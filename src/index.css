@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Brand Colors */
+:root {
+  /* Primary palette */
+  --bg-dark: #2A3439;
+  --bg-light: #F8FAFC;
+  --text-primary: #2A3439;
+  
+  /* Your accent */
+  --teal-accent: #38BEBA;
+  --teal-hover: #2DA8A5;
+  
+  /* CTAs */
+  --cta-primary: #FF9F1C;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--teal-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-hover);
+}
+
+/* Apply to buttons */
+.btn-teal {
+  background: var(--teal-accent);
+  transition: all 0.2s ease;
+}
+
+.btn-teal:hover { 
+  background: var(--teal-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 190, 186, 0.3);
+}
+
+/* Genie animations */
+@keyframes genie-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.genie-enter {
+  animation: genie-appear 0.6s ease-out;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #38BEBA 0%, #2DA8A5 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #38BEBA 0%, #FF9F1C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

@@ -1,0 +1,204 @@
+/* Brand Colors */
+:root {
+  /* Primary palette */
+  --bg-dark: #2A3439;
+  --bg-light: #F8FAFC;
+  --text-primary: #2A3439;
+  
+  /* Your accent */
+  --teal-accent: #38BEBA;
+  --teal-hover: #2DA8A5;
+  
+  /* CTAs */
+  --cta-primary: #FF9F1C;
+  
+  /* Additional brand colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+}
+
+/* Apply to buttons */
+.btn-teal {
+  background: var(--teal-accent);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-teal:hover { 
+  background: var(--teal-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(56, 190, 186, 0.3);
+}
+
+/* Genie-specific animations */
+@keyframes genie-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes lamp-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(56, 190, 186, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(56, 190, 186, 0.8);
+  }
+}
+
+@keyframes wish-granted {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.genie-enter {
+  animation: genie-appear 0.8s ease-out;
+}
+
+.lamp-glow {
+  animation: lamp-glow 2s ease-in-out infinite;
+}
+
+.wish-granted {
+  animation: wish-granted 0.6s ease-out;
+}
+
+/* Glass morphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(42, 52, 57, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(56, 190, 186, 0.2);
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #38BEBA 0%, #2DA8A5 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #38BEBA 0%, #FF9F1C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  background: linear-gradient(135deg, #38BEBA 0%, #FF9F1C 100%);
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.gradient-border > * {
+  background: var(--bg-light);
+  border-radius: 6px;
+}
+
+/* Voice control styles */
+.voice-active {
+  background: linear-gradient(45deg, #38BEBA, #FF9F1C);
+  animation: pulse 1s infinite;
+}
+
+.voice-listening {
+  box-shadow: 0 0 0 4px rgba(56, 190, 186, 0.3);
+  animation: pulse 2s infinite;
+}
+
+/* Campaign health indicators */
+.health-excellent {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.health-good {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.health-warning {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.health-critical {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 3D Funnel container */
+.funnel-container {
+  border: 2px solid var(--teal-accent);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.funnel-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(56, 190, 186, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Sidebar navigation styles */
+.nav-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+.nav-item:hover {
+  background: rgba(56, 190, 186, 0.1);
+  transform: translateX(4px);
+}
+
+.nav-item.active {
+  background: var(--teal-accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(56, 190, 186, 0.3);
+}
+
+/* Card styles */
+.genie-card {
+  background: white;
+  border: 1px solid rgba(56, 190, 186, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.genie-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: var(--teal-accent);
+}

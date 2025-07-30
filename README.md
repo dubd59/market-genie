@@ -60,9 +60,9 @@
 - **react-hot-toast** - Elegant notifications
 
 ### **Backend & Data**
-- **Supabase** - PostgreSQL database with real-time subscriptions
-- **Supabase Edge Functions** - Serverless functions for AI processing
-- **Real-time Updates** - Live data synchronization
+**Firebase** - Campaign management and authentication
+**Appwrite** - Analytics, self-healing, and serverless functions
+**PostgreSQL** - Analytics data storage
 
 ### **AI & Voice**
 - **Web Speech API** - Voice recognition and synthesis
@@ -116,10 +116,10 @@ src/
    cp .env.example .env
    ```
    
-   Update `.env` with your Supabase credentials:
+   Update `.env` with your backend credentials:
    ```env
-   VITE_SUPABASE_URL=your_supabase_url_here
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   APPWRITE_ENDPOINT=https://appwrite.genielabs.com
+   POSTGRES_PRIVATE_KEY=${DB_PASSWORD}
    ```
 
 4. **Start the development server**
@@ -203,10 +203,10 @@ npm run build
 - **AWS S3 + CloudFront**
 - **Docker** containers
 
-### **Supabase Setup**
-1. Create a new Supabase project
-2. Run the database migrations in `supabase/migrations/`
-3. Deploy the Edge Functions in `supabase/functions/`
+### **Backend Setup (Firebase, Appwrite, PostgreSQL)**
+1. Set up Firebase project and configure Firestore rules
+2. Set up Appwrite server and PostgreSQL database
+3. Run migrations in `backend/appwrite/products/marketgenie/analytics/migrations/`
 4. Update environment variables
 
 ---
@@ -232,7 +232,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 **Acknowledgments**
 
 - **React Team** for the amazing framework
-- **Supabase** for the incredible backend platform
 - **Three.js** for 3D visualization capabilities
 - **Tailwind CSS** for the utility-first approach
 - **Framer Motion** for smooth animations

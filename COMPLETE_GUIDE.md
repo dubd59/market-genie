@@ -316,10 +316,9 @@ Transform marketing through AI-first automation, 3D analytics visualization, and
 - **react-hot-toast**: Elegant notification system
 
 ### **Backend Architecture**
-- **Supabase**: PostgreSQL database with real-time subscriptions
-- **Edge Functions**: Serverless functions for AI processing
-- **Row Level Security**: Fine-grained access control
-- **Real-time Updates**: Live data synchronization
+**Firebase**: Campaign management and authentication
+**Appwrite**: Analytics, self-healing, and serverless functions
+**PostgreSQL**: Analytics data storage
 
 ### **AI & Voice Integration**
 - **Web Speech API**: Browser-native voice recognition
@@ -499,8 +498,8 @@ CMD ["npm", "run", "preview"]
 
 #### **Environment Variables**
 ```env
-VITE_SUPABASE_URL=your_production_supabase_url
-VITE_SUPABASE_ANON_KEY=your_production_anon_key
+APPWRITE_ENDPOINT=https://appwrite.genielabs.com
+POSTGRES_PRIVATE_KEY=${DB_PASSWORD}
 VITE_OPENAI_API_KEY=your_openai_api_key
 VITE_APP_NAME=Market Genie
 VITE_APP_VERSION=1.0.0
@@ -512,22 +511,18 @@ VITE_APP_VERSION=1.0.0
 - **Caching Strategy**: Proper cache headers for static assets
 - **CDN Integration**: CloudFront or Netlify CDN
 
-### **Backend Setup (Supabase)**
+### **Backend Setup (Firebase, Appwrite, PostgreSQL)**
 
 #### **Database Setup**
-1. Create new Supabase project
-2. Run migrations from `supabase/migrations/`
-3. Configure Row Level Security policies
-4. Set up authentication providers
+1. Set up Firebase project and configure Firestore rules
+2. Set up Appwrite server and PostgreSQL database
+3. Run migrations in `backend/appwrite/products/marketgenie/analytics/migrations/`
+4. Configure authentication providers in Firebase and Appwrite
 
-#### **Edge Functions Deployment**
-1. Install Supabase CLI
-2. Deploy functions:
-   ```bash
-   supabase functions deploy grant-wish
-   ```
-3. Configure environment variables
-4. Test function endpoints
+#### **Service Deployment**
+1. Build and deploy Docker containers for analytics and campaign engine
+2. Configure environment variables
+3. Test endpoints and security rules
 
 ---
 
@@ -591,12 +586,12 @@ VITE_APP_VERSION=1.0.0
 
 ## 📚 API Reference
 
-### **Supabase Database Schema**
+### **Appwrite/PostgreSQL Database Schema**
 
 #### **Users Table**
 ```sql
-CREATE TABLE profiles (
-  id UUID REFERENCES auth.users PRIMARY KEY,
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
   company TEXT,
@@ -608,9 +603,9 @@ CREATE TABLE profiles (
 
 #### **Campaigns Table**
 ```sql
-CREATE TABLE campaigns (
+CREATE TABLE marketGenie_campaigns (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id) NOT NULL,
+  ownerId UUID REFERENCES users(id) NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
   workflow JSONB NOT NULL,

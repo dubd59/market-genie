@@ -13,6 +13,8 @@ import { useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
+import SupportTicketForm from './components/SupportTicketForm'
+import SupportTicketList from './components/SupportTicketList'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -110,6 +112,16 @@ function App() {
           
           {/* Voice Command Floating Button */}
           <VoiceButton />
+          
+          {/* Support Ticket Form and List for Testing */}
+          <SupportTicketForm />
+          <SupportTicketList />
+          
+          {/* Trap door for future SuperGenie dashboard integration */}
+          <div style={{margin:'2rem auto',padding:10,border:'1px dashed #aaa',maxWidth:400,textAlign:'center',background:'#f9f9f9'}}>
+            <strong>SuperGenie Dashboard Placeholder</strong>
+            <div style={{fontSize:12,color:'#888'}}>Future integration point for MarketGenie, OfficeGenie, and SupportGenie unified dashboard.</div>
+          </div>
         </div>
       </GenieProvider>
     </AuthProvider>

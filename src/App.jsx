@@ -138,6 +138,7 @@ function App() {
           {activeSection === 'Lead Generation' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h2 className="text-3xl font-bold text-genie-teal mb-8">Lead Generation</h2>
+              {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
                   <span role="img" aria-label="leads" className="text-genie-teal text-3xl mb-2">🧲</span>
@@ -155,7 +156,90 @@ function App() {
                   <div className="text-gray-500">Lead Conversion</div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6">Lead generation tools and import options coming soon...</div>
+              {/* Lead Import Tool */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-2">Import Leads (CSV)</h3>
+                <input type="file" accept=".csv" className="mb-2" />
+                <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Upload</button>
+              </div>
+              {/* Lead Capture Form */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-2">Add New Lead</h3>
+                <form className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="text" placeholder="Name" className="border p-2 rounded" required />
+                  <input type="email" placeholder="Email" className="border p-2 rounded" required />
+                  <input type="tel" placeholder="Phone" className="border p-2 rounded" />
+                  <input type="text" placeholder="Company" className="border p-2 rounded" />
+                  <input type="text" placeholder="Source" className="border p-2 rounded" />
+                  <button type="submit" className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-3">Add Lead</button>
+                </form>
+              </div>
+              {/* Filters/Search */}
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <input type="text" placeholder="Search leads..." className="border p-2 rounded flex-1" />
+                <select className="border p-2 rounded">
+                  <option>All Sources</option>
+                  <option>Website</option>
+                  <option>Referral</option>
+                  <option>Event</option>
+                </select>
+                <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Filter</button>
+              </div>
+              {/* Recent Leads Table */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Recent Leads</h3>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="py-2">Name</th>
+                      <th className="py-2">Email</th>
+                      <th className="py-2">Phone</th>
+                      <th className="py-2">Company</th>
+                      <th className="py-2">Source</th>
+                      <th className="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-2">Jane Doe</td>
+                      <td className="py-2">jane@example.com</td>
+                      <td className="py-2">555-1234</td>
+                      <td className="py-2">Acme Inc.</td>
+                      <td className="py-2">Website</td>
+                      <td className="py-2">
+                        <button className="text-genie-teal mr-2">Edit</button>
+                        <button className="text-red-500">Delete</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2">John Smith</td>
+                      <td className="py-2">john@company.com</td>
+                      <td className="py-2">555-5678</td>
+                      <td className="py-2">Beta LLC</td>
+                      <td className="py-2">Referral</td>
+                      <td className="py-2">
+                        <button className="text-genie-teal mr-2">Edit</button>
+                        <button className="text-red-500">Delete</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2">Alice Lee</td>
+                      <td className="py-2">alice@startup.com</td>
+                      <td className="py-2">555-8765</td>
+                      <td className="py-2">Startup Hub</td>
+                      <td className="py-2">Event</td>
+                      <td className="py-2">
+                        <button className="text-genie-teal mr-2">Edit</button>
+                        <button className="text-red-500">Delete</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="flex justify-end mt-4 gap-2">
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Export CSV</button>
+                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">Add Lead</button>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'Outreach Automation' && (

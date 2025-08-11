@@ -161,6 +161,19 @@ function App() {
                   <div className="text-gray-500">Budget Used</div>
                 </div>
               </div>
+              {/* Budget-Aware Scraping Controls */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-2">Budget-Aware Scraping Controls</h3>
+                <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
+                  <label className="font-medium text-gray-700">Monthly Scraping/API Budget ($):</label>
+                  <input type="number" min="10" max="1000" defaultValue="50" className="border p-2 rounded w-32" />
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Update Budget</button>
+                </div>
+                <div className="text-gray-600 mb-2">Estimated leads per budget: <span className="font-bold">{Math.floor(50/0.5)} leads</span> (demo)</div>
+                <div className="bg-blue-50 rounded p-4 mb-2">Current usage: <span className="font-bold">$32</span> / $50</div>
+                <div className="text-xs text-gray-500 mb-2">You can update your budget as your capital grows. Low-cost mode helps startups stay within limits.</div>
+                <div className="text-xs text-red-500">{32 > 50 ? 'Warning: Budget exceeded! Scraping limited.' : ''}</div>
+              </div>
               {/* Scraping Agents */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
                 <h3 className="text-xl font-semibold text-genie-teal mb-2">Integrated Web Scraping Agents</h3>
@@ -171,7 +184,6 @@ function App() {
                 </div>
                 <div className="text-gray-600 mb-2">Choose a source and start scraping for new leads. Progress and results will appear here.</div>
                 <div className="bg-blue-50 rounded p-4">Scraping progress: <span className="font-bold">Demo: 80 leads found</span></div>
-                <div className="mt-2 text-xs text-gray-400">Budget-aware controls: <span className="font-bold">Low-cost mode enabled</span></div>
               </div>
               {/* Lead Import Tool */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">

@@ -1,6 +1,7 @@
 import React from 'react';
 
 const sections = [
+  'SuperGenie Dashboard',
   'Lead Generation',
   'Outreach Automation',
   'CRM & Pipeline',
@@ -9,8 +10,7 @@ const sections = [
   'Reporting & Analytics',
   'White-Label SaaS',
   'Cost Controls',
-  'AI & Automation',
-  'SuperGenie Dashboard'
+  'AI & Automation'
 ];
 
 export default function Sidebar({ activeSection, onSelect }) {

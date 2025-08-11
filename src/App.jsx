@@ -136,29 +136,212 @@ function App() {
             </div>
           )}
           {activeSection === 'Lead Generation' && (
-            <div>
-              <h2 className="text-3xl font-bold text-genie-teal mb-4">Lead Generation</h2>
-              <SupportTicketForm />
-              <SupportTicketList />
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Lead Generation</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="leads" className="text-genie-teal text-3xl mb-2">🧲</span>
+                  <div className="text-2xl font-bold text-gray-900">320</div>
+                  <div className="text-gray-500">New Leads</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="import" className="text-genie-teal text-3xl mb-2">📥</span>
+                  <div className="text-2xl font-bold text-gray-900">120</div>
+                  <div className="text-gray-500">Imported Contacts</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="conversion" className="text-genie-teal text-3xl mb-2">🔄</span>
+                  <div className="text-2xl font-bold text-gray-900">18%</div>
+                  <div className="text-gray-500">Lead Conversion</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Lead generation tools and import options coming soon...</div>
             </div>
           )}
-          {activeSection === 'Cost Controls' && (
-            <div>
-              <h2 className="text-3xl font-bold text-genie-teal mb-4">Cost Controls</h2>
-              <p className="mb-4">Monitor and manage your marketing budget with smart controls.</p>
-              {/* Demo budget control UI */}
-              <div className="bg-white rounded-xl shadow p-6">Budget dashboard coming soon...</div>
+          {activeSection === 'Outreach Automation' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Outreach Automation</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="email" className="text-genie-teal text-3xl mb-2">✉️</span>
+                  <div className="text-2xl font-bold text-gray-900">1,200</div>
+                  <div className="text-gray-500">Emails Sent</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="sms" className="text-genie-teal text-3xl mb-2">📱</span>
+                  <div className="text-2xl font-bold text-gray-900">800</div>
+                  <div className="text-gray-500">SMS Sent</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="social" className="text-genie-teal text-3xl mb-2">📢</span>
+                  <div className="text-2xl font-bold text-gray-900">350</div>
+                  <div className="text-gray-500">Social Posts</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Automated outreach and campaign scheduling coming soon...</div>
+            </div>
+          )}
+          {activeSection === 'CRM & Pipeline' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">CRM & Pipeline</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="crm" className="text-genie-teal text-3xl mb-2">📋</span>
+                  <div className="text-2xl font-bold text-gray-900">45</div>
+                  <div className="text-gray-500">Active Deals</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="pipeline" className="text-genie-teal text-3xl mb-2">🔗</span>
+                  <div className="text-2xl font-bold text-gray-900">12</div>
+                  <div className="text-gray-500">Pipeline Stages</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="win" className="text-genie-teal text-3xl mb-2">🏆</span>
+                  <div className="text-2xl font-bold text-gray-900">8</div>
+                  <div className="text-gray-500">Closed Won</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">CRM and pipeline management features coming soon...</div>
+            </div>
+          )}
+          {activeSection === 'Appointments' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Appointments</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="calendar" className="text-genie-teal text-3xl mb-2">📅</span>
+                  <div className="text-2xl font-bold text-gray-900">22</div>
+                  <div className="text-gray-500">Upcoming</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="booked" className="text-genie-teal text-3xl mb-2">✅</span>
+                  <div className="text-2xl font-bold text-gray-900">15</div>
+                  <div className="text-gray-500">Booked</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="cancelled" className="text-genie-teal text-3xl mb-2">❌</span>
+                  <div className="text-2xl font-bold text-gray-900">3</div>
+                  <div className="text-gray-500">Cancelled</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Appointment booking and calendar integration coming soon...</div>
+            </div>
+          )}
+          {activeSection === 'Workflow Automation' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Workflow Automation</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="automation" className="text-genie-teal text-3xl mb-2">🤖</span>
+                  <div className="text-2xl font-bold text-gray-900">12</div>
+                  <div className="text-gray-500">Active Workflows</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="tasks" className="text-genie-teal text-3xl mb-2">📝</span>
+                  <div className="text-2xl font-bold text-gray-900">34</div>
+                  <div className="text-gray-500">Tasks Automated</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="efficiency" className="text-genie-teal text-3xl mb-2">⚙️</span>
+                  <div className="text-2xl font-bold text-gray-900">89%</div>
+                  <div className="text-gray-500">Efficiency</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Workflow builder and automation tools coming soon...</div>
             </div>
           )}
           {activeSection === 'Reporting & Analytics' && (
-            <div>
-              <h2 className="text-3xl font-bold text-genie-teal mb-4">Reporting & Analytics</h2>
-              <p className="mb-4">Track campaign performance and customer insights.</p>
-              {/* Demo analytics UI */}
-              <div className="bg-white rounded-xl shadow p-6">Analytics dashboard coming soon...</div>
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Reporting & Analytics</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="reports" className="text-genie-teal text-3xl mb-2">📊</span>
+                  <div className="text-2xl font-bold text-gray-900">12</div>
+                  <div className="text-gray-500">Active Reports</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="insights" className="text-genie-teal text-3xl mb-2">🔍</span>
+                  <div className="text-2xl font-bold text-gray-900">5</div>
+                  <div className="text-gray-500">Insights</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="growth" className="text-genie-teal text-3xl mb-2">📈</span>
+                  <div className="text-2xl font-bold text-gray-900">22%</div>
+                  <div className="text-gray-500">Growth Rate</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Analytics and reporting features coming soon...</div>
             </div>
           )}
-          {/* Add similar demo content for other sections as needed */}
+          {activeSection === 'White-Label SaaS' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">White-Label SaaS</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="branding" className="text-genie-teal text-3xl mb-2">🏷️</span>
+                  <div className="text-2xl font-bold text-gray-900">4</div>
+                  <div className="text-gray-500">Brands</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="clients" className="text-genie-teal text-3xl mb-2">👔</span>
+                  <div className="text-2xl font-bold text-gray-900">18</div>
+                  <div className="text-gray-500">Clients</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="whitelabel" className="text-genie-teal text-3xl mb-2">🛠️</span>
+                  <div className="text-2xl font-bold text-gray-900">6</div>
+                  <div className="text-gray-500">Active SaaS</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">White-label SaaS management coming soon...</div>
+            </div>
+          )}
+          {activeSection === 'Cost Controls' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">Cost Controls</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="budget" className="text-genie-teal text-3xl mb-2">💸</span>
+                  <div className="text-2xl font-bold text-gray-900">$8,200</div>
+                  <div className="text-gray-500">Budget Used</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="savings" className="text-genie-teal text-3xl mb-2">💰</span>
+                  <div className="text-2xl font-bold text-gray-900">$2,400</div>
+                  <div className="text-gray-500">Savings</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="controls" className="text-genie-teal text-3xl mb-2">🛡️</span>
+                  <div className="text-2xl font-bold text-gray-900">5</div>
+                  <div className="text-gray-500">Active Controls</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">Budget control and cost optimization features coming soon...</div>
+            </div>
+          )}
+          {activeSection === 'AI & Automation' && (
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              <h2 className="text-3xl font-bold text-genie-teal mb-8">AI & Automation</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="ai" className="text-genie-teal text-3xl mb-2">🤖</span>
+                  <div className="text-2xl font-bold text-gray-900">6</div>
+                  <div className="text-gray-500">AI Models</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="automations" className="text-genie-teal text-3xl mb-2">⚡</span>
+                  <div className="text-2xl font-bold text-gray-900">14</div>
+                  <div className="text-gray-500">Automations</div>
+                </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="tasks" className="text-genie-teal text-3xl mb-2">📝</span>
+                  <div className="text-2xl font-bold text-gray-900">120</div>
+                  <div className="text-gray-500">Tasks Automated</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6">AI-powered automation features coming soon...</div>
+            </div>
+          )}
         </main>
       </div>
     </GenieProvider>

@@ -1,7 +1,9 @@
+
 import { db } from '../firebase';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 
-// Create a new support ticket	export async function createSupportTicket(ticketData) {
+// Create a new support ticket
+export async function createSupportTicket(ticketData) {
   await addDoc(collection(db, 'SupportGenie'), ticketData);
 }
 

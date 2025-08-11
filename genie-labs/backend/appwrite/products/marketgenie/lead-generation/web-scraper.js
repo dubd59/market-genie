@@ -63,8 +63,27 @@ export class WebLeadScraper {
       }
     }
 
-    console.log(`Scraped ${leads.length} leads for $${totalCost.toFixed(3)}`);
-    return { leads, totalCost };
+  // Deduplicate and validate leads before returning
+  const deduped = this.deduplicateLeads(leads);
+  const validated = this.validateLeads(deduped);
+  console.log(`Scraped ${validated.length} valid leads for $${totalCost.toFixed(3)}`);
+  return { leads: validated, totalCost };
+  deduplicateLeads(leads) {
+    const unique = [];
+    const seen = new Set();
+    for (const lead of leads) {
+      const key = `${lead.email || ''}|${lead.phone || ''}|${lead.name || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(lead);
+      }
+    }
+    return unique;
+  }
+
+  validateLeads(leads) {
+    return leads.filter(lead => lead.email || lead.phone);
+  }
   }
 
   async scrapeSource(source, criteria) {
@@ -145,5 +164,22 @@ export class WebLeadScraper {
         }
       ]
     };
+  }
+
+  deduplicateLeads(leads) {
+    const unique = [];
+    const seen = new Set();
+    for (const lead of leads) {
+      const key = `${lead.email || ''}|${lead.phone || ''}|${lead.name || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(lead);
+      }
+    }
+    return unique;
+  }
+
+  validateLeads(leads) {
+    return leads.filter(lead => lead.email || lead.phone);
   }
 }

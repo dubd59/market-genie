@@ -19,25 +19,80 @@ import { useCampaignHealth } from '../features/self-healing/useCampaignHealth'
 import { generateSampleFunnelData, calculateFunnelMetrics } from '../services/funnel3d'
 
 export default function Dashboard() {
-  const { analytics, campaigns } = useGenie()
-  const [selectedFunnelStage, setSelectedFunnelStage] = useState(null)
-  const [funnelData, setFunnelData] = useState([])
-  const [funnelMetrics, setFunnelMetrics] = useState({})
-  const [showGenieConsole, setShowGenieConsole] = useState(false)
+  // Demo stats
+  const stats = [
+    { name: 'New Customers', value: 128, icon: Users },
+    { name: 'Revenue', value: '$12,400', icon: DollarSign },
+    { name: 'Active Campaigns', value: 7, icon: Zap },
+    { name: 'Conversion Rate', value: '12%', icon: TrendingUp },
+  ];
 
-  // Sample data for demonstration
-  useEffect(() => {
-    const sampleData = generateSampleFunnelData()
-    setFunnelData(sampleData)
-    
-    const metrics = calculateFunnelMetrics([
-      { name: 'Visitors', count: 1000 },
-      { name: 'Leads', count: 200 },
-      { name: 'Qualified', count: 50 },
-      { name: 'Customers', count: 12 }
-    ])
-    setFunnelMetrics(metrics)
-  }, [])
+  // Demo financial graph data
+  const financialData = [
+    { month: 'Jan', value: 4000 },
+    { month: 'Feb', value: 6000 },
+    { month: 'Mar', value: 8000 },
+    { month: 'Apr', value: 9000 },
+    { month: 'May', value: 12000 },
+    { month: 'Jun', value: 12400 },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+      <h1 className="text-4xl font-bold text-genie-teal mb-8">Welcome to Market Genie</h1>
+      {/* Stat Boxes */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        {stats.map(stat => (
+          <div key={stat.name} className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+            <div className="bg-genie-teal/10 p-3 rounded-full">
+              <stat.icon className="h-8 w-8 text-genie-teal" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-gray-500">{stat.name}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Financial Graph */}
+      <div className="bg-white shadow-lg rounded-xl p-8 mb-10">
+        <h2 className="text-xl font-semibold text-genie-teal mb-4">Financial Growth</h2>
+        <div className="w-full h-64">
+          {/* Simple SVG Line Chart */}
+          <svg viewBox="0 0 400 200" className="w-full h-full">
+            <polyline
+              fill="none"
+              stroke="#38BEBA"
+              strokeWidth="4"
+              points={financialData.map((d, i) => `${i * 70 + 30},${200 - d.value / 70}`).join(' ')}
+            />
+            {financialData.map((d, i) => (
+              <circle key={d.month} cx={i * 70 + 30} cy={200 - d.value / 70} r="6" fill="#38BEBA" />
+            ))}
+            {/* Month labels */}
+            {financialData.map((d, i) => (
+              <text key={d.month} x={i * 70 + 30} y={190} textAnchor="middle" fontSize="14" fill="#888">{d.month}</text>
+            ))}
+          </svg>
+        </div>
+      </div>
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/contacts" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+          <Users className="h-10 w-10 text-genie-teal mb-2" />
+          <span className="font-semibold text-genie-teal">Manage Contacts</span>
+        </a>
+        <a href="/campaigns/builder" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+          <Zap className="h-10 w-10 text-genie-teal mb-2" />
+          <span className="font-semibold text-genie-teal">Build Campaigns</span>
+        </a>
+        <a href="/settings" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+          <CogIcon className="h-10 w-10 text-genie-teal mb-2" />
+          <span className="font-semibold text-genie-teal">Settings</span>
+        </a>
+      </div>
+    </div>
+  );
 
   const handleFunnelStageClick = (stageData) => {
     setSelectedFunnelStage(stageData)

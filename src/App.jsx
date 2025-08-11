@@ -139,7 +139,7 @@ function App() {
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h2 className="text-3xl font-bold text-genie-teal mb-8">Lead Generation</h2>
               {/* Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
                 <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
                   <span role="img" aria-label="leads" className="text-genie-teal text-3xl mb-2">🧲</span>
                   <div className="text-2xl font-bold text-gray-900">320</div>
@@ -155,6 +155,23 @@ function App() {
                   <div className="text-2xl font-bold text-gray-900">18%</div>
                   <div className="text-gray-500">Lead Conversion</div>
                 </div>
+                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                  <span role="img" aria-label="budget" className="text-genie-teal text-3xl mb-2">💸</span>
+                  <div className="text-2xl font-bold text-gray-900">$120</div>
+                  <div className="text-gray-500">Budget Used</div>
+                </div>
+              </div>
+              {/* Scraping Agents */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-2">Integrated Web Scraping Agents</h3>
+                <div className="flex gap-4 mb-4">
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Business Directories</button>
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Social Media</button>
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Custom Sources</button>
+                </div>
+                <div className="text-gray-600 mb-2">Choose a source and start scraping for new leads. Progress and results will appear here.</div>
+                <div className="bg-blue-50 rounded p-4">Scraping progress: <span className="font-bold">Demo: 80 leads found</span></div>
+                <div className="mt-2 text-xs text-gray-400">Budget-aware controls: <span className="font-bold">Low-cost mode enabled</span></div>
               </div>
               {/* Lead Import Tool */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
@@ -162,16 +179,20 @@ function App() {
                 <input type="file" accept=".csv" className="mb-2" />
                 <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Upload</button>
               </div>
-              {/* Lead Capture Form */}
+              {/* Lead Capture Form with Enrichment */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-2">Add New Lead</h3>
-                <form className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 className="text-xl font-semibold text-genie-teal mb-2">Add New Lead & Enrichment</h3>
+                <form className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <input type="text" placeholder="Name" className="border p-2 rounded" required />
                   <input type="email" placeholder="Email" className="border p-2 rounded" required />
                   <input type="tel" placeholder="Phone" className="border p-2 rounded" />
                   <input type="text" placeholder="Company" className="border p-2 rounded" />
+                  <input type="text" placeholder="LinkedIn" className="border p-2 rounded" />
+                  <input type="text" placeholder="Twitter" className="border p-2 rounded" />
+                  <input type="text" placeholder="Website" className="border p-2 rounded" />
                   <input type="text" placeholder="Source" className="border p-2 rounded" />
-                  <button type="submit" className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-3">Add Lead</button>
+                  <textarea placeholder="Lead Description" className="border p-2 rounded col-span-1 md:col-span-4" />
+                  <button type="submit" className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-4">Add Lead</button>
                 </form>
               </div>
               {/* Filters/Search */}
@@ -185,7 +206,7 @@ function App() {
                 </select>
                 <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Filter</button>
               </div>
-              {/* Recent Leads Table */}
+              {/* Recent Leads Table with Enrichment and Deduplication */}
               <div className="bg-white rounded-xl shadow p-6">
                 <h3 className="text-xl font-semibold text-genie-teal mb-4">Recent Leads</h3>
                 <table className="w-full text-left">
@@ -195,17 +216,25 @@ function App() {
                       <th className="py-2">Email</th>
                       <th className="py-2">Phone</th>
                       <th className="py-2">Company</th>
+                      <th className="py-2">LinkedIn</th>
+                      <th className="py-2">Twitter</th>
+                      <th className="py-2">Website</th>
                       <th className="py-2">Source</th>
+                      <th className="py-2">Description</th>
                       <th className="py-2">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
+                    <tr className="bg-blue-50">
                       <td className="py-2">Jane Doe</td>
                       <td className="py-2">jane@example.com</td>
                       <td className="py-2">555-1234</td>
                       <td className="py-2">Acme Inc.</td>
+                      <td className="py-2">linkedin.com/in/janedoe</td>
+                      <td className="py-2">@janedoe</td>
+                      <td className="py-2">acme.com</td>
                       <td className="py-2">Website</td>
+                      <td className="py-2">Interested in demo</td>
                       <td className="py-2">
                         <button className="text-genie-teal mr-2">Edit</button>
                         <button className="text-red-500">Delete</button>
@@ -216,18 +245,26 @@ function App() {
                       <td className="py-2">john@company.com</td>
                       <td className="py-2">555-5678</td>
                       <td className="py-2">Beta LLC</td>
+                      <td className="py-2">linkedin.com/in/johnsmith</td>
+                      <td className="py-2">@johnsmith</td>
+                      <td className="py-2">betallc.com</td>
                       <td className="py-2">Referral</td>
+                      <td className="py-2">Requested pricing</td>
                       <td className="py-2">
                         <button className="text-genie-teal mr-2">Edit</button>
                         <button className="text-red-500">Delete</button>
                       </td>
                     </tr>
-                    <tr>
+                    <tr className="bg-red-50">
                       <td className="py-2">Alice Lee</td>
                       <td className="py-2">alice@startup.com</td>
                       <td className="py-2">555-8765</td>
                       <td className="py-2">Startup Hub</td>
+                      <td className="py-2">linkedin.com/in/alicelee</td>
+                      <td className="py-2">@alicelee</td>
+                      <td className="py-2">startuphub.com</td>
                       <td className="py-2">Event</td>
+                      <td className="py-2">Duplicate detected</td>
                       <td className="py-2">
                         <button className="text-genie-teal mr-2">Edit</button>
                         <button className="text-red-500">Delete</button>
@@ -239,6 +276,7 @@ function App() {
                   <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Export CSV</button>
                   <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">Add Lead</button>
                 </div>
+                <div className="mt-2 text-xs text-red-500">Deduplication: <span className="font-bold">1 duplicate found</span></div>
               </div>
             </div>
           )}

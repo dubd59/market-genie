@@ -79,15 +79,25 @@ function App() {
                 {showAccountMenu && (
                   <div className={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg shadow-lg z-50`}>
                     <div className="py-2">
-                      <a href="#" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}>
+                      <button 
+                        onClick={() => {setActiveSection('Account Settings'); setShowAccountMenu(false)}}
+                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                      >
                         Account Settings
-                      </a>
+                      </button>
                       <a href="#" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}>
                         Profile
                       </a>
                       <a href="#" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}>
                         Billing
                       </a>
+                      <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+                      <button 
+                        onClick={() => {setActiveSection('Admin Panel'); setShowAccountMenu(false)}}
+                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        🛡️ Admin Panel
+                      </button>
                       <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                       <a href="#" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-100'}`}>
                         Sign Out
@@ -854,6 +864,10 @@ function App() {
               <div className="bg-white rounded-xl shadow p-6">AI-powered automation features coming soon...</div>
             </div>
           )}
+          
+          {activeSection === 'API Keys & Integrations' && renderAPIKeys()}
+          {activeSection === 'Admin Panel' && renderAdminPanel()}
+          {activeSection === 'Account Settings' && renderAccountSettings()}
         </main>
         </div>
       </div>
@@ -947,6 +961,106 @@ function App() {
             <div className="font-semibold mb-1">Automation Hub</div>
             <div className="text-purple-200 text-sm">Manage your automated workflows</div>
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  function renderAccountSettings() {
+    return (
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
+        <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Account Settings</h2>
+        
+        {/* Profile Information */}
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Profile Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Full Name</label>
+              <input 
+                type="text" 
+                defaultValue="John Smith" 
+                className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+              />
+            </div>
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Email Address</label>
+              <input 
+                type="email" 
+                defaultValue="john@company.com" 
+                className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+              />
+            </div>
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Company</label>
+              <input 
+                type="text" 
+                defaultValue="Acme Corporation" 
+                className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+              />
+            </div>
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Time Zone</label>
+              <select className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white'} rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}>
+                <option>Eastern Time (ET)</option>
+                <option>Central Time (CT)</option>
+                <option>Mountain Time (MT)</option>
+                <option>Pacific Time (PT)</option>
+              </select>
+            </div>
+          </div>
+          <button className="mt-6 bg-genie-teal text-white px-6 py-2 rounded-lg hover:bg-teal-600 transition-colors">
+            Save Changes
+          </button>
+        </div>
+
+        {/* Security Settings */}
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Security</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Two-Factor Authentication</h4>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Add an extra layer of security to your account</p>
+              </div>
+              <button className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm">Enabled</button>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Change Password</h4>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Update your account password</p>
+              </div>
+              <button className="border border-gray-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">Change</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Preferences */}
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Notification Preferences</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Email Notifications</h4>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Receive updates about your campaigns</p>
+              </div>
+              <input type="checkbox" defaultChecked className="toggle" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>SMS Notifications</h4>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Get alerts via text message</p>
+              </div>
+              <input type="checkbox" className="toggle" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Marketing Updates</h4>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Stay informed about new features</p>
+              </div>
+              <input type="checkbox" defaultChecked className="toggle" />
+            </div>
+          </div>
         </div>
       </div>
     )

@@ -10,8 +10,7 @@ import {
   BuildingStorefrontIcon,
   CurrencyDollarIcon,
   SparklesIcon,
-  KeyIcon,
-  ShieldCheckIcon
+  KeyIcon
 } from '@heroicons/react/24/outline';
 
 const sections = [
@@ -22,7 +21,6 @@ const sections = [
   { name: 'Appointments', icon: CalendarDaysIcon },
   { name: 'Workflow Automation', icon: Cog6ToothIcon },
   { name: 'API Keys & Integrations', icon: KeyIcon },
-  { name: 'Admin Panel', icon: ShieldCheckIcon },
   { name: 'Reporting & Analytics', icon: ChartBarIcon },
   { name: 'White-Label SaaS', icon: BuildingStorefrontIcon },
   { name: 'Cost Controls', icon: CurrencyDollarIcon },

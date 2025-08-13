@@ -312,7 +312,104 @@ function App() {
                   <div className="text-gray-500">Social Posts</div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6">Automated outreach and campaign scheduling coming soon...</div>
+              {/* Campaign Builder */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Create New Campaign</h3>
+                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="text" placeholder="Campaign Name" className="border p-3 rounded" required />
+                  <select className="border p-3 rounded">
+                    <option>Select Campaign Type</option>
+                    <option>Email Sequence</option>
+                    <option>SMS Campaign</option>
+                    <option>Social Media</option>
+                    <option>Mixed Campaign</option>
+                  </select>
+                  <input type="text" placeholder="Target Audience" className="border p-3 rounded" />
+                  <input type="datetime-local" className="border p-3 rounded" />
+                  <textarea placeholder="Campaign Description" className="border p-3 rounded col-span-1 md:col-span-2" />
+                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Create Campaign</button>
+                </form>
+              </div>
+              
+              {/* Email Templates */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Email Templates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
+                    <h4 className="font-semibold mb-2">Welcome Series</h4>
+                    <p className="text-sm text-gray-600">5-email welcome sequence</p>
+                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
+                  </div>
+                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
+                    <h4 className="font-semibold mb-2">Product Launch</h4>
+                    <p className="text-sm text-gray-600">Announcement campaign</p>
+                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
+                  </div>
+                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
+                    <h4 className="font-semibold mb-2">Re-engagement</h4>
+                    <p className="text-sm text-gray-600">Win back inactive users</p>
+                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Campaigns */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Active Campaigns</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="py-3">Campaign</th>
+                        <th className="py-3">Type</th>
+                        <th className="py-3">Status</th>
+                        <th className="py-3">Recipients</th>
+                        <th className="py-3">Open Rate</th>
+                        <th className="py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="py-3">Welcome New Users</td>
+                        <td className="py-3">Email</td>
+                        <td className="py-3"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span></td>
+                        <td className="py-3">1,247</td>
+                        <td className="py-3">24.5%</td>
+                        <td className="py-3">
+                          <button className="text-genie-teal mr-2 hover:underline">Edit</button>
+                          <button className="text-red-500 hover:underline">Pause</button>
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="py-3">Product Launch 2024</td>
+                        <td className="py-3">Mixed</td>
+                        <td className="py-3"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Scheduled</span></td>
+                        <td className="py-3">3,542</td>
+                        <td className="py-3">--</td>
+                        <td className="py-3">
+                          <button className="text-genie-teal mr-2 hover:underline">Edit</button>
+                          <button className="text-red-500 hover:underline">Cancel</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-3">Re-engagement Campaign</td>
+                        <td className="py-3">SMS</td>
+                        <td className="py-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">Paused</span></td>
+                        <td className="py-3">892</td>
+                        <td className="py-3">18.2%</td>
+                        <td className="py-3">
+                          <button className="text-genie-teal mr-2 hover:underline">Resume</button>
+                          <button className="text-red-500 hover:underline">Delete</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end mt-4 gap-2">
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Export Report</button>
+                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">New Campaign</button>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'CRM & Pipeline' && (
@@ -335,7 +432,91 @@ function App() {
                   <div className="text-gray-500">Closed Won</div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6">CRM and pipeline management features coming soon...</div>
+              {/* Pipeline Management */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Sales Pipeline</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-2">Prospects</h4>
+                    <div className="text-2xl font-bold text-blue-900">18</div>
+                    <div className="text-sm text-blue-700">$45,000</div>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-yellow-800 mb-2">Qualified</h4>
+                    <div className="text-2xl font-bold text-yellow-900">12</div>
+                    <div className="text-sm text-yellow-700">$78,000</div>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-orange-800 mb-2">Proposal</h4>
+                    <div className="text-2xl font-bold text-orange-900">8</div>
+                    <div className="text-sm text-orange-700">$95,000</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-green-800 mb-2">Closed Won</h4>
+                    <div className="text-2xl font-bold text-green-900">5</div>
+                    <div className="text-sm text-green-700">$67,000</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Management */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Recent Contacts</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="py-3">Name</th>
+                        <th className="py-3">Company</th>
+                        <th className="py-3">Stage</th>
+                        <th className="py-3">Value</th>
+                        <th className="py-3">Last Contact</th>
+                        <th className="py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="py-3">John Smith</td>
+                        <td className="py-3">Acme Corp</td>
+                        <td className="py-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">Qualified</span></td>
+                        <td className="py-3">$15,000</td>
+                        <td className="py-3">2 days ago</td>
+                        <td className="py-3">
+                          <button className="text-genie-teal mr-2 hover:underline">View</button>
+                          <button className="text-blue-600 hover:underline">Call</button>
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="py-3">Sarah Johnson</td>
+                        <td className="py-3">Tech Startup</td>
+                        <td className="py-3"><span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm">Proposal</span></td>
+                        <td className="py-3">$28,000</td>
+                        <td className="py-3">1 week ago</td>
+                        <td className="py-3">
+                          <button className="text-genie-teal mr-2 hover:underline">View</button>
+                          <button className="text-blue-600 hover:underline">Email</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-xl shadow p-6 text-center">
+                  <h4 className="font-semibold text-genie-teal mb-4">Add Contact</h4>
+                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">New Contact</button>
+                </div>
+                <div className="bg-white rounded-xl shadow p-6 text-center">
+                  <h4 className="font-semibold text-genie-teal mb-4">Create Deal</h4>
+                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">New Deal</button>
+                </div>
+                <div className="bg-white rounded-xl shadow p-6 text-center">
+                  <h4 className="font-semibold text-genie-teal mb-4">Export Data</h4>
+                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">Export CSV</button>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'Appointments' && (
@@ -358,7 +539,92 @@ function App() {
                   <div className="text-gray-500">Cancelled</div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6">Appointment booking and calendar integration coming soon...</div>
+              {/* Calendar Integration */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Calendar Integration</h3>
+                <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
+                  <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 flex items-center gap-2">
+                    <span>📅</span> Connect Google Calendar
+                  </button>
+                  <button className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
+                    <span>📧</span> Connect Outlook
+                  </button>
+                  <button className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 flex items-center gap-2">
+                    <span>🔗</span> Custom Integration
+                  </button>
+                </div>
+              </div>
+
+              {/* Booking Settings */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Booking Settings</h3>
+                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Duration</label>
+                    <select className="border p-3 rounded w-full">
+                      <option>15 minutes</option>
+                      <option>30 minutes</option>
+                      <option>45 minutes</option>
+                      <option>60 minutes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Buffer Time</label>
+                    <select className="border p-3 rounded w-full">
+                      <option>No buffer</option>
+                      <option>5 minutes</option>
+                      <option>10 minutes</option>
+                      <option>15 minutes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours</label>
+                    <input type="time" className="border p-3 rounded w-full" defaultValue="09:00" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <input type="time" className="border p-3 rounded w-full" defaultValue="17:00" />
+                  </div>
+                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Save Settings</button>
+                </form>
+              </div>
+
+              {/* Upcoming Appointments */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Upcoming Appointments</h3>
+                <div className="space-y-4">
+                  <div className="border-l-4 border-genie-teal bg-blue-50 p-4 rounded">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">Demo Call - Acme Corp</h4>
+                        <p className="text-gray-600">John Smith</p>
+                        <p className="text-sm text-gray-500">Today at 2:00 PM - 3:00 PM</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="text-genie-teal hover:underline">Join</button>
+                        <button className="text-blue-600 hover:underline">Reschedule</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">Strategy Session - Tech Startup</h4>
+                        <p className="text-gray-600">Sarah Johnson</p>
+                        <p className="text-sm text-gray-500">Tomorrow at 10:00 AM - 11:00 AM</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="text-genie-teal hover:underline">Prepare</button>
+                        <button className="text-blue-600 hover:underline">Send Reminder</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-6 gap-2">
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">View Calendar</button>
+                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">Book Meeting</button>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'Workflow Automation' && (
@@ -381,7 +647,65 @@ function App() {
                   <div className="text-gray-500">Efficiency</div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6">Workflow builder and automation tools coming soon...</div>
+              {/* Workflow Builder */}
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Create New Workflow</h3>
+                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="text" placeholder="Workflow Name" className="border p-3 rounded" required />
+                  <select className="border p-3 rounded">
+                    <option>Select Trigger</option>
+                    <option>New Lead Added</option>
+                    <option>Email Opened</option>
+                    <option>Form Submitted</option>
+                    <option>Deal Stage Changed</option>
+                  </select>
+                  <select className="border p-3 rounded">
+                    <option>Select Action</option>
+                    <option>Send Email</option>
+                    <option>Add to Sequence</option>
+                    <option>Update Field</option>
+                    <option>Create Task</option>
+                  </select>
+                  <input type="number" placeholder="Delay (minutes)" className="border p-3 rounded" />
+                  <textarea placeholder="Workflow Description" className="border p-3 rounded col-span-1 md:col-span-2" />
+                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Create Workflow</button>
+                </form>
+              </div>
+
+              {/* Active Workflows */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-xl font-semibold text-genie-teal mb-4">Active Workflows</h3>
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold">Welcome New Leads</h4>
+                      <p className="text-gray-600">Trigger: New Lead → Send welcome email sequence</p>
+                      <p className="text-sm text-gray-500">Last triggered: 2 hours ago</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
+                      <button className="text-genie-teal hover:underline">Edit</button>
+                      <button className="text-red-500 hover:underline">Pause</button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold">Follow-up Reminder</h4>
+                      <p className="text-gray-600">Trigger: No response after 3 days → Create task</p>
+                      <p className="text-sm text-gray-500">Last triggered: 1 day ago</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
+                      <button className="text-genie-teal hover:underline">Edit</button>
+                      <button className="text-red-500 hover:underline">Pause</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-6 gap-2">
+                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">View All</button>
+                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">New Workflow</button>
+                </div>
+              </div>
             </div>
           )}
           {activeSection === 'Reporting & Analytics' && (

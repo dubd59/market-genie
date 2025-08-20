@@ -5,8 +5,11 @@
   "targets": {
     "genie-labs-81b9b": {
       "hosting": {
-        "market-genie": ["market-genie-app"]
+        "market-genie": [
+          "market-genie-app"
+        ]
       }
     }
-  }
+  },
+  "etags": {}
 }

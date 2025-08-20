@@ -6,6 +6,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  setDoc,
   query, 
   where, 
   orderBy, 
@@ -44,14 +45,25 @@ export class FirebaseService {
     }
   }
 
-  static async create(collectionName, data) {
+  static async create(collectionName, data, customId = null) {
     try {
-      const docRef = await addDoc(collection(db, collectionName), {
+      let docRef
+      const docData = {
         ...data,
         created_at: new Date(),
         updated_at: new Date()
-      })
-      return { data: { id: docRef.id, ...data }, error: null }
+      }
+
+      if (customId) {
+        // Use custom ID (for user profiles, etc.)
+        docRef = doc(db, collectionName, customId)
+        await setDoc(docRef, docData)
+        return { data: { id: customId, ...data }, error: null }
+      } else {
+        // Auto-generate ID
+        docRef = await addDoc(collection(db, collectionName), docData)
+        return { data: { id: docRef.id, ...data }, error: null }
+      }
     } catch (error) {
       return { data: null, error }
     }

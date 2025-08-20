@@ -1,105 +1,47 @@
 import React, { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { TenantProvider } from './contexts/TenantContext'
 import { GenieProvider } from './contexts/GenieContext'
+import FounderSetup from './components/FounderSetup'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import CampaignBuilder from './pages/CampaignBuilder'
 import ContactManagement from './pages/ContactManagement'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
-import Register from './pages/Register'
+import Register from './pages/RegisterSimple'
+import LandingPage from './pages/LandingPage'
+import AIAgentHelper from './components/AIAgentHelper'
 import { useAuth } from './contexts/AuthContext'
+import { useTenant } from './contexts/TenantContext'
 import { Toaster } from 'react-hot-toast'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
 import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
-
-// Landing Page Component
-function LandingPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <nav className="flex justify-between items-center p-6 bg-white shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🧞‍♂️</span>
-          <h1 className="text-2xl font-bold text-genie-teal">Market Genie</h1>
-        </div>
-        <div className="flex gap-4">
-          <a href="/dashboard" className="bg-genie-teal text-white px-6 py-2 rounded-lg hover:bg-genie-teal/90">
-            Dashboard
-          </a>
-          <a href="/admin" className="border border-genie-teal text-genie-teal px-6 py-2 rounded-lg hover:bg-genie-teal/10">
-            Admin
-          </a>
-        </div>
-      </nav>
-
-      <div className="container mx-auto px-6 py-20 text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          Automate Your <span className="text-genie-teal">Lead Generation</span> & Marketing
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Market Genie is the complete AI-powered marketing automation platform. Generate leads, 
-          nurture prospects, and close deals with sophisticated automation workflows.
-        </p>
-        
-        <div className="flex justify-center gap-4 mb-16">
-          <a 
-            href="/dashboard" 
-            className="bg-genie-teal text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-genie-teal/90 transition-colors"
-          >
-            Get Started Free
-          </a>
-          <button className="border border-gray-300 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors">
-            Watch Demo
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <div className="text-4xl mb-4">🎯</div>
-            <h3 className="text-xl font-semibold mb-3">Smart Lead Generation</h3>
-            <p className="text-gray-600">Budget-aware scraping with AI enrichment and deduplication</p>
-          </div>
-          
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <div className="text-4xl mb-4">⚡</div>
-            <h3 className="text-xl font-semibold mb-3">Automation Workflows</h3>
-            <p className="text-gray-600">Visual workflow builder with multi-channel campaigns</p>
-          </div>
-          
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold mb-3">Analytics & CRM</h3>
-            <p className="text-gray-600">Complete pipeline management with advanced reporting</p>
-          </div>
-        </div>
-      </div>
-
-      <footer className="bg-gray-50 py-12">
-        <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-2xl">🧞‍♂️</span>
-            <h2 className="text-xl font-bold text-genie-teal">Market Genie</h2>
-          </div>
-          <p className="text-gray-600">© 2024 Market Genie. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
-  )
-}
+import APIKeysIntegrations from './components/APIKeysIntegrations'
+import AISwarmDashboard from './components/AISwarmDashboard'
+import CostControlsDashboard from './components/CostControlsDashboard'
+import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
+import LeadGenerationWorkflows from './components/LeadGenerationWorkflows'
+import IntegrationConnectionStatus from './components/IntegrationConnectionStatus'
+import AdvancedFunnelBuilder from './components/AdvancedFunnelBuilder'
+import SuperiorCRMSystem from './components/SuperiorCRMSystem'
+import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
+  const { tenant, loading: tenantLoading } = useTenant()
   
-  if (loading) {
+  if (loading || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
         <div className="genie-enter">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-genie-teal"></div>
           <p className="mt-4 text-genie-teal font-medium">Market Genie is awakening...</p>
+          {tenantLoading && <p className="text-sm text-gray-500">Setting up your workspace...</p>}
         </div>
       </div>
     )
@@ -117,6 +59,8 @@ function SophisticatedDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const { user } = useAuth()
+  const { tenant, loading: tenantLoading } = useTenant()
 
   // Ensure proper initialization
   React.useEffect(() => {
@@ -129,10 +73,13 @@ function SophisticatedDashboard() {
   }
 
   // Prevent flash of wrong content during initialization
-  if (!isInitialized) {
+  if (!isInitialized || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your workspace...</p>
+        </div>
       </div>
     )
   }
@@ -144,9 +91,30 @@ function SophisticatedDashboard() {
         <div className="flex-1 flex flex-col">
           {/* Top Bar */}
           <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex justify-between items-center`}>
-            <h1 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              {activeSection}
-            </h1>
+            <div>
+              <h1 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {activeSection}
+              </h1>
+              {tenant && (
+                <div className="flex items-center gap-2">
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {tenant.name} • 
+                    <span className={tenant.plan === 'founder' ? 'executive-plan' : ''}> 
+                      {tenant.plan === 'founder' ? 'Executive Plan' : tenant.plan} 
+                    </span>
+                    • {user?.email}
+                  </p>
+                  {tenant.role === 'founder' && (
+                    <span className="founder-badge">Founder</span>
+                  )}
+                  {tenant.billing?.lifetime && (
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                      Lifetime Access
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-4">
               {/* Dark Mode Toggle */}
               <button
@@ -203,87 +171,101 @@ function SophisticatedDashboard() {
           {activeSection === 'SuperGenie Dashboard' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h1 className="text-4xl font-bold text-genie-teal mb-8">Welcome to Market Genie</h1>
+              
+              {/* Interactive Stat Boxes */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                {/* Stat Boxes */}
-                <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+                <button 
+                  onClick={() => setActiveSection('Lead Generation')}
+                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                >
                   <div className="bg-genie-teal/10 p-3 rounded-full">
                     <span role="img" aria-label="users" className="text-genie-teal text-2xl">👥</span>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">128</div>
-                    <div className="text-gray-500">New Customers</div>
+                    <div className="text-2xl font-bold text-gray-900">{tenant?.usage?.leads || 0}</div>
+                    <div className="text-gray-500">Total Leads</div>
                   </div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+                </button>
+                
+                <button 
+                  onClick={() => setActiveSection('CRM & Pipeline')}
+                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                >
                   <div className="bg-genie-teal/10 p-3 rounded-full">
                     <span role="img" aria-label="revenue" className="text-genie-teal text-2xl">💰</span>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900">$12,400</div>
-                    <div className="text-gray-500">Revenue</div>
+                    <div className="text-gray-500">Pipeline Value</div>
                   </div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+                </button>
+                
+                <button 
+                  onClick={() => setActiveSection('Outreach Automation')}
+                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                >
                   <div className="bg-genie-teal/10 p-3 rounded-full">
                     <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl">⚡</span>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">7</div>
+                    <div className="text-2xl font-bold text-gray-900">{tenant?.usage?.campaigns || 0}</div>
                     <div className="text-gray-500">Active Campaigns</div>
                   </div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+                </button>
+                
+                <button 
+                  onClick={() => setActiveSection('Reporting & Analytics')}
+                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                >
                   <div className="bg-genie-teal/10 p-3 rounded-full">
                     <span role="img" aria-label="conversion" className="text-genie-teal text-2xl">📈</span>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">12%</div>
+                    <div className="text-2xl font-bold text-gray-900">23%</div>
                     <div className="text-gray-500">Conversion Rate</div>
                   </div>
-                </div>
-              </div>
-              {/* Financial Graph */}
-              <div className="bg-white shadow-lg rounded-xl p-8 mb-10">
-                <h2 className="text-xl font-semibold text-genie-teal mb-4">Financial Growth</h2>
-                <div className="w-full h-64">
-                  {/* Simple SVG Line Chart */}
-                  <svg viewBox="0 0 400 200" className="w-full h-full">
-                    <polyline
-                      fill="none"
-                      stroke="#38BEBA"
-                      strokeWidth="4"
-                      points="30,143 100,114 170,86 240,71 310,43 380,40"
-                    />
-                    {/* Dots */}
-                    <circle cx="30" cy="143" r="6" fill="#38BEBA" />
-                    <circle cx="100" cy="114" r="6" fill="#38BEBA" />
-                    <circle cx="170" cy="86" r="6" fill="#38BEBA" />
-                    <circle cx="240" cy="71" r="6" fill="#38BEBA" />
-                    <circle cx="310" cy="43" r="6" fill="#38BEBA" />
-                    <circle cx="380" cy="40" r="6" fill="#38BEBA" />
-                    {/* Month labels */}
-                    <text x="30" y="190" textAnchor="middle" fontSize="14" fill="#888">Jan</text>
-                    <text x="100" y="190" textAnchor="middle" fontSize="14" fill="#888">Feb</text>
-                    <text x="170" y="190" textAnchor="middle" fontSize="14" fill="#888">Mar</text>
-                    <text x="240" y="190" textAnchor="middle" fontSize="14" fill="#888">Apr</text>
-                    <text x="310" y="190" textAnchor="middle" fontSize="14" fill="#888">May</text>
-                    <text x="380" y="190" textAnchor="middle" fontSize="14" fill="#888">Jun</text>
-                  </svg>
-                </div>
-              </div>
-              {/* Quick Links */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button onClick={() => setActiveSection('Lead Generation')} className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
-                  <span role="img" aria-label="contacts" className="text-genie-teal text-3xl mb-2">👥</span>
-                  <span className="font-semibold text-genie-teal">Manage Contacts</span>
                 </button>
-                <button onClick={() => setActiveSection('Cost Controls')} className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
-                  <span role="img" aria-label="cost" className="text-genie-teal text-3xl mb-2">💸</span>
-                  <span className="font-semibold text-genie-teal">Cost Controls</span>
+              </div>
+              
+              {/* AI Agent Helper / Chatbot */}
+              <AIAgentHelper />
+              
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
+                <button 
+                  onClick={() => setActiveSection('Lead Generation')} 
+                  className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition group"
+                >
+                  <span role="img" aria-label="contacts" className="text-genie-teal text-3xl mb-2 group-hover:scale-110 transition-transform">👥</span>
+                  <span className="font-semibold text-genie-teal">Generate Leads</span>
+                  <span className="text-sm text-gray-600 mt-1">Budget-aware scraping & enrichment</span>
                 </button>
-                <button onClick={() => setActiveSection('Reporting & Analytics')} className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
-                  <span role="img" aria-label="analytics" className="text-genie-teal text-3xl mb-2">📊</span>
-                  <span className="font-semibold text-genie-teal">Analytics</span>
+                
+                <button 
+                  onClick={() => setActiveSection('Outreach Automation')} 
+                  className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition group"
+                >
+                  <span role="img" aria-label="automation" className="text-genie-teal text-3xl mb-2 group-hover:scale-110 transition-transform">🤖</span>
+                  <span className="font-semibold text-genie-teal">Start Campaign</span>
+                  <span className="text-sm text-gray-600 mt-1">Multi-channel automation</span>
+                </button>
+                
+                <button 
+                  onClick={() => setActiveSection('AI Swarm')} 
+                  className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl p-6 flex flex-col items-center hover:from-purple-200 hover:to-blue-200 transition group"
+                >
+                  <span role="img" aria-label="ai-swarm" className="text-purple-600 text-3xl mb-2 group-hover:scale-110 transition-transform">🧠</span>
+                  <span className="font-semibold text-purple-600">AI Swarm</span>
+                  <span className="text-sm text-gray-600 mt-1">Multiple AI agents working</span>
+                </button>
+                
+                <button 
+                  onClick={() => setActiveSection('Reporting & Analytics')} 
+                  className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition group"
+                >
+                  <span role="img" aria-label="analytics" className="text-genie-teal text-3xl mb-2 group-hover:scale-110 transition-transform">📊</span>
+                  <span className="font-semibold text-genie-teal">View Analytics</span>
+                  <span className="text-sm text-gray-600 mt-1">Performance insights</span>
                 </button>
               </div>
             </div>
@@ -907,54 +889,10 @@ function SophisticatedDashboard() {
               <div className="bg-white rounded-xl shadow p-6">White-label SaaS management coming soon...</div>
             </div>
           )}
-          {activeSection === 'Cost Controls' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">Cost Controls</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="budget" className="text-genie-teal text-3xl mb-2">💸</span>
-                  <div className="text-2xl font-bold text-gray-900">$8,200</div>
-                  <div className="text-gray-500">Budget Used</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="savings" className="text-genie-teal text-3xl mb-2">💰</span>
-                  <div className="text-2xl font-bold text-gray-900">$2,400</div>
-                  <div className="text-gray-500">Savings</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="controls" className="text-genie-teal text-3xl mb-2">🛡️</span>
-                  <div className="text-2xl font-bold text-gray-900">5</div>
-                  <div className="text-gray-500">Active Controls</div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow p-6">Budget control and cost optimization features coming soon...</div>
-            </div>
-          )}
-          {activeSection === 'AI & Automation' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">AI & Automation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="ai" className="text-genie-teal text-3xl mb-2">🤖</span>
-                  <div className="text-2xl font-bold text-gray-900">6</div>
-                  <div className="text-gray-500">AI Models</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="automations" className="text-genie-teal text-3xl mb-2">⚡</span>
-                  <div className="text-2xl font-bold text-gray-900">14</div>
-                  <div className="text-gray-500">Automations</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="tasks" className="text-genie-teal text-3xl mb-2">📝</span>
-                  <div className="text-2xl font-bold text-gray-900">120</div>
-                  <div className="text-gray-500">Tasks Automated</div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow p-6">AI-powered automation features coming soon...</div>
-            </div>
-          )}
+          {activeSection === 'Cost Controls' && <CostControlsDashboard />}
           
-          {activeSection === 'API Keys & Integrations' && renderAPIKeys()}
+          {activeSection === 'API Keys & Integrations' && <APIKeysIntegrations />}
+          {activeSection === 'AI Swarm' && <AISwarmDashboard />}
           {activeSection === 'Admin Panel' && renderAdminPanel()}
           {activeSection === 'Account Settings' && renderAccountSettings()}
         </main>
@@ -1347,7 +1285,37 @@ function SophisticatedDashboard() {
   function renderLeadGeneration() {
     return (
       <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
-        <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Lead Generation</h2>
+        <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>🚀 Ultimate Lead Generation Ecosystem</h2>
+        
+        {/* Integration Connection Status */}
+        <div className="mb-10">
+          <IntegrationConnectionStatus />
+        </div>
+        
+        {/* Social Media Scraping Agents */}
+        <div className="mb-10">
+          <SocialMediaScrapingAgents />
+        </div>
+        
+        {/* Lead Generation Automation Workflows */}
+        <div className="mb-10">
+          <LeadGenerationWorkflows />
+        </div>
+        
+        {/* Multi-Channel Automation Hub */}
+        <div className="mb-10">
+          <MultiChannelAutomationHub />
+        </div>
+        
+        {/* Advanced Funnel Builder */}
+        <div className="mb-10">
+          <AdvancedFunnelBuilder />
+        </div>
+        
+        {/* Superior CRM System */}
+        <div className="mb-10">
+          <SuperiorCRMSystem />
+        </div>
         
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
@@ -1856,30 +1824,34 @@ function AdminPage() {
 // Main App Component with Routing
 function App() {
   return (
-    <AuthProvider>
-      <GenieProvider>
-        <Toaster position="top-right" />
-        <Routes>
-          {/* Landing Page - Public sales page */}
-          <Route path="/" element={<LandingPage />} />
-          
-          {/* Dashboard - User workspace */}
-          <Route path="/dashboard" element={<SophisticatedDashboard />} />
-          <Route path="/dashboard/*" element={<SophisticatedDashboard />} />
-          
-          {/* Admin Panel - Admin only */}
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/*" element={<AdminPage />} />
-          
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Catch all - redirect to landing */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </GenieProvider>
-    </AuthProvider>
+    <FounderSetup>
+      <AuthProvider>
+        <TenantProvider>
+          <GenieProvider>
+            <Toaster position="top-right" />
+            <Routes>
+              {/* Landing Page - Public sales page */}
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Dashboard - User workspace */}
+              <Route path="/dashboard" element={<SophisticatedDashboard />} />
+              <Route path="/dashboard/*" element={<SophisticatedDashboard />} />
+              
+              {/* Admin Panel - Admin only */}
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/*" element={<AdminPage />} />
+              
+              {/* Auth Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Catch all - redirect to landing */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </GenieProvider>
+        </TenantProvider>
+      </AuthProvider>
+    </FounderSetup>
   )
 }
 

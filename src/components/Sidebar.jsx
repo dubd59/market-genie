@@ -20,11 +20,11 @@ const sections = [
   { name: 'CRM & Pipeline', icon: BuildingOfficeIcon },
   { name: 'Appointments', icon: CalendarDaysIcon },
   { name: 'Workflow Automation', icon: Cog6ToothIcon },
+  { name: 'AI Swarm', icon: SparklesIcon },
   { name: 'API Keys & Integrations', icon: KeyIcon },
-  { name: 'Reporting & Analytics', icon: ChartBarIcon },
-  { name: 'White-Label SaaS', icon: BuildingStorefrontIcon },
   { name: 'Cost Controls', icon: CurrencyDollarIcon },
-  { name: 'AI & Automation', icon: SparklesIcon }
+  { name: 'Reporting & Analytics', icon: ChartBarIcon },
+  { name: 'White-Label SaaS', icon: BuildingStorefrontIcon }
 ];
 
 export default function Sidebar({ activeSection, onSelect }) {

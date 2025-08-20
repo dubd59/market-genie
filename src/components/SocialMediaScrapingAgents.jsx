@@ -4,6 +4,7 @@ import persistenceService from '../services/persistenceService';
 
 const SocialMediaScrapingAgents = () => {
   const { user } = useAuth();
+  const [hasLoaded, setHasLoaded] = useState(false); // Prevent saving during initial load
   
   const [scrapingAgents, setScrapingAgents] = useState([
     {
@@ -113,8 +114,11 @@ const SocialMediaScrapingAgents = () => {
       if (Object.keys(savedBudget).length > 0) {
         setBudgetSettings(savedBudget);
       }
+      
+      setHasLoaded(true); // Mark as loaded to enable saving
     } catch (error) {
       console.error('Error loading scraping agents data:', error);
+      setHasLoaded(true); // Still mark as loaded even if there's an error
     }
   };
 
@@ -126,10 +130,12 @@ const SocialMediaScrapingAgents = () => {
   }, [scrapingAgents, user]);
 
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && hasLoaded) {
+      // Only save after initial data has been loaded to prevent overwriting saved values
       persistenceService.saveBudgetSettings(user.uid, budgetSettings);
+      console.log('💾 Saving budget settings:', budgetSettings);
     }
-  }, [budgetSettings, user]);
+  }, [budgetSettings, user, hasLoaded]);
 
   // Simulate live lead generation
   const updateLeadCounts = () => {

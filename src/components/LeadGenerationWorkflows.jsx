@@ -4,6 +4,7 @@ import persistenceService from '../services/persistenceService';
 
 const LeadGenerationWorkflows = () => {
   const { user } = useAuth();
+  const [hasLoaded, setHasLoaded] = useState(false); // Prevent saving during initial load
   
   const [workflows, setWorkflows] = useState([
     {
@@ -131,22 +132,27 @@ const LeadGenerationWorkflows = () => {
       if (Object.keys(savedRules).length > 0) {
         setAutomationRules({ ...automationRules, ...savedRules });
       }
+      
+      setHasLoaded(true); // Mark as loaded to enable saving
     } catch (error) {
       console.error('Error loading workflow data:', error);
+      setHasLoaded(true); // Still mark as loaded even if there's an error
     }
   };
 
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && hasLoaded) {
       persistenceService.saveWorkflows(user.uid, workflows);
+      console.log('💾 Saving workflows data');
     }
-  }, [workflows, user]);
+  }, [workflows, user, hasLoaded]);
 
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && hasLoaded) {
       persistenceService.saveData(user.uid, 'automationRules', automationRules);
+      console.log('💾 Saving automation rules:', automationRules);
     }
-  }, [automationRules, user]);
+  }, [automationRules, user, hasLoaded]);
 
   // Simulate live workflow updates
   const updateWorkflowStats = () => {

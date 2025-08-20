@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import persistenceService from '../services/persistenceService';
 
 const AISwarmDashboard = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
+  const [hasLoaded, setHasLoaded] = useState(false); // Prevent saving during initial load
   
   const [swarmStatus, setSwarmStatus] = useState('idle'); // idle, running, paused
   const [agents, setAgents] = useState([
@@ -100,6 +102,37 @@ const AISwarmDashboard = () => {
     contentCreated: 45,
     emailsSent: 234
   });
+
+  // Load data from Firebase on component mount
+  useEffect(() => {
+    if (user?.uid) {
+      loadPersistentData();
+    }
+  }, [user]);
+
+  // Load persistent data from Firebase
+  const loadPersistentData = async () => {
+    try {
+      const savedSettings = await persistenceService.loadData(user.uid, 'swarmSettings', {});
+      
+      if (Object.keys(savedSettings).length > 0) {
+        setSwarmSettings(savedSettings);
+      }
+      
+      setHasLoaded(true); // Mark as loaded to enable saving
+    } catch (error) {
+      console.error('Error loading AI swarm data:', error);
+      setHasLoaded(true); // Still mark as loaded even if there's an error
+    }
+  };
+
+  // Save swarm settings when they change
+  useEffect(() => {
+    if (user?.uid && hasLoaded) {
+      persistenceService.saveData(user.uid, 'swarmSettings', swarmSettings);
+      console.log('💾 Saving AI swarm settings:', swarmSettings);
+    }
+  }, [swarmSettings, user, hasLoaded]);
 
   const startSwarm = () => {
     setSwarmStatus('running');

@@ -1,8 +1,15 @@
 import { FirebaseAPI } from '../FirebaseAPI.js'
+import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
 class LeadService {
   constructor() {
-    this.api = new FirebaseAPI('leads')
+    // We'll create the path dynamically based on tenant
+  }
+
+  // Get the correct collection path for tenant
+  getLeadsCollection(tenantId) {
+    return collection(db, 'tenants', tenantId, 'leads')
   }
 
   // Create a new lead
@@ -14,14 +21,17 @@ class LeadService {
         status: 'new',
         enriched: false,
         lastContact: null,
-        score: leadData.score || Math.floor(Math.random() * 40) + 60
+        score: leadData.score || Math.floor(Math.random() * 40) + 60,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       }
 
-      const docId = await this.api.create(enrichedLead)
+      const leadsCollection = this.getLeadsCollection(tenantId)
+      const docRef = await addDoc(leadsCollection, enrichedLead)
       
-      if (docId) {
+      if (docRef.id) {
         await this.updateTenantUsage(tenantId, 'leads', 1)
-        return { success: true, data: { id: docId, ...enrichedLead } }
+        return { success: true, data: { id: docRef.id, ...enrichedLead } }
       }
 
       return { success: false, error: 'Failed to create lead' }
@@ -34,16 +44,21 @@ class LeadService {
   // Get leads for a tenant
   async getLeads(tenantId, limitCount = 50) {
     try {
-      const result = await this.api.read(
-        { tenantId },
-        { limit: limitCount }
+      const leadsCollection = this.getLeadsCollection(tenantId)
+      const q = query(
+        leadsCollection,
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
       )
+      
+      const querySnapshot = await getDocs(q)
+      const documents = []
+      
+      querySnapshot.forEach((doc) => {
+        documents.push({ id: doc.id, ...doc.data() })
+      })
 
-      if (result && result.documents) {
-        return { success: true, data: result.documents }
-      }
-
-      return { success: false, error: 'No data returned' }
+      return { success: true, data: documents }
     } catch (error) {
       console.error('Error getting leads:', error)
       return { success: false, error: error.message }
@@ -51,9 +66,13 @@ class LeadService {
   }
 
   // Update a lead
-  async updateLead(leadId, updateData) {
+  async updateLead(tenantId, leadId, updateData) {
     try {
-      await this.api.update(leadId, updateData)
+      const leadDoc = doc(db, 'tenants', tenantId, 'leads', leadId)
+      await updateDoc(leadDoc, {
+        ...updateData,
+        updatedAt: serverTimestamp()
+      })
       return { success: true, data: updateData }
     } catch (error) {
       console.error('Error updating lead:', error)
@@ -62,9 +81,10 @@ class LeadService {
   }
 
   // Delete a lead
-  async deleteLead(leadId) {
+  async deleteLead(tenantId, leadId) {
     try {
-      await this.api.delete(leadId)
+      const leadDoc = doc(db, 'tenants', tenantId, 'leads', leadId)
+      await deleteDoc(leadDoc)
       return { success: true }
     } catch (error) {
       console.error('Error deleting lead:', error)

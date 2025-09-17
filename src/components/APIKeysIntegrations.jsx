@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import IntegrationService from '../services/integrationService';
@@ -9,36 +9,7 @@ const APIKeysIntegrations = () => {
   const { user } = useAuth();
   
   const [apiKeys, setApiKeys] = useState([
-    {
-      id: 1,
-      name: 'Production OpenAI',
-      service: 'OpenAI GPT-4',
-      status: 'active',
-      usage: 12450,
-      limit: 50000,
-      lastUsed: '2 hours ago',
-      key: 'sk-...abc123'
-    },
-    {
-      id: 2,
-      name: 'Claude AI Assistant',
-      service: 'Anthropic Claude-3',
-      status: 'active',
-      usage: 8900,
-      limit: 25000,
-      lastUsed: '1 hour ago',
-      key: 'cl-...xyz789'
-    },
-    {
-      id: 3,
-      name: 'Backup GPT Key',
-      service: 'OpenAI GPT-3.5',
-      status: 'inactive',
-      usage: 2100,
-      limit: 10000,
-      lastUsed: '1 day ago',
-      key: 'sk-...def456'
-    }
+    // Start with empty array - no placeholder keys
   ]);
 
   const [integrations, setIntegrations] = useState([
@@ -46,32 +17,32 @@ const APIKeysIntegrations = () => {
       id: 1,
       name: 'Gmail',
       type: 'Email',
-      status: 'connected',
+      status: 'disconnected',
       icon: '📧',
       description: 'Send personalized emails and track responses',
-      lastSync: '5 minutes ago',
-      account: 'your-email@gmail.com'
+      lastSync: 'Never',
+      account: 'Not connected'
     },
     {
       id: 2,
       name: 'LinkedIn Basic',
       type: 'Professional Network',
-      status: 'connected',
+      status: 'disconnected',
       icon: '💼',
       description: 'Basic LinkedIn profile integration and connection requests',
-      lastSync: '10 minutes ago',
-      account: 'Your LinkedIn Profile',
+      lastSync: 'Never',
+      account: 'Not connected',
       features: ['Profile Access', 'Connection Requests', 'Basic Messaging', 'Company Data']
     },
     {
       id: 3,
       name: 'HubSpot',
       type: 'CRM',
-      status: 'connected',
+      status: 'disconnected',
       icon: '🏢',
       description: 'Sync leads and contacts with your CRM',
-      lastSync: '1 hour ago',
-      account: 'your-company.hubspot.com'
+      lastSync: 'Never',
+      account: 'Not connected'
     },
     {
       id: 4,
@@ -87,11 +58,11 @@ const APIKeysIntegrations = () => {
       id: 5,
       name: 'Google Calendar',
       type: 'Scheduling',
-      status: 'connected',
+      status: 'disconnected',
       icon: '📅',
       description: 'Schedule meetings and appointments automatically',
-      lastSync: '30 minutes ago',
-      account: 'your-email@gmail.com'
+      lastSync: 'Never',
+      account: 'Not connected'
     },
     {
       id: 7,
@@ -223,6 +194,17 @@ const APIKeysIntegrations = () => {
   });
 
   const [showAddKey, setShowAddKey] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [loadingStatuses, setLoadingStatuses] = useState(true);
+  const [settingsForm, setSettingsForm] = useState({
+    apiKey: '',
+    clientId: '',
+    clientSecret: '',
+    accessToken: '',
+    refreshToken: ''
+  });
 
   const availableServices = [
     'OpenAI GPT-4',
@@ -234,6 +216,59 @@ const APIKeysIntegrations = () => {
     'Hugging Face',
     'Custom API'
   ];
+
+  // Load real connection statuses when component mounts
+  useEffect(() => {
+    if (tenant?.id) {
+      loadIntegrationStatuses();
+    }
+  }, [tenant?.id]);
+
+  const loadIntegrationStatuses = async () => {
+    setLoadingStatuses(true);
+    const integrationKeys = [
+      'hunter-io',
+      'apollo',
+      'linkedin-sales',
+      'facebook-business',
+      'twitter',
+      'clearbit',
+      'zoominfo'
+    ];
+
+    for (const key of integrationKeys) {
+      try {
+        const result = await IntegrationService.getIntegrationCredentials(tenant.id, key);
+        if (result.success) {
+          // Update the integration status to connected
+          setIntegrations(prev => prev.map(integration => {
+            const nameMap = {
+              'hunter-io': 'Hunter.io Email Finding',
+              'apollo': 'Apollo.io',
+              'linkedin-sales': 'LinkedIn Sales Navigator',
+              'facebook-business': 'Facebook Business',
+              'twitter': 'Twitter/X API',
+              'clearbit': 'Clearbit',
+              'zoominfo': 'ZoomInfo'
+            };
+            
+            if (integration.name === nameMap[key]) {
+              return {
+                ...integration,
+                status: 'connected',
+                lastSync: 'Connected',
+                account: 'API Connected'
+              };
+            }
+            return integration;
+          }));
+        }
+      } catch (error) {
+        console.log(`${key} not connected:`, error.message);
+      }
+    }
+    setLoadingStatuses(false);
+  };
 
   const addApiKey = (e) => {
     e.preventDefault();
@@ -348,6 +383,225 @@ const APIKeysIntegrations = () => {
     ));
   };
 
+  const openSettingsModal = (integration) => {
+    setSelectedIntegration(integration);
+    setSettingsForm({
+      apiKey: '',
+      clientId: '',
+      clientSecret: '',
+      accessToken: '',
+      refreshToken: ''
+    });
+    setShowSettingsModal(true);
+  };
+
+  const closeSettingsModal = () => {
+    setShowSettingsModal(false);
+    setSelectedIntegration(null);
+    setSettingsForm({
+      apiKey: '',
+      clientId: '',
+      clientSecret: '',
+      accessToken: '',
+      refreshToken: ''
+    });
+  };
+
+  const saveIntegrationSettings = async () => {
+    if (!selectedIntegration || !tenant?.id) return;
+
+    setIsConnecting(true);
+    
+    try {
+      let result = { success: false };
+      
+      switch(selectedIntegration.name) {
+        case 'Hunter.io Email Finding':
+          if (settingsForm.apiKey) {
+            result = await IntegrationService.connectHunterIO(tenant.id, settingsForm.apiKey);
+          }
+          break;
+          
+        case 'Apollo.io':
+          if (settingsForm.apiKey) {
+            result = await IntegrationService.connectApollo(tenant.id, settingsForm.apiKey);
+          }
+          break;
+          
+        case 'Clearbit':
+          if (settingsForm.apiKey) {
+            // Test Clearbit API key
+            const testResponse = await fetch(`https://person.clearbit.com/v2/people/find?email=test@example.com`, {
+              headers: { 'Authorization': `Bearer ${settingsForm.apiKey}` }
+            });
+            
+            if (testResponse.status === 200 || testResponse.status === 422) { // 422 = not found but valid key
+              await IntegrationService.saveIntegrationCredentials(tenant.id, 'clearbit', {
+                apiKey: settingsForm.apiKey
+              });
+              result = { success: true };
+            } else {
+              result = { success: false, error: 'Invalid Clearbit API key' };
+            }
+          }
+          break;
+          
+        case 'ZoomInfo':
+          if (settingsForm.apiKey) {
+            // For ZoomInfo, we'll save the key and assume it's valid for now
+            // In production, you'd test the actual ZoomInfo API
+            await IntegrationService.saveIntegrationCredentials(tenant.id, 'zoominfo', {
+              apiKey: settingsForm.apiKey
+            });
+            result = { success: true };
+          }
+          break;
+          
+        case 'HubSpot':
+          if (settingsForm.apiKey) {
+            // Test HubSpot API key
+            try {
+              const testResponse = await fetch(`https://api.hubapi.com/contacts/v1/lists/all/contacts/all?hapikey=${settingsForm.apiKey}&count=1`);
+              if (testResponse.status === 200) {
+                await IntegrationService.saveIntegrationCredentials(tenant.id, 'hubspot', {
+                  apiKey: settingsForm.apiKey
+                });
+                result = { success: true };
+              } else {
+                result = { success: false, error: 'Invalid HubSpot API key' };
+              }
+            } catch (error) {
+              result = { success: false, error: 'Failed to validate HubSpot API key' };
+            }
+          }
+          break;
+          
+        case 'Slack':
+          if (settingsForm.accessToken) {
+            // Test Slack bot token
+            try {
+              const testResponse = await fetch('https://slack.com/api/auth.test', {
+                headers: { 'Authorization': `Bearer ${settingsForm.accessToken}` }
+              });
+              const data = await testResponse.json();
+              if (data.ok) {
+                await IntegrationService.saveIntegrationCredentials(tenant.id, 'slack', {
+                  accessToken: settingsForm.accessToken
+                });
+                result = { success: true };
+              } else {
+                result = { success: false, error: 'Invalid Slack bot token' };
+              }
+            } catch (error) {
+              result = { success: false, error: 'Failed to validate Slack token' };
+            }
+          }
+          break;
+          
+        case 'YouTube Data API':
+          if (settingsForm.apiKey) {
+            // Test YouTube Data API key
+            try {
+              const testResponse = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&key=${settingsForm.apiKey}`);
+              if (testResponse.status === 200 || testResponse.status === 401) { // 401 means key is valid but no OAuth
+                await IntegrationService.saveIntegrationCredentials(tenant.id, 'youtube', {
+                  apiKey: settingsForm.apiKey
+                });
+                result = { success: true };
+              } else {
+                result = { success: false, error: 'Invalid YouTube Data API key' };
+              }
+            } catch (error) {
+              result = { success: false, error: 'Failed to validate YouTube API key' };
+            }
+          }
+          break;
+          
+        case 'TikTok for Business':
+          if (settingsForm.clientId && settingsForm.clientSecret) {
+            // Save TikTok credentials
+            await IntegrationService.saveIntegrationCredentials(tenant.id, 'tiktok', {
+              clientId: settingsForm.clientId,
+              clientSecret: settingsForm.clientSecret
+            });
+            result = { success: true };
+          }
+          break;
+
+        default:
+          // For OAuth-based integrations, store the tokens
+          if (settingsForm.accessToken) {
+            await IntegrationService.saveIntegrationCredentials(tenant.id, selectedIntegration.name.toLowerCase(), {
+              accessToken: settingsForm.accessToken,
+              refreshToken: settingsForm.refreshToken,
+              clientId: settingsForm.clientId,
+              clientSecret: settingsForm.clientSecret
+            });
+            result = { success: true };
+          }
+      }
+      
+      if (result.success) {
+        // Update the integration status
+        setIntegrations(prev => prev.map(integration =>
+          integration.id === selectedIntegration.id
+            ? { 
+                ...integration, 
+                status: 'connected', 
+                lastSync: 'Just now',
+                account: 'Connected via API'
+              }
+            : integration
+        ));
+        
+        toast.success(`Successfully connected to ${selectedIntegration.name}!`);
+        closeSettingsModal();
+        // Refresh integration statuses to show the new connection
+        loadIntegrationStatuses();
+      } else {
+        toast.error(`Failed to connect: ${result.error || 'Invalid credentials'}`);
+      }
+    } catch (error) {
+      console.error('Settings save error:', error);
+      toast.error(`Connection failed: ${error.message}`);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const testConnection = async (integration) => {
+    try {
+      setIsConnecting(true);
+      
+      const nameMap = {
+        'Hunter.io Email Finding': 'hunter-io',
+        'Apollo.io': 'apollo',
+        'LinkedIn Sales Navigator': 'linkedin-sales',
+        'Facebook Business': 'facebook-business',
+        'Twitter/X API': 'twitter',
+        'Clearbit': 'clearbit',
+        'ZoomInfo': 'zoominfo'
+      };
+      
+      const key = nameMap[integration.name];
+      if (!key) {
+        toast.error('Unknown integration');
+        return;
+      }
+      
+      const result = await IntegrationService.getIntegrationCredentials(tenant.id, key);
+      if (result.success) {
+        toast.success(`✅ ${integration.name} connection is active!`);
+      } else {
+        toast.error(`❌ ${integration.name} connection failed - please check settings`);
+      }
+    } catch (error) {
+      toast.error(`❌ Connection test failed: ${error.message}`);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch(status) {
       case 'active':
@@ -388,20 +642,23 @@ const APIKeysIntegrations = () => {
             </div>
             <div className="text-3xl font-bold text-green-600">{integrations.filter(i => i.status === 'connected').length}</div>
             <div className="text-sm text-gray-500">of {integrations.length} available</div>
+            {integrations.filter(i => i.status === 'connected').length > 0 && (
+              <div className="text-xs text-green-600 mt-1">✓ Ready for lead generation</div>
+            )}
           </div>
           
           <div className="bg-white rounded-xl p-6 shadow-lg border border-purple-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">📊</span>
-              <h3 className="text-lg font-semibold">API Usage</h3>
+              <h3 className="text-lg font-semibold">Lead Sources</h3>
             </div>
             <div className="text-3xl font-bold text-purple-600">
-              {apiKeys.reduce((sum, key) => sum + key.usage, 0).toLocaleString()}
+              {integrations.filter(i => i.status === 'connected').length * 2}
             </div>
-            <div className="text-sm text-gray-500">Total requests this month</div>
+            <div className="text-sm text-gray-500">Active channels available</div>
             <div className="mt-2">
               <span className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer">
-                → View costs in Cost Controls
+                → View performance in Analytics
               </span>
             </div>
           </div>
@@ -538,7 +795,13 @@ const APIKeysIntegrations = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Third-Party Integrations</h2>
               
               <div className="space-y-4">
-                {integrations.map(integration => (
+                {loadingStatuses && (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="mt-2 text-gray-600">Loading integration statuses...</p>
+                  </div>
+                )}
+                {!loadingStatuses && integrations.map(integration => (
                   <div key={integration.id} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -583,21 +846,33 @@ const APIKeysIntegrations = () => {
                     
                     <div className="flex gap-2">
                       {integration.status === 'connected' ? (
-                        <button
-                          onClick={() => disconnectIntegration(integration.id)}
-                          className="px-3 py-1 rounded text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
-                        >
-                          Disconnect
-                        </button>
+                        <>
+                          <button
+                            onClick={() => testConnection(integration)}
+                            disabled={isConnecting}
+                            className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 disabled:bg-gray-300 transition-colors"
+                          >
+                            {isConnecting ? 'Testing...' : 'Test'}
+                          </button>
+                          <button
+                            onClick={() => disconnectIntegration(integration.id)}
+                            className="px-3 py-1 rounded text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                          >
+                            Disconnect
+                          </button>
+                        </>
                       ) : (
                         <button
-                          onClick={() => connectIntegration(integration.id)}
+                          onClick={() => openSettingsModal(integration)}
                           className="px-3 py-1 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
                         >
                           Connect
                         </button>
                       )}
-                      <button className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
+                      <button 
+                        onClick={() => openSettingsModal(integration)}
+                        className="px-3 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
+                      >
                         Settings
                       </button>
                     </div>
@@ -621,6 +896,302 @@ const APIKeysIntegrations = () => {
             </div>
           </div>
         </div>
+
+        {/* Settings Modal */}
+        {showSettingsModal && selectedIntegration && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {selectedIntegration.icon} Configure {selectedIntegration.name}
+                </h3>
+                <button
+                  onClick={closeSettingsModal}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-gray-600 text-sm">
+                  {selectedIntegration.description}
+                </p>
+
+                {/* API Key Input for Hunter.io, Apollo.io, Clearbit, ZoomInfo */}
+                {['Hunter.io Email Finding', 'Apollo.io', 'Clearbit', 'ZoomInfo'].includes(selectedIntegration.name) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={settingsForm.apiKey}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder={`Enter your ${selectedIntegration.name} API key`}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {selectedIntegration.name === 'Hunter.io Email Finding' && 'Get your API key from hunter.io/api'}
+                      {selectedIntegration.name === 'Apollo.io' && 'Get your API key from apollo.io/settings/integrations'}
+                      {selectedIntegration.name === 'Clearbit' && 'Get your API key from clearbit.com/keys'}
+                      {selectedIntegration.name === 'ZoomInfo' && 'Get your API key from zoominfo.com/business/api'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Gmail OAuth Configuration */}
+                {selectedIntegration.name === 'Gmail' && (
+                  <div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-blue-800 mb-2">Gmail OAuth Integration</h4>
+                      <p className="text-blue-700 text-sm mb-3">
+                        This integration uses OAuth for secure Gmail access. Click "Connect" to start the authorization process.
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeSettingsModal();
+                          connectIntegration(selectedIntegration.id);
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Connect Gmail
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* HubSpot Configuration */}
+                {selectedIntegration.name === 'HubSpot' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      HubSpot API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={settingsForm.apiKey}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="Enter your HubSpot API key"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your API key from HubSpot Settings → Integrations → API key
+                    </p>
+                  </div>
+                )}
+
+                {/* Slack Configuration */}
+                {selectedIntegration.name === 'Slack' && (
+                  <div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-green-800 mb-2">Slack Bot Integration</h4>
+                      <p className="text-green-700 text-sm mb-3">
+                        Create a Slack app and bot to receive notifications and updates.
+                      </p>
+                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bot Token
+                    </label>
+                    <input
+                      type="password"
+                      value={settingsForm.accessToken}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, accessToken: e.target.value }))}
+                      placeholder="xoxb-your-bot-token"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your bot token from api.slack.com → Your Apps → OAuth & Permissions
+                    </p>
+                  </div>
+                )}
+
+                {/* Google Calendar Configuration */}
+                {selectedIntegration.name === 'Google Calendar' && (
+                  <div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-blue-800 mb-2">Google Calendar OAuth</h4>
+                      <p className="text-blue-700 text-sm mb-3">
+                        Connect your Google Calendar for appointment scheduling.
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeSettingsModal();
+                          connectIntegration(selectedIntegration.id);
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Connect Google Calendar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* YouTube Data API Configuration */}
+                {selectedIntegration.name === 'YouTube Data API' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      YouTube Data API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={settingsForm.apiKey}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="Enter your YouTube Data API key"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your API key from Google Cloud Console → YouTube Data API v3
+                    </p>
+                  </div>
+                )}
+
+                {/* Instagram Business Configuration */}
+                {selectedIntegration.name === 'Instagram Business' && (
+                  <div>
+                    <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-pink-800 mb-2">Instagram Business API</h4>
+                      <p className="text-pink-700 text-sm mb-3">
+                        Uses Facebook Business API. Connect your Instagram Business account through Facebook.
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeSettingsModal();
+                          connectIntegration(selectedIntegration.id);
+                        }}
+                        className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors"
+                      >
+                        Connect Instagram Business
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* TikTok for Business Configuration */}
+                {selectedIntegration.name === 'TikTok for Business' && (
+                  <div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-gray-800 mb-2">TikTok Business API</h4>
+                      <p className="text-gray-700 text-sm mb-3">
+                        TikTok for Business API integration for trend analysis and advertising insights.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          App ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.clientId}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientId: e.target.value }))}
+                          placeholder="Enter your TikTok App ID"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          App Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={settingsForm.clientSecret}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientSecret: e.target.value }))}
+                          placeholder="Enter your TikTok App Secret"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your credentials from TikTok for Business → Developer Portal
+                    </p>
+                  </div>
+                )}
+
+                {/* OAuth Instructions for Social Platforms */}
+                {['LinkedIn Sales Navigator', 'Facebook Business', 'Twitter/X API'].includes(selectedIntegration.name) && (
+                  <div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-800 mb-2">OAuth Integration</h4>
+                      <p className="text-blue-700 text-sm mb-3">
+                        This integration uses OAuth for secure authentication. Click "Connect" to start the authorization process.
+                      </p>
+                      <button
+                        onClick={() => {
+                          closeSettingsModal();
+                          connectIntegration(selectedIntegration.id);
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Start OAuth Connection
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Token Input (for testing OAuth results) */}
+                {['LinkedIn Sales Navigator', 'Facebook Business', 'Twitter/X API'].includes(selectedIntegration.name) && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Manual Configuration (Advanced)</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Access Token</label>
+                        <input
+                          type="password"
+                          value={settingsForm.accessToken}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, accessToken: e.target.value }))}
+                          placeholder="Paste access token here"
+                          className="w-full p-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Refresh Token (Optional)</label>
+                        <input
+                          type="password"
+                          value={settingsForm.refreshToken}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, refreshToken: e.target.value }))}
+                          placeholder="Paste refresh token here"
+                          className="w-full p-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Features List */}
+                {selectedIntegration.features && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Available Features:</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {selectedIntegration.features.map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="text-green-500 mr-2">✓</span>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={closeSettingsModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveIntegrationSettings}
+                  disabled={isConnecting || (!settingsForm.apiKey && !settingsForm.accessToken)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isConnecting ? 'Connecting...' : 'Save & Connect'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

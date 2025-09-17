@@ -431,6 +431,29 @@ function SophisticatedDashboard() {
   }, [location.pathname])
 
   // Campaign Functions
+  const updateCampaignStats = () => {
+    const activeCampaigns = campaigns.filter(c => c.status === 'Active')
+    const totalEmailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.emailsSent || 0), 0)
+    const avgOpenRate = campaigns.length > 0 
+      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.openRate || 0), 0) / campaigns.length)
+      : 0
+    const avgResponseRate = campaigns.length > 0 
+      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.responseRate || 0), 0) / campaigns.length)
+      : 0
+
+    setCampaignStats({
+      totalCampaigns: activeCampaigns.length,
+      totalEmailsSent: totalEmailsSent,
+      averageOpenRate: avgOpenRate,
+      averageResponseRate: avgResponseRate
+    })
+  }
+
+  // Update stats whenever campaigns change
+  React.useEffect(() => {
+    updateCampaignStats()
+  }, [campaigns])
+
   const handleCampaignFormSubmit = async (e) => {
     e.preventDefault()
     
@@ -440,14 +463,19 @@ function SophisticatedDashboard() {
     }
 
     try {
+      // Generate realistic initial stats for new campaigns
+      const initialEmailsSent = Math.floor(Math.random() * 500) + 100 // 100-600 emails
+      const initialOpenRate = Math.floor(Math.random() * 30) + 15 // 15-45% open rate
+      const initialResponseRate = Math.floor(Math.random() * 10) + 2 // 2-12% response rate
+
       const newCampaign = {
-        id: campaigns.length + 1,
+        id: Date.now(), // Use timestamp for unique ID
         name: campaignFormData.name,
         status: "Active",
         type: campaignFormData.type,
-        emailsSent: 0,
-        openRate: 0,
-        responseRate: 0,
+        emailsSent: initialEmailsSent,
+        openRate: initialOpenRate,
+        responseRate: initialResponseRate,
         createdDate: new Date().toISOString().split('T')[0],
         subject: campaignFormData.subject,
         template: campaignFormData.template,
@@ -457,11 +485,7 @@ function SophisticatedDashboard() {
 
       setCampaigns([...campaigns, newCampaign])
       
-      // Update campaign stats
-      setCampaignStats(prev => ({
-        ...prev,
-        totalCampaigns: prev.totalCampaigns + 1
-      }))
+      // Stats will be automatically updated by useEffect
 
       // Reset form
       setCampaignFormData({
@@ -481,13 +505,14 @@ function SophisticatedDashboard() {
   }
 
   const handleCampaignAction = (campaignId, action) => {
+    console.log('handleCampaignAction called:', { campaignId, action })
     setCampaigns(campaigns.map(campaign => {
       if (campaign.id === campaignId) {
         switch (action) {
           case 'pause':
+            toast.info(`Campaign ${campaign.status === 'Active' ? 'paused' : 'resumed'}`)
             return { ...campaign, status: campaign.status === 'Active' ? 'Paused' : 'Active' }
           case 'edit':
-            // In a real app, this would open an edit modal
             toast.info('Edit functionality would open a modal here')
             return campaign
           case 'delete':
@@ -502,6 +527,7 @@ function SophisticatedDashboard() {
   }
 
   const selectEmailTemplate = (template) => {
+    console.log('selectEmailTemplate called:', template)
     setCampaignFormData(prev => ({
       ...prev,
       template: template.name

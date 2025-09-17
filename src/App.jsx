@@ -1833,17 +1833,33 @@ function App() {
               {/* Landing Page - Public sales page */}
               <Route path="/" element={<LandingPage />} />
               
-              {/* Dashboard - User workspace */}
-              <Route path="/dashboard" element={<SophisticatedDashboard />} />
-              <Route path="/dashboard/*" element={<SophisticatedDashboard />} />
-              
-              {/* Admin Panel - Admin only */}
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/*" element={<AdminPage />} />
-              
-              {/* Auth Routes */}
+              {/* Auth Routes - Public */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              
+              {/* Dashboard - Protected User workspace */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <SophisticatedDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/*" element={
+                <ProtectedRoute>
+                  <SophisticatedDashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Panel - Protected Admin only */}
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/*" element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
               
               {/* Catch all - redirect to landing */}
               <Route path="*" element={<Navigate to="/" replace />} />

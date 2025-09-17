@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import TenantService from '../services/firebase/tenants'
 import toast from 'react-hot-toast'
@@ -15,6 +16,7 @@ export const useTenant = () => {
 
 export function TenantProvider({ children }) {
   const { user, loading: authLoading } = useAuth()
+  const location = useLocation()
   const [tenant, setTenant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -69,7 +71,11 @@ export function TenantProvider({ children }) {
           }
         }
 
-        toast.success(`Welcome to your workspace: ${result.data.name}`)
+        // Only show welcome toast on protected routes (dashboard, admin), not on public pages
+        const isProtectedRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin')
+        if (isProtectedRoute) {
+          toast.success(`Welcome to your workspace: ${result.data.name}`)
+        }
       } else {
         console.log('No tenant found, will create one on first sign-in')
       }

@@ -124,11 +124,37 @@ function SophisticatedDashboard() {
     sendDate: ''
   })
   const [emailTemplates] = useState([
-    { id: 1, name: "Welcome Series", category: "Onboarding" },
-    { id: 2, name: "Product Launch", category: "Promotion" },
-    { id: 3, name: "Follow-up", category: "Nurture" },
-    { id: 4, name: "Re-engagement", category: "Retention" }
+    { 
+      id: 1, 
+      name: "Welcome Series", 
+      category: "Onboarding",
+      subject: "Welcome to our platform!",
+      preview: "Hi {{firstName}}, welcome to our amazing platform! We're excited to have you on board..."
+    },
+    { 
+      id: 2, 
+      name: "Product Launch", 
+      category: "Promotion",
+      subject: "🚀 New Product Launch - Limited Time Offer!",
+      preview: "Hi {{firstName}}, we're thrilled to announce our latest product! Get 20% off during launch week..."
+    },
+    { 
+      id: 3, 
+      name: "Follow-up", 
+      category: "Nurture",
+      subject: "Following up on your interest",
+      preview: "Hi {{firstName}}, I wanted to follow up on our previous conversation about..."
+    },
+    { 
+      id: 4, 
+      name: "Re-engagement", 
+      category: "Retention",
+      subject: "We miss you! Special offer inside",
+      preview: "Hi {{firstName}}, we noticed you haven't been active lately. Here's a special offer just for you..."
+    }
   ])
+  const [editingCampaign, setEditingCampaign] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   // Ensure proper initialization
   React.useEffect(() => {
@@ -463,24 +489,33 @@ function SophisticatedDashboard() {
     }
 
     try {
-      // Generate realistic initial stats for new campaigns
-      const initialEmailsSent = Math.floor(Math.random() * 500) + 100 // 100-600 emails
-      const initialOpenRate = Math.floor(Math.random() * 30) + 15 // 15-45% open rate
-      const initialResponseRate = Math.floor(Math.random() * 10) + 2 // 2-12% response rate
-
+      // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
         id: Date.now(), // Use timestamp for unique ID
         name: campaignFormData.name,
-        status: "Active",
+        status: "Draft", // New campaigns start as Draft, not Active
         type: campaignFormData.type,
-        emailsSent: initialEmailsSent,
-        openRate: initialOpenRate,
-        responseRate: initialResponseRate,
+        emailsSent: 0, // Start with 0 emails sent
+        openRate: 0, // No opens until emails are sent
+        responseRate: 0, // No responses until emails are sent
         createdDate: new Date().toISOString().split('T')[0],
         subject: campaignFormData.subject,
         template: campaignFormData.template,
         targetAudience: campaignFormData.targetAudience,
-        sendDate: campaignFormData.sendDate
+        sendDate: campaignFormData.sendDate,
+        totalContacts: leads.filter(lead => {
+          // Calculate how many contacts match the target audience
+          if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads') {
+            return true
+          }
+          if (campaignFormData.targetAudience === 'New Leads') {
+            return lead.score < 50
+          }
+          if (campaignFormData.targetAudience === 'Warm Prospects') {
+            return lead.score >= 50
+          }
+          return false
+        }).length
       }
 
       setCampaigns([...campaigns, newCampaign])
@@ -506,15 +541,22 @@ function SophisticatedDashboard() {
 
   const handleCampaignAction = (campaignId, action) => {
     console.log('handleCampaignAction called:', { campaignId, action })
+    const campaign = campaigns.find(c => c.id === campaignId)
+    
+    if (action === 'edit') {
+      setEditingCampaign(campaign)
+      setShowEditModal(true)
+      toast.info('Opening campaign editor...')
+      return
+    }
+    
     setCampaigns(campaigns.map(campaign => {
       if (campaign.id === campaignId) {
         switch (action) {
           case 'pause':
-            toast.info(`Campaign ${campaign.status === 'Active' ? 'paused' : 'resumed'}`)
-            return { ...campaign, status: campaign.status === 'Active' ? 'Paused' : 'Active' }
-          case 'edit':
-            toast.info('Edit functionality would open a modal here')
-            return campaign
+            const newStatus = campaign.status === 'Active' ? 'Paused' : 'Active'
+            toast.success(`Campaign ${newStatus === 'Paused' ? 'paused' : 'resumed'} successfully`)
+            return { ...campaign, status: newStatus }
           case 'delete':
             toast.success('Campaign deleted')
             return null
@@ -530,9 +572,15 @@ function SophisticatedDashboard() {
     console.log('selectEmailTemplate called:', template)
     setCampaignFormData(prev => ({
       ...prev,
-      template: template.name
+      template: template.name,
+      subject: template.subject // Auto-fill subject from template
     }))
-    toast.success(`Selected template: ${template.name}`)
+    toast.success(`Template "${template.name}" selected! Subject auto-filled.`)
+    
+    // Show template preview
+    toast.info(`Preview: ${template.preview.substring(0, 100)}...`, {
+      duration: 5000
+    })
   }
 
   // Security function to validate section access
@@ -1159,14 +1207,21 @@ function SophisticatedDashboard() {
                           <div>
                             <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                              {campaign.type} • {campaign.emailsSent} emails sent • Created: {campaign.createdDate}
+                              {campaign.type} • {campaign.emailsSent} of {campaign.totalContacts || 0} contacts • Created: {campaign.createdDate}
                             </p>
                             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
                               Status: <span className={`px-2 py-1 rounded-full text-xs ${
                                 campaign.status === 'Active' 
                                   ? 'bg-green-100 text-green-800' 
+                                  : campaign.status === 'Draft'
+                                  ? 'bg-blue-100 text-blue-800'
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}>{campaign.status}</span>
+                              {campaign.subject && (
+                                <span className={`ml-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Subject: "{campaign.subject}"
+                                </span>
+                              )}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -1227,6 +1282,105 @@ function SophisticatedDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* Campaign Edit Modal */}
+              {showEditModal && editingCampaign && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className={`text-xl font-semibold text-genie-teal`}>Edit Campaign: {editingCampaign.name}</h3>
+                      <button 
+                        onClick={() => setShowEditModal(false)}
+                        className={`text-gray-500 hover:text-gray-700 text-2xl ${isDarkMode ? 'hover:text-gray-300' : ''}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Name</label>
+                        <input 
+                          type="text" 
+                          value={editingCampaign.name}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, name: e.target.value})}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Subject</label>
+                        <input 
+                          type="text" 
+                          value={editingCampaign.subject || ''}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, subject: e.target.value})}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Status</label>
+                        <select 
+                          value={editingCampaign.status}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, status: e.target.value})}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        >
+                          <option value="Draft">Draft</option>
+                          <option value="Active">Active</option>
+                          <option value="Paused">Paused</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Selected Template</label>
+                        <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
+                          {editingCampaign.template || 'No template selected'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Target Audience</label>
+                        <select 
+                          value={editingCampaign.targetAudience || ''}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, targetAudience: e.target.value})}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        >
+                          <option value="">Select Audience</option>
+                          <option value="All Leads">All Leads</option>
+                          <option value="New Leads">New Leads</option>
+                          <option value="Warm Prospects">Warm Prospects</option>
+                          <option value="Custom Segment">Custom Segment</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                      <button 
+                        onClick={() => {
+                          setCampaigns(campaigns.map(c => 
+                            c.id === editingCampaign.id ? editingCampaign : c
+                          ))
+                          setShowEditModal(false)
+                          toast.success('Campaign updated successfully!')
+                        }}
+                        className="bg-genie-teal text-white px-6 py-2 rounded hover:bg-genie-teal/80 transition-colors"
+                      >
+                        Save Changes
+                      </button>
+                      <button 
+                        onClick={() => setShowEditModal(false)}
+                        className={`px-6 py-2 rounded border transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeSection === 'CRM & Pipeline' && (

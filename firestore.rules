@@ -7,8 +7,12 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Tenants - users can only access their own tenant
+    // Tenants - consolidated rules for tenant access
     match /tenants/{tenantId} {
+      // Allow super admin (dubdproducts@gmail.com) full access to all tenants
+      allow read, write, create: if request.auth != null && 
+        request.auth.token.email == 'dubdproducts@gmail.com';
+      
       // Allow read/write if user owns the tenant (existing tenant)
       allow read, write: if request.auth != null && 
         resource.data.ownerId == request.auth.uid;
@@ -18,32 +22,24 @@ service cloud.firestore {
         request.resource.data.ownerId == request.auth.uid;
       
       // Tenant sub-collections (leads, campaigns, etc.)
-      // Users can only access data within their own tenant
       match /{subcollection}/{document} {
+        // Super admin access
+        allow read, write, create: if request.auth != null && 
+          request.auth.token.email == 'dubdproducts@gmail.com';
+        
+        // Users can only access data within their own tenant
         allow read, write, create: if request.auth != null && 
           get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
           
         // Allow nested documents within tenant subcollections
         match /{document=**} {
-          allow read, write, create: if request.auth != null && 
-            get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
-        }
-      }
-    }
-    
-    // Super admin access (for dubdproducts@gmail.com)
-    // Super admins can read and create all tenants for admin purposes
-    match /tenants/{tenantId} {
-      allow read, write, create: if request.auth != null && 
-        request.auth.token.email == 'dubdproducts@gmail.com';
-        
-      match /{subcollection}/{document} {
-        allow read, write, create: if request.auth != null && 
-          request.auth.token.email == 'dubdproducts@gmail.com';
-          
-        match /{document=**} {
+          // Super admin access
           allow read, write, create: if request.auth != null && 
             request.auth.token.email == 'dubdproducts@gmail.com';
+          
+          // Regular user access
+          allow read, write, create: if request.auth != null && 
+            get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
         }
       }
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   TrendingUp, 
@@ -10,7 +11,8 @@ import {
   ShoppingCart,
   Sparkles,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Settings
 } from 'lucide-react'
 import Funnel3D from '../components/ui/Funnel3D'
 import GenieConsole from '../components/ai/GenieConsole'
@@ -78,18 +80,18 @@ export default function Dashboard() {
       </div>
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a href="/contacts" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+        <Link to="/contacts" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
           <Users className="h-10 w-10 text-genie-teal mb-2" />
           <span className="font-semibold text-genie-teal">Manage Contacts</span>
-        </a>
-        <a href="/campaigns/builder" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+        </Link>
+        <Link to="/campaigns/builder" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
           <Zap className="h-10 w-10 text-genie-teal mb-2" />
           <span className="font-semibold text-genie-teal">Build Campaigns</span>
-        </a>
-        <a href="/settings" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
+        </Link>
+        <Link to="/settings" className="bg-genie-teal/10 rounded-xl p-6 flex flex-col items-center hover:bg-genie-teal/20 transition">
           <CogIcon className="h-10 w-10 text-genie-teal mb-2" />
           <span className="font-semibold text-genie-teal">Settings</span>
-        </a>
+        </Link>
       </div>
     </div>
   );

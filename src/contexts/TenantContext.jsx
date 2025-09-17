@@ -71,11 +71,7 @@ export function TenantProvider({ children }) {
           }
         }
 
-        // Only show welcome toast on protected routes (dashboard, admin), not on public pages
-        const isProtectedRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin')
-        if (isProtectedRoute) {
-          toast.success(`Welcome to your workspace: ${result.data.name}`)
-        }
+        // Welcome toast removed per user request
       } else {
         console.log('No tenant found, will create one on first sign-in')
       }

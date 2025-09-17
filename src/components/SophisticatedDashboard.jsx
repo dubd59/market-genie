@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import Sidebar from './Sidebar'
 
 function SophisticatedDashboard() {
@@ -75,9 +76,9 @@ function SophisticatedDashboard() {
                       🛡️ Admin Panel
                     </button>
                     <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
-                    <a href="/" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-100'}`}>
+                    <Link to="/" className={`block px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-100'}`}>
                       ← Back to Landing
-                    </a>
+                    </Link>
                   </div>
                 </div>
               )}

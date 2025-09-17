@@ -27,6 +27,14 @@ import {
 export default function LandingPage() {
   const [selectedPlan, setSelectedPlan] = useState('pro')
 
+  // Function to scroll to pricing section
+  const scrollToPricing = () => {
+    const pricingElement = document.getElementById('pricing')
+    if (pricingElement) {
+      pricingElement.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   const features = [
     {
       icon: Bot,
@@ -165,13 +173,13 @@ export default function LandingPage() {
               <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
               <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
               <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors">Reviews</a>
-              <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">Sign In</Link>
-              <Link 
-                to="/dashboard" 
+              <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Sign In</Link>
+              <button 
+                onClick={scrollToPricing}
                 className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
               >
                 Start Free Trial
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -210,13 +218,13 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link 
-                to="/dashboard" 
+              <button 
+                onClick={scrollToPricing}
                 className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-cyan-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center"
               >
                 Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
+              </button>
               <button className="border border-white/30 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
                 Watch Demo
               </button>
@@ -327,7 +335,7 @@ export default function LandingPage() {
                 </ul>
 
                 <Link
-                  to="/dashboard"
+                  to="/register"
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center ${
                     plan.popular
                       ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-600 hover:to-purple-700'

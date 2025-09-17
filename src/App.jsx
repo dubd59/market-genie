@@ -106,7 +106,33 @@ function SophisticatedDashboard() {
       emailsSent: 1234,
       openRate: 68,
       responseRate: 24,
-      createdDate: "2024-01-15"
+      createdDate: "2024-01-15",
+      subject: "🌞 Summer Sale - 50% Off Everything!",
+      emailContent: `Hi {firstName},
+
+Summer is here and we're celebrating with our biggest sale of the year!
+
+🌞 50% OFF EVERYTHING 🌞
+Valid until July 31st
+
+This is the perfect time to upgrade your marketing automation tools and take your business to the next level.
+
+What's included:
+• All premium features unlocked
+• Priority customer support
+• Advanced analytics dashboard
+• Custom integrations
+
+Don't miss out - this offer expires soon!
+
+[SHOP NOW - 50% OFF]
+
+Best regards,
+The MarketGenie Team
+
+P.S. This offer is exclusive to our valued customers like you!`,
+      template: "Product Launch",
+      targetAudience: "All Leads"
     }
   ])
   const [campaignStats, setCampaignStats] = useState({
@@ -591,6 +617,19 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Find the selected template to get its content
       const selectedTemplate = emailTemplates.find(t => t.name === campaignFormData.template)
       
+      // Generate AI-powered email content based on campaign settings
+      const aiGeneratedContent = generateAIEmailContent(campaignFormData)
+      
+      // Use AI content if no template, or enhance template with AI if available
+      let finalEmailContent
+      if (selectedTemplate && selectedTemplate.content) {
+        // Enhance template with AI personalization
+        finalEmailContent = `${selectedTemplate.content}\n\n--- AI Enhancement ---\n\n${aiGeneratedContent}`
+      } else {
+        // Use pure AI generation
+        finalEmailContent = aiGeneratedContent
+      }
+      
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
         id: Date.now(), // Use timestamp for unique ID
@@ -603,7 +642,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         createdDate: new Date().toISOString().split('T')[0],
         subject: campaignFormData.subject,
         template: campaignFormData.template,
-        emailContent: selectedTemplate?.content || 'No template selected. Please edit this campaign to add email content.',
+        emailContent: finalEmailContent,
         targetAudience: campaignFormData.targetAudience,
         sendDate: campaignFormData.sendDate,
         totalContacts: leads.filter(lead => {
@@ -635,7 +674,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         sendDate: ''
       })
 
-      toast.success('Campaign created successfully!')
+      toast.success('🤖 Campaign created with AI-generated content! Click "View Email" or "Edit" to see the personalized content.')
     } catch (error) {
       console.error('Error creating campaign:', error)
       toast.error('Failed to create campaign')
@@ -669,6 +708,90 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
       return campaign
     }).filter(Boolean))
+  }
+
+  // AI-powered email content generation based on campaign settings
+  const generateAIEmailContent = (campaignData) => {
+    const { name, type, targetAudience, subject } = campaignData
+    
+    // AI-style content generation based on campaign parameters
+    let content = `Hi {firstName},\n\n`
+    
+    // Customize opening based on audience
+    if (targetAudience === 'New Leads') {
+      content += `Welcome to MarketGenie! We're excited to have you join our community of successful marketers.\n\n`
+    } else if (targetAudience === 'Warm Prospects') {
+      content += `Thank you for your continued interest in MarketGenie. We have something special for you.\n\n`
+    } else {
+      content += `We hope this message finds you well and that your business is thriving.\n\n`
+    }
+    
+    // Customize content based on campaign type
+    if (type === 'Email') {
+      content += `This ${name.toLowerCase()} campaign is designed to help you:\n`
+      content += `• Increase your email engagement rates\n`
+      content += `• Build stronger relationships with your audience\n`
+      content += `• Drive more conversions through targeted messaging\n\n`
+    } else if (type === 'SMS') {
+      content += `Our SMS marketing approach for "${name}" focuses on:\n`
+      content += `• Immediate, direct communication\n`
+      content += `• Higher open rates than traditional email\n`
+      content += `• Time-sensitive offers and updates\n\n`
+    } else if (type === 'LinkedIn') {
+      content += `Through LinkedIn outreach for "${name}", we're connecting with:\n`
+      content += `• Industry professionals in your target market\n`
+      content += `• Decision-makers who can benefit from your solution\n`
+      content += `• Potential partners and collaborators\n\n`
+    } else {
+      content += `Our multi-channel approach for "${name}" includes:\n`
+      content += `• Coordinated messaging across all platforms\n`
+      content += `• Consistent brand experience\n`
+      content += `• Maximum reach and engagement\n\n`
+    }
+    
+    // Add value proposition based on campaign name keywords
+    if (name.toLowerCase().includes('launch')) {
+      content += `🚀 We're thrilled to announce this exciting launch! Here's what you can expect:\n\n`
+      content += `✅ Early access to new features\n`
+      content += `✅ Special launch pricing (limited time)\n`
+      content += `✅ Exclusive bonuses for early adopters\n`
+      content += `✅ Direct access to our product team\n\n`
+    } else if (name.toLowerCase().includes('welcome')) {
+      content += `As a warm welcome, we're providing you with:\n\n`
+      content += `🎁 Complete access to our platform\n`
+      content += `📚 Free training materials and guides\n`
+      content += `🎯 Personalized strategy session\n`
+      content += `💬 24/7 customer support\n\n`
+    } else if (name.toLowerCase().includes('follow')) {
+      content += `Following up on our previous conversation, I wanted to share:\n\n`
+      content += `📈 How other companies like {company} have seen 300% ROI\n`
+      content += `⏰ Limited-time implementation bonus\n`
+      content += `🤝 Personalized demo tailored to your needs\n`
+      content += `📞 Direct line to our success team\n\n`
+    } else {
+      content += `Here's what makes this campaign special for you:\n\n`
+      content += `🎯 Personalized content based on your interests\n`
+      content += `📊 Data-driven insights for better results\n`
+      content += `🔧 Tools and resources to succeed\n`
+      content += `🏆 Proven strategies from top performers\n\n`
+    }
+    
+    // Call to action based on campaign type
+    if (targetAudience === 'New Leads') {
+      content += `Ready to get started? Click below to:\n`
+      content += `[GET STARTED NOW]\n\n`
+      content += `Or reply to this email if you have any questions. We're here to help!\n\n`
+    } else {
+      content += `Want to learn more? Here are your next steps:\n`
+      content += `[SCHEDULE A DEMO] [LEARN MORE] [CONTACT US]\n\n`
+      content += `Or simply reply to this email and let's start a conversation.\n\n`
+    }
+    
+    content += `Best regards,\n`
+    content += `The MarketGenie Team\n\n`
+    content += `P.S. This email was crafted specifically for "${name}" to deliver maximum value to ${targetAudience?.toLowerCase() || 'your audience'}!`
+    
+    return content
   }
 
   const selectEmailTemplate = (template) => {
@@ -1330,9 +1453,13 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
                           <div className="flex gap-2">
                             <button 
                               onClick={() => {
-                                toast.info(`Email Preview:\nSubject: ${campaign.subject}\n\nContent:\n${campaign.emailContent?.substring(0, 200)}...`, {
-                                  duration: 8000
-                                })
+                                if (campaign.emailContent) {
+                                  toast.success(`📧 Email Preview for "${campaign.name}":\n\nSubject: ${campaign.subject}\n\nContent:\n${campaign.emailContent.substring(0, 300)}${campaign.emailContent.length > 300 ? '...' : ''}`, {
+                                    duration: 10000
+                                  })
+                                } else {
+                                  toast.error('No email content available. Click Edit to add content.')
+                                }
                               }}
                               className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600 transition-colors"
                             >

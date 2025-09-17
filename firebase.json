@@ -6,7 +6,7 @@
   },
   "hosting": [
     {
-      "target": "market-genie",
+      "target": "market-genie-app",
       "public": "dist",
       "ignore": [
         "firebase.json",

@@ -1034,121 +1034,197 @@ function SophisticatedDashboard() {
             </div>
           )}
           {activeSection === 'Outreach Automation' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">Outreach Automation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="email" className="text-genie-teal text-3xl mb-2">✉️</span>
-                  <div className="text-2xl font-bold text-gray-900">1,200</div>
-                  <div className="text-gray-500">Emails Sent</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="sms" className="text-genie-teal text-3xl mb-2">📱</span>
-                  <div className="text-2xl font-bold text-gray-900">800</div>
-                  <div className="text-gray-500">SMS Sent</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="social" className="text-genie-teal text-3xl mb-2">📢</span>
-                  <div className="text-2xl font-bold text-gray-900">350</div>
-                  <div className="text-gray-500">Social Posts</div>
-                </div>
-              </div>
-              {/* Campaign Builder */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Create New Campaign</h3>
-                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" placeholder="Campaign Name" className="border p-3 rounded" required />
-                  <select className="border p-3 rounded">
-                    <option>Select Campaign Type</option>
-                    <option>Email Sequence</option>
-                    <option>SMS Campaign</option>
-                    <option>Social Media</option>
-                    <option>Mixed Campaign</option>
-                  </select>
-                  <input type="text" placeholder="Target Audience" className="border p-3 rounded" />
-                  <input type="datetime-local" className="border p-3 rounded" />
-                  <textarea placeholder="Campaign Description" className="border p-3 rounded col-span-1 md:col-span-2" />
-                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Create Campaign</button>
-                </form>
-              </div>
+            <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
+              <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
-              {/* Email Templates */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Email Templates</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
-                    <h4 className="font-semibold mb-2">Welcome Series</h4>
-                    <p className="text-sm text-gray-600">5-email welcome sequence</p>
-                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
-                  </div>
-                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
-                    <h4 className="font-semibold mb-2">Product Launch</h4>
-                    <p className="text-sm text-gray-600">Announcement campaign</p>
-                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
-                  </div>
-                  <div className="border rounded-lg p-4 hover:border-genie-teal cursor-pointer">
-                    <h4 className="font-semibold mb-2">Re-engagement</h4>
-                    <p className="text-sm text-gray-600">Win back inactive users</p>
-                    <button className="mt-2 text-genie-teal hover:underline">Use Template</button>
-                  </div>
+              {/* Campaign Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Campaigns</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Emails Sent</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="opened" className="text-genie-teal text-3xl mb-2">�</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Open Rate</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="responses" className="text-genie-teal text-3xl mb-2">�</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Response Rate</div>
                 </div>
               </div>
 
+              {/* Campaign Builder */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Create New Campaign</h3>
+                <form onSubmit={handleCampaignFormSubmit} className="space-y-4">
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Name</label>
+                    <input 
+                      type="text" 
+                      value={campaignFormData.name}
+                      onChange={(e) => setCampaignFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
+                      placeholder="Q1 Product Launch"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Subject</label>
+                    <input 
+                      type="text" 
+                      value={campaignFormData.subject}
+                      onChange={(e) => setCampaignFormData(prev => ({ ...prev, subject: e.target.value }))}
+                      className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
+                      placeholder="Exciting news about our latest product!"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Type</label>
+                      <select 
+                        value={campaignFormData.type}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, type: e.target.value }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                      >
+                        <option value="Email">Email Sequence</option>
+                        <option value="SMS">SMS Campaign</option>
+                        <option value="LinkedIn">LinkedIn Outreach</option>
+                        <option value="Multi-Channel">Multi-Channel</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Target Audience</label>
+                      <select 
+                        value={campaignFormData.targetAudience}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                      >
+                        <option value="">Select Audience</option>
+                        <option value="All Leads">All Leads</option>
+                        <option value="New Leads">New Leads</option>
+                        <option value="Warm Prospects">Warm Prospects</option>
+                        <option value="Custom Segment">Custom Segment</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Template</label>
+                      <input 
+                        type="text" 
+                        value={campaignFormData.template}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, template: e.target.value }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
+                        placeholder="Select template below or type custom"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Send Date</label>
+                      <input 
+                        type="datetime-local" 
+                        value={campaignFormData.sendDate}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, sendDate: e.target.value }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                      />
+                    </div>
+                  </div>
+                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 transition-colors">
+                    Create Campaign
+                  </button>
+                </form>
+              </div>
+
               {/* Active Campaigns */}
-              <div className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Active Campaigns</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-3">Campaign</th>
-                        <th className="py-3">Type</th>
-                        <th className="py-3">Status</th>
-                        <th className="py-3">Recipients</th>
-                        <th className="py-3">Open Rate</th>
-                        <th className="py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b">
-                        <td className="py-3">Welcome New Users</td>
-                        <td className="py-3">Email</td>
-                        <td className="py-3"><span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span></td>
-                        <td className="py-3">1,247</td>
-                        <td className="py-3">24.5%</td>
-                        <td className="py-3">
-                          <button className="text-genie-teal mr-2 hover:underline">Edit</button>
-                          <button className="text-red-500 hover:underline">Pause</button>
-                        </td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-3">Product Launch 2024</td>
-                        <td className="py-3">Mixed</td>
-                        <td className="py-3"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Scheduled</span></td>
-                        <td className="py-3">3,542</td>
-                        <td className="py-3">--</td>
-                        <td className="py-3">
-                          <button className="text-genie-teal mr-2 hover:underline">Edit</button>
-                          <button className="text-red-500 hover:underline">Cancel</button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="py-3">Re-engagement Campaign</td>
-                        <td className="py-3">SMS</td>
-                        <td className="py-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">Paused</span></td>
-                        <td className="py-3">892</td>
-                        <td className="py-3">18.2%</td>
-                        <td className="py-3">
-                          <button className="text-genie-teal mr-2 hover:underline">Resume</button>
-                          <button className="text-red-500 hover:underline">Delete</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Active Campaigns</h3>
+                <div className="space-y-4">
+                  {campaigns.length === 0 ? (
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      No campaigns created yet. Create your first campaign above!
+                    </div>
+                  ) : (
+                    campaigns.map(campaign => (
+                      <div key={campaign.id} className={`border-l-4 border-genie-teal ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'} p-4 rounded`}>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {campaign.type} • {campaign.emailsSent} emails sent • Created: {campaign.createdDate}
+                            </p>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                              Status: <span className={`px-2 py-1 rounded-full text-xs ${
+                                campaign.status === 'Active' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>{campaign.status}</span>
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleCampaignAction(campaign.id, 'edit')}
+                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleCampaignAction(campaign.id, 'pause')}
+                              className={`px-3 py-1 rounded text-sm transition-colors ${
+                                campaign.status === 'Active' 
+                                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                                  : 'bg-green-500 hover:bg-green-600 text-white'
+                              }`}
+                            >
+                              {campaign.status === 'Active' ? 'Pause' : 'Resume'}
+                            </button>
+                            <button 
+                              onClick={() => handleCampaignAction(campaign.id, 'delete')}
+                              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-1 flex justify-between`}>
+                            <span>Open Rate: {campaign.openRate}%</span>
+                            <span>Response Rate: {campaign.responseRate}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-genie-teal h-2 rounded-full" style={{width: `${campaign.openRate}%`}}></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <div className="flex justify-end mt-4 gap-2">
-                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Export Report</button>
-                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">New Campaign</button>
+              </div>
+
+              {/* Email Templates */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Email Templates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {emailTemplates.map(template => (
+                    <div key={template.id} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{template.name}</h4>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-3`}>{template.category}</p>
+                      <button 
+                        onClick={() => selectEmailTemplate(template)}
+                        className="w-full bg-genie-teal text-white px-3 py-2 rounded text-sm hover:bg-genie-teal/80 transition-colors"
+                      >
+                        Use Template
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2167,205 +2243,6 @@ function SophisticatedDashboard() {
                 </tr>
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  function renderOutreachAutomation() {
-    return (
-      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
-        <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
-        
-        {/* Campaign Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
-            <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Campaigns</div>
-          </div>
-          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
-            <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Emails Sent</div>
-          </div>
-          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <span role="img" aria-label="opened" className="text-genie-teal text-3xl mb-2">👀</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
-            <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Open Rate</div>
-          </div>
-          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <span role="img" aria-label="responses" className="text-genie-teal text-3xl mb-2">💬</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
-            <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Response Rate</div>
-          </div>
-        </div>
-
-        {/* Campaign Builder */}
-        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Create New Campaign</h3>
-          <form onSubmit={handleCampaignFormSubmit} className="space-y-4">
-            <div>
-              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Name</label>
-              <input 
-                type="text" 
-                value={campaignFormData.name}
-                onChange={(e) => setCampaignFormData(prev => ({ ...prev, name: e.target.value }))}
-                className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                placeholder="Q1 Product Launch"
-                required
-              />
-            </div>
-            <div>
-              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Subject</label>
-              <input 
-                type="text" 
-                value={campaignFormData.subject}
-                onChange={(e) => setCampaignFormData(prev => ({ ...prev, subject: e.target.value }))}
-                className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                placeholder="Exciting news about our latest product!"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Type</label>
-                <select 
-                  value={campaignFormData.type}
-                  onChange={(e) => setCampaignFormData(prev => ({ ...prev, type: e.target.value }))}
-                  className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                >
-                  <option value="Email">Email Sequence</option>
-                  <option value="SMS">SMS Campaign</option>
-                  <option value="LinkedIn">LinkedIn Outreach</option>
-                  <option value="Multi-Channel">Multi-Channel</option>
-                </select>
-              </div>
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Target Audience</label>
-                <select 
-                  value={campaignFormData.targetAudience}
-                  onChange={(e) => setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
-                  className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                >
-                  <option value="">Select Audience</option>
-                  <option value="All Leads">All Leads</option>
-                  <option value="New Leads">New Leads</option>
-                  <option value="Warm Prospects">Warm Prospects</option>
-                  <option value="Custom Segment">Custom Segment</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Template</label>
-                <input 
-                  type="text" 
-                  value={campaignFormData.template}
-                  onChange={(e) => setCampaignFormData(prev => ({ ...prev, template: e.target.value }))}
-                  className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                  placeholder="Select template below or type custom"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Send Date</label>
-                <input 
-                  type="datetime-local" 
-                  value={campaignFormData.sendDate}
-                  onChange={(e) => setCampaignFormData(prev => ({ ...prev, sendDate: e.target.value }))}
-                  className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-            </div>
-            <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 transition-colors">
-              Create Campaign
-            </button>
-          </form>
-        </div>
-
-        {/* Active Campaigns */}
-        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Active Campaigns</h3>
-          <div className="space-y-4">
-            {campaigns.length === 0 ? (
-              <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                No campaigns created yet. Create your first campaign above!
-              </div>
-            ) : (
-              campaigns.map(campaign => (
-                <div key={campaign.id} className={`border-l-4 border-genie-teal ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'} p-4 rounded`}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {campaign.type} • {campaign.emailsSent} emails sent • Created: {campaign.createdDate}
-                      </p>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                        Status: <span className={`px-2 py-1 rounded-full text-xs ${
-                          campaign.status === 'Active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>{campaign.status}</span>
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleCampaignAction(campaign.id, 'edit')}
-                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleCampaignAction(campaign.id, 'pause')}
-                        className={`px-3 py-1 rounded text-sm transition-colors ${
-                          campaign.status === 'Active' 
-                            ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                            : 'bg-green-500 hover:bg-green-600 text-white'
-                        }`}
-                      >
-                        {campaign.status === 'Active' ? 'Pause' : 'Resume'}
-                      </button>
-                      <button 
-                        onClick={() => handleCampaignAction(campaign.id, 'delete')}
-                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-1 flex justify-between`}>
-                      <span>Open Rate: {campaign.openRate}%</span>
-                      <span>Response Rate: {campaign.responseRate}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-genie-teal h-2 rounded-full" style={{width: `${campaign.openRate}%`}}></div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Email Templates */}
-        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Email Templates</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {emailTemplates.map(template => (
-              <div key={template.id} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-200 hover:border-gray-300'}`}>
-                <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{template.name}</h4>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-3`}>{template.category}</p>
-                <button 
-                  onClick={() => selectEmailTemplate(template)}
-                  className="w-full bg-genie-teal text-white px-3 py-2 rounded text-sm hover:bg-genie-teal/80 transition-colors"
-                >
-                  Use Template
-                </button>
-              </div>
-            ))}
           </div>
         </div>
       </div>

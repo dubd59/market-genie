@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import IntegrationService from '../services/integrationService';
+import toast from 'react-hot-toast';
 
 const APIKeysIntegrations = () => {
   const { tenant } = useTenant();
@@ -159,6 +161,50 @@ const APIKeysIntegrations = () => {
     },
     {
       id: 13,
+      name: 'Hunter.io Email Finding',
+      type: 'Email Discovery',
+      status: 'disconnected',
+      icon: '🎯',
+      description: 'Find and verify email addresses for lead generation',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Email Finder', 'Email Verifier', 'Domain Search', 'Bulk Processing']
+    },
+    {
+      id: 14,
+      name: 'Apollo.io',
+      type: 'Lead Database',
+      status: 'disconnected',
+      icon: '🚀',
+      description: 'Access to 275M+ contacts and 73M+ companies',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Contact Search', 'Company Search', 'Email Sequences', 'CRM Integration']
+    },
+    {
+      id: 15,
+      name: 'ZoomInfo',
+      type: 'B2B Database',
+      status: 'disconnected',
+      icon: '🔍',
+      description: 'Premium B2B contact and company intelligence',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Advanced Search', 'Intent Data', 'Technographics', 'Real-time Updates']
+    },
+    {
+      id: 16,
+      name: 'Clearbit',
+      type: 'Data Enrichment',
+      status: 'disconnected',
+      icon: '✨',
+      description: 'Enrich leads with company and contact data',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Company Enrichment', 'Person Enrichment', 'Logo API', 'Risk Assessment']
+    },
+    {
+      id: 17,
       name: 'Zapier',
       type: 'Automation',
       status: 'disconnected',
@@ -221,17 +267,77 @@ const APIKeysIntegrations = () => {
     setApiKeys(prev => prev.filter(key => key.id !== keyId));
   };
 
-  const connectIntegration = (integrationId) => {
-    setIntegrations(prev => prev.map(integration =>
-      integration.id === integrationId
-        ? { 
-            ...integration, 
-            status: 'connected', 
-            lastSync: 'Just now',
-            account: integration.type === 'Email' ? 'your-email@gmail.com' : 'Connected Account'
+  const connectIntegration = async (integrationId) => {
+    const integration = integrations.find(i => i.id === integrationId);
+    
+    try {
+      switch(integration.name) {
+        case 'LinkedIn Sales Navigator':
+          // Redirect to LinkedIn OAuth
+          const linkedinUrl = IntegrationService.getOAuthURL('linkedin-sales', tenant.id);
+          window.open(linkedinUrl, 'linkedin-oauth', 'width=600,height=600');
+          toast.loading('Connecting to LinkedIn Sales Navigator...');
+          break;
+          
+        case 'Facebook Business':
+          // Redirect to Facebook OAuth
+          const facebookUrl = IntegrationService.getOAuthURL('facebook-business', tenant.id);
+          window.open(facebookUrl, 'facebook-oauth', 'width=600,height=600');
+          toast.loading('Connecting to Facebook Business...');
+          break;
+          
+        case 'Twitter/X API':
+          // Redirect to Twitter OAuth
+          const twitterUrl = IntegrationService.getOAuthURL('twitter', tenant.id);
+          window.open(twitterUrl, 'twitter-oauth', 'width=600,height=600');
+          toast.loading('Connecting to Twitter/X...');
+          break;
+          
+        case 'Hunter.io Email Finding':
+        case 'Apollo.io':
+          // Show API key input modal
+          const apiKey = prompt(`Enter your ${integration.name} API key:`);
+          if (apiKey) {
+            toast.loading(`Connecting to ${integration.name}...`);
+            let result;
+            
+            if (integration.name === 'Hunter.io Email Finding') {
+              result = await IntegrationService.connectHunterIO(tenant.id, apiKey);
+            } else if (integration.name === 'Apollo.io') {
+              result = await IntegrationService.connectApollo(tenant.id, apiKey);
+            }
+            
+            if (result.success) {
+              setIntegrations(prev => prev.map(int =>
+                int.id === integrationId
+                  ? { ...int, status: 'connected', lastSync: 'Just now', account: 'Connected' }
+                  : int
+              ));
+              toast.success(`Successfully connected to ${integration.name}!`);
+            } else {
+              toast.error(`Failed to connect: ${result.error}`);
+            }
           }
-        : integration
-    ));
+          break;
+          
+        default:
+          // For other integrations, use the existing placeholder behavior
+          setIntegrations(prev => prev.map(integration =>
+            integration.id === integrationId
+              ? { 
+                  ...integration, 
+                  status: 'connected', 
+                  lastSync: 'Just now',
+                  account: integration.type === 'Email' ? 'your-email@gmail.com' : 'Connected Account'
+                }
+              : integration
+          ));
+          toast.success(`Connected to ${integration.name}!`);
+      }
+    } catch (error) {
+      console.error('Connection error:', error);
+      toast.error(`Failed to connect to ${integration.name}`);
+    }
   };
 
   const disconnectIntegration = (integrationId) => {

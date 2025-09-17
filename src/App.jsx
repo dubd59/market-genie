@@ -129,28 +129,127 @@ function SophisticatedDashboard() {
       name: "Welcome Series", 
       category: "Onboarding",
       subject: "Welcome to our platform!",
-      preview: "Hi {{firstName}}, welcome to our amazing platform! We're excited to have you on board..."
+      preview: "Hi {{firstName}}, welcome to our amazing platform! We're excited to have you on board...",
+      content: `Hi {{firstName}},
+
+Welcome to our amazing platform! We're excited to have you on board.
+
+Here's what you can expect:
+• Complete access to all features
+• 24/7 customer support  
+• Regular updates and improvements
+• A dedicated success manager
+
+To get started, simply log in to your account and explore the dashboard.
+
+If you have any questions, don't hesitate to reach out to our support team.
+
+Best regards,
+The MarketGenie Team
+
+P.S. Keep an eye out for our weekly newsletter with tips and best practices!`
     },
     { 
       id: 2, 
       name: "Product Launch", 
       category: "Promotion",
       subject: "🚀 New Product Launch - Limited Time Offer!",
-      preview: "Hi {{firstName}}, we're thrilled to announce our latest product! Get 20% off during launch week..."
+      preview: "Hi {{firstName}}, we're thrilled to announce our latest product! Get 20% off during launch week...",
+      content: `Hi {{firstName}},
+
+We're thrilled to announce our latest product launch!
+
+🎉 Introducing our new AI-powered marketing automation suite that will revolutionize how you connect with customers.
+
+LIMITED TIME LAUNCH OFFER:
+✅ 20% off your first 3 months
+✅ Free premium onboarding session
+✅ Exclusive access to new features
+
+This offer expires in 7 days, so don't miss out!
+
+[CLAIM YOUR DISCOUNT NOW]
+
+Why our customers love this new product:
+"This has transformed our marketing strategy completely!" - Sarah M.
+"The automation features saved us 10+ hours per week" - John D.
+
+Ready to get started? Click the button above or reply to this email.
+
+Cheers,
+The MarketGenie Team`
     },
     { 
       id: 3, 
       name: "Follow-up", 
       category: "Nurture",
       subject: "Following up on your interest",
-      preview: "Hi {{firstName}}, I wanted to follow up on our previous conversation about..."
+      preview: "Hi {{firstName}}, I wanted to follow up on our previous conversation about...",
+      content: `Hi {{firstName}},
+
+I wanted to follow up on our previous conversation about improving your marketing automation.
+
+I know you mentioned being interested in:
+• Streamlining your lead generation process
+• Improving email campaign performance
+• Better tracking and analytics
+
+I'd love to show you how MarketGenie can specifically help with these challenges.
+
+Would you be available for a quick 15-minute demo this week? I can show you:
+1. How to set up automated lead nurturing
+2. Our advanced analytics dashboard
+3. Real ROI improvements our clients have seen
+
+Here are a few time slots that work for me:
+• Tuesday 2:00 PM - 3:00 PM
+• Wednesday 10:00 AM - 11:00 AM  
+• Thursday 3:00 PM - 4:00 PM
+
+Just reply with what works best for you, or feel free to suggest another time.
+
+Looking forward to hearing from you!
+
+Best regards,
+[Your Name]
+MarketGenie Team`
     },
     { 
       id: 4, 
       name: "Re-engagement", 
       category: "Retention",
       subject: "We miss you! Special offer inside",
-      preview: "Hi {{firstName}}, we noticed you haven't been active lately. Here's a special offer just for you..."
+      preview: "Hi {{firstName}}, we noticed you haven't been active lately. Here's a special offer just for you...",
+      content: `Hi {{firstName}},
+
+We noticed you haven't been active on MarketGenie lately, and we miss you!
+
+We want to make sure you're getting the most value from our platform, so we've prepared something special for you:
+
+🎁 EXCLUSIVE RE-ENGAGEMENT OFFER:
+• 30% off your next billing cycle
+• Free 1-on-1 strategy session ($200 value)
+• Access to our new AI templates library
+
+We've also added some amazing new features since your last visit:
+✨ Advanced A/B testing tools
+✨ Improved analytics dashboard
+✨ New integration with popular CRMs
+✨ Enhanced automation workflows
+
+Don't let your account gather dust! Log in today and rediscover what MarketGenie can do for your business.
+
+[CLAIM YOUR OFFER & LOG IN NOW]
+
+This offer expires in 5 days, so don't wait!
+
+If you're facing any challenges or have questions, our support team is here to help. Just reply to this email.
+
+We'd love to have you back!
+
+The MarketGenie Team
+
+P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [unsubscribe link]`
     }
   ])
   const [editingCampaign, setEditingCampaign] = useState(null)
@@ -489,6 +588,9 @@ function SophisticatedDashboard() {
     }
 
     try {
+      // Find the selected template to get its content
+      const selectedTemplate = emailTemplates.find(t => t.name === campaignFormData.template)
+      
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
         id: Date.now(), // Use timestamp for unique ID
@@ -501,6 +603,7 @@ function SophisticatedDashboard() {
         createdDate: new Date().toISOString().split('T')[0],
         subject: campaignFormData.subject,
         template: campaignFormData.template,
+        emailContent: selectedTemplate?.content || 'No template selected. Please edit this campaign to add email content.',
         targetAudience: campaignFormData.targetAudience,
         sendDate: campaignFormData.sendDate,
         totalContacts: leads.filter(lead => {
@@ -1226,6 +1329,16 @@ function SophisticatedDashboard() {
                           </div>
                           <div className="flex gap-2">
                             <button 
+                              onClick={() => {
+                                toast.info(`Email Preview:\nSubject: ${campaign.subject}\n\nContent:\n${campaign.emailContent?.substring(0, 200)}...`, {
+                                  duration: 8000
+                                })
+                              }}
+                              className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600 transition-colors"
+                            >
+                              View Email
+                            </button>
+                            <button 
                               onClick={() => handleCampaignAction(campaign.id, 'edit')}
                               className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
                             >
@@ -1351,6 +1464,33 @@ function SophisticatedDashboard() {
                           <option value="Warm Prospects">Warm Prospects</option>
                           <option value="Custom Segment">Custom Segment</option>
                         </select>
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Content</label>
+                        <textarea 
+                          value={editingCampaign.emailContent || ''}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, emailContent: e.target.value})}
+                          className={`w-full border p-3 rounded h-64 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`}
+                          placeholder="Enter the email content that will be sent to contacts..."
+                          style={{fontFamily: 'monospace', fontSize: '14px'}}
+                        />
+                        <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          You can use variables like {'{firstName}'} {'{lastName}'} {'{company}'} that will be replaced with actual contact data.
+                        </div>
+                      </div>
+
+                      <div className={`p-4 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-blue-50 border-blue-200'}`}>
+                        <h4 className={`font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Email Preview</h4>
+                        <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap max-h-32 overflow-y-auto border rounded p-2 ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+                          {editingCampaign.emailContent ? 
+                            editingCampaign.emailContent
+                              .replace(/{firstName}/g, 'John')
+                              .replace(/{lastName}/g, 'Doe')
+                              .replace(/{company}/g, 'Acme Corp') 
+                            : 'No content to preview'
+                          }
+                        </div>
                       </div>
                     </div>
 

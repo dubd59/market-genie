@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { TenantProvider } from './contexts/TenantContext'
 import { GenieProvider } from './contexts/GenieContext'
 import FounderSetup from './components/FounderSetup'
@@ -12,7 +12,6 @@ import Login from './pages/Login'
 import Register from './pages/RegisterSimple'
 import LandingPage from './pages/LandingPage'
 import AIAgentHelper from './components/AIAgentHelper'
-import { useAuth } from './contexts/AuthContext'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
 import toast from 'react-hot-toast'
@@ -56,7 +55,24 @@ function ProtectedRoute({ children }) {
 }
 
 function SophisticatedDashboard() {
-  const [activeSection, setActiveSection] = useState('SuperGenie Dashboard')
+  const location = useLocation()
+  const navigate = useNavigate()
+  
+  // URL-based section mapping
+  const getSectionFromURL = () => {
+    const path = location.pathname
+    if (path.includes('lead-generation')) return 'Lead Generation'
+    if (path.includes('outreach-automation')) return 'Outreach Automation'
+    if (path.includes('workflow-automation')) return 'Workflow Automation'
+    if (path.includes('appointment-booking')) return 'Appointment Booking'
+    if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
+    if (path.includes('analytics')) return 'Analytics & Reporting'
+    if (path.includes('api-keys')) return 'API Keys & Integrations'
+    if (path.includes('admin-panel')) return 'Admin Panel'
+    return 'SuperGenie Dashboard'
+  }
+
+  const [activeSection, setActiveSection] = useState(getSectionFromURL())
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -406,6 +422,14 @@ function SophisticatedDashboard() {
     }
   }, [tenant])
 
+  // URL synchronization - update section when URL changes
+  React.useEffect(() => {
+    const newSection = getSectionFromURL()
+    if (newSection !== activeSection) {
+      setActiveSection(newSection)
+    }
+  }, [location.pathname])
+
   // Campaign Functions
   const handleCampaignFormSubmit = async (e) => {
     e.preventDefault()
@@ -493,13 +517,32 @@ function SophisticatedDashboard() {
     return true // All other sections are accessible
   }
 
-  // Secure section setter with validation
+  // Secure section setter with validation and URL navigation
   const setSecureActiveSection = (section) => {
     if (isAuthorizedForSection(section)) {
       setActiveSection(section)
+      
+      // Navigate to appropriate URL
+      const sectionURLs = {
+        'SuperGenie Dashboard': '/dashboard',
+        'Lead Generation': '/dashboard/lead-generation',
+        'Outreach Automation': '/dashboard/outreach-automation',
+        'Workflow Automation': '/dashboard/workflow-automation',
+        'Appointment Booking': '/dashboard/appointment-booking',
+        'CRM & Pipeline': '/dashboard/crm-pipeline',
+        'Analytics & Reporting': '/dashboard/analytics',
+        'API Keys & Integrations': '/dashboard/api-keys',
+        'Admin Panel': '/dashboard/admin-panel'
+      }
+      
+      const targetURL = sectionURLs[section] || '/dashboard'
+      if (location.pathname !== targetURL) {
+        navigate(targetURL, { replace: true })
+      }
     } else {
       console.warn(`Unauthorized access attempt to section: ${section}`)
-      setActiveSection('SuperGenie Dashboard') // Redirect to safe section
+      setActiveSection('SuperGenie Dashboard')
+      navigate('/dashboard', { replace: true })
     }
   }
 

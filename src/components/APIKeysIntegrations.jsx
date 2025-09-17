@@ -8,9 +8,16 @@ const APIKeysIntegrations = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
-  const [apiKeys, setApiKeys] = useState([
-    // Start with empty array - no placeholder keys
-  ]);
+  const [apiKeys, setApiKeys] = useState(() => {
+    // Load API keys from localStorage on init
+    try {
+      const savedKeys = localStorage.getItem('marketgenie_api_keys');
+      return savedKeys ? JSON.parse(savedKeys) : [];
+    } catch (error) {
+      console.error('Error loading API keys from localStorage:', error);
+      return [];
+    }
+  });
 
   const [integrations, setIntegrations] = useState([
     {
@@ -224,6 +231,15 @@ const APIKeysIntegrations = () => {
     }
   }, [tenant?.id]);
 
+  // Save API keys to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('marketgenie_api_keys', JSON.stringify(apiKeys));
+    } catch (error) {
+      console.error('Error saving API keys to localStorage:', error);
+    }
+  }, [apiKeys]);
+
   const loadIntegrationStatuses = async () => {
     setLoadingStatuses(true);
     const integrationKeys = [
@@ -281,12 +297,14 @@ const APIKeysIntegrations = () => {
         usage: 0,
         limit: 10000,
         lastUsed: 'Never',
-        key: newApiKey.key.slice(0, 6) + '...' + newApiKey.key.slice(-6)
+        key: newApiKey.key, // Store full key for AI API calls
+        displayKey: newApiKey.key.slice(0, 6) + '...' + newApiKey.key.slice(-6) // For display only
       };
       
       setApiKeys(prev => [...prev, newKey]);
       setNewApiKey({ name: '', service: '', key: '' });
       setShowAddKey(false);
+      toast.success(`${newApiKey.service} API key added successfully!`);
     }
   };
 
@@ -761,7 +779,7 @@ const APIKeysIntegrations = () => {
                       </div>
                       <div className="col-span-2">
                         <span className="text-gray-500">Key:</span>
-                        <span className="font-mono ml-2">{key.key}</span>
+                        <span className="font-mono ml-2">{key.displayKey || (key.key?.slice(0, 6) + '...' + key.key?.slice(-6))}</span>
                       </div>
                     </div>
                     

@@ -22,6 +22,7 @@ import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
+import AIService from './services/aiService'
 import AISwarmDashboard from './components/AISwarmDashboard'
 import CostControlsDashboard from './components/CostControlsDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
@@ -618,7 +619,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       const selectedTemplate = emailTemplates.find(t => t.name === campaignFormData.template)
       
       // Generate AI-powered email content based on campaign settings
-      const aiGeneratedContent = generateAIEmailContent(campaignFormData)
+      toast.loading('Generating AI-powered email content...')
+      const aiGeneratedContent = await generateAIEmailContent(campaignFormData, campaignFormData.aiProvider)
+      toast.dismiss()
       
       // Use AI content if no template, or enhance template with AI if available
       let finalEmailContent
@@ -711,87 +714,36 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   // AI-powered email content generation based on campaign settings
-  const generateAIEmailContent = (campaignData) => {
-    const { name, type, targetAudience, subject } = campaignData
-    
-    // AI-style content generation based on campaign parameters
-    let content = `Hi {firstName},\n\n`
-    
-    // Customize opening based on audience
-    if (targetAudience === 'New Leads') {
-      content += `Welcome to MarketGenie! We're excited to have you join our community of successful marketers.\n\n`
-    } else if (targetAudience === 'Warm Prospects') {
-      content += `Thank you for your continued interest in MarketGenie. We have something special for you.\n\n`
-    } else {
-      content += `We hope this message finds you well and that your business is thriving.\n\n`
+  const generateAIEmailContent = async (campaignData, preferredProvider = null) => {
+    try {
+      // Use real AI APIs with user's stored API keys
+      const content = await AIService.generateEmailContent(campaignData, preferredProvider);
+      return content;
+    } catch (error) {
+      console.error('AI Email Generation Error:', error);
+      toast.error(`AI Generation Failed: ${error.message}`);
+      
+      // Fallback to basic template if AI fails
+      const { name, type, targetAudience } = campaignData;
+      return `Hi {firstName},
+
+Thank you for your interest in ${name}! This ${type.toLowerCase()} campaign is designed specifically for ${targetAudience?.toLowerCase() || 'our valued audience'}.
+
+We're excited to share this opportunity with you and believe it will provide significant value.
+
+Key benefits:
+• Personalized content tailored to your needs
+• Proven strategies for success
+• Expert guidance and support
+
+Ready to get started? Click the link below:
+[GET STARTED NOW]
+
+Best regards,
+The MarketGenie Team
+
+P.S. This email was generated for the "${name}" campaign.`;
     }
-    
-    // Customize content based on campaign type
-    if (type === 'Email') {
-      content += `This ${name.toLowerCase()} campaign is designed to help you:\n`
-      content += `• Increase your email engagement rates\n`
-      content += `• Build stronger relationships with your audience\n`
-      content += `• Drive more conversions through targeted messaging\n\n`
-    } else if (type === 'SMS') {
-      content += `Our SMS marketing approach for "${name}" focuses on:\n`
-      content += `• Immediate, direct communication\n`
-      content += `• Higher open rates than traditional email\n`
-      content += `• Time-sensitive offers and updates\n\n`
-    } else if (type === 'LinkedIn') {
-      content += `Through LinkedIn outreach for "${name}", we're connecting with:\n`
-      content += `• Industry professionals in your target market\n`
-      content += `• Decision-makers who can benefit from your solution\n`
-      content += `• Potential partners and collaborators\n\n`
-    } else {
-      content += `Our multi-channel approach for "${name}" includes:\n`
-      content += `• Coordinated messaging across all platforms\n`
-      content += `• Consistent brand experience\n`
-      content += `• Maximum reach and engagement\n\n`
-    }
-    
-    // Add value proposition based on campaign name keywords
-    if (name.toLowerCase().includes('launch')) {
-      content += `🚀 We're thrilled to announce this exciting launch! Here's what you can expect:\n\n`
-      content += `✅ Early access to new features\n`
-      content += `✅ Special launch pricing (limited time)\n`
-      content += `✅ Exclusive bonuses for early adopters\n`
-      content += `✅ Direct access to our product team\n\n`
-    } else if (name.toLowerCase().includes('welcome')) {
-      content += `As a warm welcome, we're providing you with:\n\n`
-      content += `🎁 Complete access to our platform\n`
-      content += `📚 Free training materials and guides\n`
-      content += `🎯 Personalized strategy session\n`
-      content += `💬 24/7 customer support\n\n`
-    } else if (name.toLowerCase().includes('follow')) {
-      content += `Following up on our previous conversation, I wanted to share:\n\n`
-      content += `📈 How other companies like {company} have seen 300% ROI\n`
-      content += `⏰ Limited-time implementation bonus\n`
-      content += `🤝 Personalized demo tailored to your needs\n`
-      content += `📞 Direct line to our success team\n\n`
-    } else {
-      content += `Here's what makes this campaign special for you:\n\n`
-      content += `🎯 Personalized content based on your interests\n`
-      content += `📊 Data-driven insights for better results\n`
-      content += `🔧 Tools and resources to succeed\n`
-      content += `🏆 Proven strategies from top performers\n\n`
-    }
-    
-    // Call to action based on campaign type
-    if (targetAudience === 'New Leads') {
-      content += `Ready to get started? Click below to:\n`
-      content += `[GET STARTED NOW]\n\n`
-      content += `Or reply to this email if you have any questions. We're here to help!\n\n`
-    } else {
-      content += `Want to learn more? Here are your next steps:\n`
-      content += `[SCHEDULE A DEMO] [LEARN MORE] [CONTACT US]\n\n`
-      content += `Or simply reply to this email and let's start a conversation.\n\n`
-    }
-    
-    content += `Best regards,\n`
-    content += `The MarketGenie Team\n\n`
-    content += `P.S. This email was crafted specifically for "${name}" to deliver maximum value to ${targetAudience?.toLowerCase() || 'your audience'}!`
-    
-    return content
   }
 
   const selectEmailTemplate = (template) => {
@@ -1387,6 +1339,20 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
                         <option value="New Leads">New Leads</option>
                         <option value="Warm Prospects">Warm Prospects</option>
                         <option value="Custom Segment">Custom Segment</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>AI Provider</label>
+                      <select 
+                        value={campaignFormData.aiProvider || ''}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, aiProvider: e.target.value }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                      >
+                        <option value="">Auto-Select (Use Best Available)</option>
+                        <option value="openai">OpenAI GPT-4</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="gemini">Google Gemini</option>
                       </select>
                     </div>
                   </div>

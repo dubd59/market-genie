@@ -14,6 +14,7 @@ const CRMPipeline = () => {
   const [showDealModal, setShowDealModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showFunnelModal, setShowFunnelModal] = useState(false)
+  const [editingFunnel, setEditingFunnel] = useState(null)
   const [selectedContact, setSelectedContact] = useState(null)
   const [selectedDeal, setSelectedDeal] = useState(null)
   const [csvFile, setCsvFile] = useState(null)
@@ -479,6 +480,62 @@ const CRMPipeline = () => {
     }
   }
 
+  const editFunnel = (funnel) => {
+    setEditingFunnel(funnel)
+    setNewFunnel({
+      name: funnel.name,
+      description: funnel.description,
+      stages: funnel.stages,
+      landingPageUrl: funnel.landingPageUrl || '',
+      conversionGoal: funnel.conversionGoal || ''
+    })
+    setShowFunnelModal(true)
+  }
+
+  const updateFunnel = async (e) => {
+    e.preventDefault()
+    
+    if (!newFunnel.name) {
+      toast.error('Please provide a funnel name')
+      return
+    }
+
+    const updatedFunnel = {
+      ...editingFunnel,
+      ...newFunnel,
+      updatedAt: new Date().toISOString()
+    }
+
+    const updatedFunnels = funnels.map(funnel => 
+      funnel.id === editingFunnel.id ? updatedFunnel : funnel
+    )
+    
+    await saveFunnels(updatedFunnels)
+    
+    setNewFunnel({
+      name: '',
+      description: '',
+      stages: ['awareness', 'interest', 'consideration', 'purchase'],
+      landingPageUrl: '',
+      conversionGoal: ''
+    })
+    setEditingFunnel(null)
+    setShowFunnelModal(false)
+    toast.success('Funnel updated successfully!')
+  }
+
+  const cancelFunnelEdit = () => {
+    setEditingFunnel(null)
+    setNewFunnel({
+      name: '',
+      description: '',
+      stages: ['awareness', 'interest', 'consideration', 'purchase'],
+      landingPageUrl: '',
+      conversionGoal: ''
+    })
+    setShowFunnelModal(false)
+  }
+
   const getFunnelStats = (funnelId) => {
     const funnelContacts = contacts.filter(c => c.funnelId === funnelId)
     const funnelDeals = deals.filter(d => d.funnelId === funnelId)
@@ -638,12 +695,22 @@ const CRMPipeline = () => {
                 <div key={funnel.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <h4 className="font-semibold text-gray-900">{funnel.name}</h4>
-                    <button
-                      onClick={() => deleteFunnel(funnel.id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      ×
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => editFunnel(funnel)}
+                        className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                        title="Edit Funnel"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => deleteFunnel(funnel.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                        title="Delete Funnel"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                   <p className="text-gray-600 text-sm mb-4">{funnel.description}</p>
                   
@@ -1194,8 +1261,10 @@ const CRMPipeline = () => {
       {showFunnelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold text-genie-teal mb-4">Create New Funnel</h3>
-            <form onSubmit={addFunnel} className="space-y-4">
+            <h3 className="text-xl font-semibold text-genie-teal mb-4">
+              {editingFunnel ? 'Edit Funnel' : 'Create New Funnel'}
+            </h3>
+            <form onSubmit={editingFunnel ? updateFunnel : addFunnel} className="space-y-4">
               <input
                 type="text"
                 placeholder="Funnel Name"
@@ -1230,11 +1299,11 @@ const CRMPipeline = () => {
                   type="submit"
                   className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Create Funnel
+                  {editingFunnel ? 'Update Funnel' : 'Create Funnel'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowFunnelModal(false)}
+                  onClick={editingFunnel ? cancelFunnelEdit : () => setShowFunnelModal(false)}
                   className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel

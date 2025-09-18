@@ -317,7 +317,17 @@ const WorkflowAutomation = () => {
 
   // AI Assistant Functions
   const generateAIWorkflow = async (prompt) => {
+    if (!prompt.trim()) {
+      toast.error('Please enter a workflow description')
+      return
+    }
+
+    // Show loading state
+    toast.loading('🤖 AI is generating your workflow...', { id: 'ai-workflow' })
+
     try {
+      let workflowData = null
+
       if (!genieCreateWorkflow) {
         // Fallback to template matching
         const matchedTemplate = aiWorkflowTemplates.find(template => 
@@ -326,7 +336,7 @@ const WorkflowAutomation = () => {
         )
         
         if (matchedTemplate) {
-          setNewWorkflow({
+          workflowData = {
             name: matchedTemplate.name,
             trigger: matchedTemplate.trigger,
             action: matchedTemplate.action,
@@ -337,32 +347,80 @@ const WorkflowAutomation = () => {
             status: 'active',
             campaignId: '',
             aiOptimized: true
-          })
-          setAiSuggestion(`AI suggested: "${matchedTemplate.name}" - ${matchedTemplate.description}`)
-          return
+          }
+        }
+      } else {
+        // Use Genie AI if available
+        const suggestion = await genieCreateWorkflow({
+          prompt,
+          context: 'workflow-automation',
+          availableTriggers: triggerOptions,
+          availableActions: actionOptions,
+          availableTags: availableTags
+        })
+        
+        if (suggestion) {
+          workflowData = {
+            ...suggestion,
+            aiOptimized: true,
+            conditions: [],
+            status: 'active',
+            campaignId: ''
+          }
         }
       }
 
-      // Use Genie AI if available
-      const suggestion = await genieCreateWorkflow({
-        prompt,
-        context: 'workflow-automation',
-        availableTriggers: triggerOptions,
-        availableActions: actionOptions,
-        availableTags: availableTags
-      })
-      
-      if (suggestion) {
-        setNewWorkflow(prev => ({
-          ...prev,
-          ...suggestion,
+      // If no workflow generated, create a basic one
+      if (!workflowData) {
+        workflowData = {
+          name: `AI Workflow: ${prompt.slice(0, 30)}...`,
+          trigger: 'lead_added',
+          action: 'launch_campaign',
+          description: `AI-generated workflow based on: "${prompt}"`,
+          targetTags: ['all'],
+          delay: 0,
+          conditions: [],
+          status: 'active',
+          campaignId: '',
           aiOptimized: true
-        }))
-        setAiSuggestion(`AI generated workflow based on: "${prompt}"`)
+        }
       }
+
+      // Auto-save the AI-generated workflow
+      const workflow = {
+        id: `workflow_${Date.now()}`,
+        ...workflowData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      const updatedWorkflows = [...workflows, workflow]
+      await saveWorkflows(updatedWorkflows)
+      
+      // Update state to show the new workflow
+      setWorkflows(updatedWorkflows)
+      
+      // Close the AI assistant and reset form
+      setShowAIAssistant(false)
+      setAiSuggestion('')
+      
+      // Success feedback with next steps
+      toast.success(
+        `✨ AI Workflow "${workflow.name}" created and saved! 
+        Check the workflow list below to edit or activate.`, 
+        { 
+          id: 'ai-workflow',
+          duration: 5000 
+        }
+      )
+
+      // Optional: Show builder with the new workflow for immediate editing
+      // setNewWorkflow(workflowData)
+      // setShowBuilder(true)
+
     } catch (error) {
       console.error('Error generating AI workflow:', error)
-      toast.error('AI assistant temporarily unavailable')
+      toast.error('AI assistant temporarily unavailable', { id: 'ai-workflow' })
     }
   }
 
@@ -450,8 +508,11 @@ Examples:
                   onClick={() => generateAIWorkflow(aiSuggestion)}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors w-full"
                 >
-                  ✨ Generate AI Workflow
+                  🚀 Create & Save AI Workflow
                 </button>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  ℹ️ Your new workflow will appear in the "Existing Workflows" list below
+                </p>
               </div>
             </div>
           </div>

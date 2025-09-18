@@ -9,6 +9,7 @@ const CRMPipeline = () => {
   const [deals, setDeals] = useState([])
   const [funnels, setFunnels] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [showDealModal, setShowDealModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
@@ -806,10 +807,12 @@ const CRMPipeline = () => {
 
       {/* Contact Modal */}
       {showContactModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold text-genie-teal mb-4">Add New Contact</h3>
-            <form onSubmit={addContact} className="space-y-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 rounded-t-xl">
+              <h3 className="text-xl font-semibold text-genie-teal">Add New Contact</h3>
+            </div>
+            <form id="contact-form" onSubmit={addContact} className="p-6 space-y-4">
               <input
                 type="text"
                 placeholder="Full Name"
@@ -959,22 +962,25 @@ const CRMPipeline = () => {
                 rows="3"
                 className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-genie-teal focus:border-transparent"
               />
+            </form>
+            <div className="sticky bottom-0 bg-white p-6 border-t border-gray-200 rounded-b-xl">
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/80 transition-colors"
+                  form="contact-form"
+                  className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/80 transition-colors flex-1"
                 >
                   Add Contact
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowContactModal(false)}
-                  className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors flex-1"
                 >
                   Cancel
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -1066,10 +1072,13 @@ const CRMPipeline = () => {
 
       {/* CSV Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-90vh overflow-y-auto">
-            <h3 className="text-xl font-semibold text-genie-teal mb-4">Import Contacts from CSV</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 rounded-t-xl">
+              <h3 className="text-xl font-semibold text-genie-teal">Import Contacts from CSV</h3>
+            </div>
             
+            <div className="p-6">
             {!csvFile ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <div className="text-4xl mb-4">📁</div>
@@ -1144,35 +1153,38 @@ const CRMPipeline = () => {
               </div>
             )}
 
-            <div className="flex gap-3">
-              {csvFile && (
+            </div>
+            <div className="sticky bottom-0 bg-white p-6 border-t border-gray-200 rounded-b-xl">
+              <div className="flex gap-3">
+                {csvFile && (
+                  <button
+                    onClick={importContacts}
+                    disabled={isLoading}
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 flex-1"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Importing...
+                      </>
+                    ) : (
+                      'Import Contacts'
+                    )}
+                  </button>
+                )}
                 <button
-                  onClick={importContacts}
+                  onClick={() => {
+                    setShowImportModal(false)
+                    setCsvFile(null)
+                    setCsvPreview([])
+                    setFieldMapping({})
+                  }}
                   disabled={isLoading}
-                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 flex-1"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Importing...
-                    </>
-                  ) : (
-                    'Import Contacts'
-                  )}
+                  Cancel
                 </button>
-              )}
-              <button
-                onClick={() => {
-                  setShowImportModal(false)
-                  setCsvFile(null)
-                  setCsvPreview([])
-                  setFieldMapping({})
-                }}
-                disabled={isLoading}
-                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
+              </div>
             </div>
           </div>
         </div>

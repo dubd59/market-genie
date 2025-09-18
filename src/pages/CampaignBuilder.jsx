@@ -26,6 +26,9 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { useGenie } from '../contexts/GenieContext'
 import { useCampaignHealth } from '../features/self-healing/useCampaignHealth'
 import GenieConsole from '../components/ai/GenieConsole'
+import IntegratedMarketingService from '../services/integratedMarketing'
+import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 const CAMPAIGN_BLOCKS = {
   TRIGGER: {
@@ -81,6 +84,7 @@ const CAMPAIGN_BLOCKS = {
 
 export default function CampaignBuilder() {
   const { createCampaign, analyzeCampaign } = useGenie()
+  const { user } = useAuth()
   const [campaignBlocks, setCampaignBlocks] = useState([
     {
       id: 'trigger-1',
@@ -96,6 +100,19 @@ export default function CampaignBuilder() {
   const [showGenieConsole, setShowGenieConsole] = useState(false)
   const [healthScore, setHealthScore] = useState(null)
   const [suggestions, setSuggestions] = useState([])
+  
+  // CRM Integration States
+  const [crmContacts, setCrmContacts] = useState([])
+  const [selectedContacts, setSelectedContacts] = useState([])
+  const [showContactSelector, setShowContactSelector] = useState(false)
+  const [contactFilters, setContactFilters] = useState({
+    tags: [],
+    status: '',
+    company: '',
+    source: ''
+  })
+  const [availableTags, setAvailableTags] = useState([])
+  const [showCampaignExecutor, setShowCampaignExecutor] = useState(false)
 
   // Campaign health monitoring
   const { healthData, isMonitoring, startMonitoring, stopMonitoring } = useCampaignHealth(
@@ -108,6 +125,106 @@ export default function CampaignBuilder() {
       setSuggestions(healthData.suggestions || [])
     }
   }, [healthData])
+
+  // Load CRM contacts for campaign targeting
+  useEffect(() => {
+    const loadCRMContacts = async () => {
+      if (!user) return
+      
+      try {
+        const contacts = await IntegratedMarketingService.getContactsForCampaign(user.uid, contactFilters)
+        setCrmContacts(contacts)
+        
+        // Extract unique tags for filtering
+        const tags = [...new Set(contacts.flatMap(contact => contact.tags || []))]
+        setAvailableTags(tags)
+      } catch (error) {
+        console.error('Error loading CRM contacts:', error)
+        toast.error('Failed to load contacts')
+      }
+    }
+
+    loadCRMContacts()
+  }, [user, contactFilters])
+
+  // Filter contacts based on current filters
+  const filteredContacts = crmContacts.filter(contact => {
+    if (contactFilters.tags.length > 0 && !contactFilters.tags.some(tag => contact.tags?.includes(tag))) {
+      return false
+    }
+    if (contactFilters.status && contact.status !== contactFilters.status) {
+      return false
+    }
+    if (contactFilters.company && !contact.company?.toLowerCase().includes(contactFilters.company.toLowerCase())) {
+      return false
+    }
+    if (contactFilters.source && contact.source !== contactFilters.source) {
+      return false
+    }
+    return true
+  })
+
+  // Campaign execution functions
+  const executeCampaignWithContacts = async () => {
+    if (selectedContacts.length === 0) {
+      toast.error('Please select contacts for the campaign')
+      return
+    }
+
+    if (campaignBlocks.length < 2) {
+      toast.error('Please add email blocks to your campaign')
+      return
+    }
+
+    try {
+      // Create automation campaign
+      const campaignData = {
+        name: campaignName,
+        blocks: campaignBlocks,
+        targetContacts: selectedContacts.length,
+        filters: contactFilters
+      }
+
+      const campaign = await IntegratedMarketingService.createAutomationCampaign(user.uid, campaignData)
+      
+      // Execute campaign with selected contacts
+      const execution = await IntegratedMarketingService.executeCampaign(
+        user.uid, 
+        campaign.id, 
+        selectedContacts.map(c => c.id)
+      )
+
+      toast.success(`Campaign launched! Targeting ${selectedContacts.length} contacts`)
+      setShowCampaignExecutor(false)
+      setSelectedContacts([])
+      
+      // Update campaign status
+      setCampaignStatus('running')
+      
+    } catch (error) {
+      console.error('Error executing campaign:', error)
+      toast.error('Failed to launch campaign')
+    }
+  }
+
+  const toggleContactSelection = (contact) => {
+    setSelectedContacts(prev => {
+      const isSelected = prev.find(c => c.id === contact.id)
+      if (isSelected) {
+        return prev.filter(c => c.id !== contact.id)
+      } else {
+        return [...prev, contact]
+      }
+    })
+  }
+
+  const selectAllContacts = () => {
+    if (selectedContacts.length === filteredContacts.length) {
+      setSelectedContacts([])
+    } else {
+      setSelectedContacts([...filteredContacts])
+    }
+  }
 
   const handleDragEnd = (result) => {
     if (!result.destination) return
@@ -255,13 +372,22 @@ export default function CampaignBuilder() {
                   Pause
                 </button>
               ) : (
-                <button
-                  onClick={launchCampaign}
-                  className="btn-teal flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Launch
-                </button>
+                <>
+                  <button
+                    onClick={launchCampaign}
+                    className="btn-teal flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4" />
+                    Launch
+                  </button>
+                  <button
+                    onClick={() => setShowCampaignExecutor(true)}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    Launch with CRM Contacts
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -600,4 +726,77 @@ function BlockPropertiesPanel({ block, onUpdate, onClose }) {
       </div>
     </div>
   )
+
+  // Add the CRM Contact Selection Modal here
+  return (
+    <>
+      {/* All the existing JSX content above this point */}
+      
+      {/* CRM Contact Selection Modal */}
+      <AnimatePresence>
+        {showCampaignExecutor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Launch Campaign: {campaignName}</h2>
+                    <p className="text-blue-100 mt-1">Select contacts from your CRM to target</p>
+                  </div>
+                  <button
+                    onClick={() => setShowCampaignExecutor(false)}
+                    className="text-white hover:text-gray-200 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Contact Selection and Execution Logic */}
+              <div className="p-6 max-h-96 overflow-y-auto">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Ready to Launch with CRM Contacts
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    This will connect your campaign to contacts from the CRM Pipeline section.
+                    Currently showing {crmContacts.length} available contacts.
+                  </p>
+                  
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowCampaignExecutor(false)}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:text-gray-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={executeCampaignWithContacts}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Play className="w-4 h-4" />
+                      Launch with All CRM Contacts ({crmContacts.length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
 }
+
+export default CampaignBuilder

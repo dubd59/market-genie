@@ -505,8 +505,11 @@ const APIKeysIntegrations = () => {
           break;
           
         case 'Zoho Mail':
-          if (settingsForm.clientId && settingsForm.clientSecret) {
-            result = await IntegrationService.connectZohoMail(tenant.id, settingsForm.clientId, settingsForm.clientSecret);
+          if (settingsForm.clientId && settingsForm.clientSecret && settingsForm.authCode) {
+            result = await IntegrationService.exchangeZohoAuthCode(tenant.id, settingsForm.authCode, settingsForm.clientId, settingsForm.clientSecret);
+          } else {
+            toast.error('Please provide Client ID, Client Secret, and Authorization Code');
+            return;
           }
           break;
           
@@ -1206,11 +1209,12 @@ const APIKeysIntegrations = () => {
                         Configure your Zoho Mail self-client application for email sending capabilities.
                       </p>
                       <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
-                        <p className="text-orange-800 text-sm font-medium mb-2">OAuth Setup Steps:</p>
+                        <p className="text-orange-800 text-sm font-medium mb-2">Setup Steps:</p>
                         <ol className="text-orange-700 text-sm space-y-1 ml-4">
                           <li>1. Enter your Client ID and Secret below</li>
-                          <li>2. Click "Start OAuth Flow" to get authorization</li>
-                          <li>3. Complete authentication on Zoho's website</li>
+                          <li>2. Generate authorization code in Zoho API Console</li>
+                          <li>3. Paste the generated code in the Authorization Code field</li>
+                          <li>4. Click "Connect" to complete setup</li>
                         </ol>
                       </div>
                     </div>
@@ -1239,22 +1243,21 @@ const APIKeysIntegrations = () => {
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      {settingsForm.clientId && settingsForm.clientSecret && (
-                        <div className="mt-4">
-                          <button
-                            onClick={() => {
-                              const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZohoMail.messages.CREATE&client_id=${settingsForm.clientId}&response_type=code&access_type=offline&redirect_uri=${window.location.origin}/integrations/zoho-callback`;
-                              window.open(authUrl, 'zoho-oauth', 'width=600,height=700');
-                            }}
-                            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors w-full"
-                          >
-                            🔗 Start OAuth Flow
-                          </button>
-                          <p className="text-xs text-gray-500 mt-2">
-                            This will open Zoho's authorization page in a new window
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Authorization Code
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.authCode}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, authCode: e.target.value }))}
+                          placeholder="Paste the generated authorization code from Zoho API Console"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Generate this code in Zoho API Console → Self Client → Generate Code
+                        </p>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       Get your credentials from Zoho API Console → Self Client application
@@ -1363,7 +1366,11 @@ const APIKeysIntegrations = () => {
                 </button>
                 <button
                   onClick={saveIntegrationSettings}
-                  disabled={isConnecting || (!settingsForm.apiKey && !settingsForm.accessToken)}
+                  disabled={isConnecting || (
+                    !settingsForm.apiKey && 
+                    !settingsForm.accessToken && 
+                    !(settingsForm.clientId && settingsForm.clientSecret && settingsForm.authCode)
+                  )}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   {isConnecting ? 'Connecting...' : 'Save & Connect'}

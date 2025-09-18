@@ -62,13 +62,58 @@ export class IntegratedMarketingService {
   // Get campaigns with contact data
   static async getAutomationCampaigns(userId) {
     try {
-      const campaignsRef = this.getUserDataRef(userId, 'automation_campaigns')
-      const doc = await getDoc(campaignsRef)
+      // First try to get campaigns from OutreachAutomation
+      const outreachCampaignsRef = this.getUserDataRef(userId, 'outreach_campaigns')
+      const outreachDoc = await getDoc(outreachCampaignsRef)
       
-      if (doc.exists()) {
-        return doc.data().campaigns || []
+      let campaigns = []
+      
+      if (outreachDoc.exists()) {
+        campaigns = outreachDoc.data().campaigns || []
       }
-      return []
+      
+      // If no OutreachAutomation campaigns, provide some default campaign options
+      if (campaigns.length === 0) {
+        campaigns = [
+          {
+            id: 'welcome_sequence',
+            name: 'Welcome Email Sequence',
+            type: 'email_sequence',
+            status: 'ready',
+            description: 'AI-powered welcome emails for new leads'
+          },
+          {
+            id: 'product_launch',
+            name: 'Product Launch Campaign',
+            type: 'marketing',
+            status: 'ready', 
+            description: 'Announce new products to your audience'
+          },
+          {
+            id: 'reengagement',
+            name: 'Re-engagement Campaign',
+            type: 'retention',
+            status: 'ready',
+            description: 'Win back inactive customers'
+          },
+          {
+            id: 'vip_outreach',
+            name: 'VIP Customer Outreach',
+            type: 'targeted',
+            status: 'ready',
+            description: 'Exclusive offers for VIP customers'
+          }
+        ]
+        
+        // Save default campaigns for future use
+        await setDoc(outreachCampaignsRef, { 
+          campaigns, 
+          updatedAt: new Date(),
+          source: 'workflow_integration'
+        })
+      }
+      
+      return campaigns
     } catch (error) {
       console.error('Error loading automation campaigns:', error)
       return []

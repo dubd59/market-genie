@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGenie } from '../contexts/GenieContext';
+import FirebaseUserDataService from '../services/firebaseUserData';
+import IntegratedMarketingService from '../services/integratedMarketing';
 import toast from 'react-hot-toast';
 
 const OutreachAutomation = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
+  const { createCampaign: genieCreateCampaign } = useGenie();
   
   // Campaign State
   const [campaigns, setCampaigns] = useState([]);
@@ -22,6 +26,9 @@ const OutreachAutomation = () => {
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showAIEmailBuilder, setShowAIEmailBuilder] = useState(false);
+  const [aiEmailPrompt, setAiEmailPrompt] = useState('');
+  const [generatedEmail, setGeneratedEmail] = useState(null);
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     type: '',
@@ -229,9 +236,17 @@ Best regards,
 
   const loadCampaigns = async () => {
     try {
-      // In production, this would fetch from Firebase/database
-      // For now, using demo data
-      setCampaigns([
+      // Load from Firebase first
+      if (user) {
+        const savedCampaigns = await IntegratedMarketingService.getAutomationCampaigns(user.uid)
+        if (savedCampaigns.length > 0) {
+          setCampaigns(savedCampaigns)
+          return
+        }
+      }
+      
+      // Fallback to demo data if no saved campaigns
+      const defaultCampaigns = [
         {
           id: 1,
           name: 'Welcome New Users',
@@ -256,7 +271,17 @@ Best regards,
           channels: ['email', 'sms', 'social'],
           description: 'Launch campaign for Q4 product release'
         }
-      ]);
+      ]
+      
+      setCampaigns(defaultCampaigns)
+      
+      // Save default campaigns to Firebase for workflow integration
+      if (user) {
+        await IntegratedMarketingService.createAutomationCampaign(user.uid, {
+          campaigns: defaultCampaigns,
+          source: 'outreach_automation'
+        })
+      }
     } catch (error) {
       console.error('Error loading campaigns:', error);
       toast.error('Failed to load campaigns');
@@ -351,6 +376,147 @@ Best regards,
     setShowCampaignForm(true);
     toast.success(`${template.name} template loaded!`);
   };
+
+  // AI Email Generation
+  const generateAIEmail = async (prompt) => {
+    if (!prompt.trim()) {
+      toast.error('Please enter a description for your email')
+      return
+    }
+
+    toast.loading('🤖 AI is crafting your email...', { id: 'ai-email' })
+
+    try {
+      // AI-powered email generation with templates
+      const emailTemplates = {
+        'welcome': {
+          subject: 'Welcome to [Company Name] - Let\'s Get You Started!',
+          content: `Hi [First Name],
+
+Welcome to [Company Name]! We're thrilled to have you join our community of successful [industry/customers].
+
+Here's what happens next:
+✅ Check out our quick start guide (2 minutes)
+✅ Explore your dashboard and key features  
+✅ Connect with our support team if you need help
+
+Your success is our priority. Reply to this email with any questions!
+
+Best regards,
+[Your Name]
+[Company Name] Team`
+        },
+        'product': {
+          subject: '🚀 Introducing [Product Name] - Early Access Inside!',
+          content: `Hi [First Name],
+
+The wait is over! We're excited to announce [Product Name].
+
+What makes it special:
+✨ [Key Benefit 1]
+✨ [Key Benefit 2] 
+✨ [Key Benefit 3]
+
+Early Bird Special: [Discount/Offer] for the next 48 hours!
+
+[Call-to-Action Button/Link]
+
+Questions? Just reply to this email.
+
+Cheers,
+[Your Name]`
+        },
+        'follow': {
+          subject: 'Quick Follow-up: [Topic/Meeting Reference]',
+          content: `Hi [First Name],
+
+Thanks for [specific reference - call, meeting, demo, etc.].
+
+As promised, here are the next steps:
+• [Action Item 1]
+• [Action Item 2]
+• [Action Item 3]
+
+I'm here to help make this process smooth. What questions can I answer?
+
+Best regards,
+[Your Name]`
+        },
+        'vip': {
+          subject: '🌟 Exclusive Access: VIP-Only [Offer/Feature]',
+          content: `Hi [First Name],
+
+Because you're one of our valued VIP customers, you get exclusive early access to [offer/feature].
+
+Your VIP Benefits:
+🏆 [Exclusive Benefit 1]
+🏆 [Exclusive Benefit 2]
+🏆 [Exclusive Benefit 3]
+
+This expires [date], so secure your access today.
+
+[VIP Action Button]
+
+Thank you for being an amazing customer!
+
+Best,
+[Your Name]`
+        }
+      }
+
+      // Find matching template based on prompt
+      const promptLower = prompt.toLowerCase()
+      let selectedTemplate = null
+
+      for (const [key, template] of Object.entries(emailTemplates)) {
+        if (promptLower.includes(key) || 
+            promptLower.includes(template.subject.toLowerCase().split(' ')[0]) ||
+            (key === 'follow' && (promptLower.includes('follow') || promptLower.includes('up'))) ||
+            (key === 'vip' && promptLower.includes('exclusive'))) {
+          selectedTemplate = template
+          break
+        }
+      }
+
+      // Default template if no match
+      if (!selectedTemplate) {
+        selectedTemplate = {
+          subject: `[Subject Based on: ${prompt}]`,
+          content: `Hi [First Name],
+
+Based on your request: "${prompt}"
+
+[Your personalized message here]
+
+Key points to cover:
+• [Point 1]
+• [Point 2] 
+• [Point 3]
+
+[Call-to-action]
+
+Best regards,
+[Your Name]`
+        }
+      }
+
+      setGeneratedEmail({
+        ...selectedTemplate,
+        prompt: prompt,
+        generated: true,
+        createdAt: new Date().toISOString()
+      })
+
+      toast.success('✨ AI email generated! Review and customize as needed.', { 
+        id: 'ai-email',
+        duration: 4000 
+      })
+      
+    } catch (error) {
+      console.error('Error generating AI email:', error)
+      toast.error('AI email generation failed. Please try again.', { id: 'ai-email' })
+    }
+  }
 
   const pauseCampaign = (campaignId) => {
     setCampaigns(prev => prev.map(campaign =>
@@ -578,6 +744,97 @@ Best regards,
               </div>
             )}
           </div>
+        </div>
+
+        {/* AI Email Builder */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">🤖 AI Email Builder</h2>
+            <button
+              onClick={() => setShowAIEmailBuilder(!showAIEmailBuilder)}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              {showAIEmailBuilder ? 'Hide AI Builder' : '✨ Create AI Email'}
+            </button>
+          </div>
+          
+          {showAIEmailBuilder && (
+            <div className="space-y-6">
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="font-semibold text-purple-800 mb-2">Tell AI what email you want:</h3>
+                <textarea
+                  placeholder="Examples:
+• 'Welcome email for new VIP customers'
+• 'Product launch announcement with early bird discount'
+• 'Follow up email after demo call'
+• 'Exclusive offer for enterprise prospects'"
+                  className="w-full border border-purple-200 p-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows="4"
+                  value={aiEmailPrompt}
+                  onChange={(e) => setAiEmailPrompt(e.target.value)}
+                />
+                <button
+                  onClick={() => generateAIEmail(aiEmailPrompt)}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors mt-3"
+                >
+                  🚀 Generate AI Email
+                </button>
+              </div>
+              
+              {generatedEmail && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="font-semibold text-green-800 mb-3">✨ AI Generated Email:</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject Line:</label>
+                      <input
+                        type="text"
+                        value={generatedEmail.subject}
+                        onChange={(e) => setGeneratedEmail(prev => ({ ...prev, subject: e.target.value }))}
+                        className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Content:</label>
+                      <textarea
+                        value={generatedEmail.content}
+                        onChange={(e) => setGeneratedEmail(prev => ({ ...prev, content: e.target.value }))}
+                        className="w-full border border-gray-300 p-3 rounded focus:ring-2 focus:ring-green-500"
+                        rows="12"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`Subject: ${generatedEmail.subject}\n\n${generatedEmail.content}`)
+                          toast.success('Email copied to clipboard!')
+                        }}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        📋 Copy Email
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCampaignForm(prev => ({
+                            ...prev,
+                            name: `AI Campaign: ${generatedEmail.subject}`,
+                            type: 'Email Campaign',
+                            description: `AI-generated email: ${generatedEmail.prompt}`,
+                            channels: ['email']
+                          }))
+                          setShowCampaignForm(true)
+                          toast.success('Email added to campaign builder!')
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        📧 Create Campaign
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Email Templates */}

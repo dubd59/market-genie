@@ -152,7 +152,9 @@ P.S. This offer is exclusive to our valued customers like you!`,
     subject: '',
     template: '',
     targetAudience: '',
-    sendDate: ''
+    sendDate: '',
+    aiSmartPrompt: '',
+    additionalPrompt: ''
   })
   const [emailTemplates] = useState([
     { 
@@ -283,6 +285,38 @@ The MarketGenie Team
 P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [unsubscribe link]`
     }
   ])
+
+  // AI Smart Prompt Options
+  const aiSmartPrompts = [
+    { value: '', label: 'Select AI Smart Prompt...' },
+    { value: 'welcome_new_customer', label: '👋 Welcome email for new customers' },
+    { value: 'welcome_vip', label: '🌟 Welcome email for VIP customers with exclusive offers' },
+    { value: 'product_launch', label: '🚀 Product launch announcement with early bird pricing' },
+    { value: 'product_launch_vip', label: '⭐ Product launch exclusive access for VIP customers' },
+    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
+    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
+    { value: 'reengagement_inactive', label: '💤 Re-engagement email for inactive users with special offer' },
+    { value: 'reengagement_win_back', label: '❤️ Win-back email for churned customers' },
+    { value: 'educational_tips', label: '💡 Educational email with industry tips and insights' },
+    { value: 'case_study', label: '📊 Case study email showing customer success story' },
+    { value: 'event_invitation', label: '🎯 Event invitation with compelling benefits' },
+    { value: 'webinar_invitation', label: '📺 Webinar invitation with exclusive content preview' },
+    { value: 'survey_feedback', label: '📝 Survey request with incentive for completion' },
+    { value: 'testimonial_request', label: '⭐ Testimonial request from satisfied customers' },
+    { value: 'referral_program', label: '🤝 Referral program invitation with rewards' },
+    { value: 'cart_abandonment', label: '🛒 Cart abandonment recovery with urgency' },
+    { value: 'subscription_renewal', label: '🔄 Subscription renewal with special pricing' },
+    { value: 'upsell_cross_sell', label: '📈 Upsell/cross-sell to existing customers' },
+    { value: 'thank_you_purchase', label: '🙏 Thank you email after purchase with next steps' },
+    { value: 'birthday_anniversary', label: '🎂 Birthday/anniversary email with special offer' },
+    { value: 'industry_insights', label: '📰 Industry insights and trend analysis' },
+    { value: 'company_update', label: '📢 Company update and milestone announcement' },
+    { value: 'seasonal_promotion', label: '🎄 Seasonal promotion with limited-time offer' },
+    { value: 'competitor_comparison', label: '⚖️ Competitive advantage and feature comparison' },
+    { value: 'urgency_scarcity', label: '⏰ Urgency and scarcity-driven promotional email' },
+    { value: 'social_proof', label: '👥 Social proof with customer success stories' }
+  ];
+
   const [editingCampaign, setEditingCampaign] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -1384,18 +1418,36 @@ P.S. This email was generated for the "${name}" campaign.`;
                       </select>
                     </div>
                   </div>
+                  
+                  {/* AI Smart Prompt */}
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>🤖 AI Smart Prompt</label>
+                    <select
+                      value={campaignFormData.aiSmartPrompt}
+                      onChange={(e) => setCampaignFormData(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}
+                      className={`w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-purple-50' : 'bg-purple-50'}`}
+                    >
+                      {aiSmartPrompts.map(prompt => (
+                        <option key={prompt.value} value={prompt.value}>
+                          {prompt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Additional Prompting/Customized */}
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>✨ Additional Prompting/Customized</label>
+                    <textarea
+                      value={campaignFormData.additionalPrompt}
+                      onChange={(e) => setCampaignFormData(prev => ({ ...prev, additionalPrompt: e.target.value }))}
+                      placeholder="Add any additional instructions or customizations for your AI-generated email content..."
+                      rows={3}
+                      className={`w-full border border-indigo-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-indigo-50' : 'bg-indigo-50'}`}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Template</label>
-                      <input 
-                        type="text" 
-                        value={campaignFormData.template}
-                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, template: e.target.value }))}
-                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                        placeholder="Select template below or type custom"
-                        readOnly
-                      />
-                    </div>
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Send Date</label>
                       <input 
@@ -1495,25 +1547,6 @@ P.S. This email was generated for the "${name}" campaign.`;
                       </div>
                     ))
                   )}
-                </div>
-              </div>
-
-              {/* Email Templates */}
-              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Email Templates</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {emailTemplates.map(template => (
-                    <div key={template.id} className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${isDarkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>{template.name}</h4>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-3`}>{template.category}</p>
-                      <button 
-                        onClick={() => selectEmailTemplate(template)}
-                        className="w-full bg-genie-teal text-white px-3 py-2 rounded text-sm hover:bg-genie-teal/80 transition-colors"
-                      >
-                        Use Template
-                      </button>
-                    </div>
-                  ))}
                 </div>
               </div>
 

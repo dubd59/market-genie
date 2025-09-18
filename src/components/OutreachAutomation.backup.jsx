@@ -67,13 +67,13 @@ const OutreachAutomation = () => {
   ];
 
 
-  useEffect(() => {
-    if (tenant?.id) {
-      loadCampaigns();
-      loadStats();
-    }
-  }, [tenant?.id]);
-  const loadCampaigns = async () => {
+  // Load campaigns and stats
+      type: 'sequence',
+      emails: 5,
+      category: 'onboarding',
+      preview: 'Welcome to [Company]! We\'re excited to have you...',
+      template: {
+        subject: 'Welcome to [Company Name]!',
         content: `Hi [First Name],
 
 Welcome to [Company Name]! We're thrilled to have you join our community.

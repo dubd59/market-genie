@@ -24,19 +24,47 @@ const OutreachAutomation = () => {
   
   // Form States
   const [showCampaignForm, setShowCampaignForm] = useState(false);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [showAIEmailBuilder, setShowAIEmailBuilder] = useState(false);
-  const [aiEmailPrompt, setAiEmailPrompt] = useState('');
-  const [generatedEmail, setGeneratedEmail] = useState(null);
   const [campaignForm, setCampaignForm] = useState({
     name: '',
     type: '',
     audience: '',
     scheduleDate: '',
     description: '',
-    channels: []
+    channels: [],
+    aiSmartPrompt: '',
+    additionalPrompt: ''
   });
+
+  // AI Smart Prompt Options
+  const aiSmartPrompts = [
+    { value: '', label: 'Select AI Smart Prompt...' },
+    { value: 'welcome_new_customer', label: '👋 Welcome email for new customers' },
+    { value: 'welcome_vip', label: '🌟 Welcome email for VIP customers with exclusive offers' },
+    { value: 'product_launch', label: '🚀 Product launch announcement with early bird pricing' },
+    { value: 'product_launch_vip', label: '⭐ Product launch exclusive access for VIP customers' },
+    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
+    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
+    { value: 'reengagement_inactive', label: '💤 Re-engagement email for inactive users with special offer' },
+    { value: 'reengagement_win_back', label: '❤️ Win-back email for churned customers' },
+    { value: 'educational_tips', label: '💡 Educational email with industry tips and insights' },
+    { value: 'case_study', label: '📊 Case study email showing customer success story' },
+    { value: 'webinar_invite', label: '🎥 Webinar invitation with registration link' },
+    { value: 'event_invitation', label: '🎪 Event invitation with exclusive attendee benefits' },
+    { value: 'survey_feedback', label: '📝 Customer feedback survey with incentive' },
+    { value: 'birthday_special', label: '🎂 Birthday special offer for customers' },
+    { value: 'anniversary_celebration', label: '🎉 Company anniversary celebration with customer appreciation' },
+    { value: 'seasonal_promotion', label: '🌟 Seasonal promotion with limited-time offers' },
+    { value: 'cart_abandonment', label: '🛒 Cart abandonment reminder with discount incentive' },
+    { value: 'renewal_reminder', label: '🔄 Subscription renewal reminder with upgrade options' },
+    { value: 'referral_program', label: '👥 Referral program invitation with rewards' },
+    { value: 'testimonial_request', label: '⭐ Testimonial request with easy submission process' },
+    { value: 'feature_announcement', label: '✨ New feature announcement with tutorial links' },
+    { value: 'maintenance_notice', label: '🔧 Maintenance notice with minimal disruption messaging' },
+    { value: 'thank_you_purchase', label: '🙏 Thank you email after purchase with what\'s next' },
+    { value: 'onboarding_step1', label: '📚 Onboarding email step 1: Getting started guide' },
+    { value: 'onboarding_step2', label: '🎯 Onboarding email step 2: Key features walkthrough' },
+    { value: 'onboarding_step3', label: '🚀 Onboarding email step 3: Advanced tips and tricks' }
+  ];
 
   // Email Templates
   const emailTemplates = [
@@ -349,10 +377,12 @@ Best regards,
         audience: '',
         scheduleDate: '',
         description: '',
-        channels: []
+        channels: [],
+        aiSmartPrompt: '',
+        additionalPrompt: ''
       });
       setShowCampaignForm(false);
-      toast.success('Campaign created successfully!');
+      toast.success('🚀 AI Campaign created successfully!');
       
       // Reload stats
       loadStats();
@@ -361,162 +391,6 @@ Best regards,
       toast.error('Failed to create campaign');
     }
   };
-
-  const useTemplate = (template) => {
-    setCampaignForm({
-      name: `${template.name} Campaign`,
-      type: 'Email Sequence',
-      audience: '',
-      scheduleDate: '',
-      description: template.description,
-      channels: ['email']
-    });
-    setSelectedTemplate(template);
-    setShowTemplateModal(false);
-    setShowCampaignForm(true);
-    toast.success(`${template.name} template loaded!`);
-  };
-
-  // AI Email Generation
-  const generateAIEmail = async (prompt) => {
-    if (!prompt.trim()) {
-      toast.error('Please enter a description for your email')
-      return
-    }
-
-    toast.loading('🤖 AI is crafting your email...', { id: 'ai-email' })
-
-    try {
-      // AI-powered email generation with templates
-      const emailTemplates = {
-        'welcome': {
-          subject: 'Welcome to [Company Name] - Let\'s Get You Started!',
-          content: `Hi [First Name],
-
-Welcome to [Company Name]! We're thrilled to have you join our community of successful [industry/customers].
-
-Here's what happens next:
-✅ Check out our quick start guide (2 minutes)
-✅ Explore your dashboard and key features  
-✅ Connect with our support team if you need help
-
-Your success is our priority. Reply to this email with any questions!
-
-Best regards,
-[Your Name]
-[Company Name] Team`
-        },
-        'product': {
-          subject: '🚀 Introducing [Product Name] - Early Access Inside!',
-          content: `Hi [First Name],
-
-The wait is over! We're excited to announce [Product Name].
-
-What makes it special:
-✨ [Key Benefit 1]
-✨ [Key Benefit 2] 
-✨ [Key Benefit 3]
-
-Early Bird Special: [Discount/Offer] for the next 48 hours!
-
-[Call-to-Action Button/Link]
-
-Questions? Just reply to this email.
-
-Cheers,
-[Your Name]`
-        },
-        'follow': {
-          subject: 'Quick Follow-up: [Topic/Meeting Reference]',
-          content: `Hi [First Name],
-
-Thanks for [specific reference - call, meeting, demo, etc.].
-
-As promised, here are the next steps:
-• [Action Item 1]
-• [Action Item 2]
-• [Action Item 3]
-
-I'm here to help make this process smooth. What questions can I answer?
-
-Best regards,
-[Your Name]`
-        },
-        'vip': {
-          subject: '🌟 Exclusive Access: VIP-Only [Offer/Feature]',
-          content: `Hi [First Name],
-
-Because you're one of our valued VIP customers, you get exclusive early access to [offer/feature].
-
-Your VIP Benefits:
-🏆 [Exclusive Benefit 1]
-🏆 [Exclusive Benefit 2]
-🏆 [Exclusive Benefit 3]
-
-This expires [date], so secure your access today.
-
-[VIP Action Button]
-
-Thank you for being an amazing customer!
-
-Best,
-[Your Name]`
-        }
-      }
-
-      // Find matching template based on prompt
-      const promptLower = prompt.toLowerCase()
-      let selectedTemplate = null
-
-      for (const [key, template] of Object.entries(emailTemplates)) {
-        if (promptLower.includes(key) || 
-            promptLower.includes(template.subject.toLowerCase().split(' ')[0]) ||
-            (key === 'follow' && (promptLower.includes('follow') || promptLower.includes('up'))) ||
-            (key === 'vip' && promptLower.includes('exclusive'))) {
-          selectedTemplate = template
-          break
-        }
-      }
-
-      // Default template if no match
-      if (!selectedTemplate) {
-        selectedTemplate = {
-          subject: `[Subject Based on: ${prompt}]`,
-          content: `Hi [First Name],
-
-Based on your request: "${prompt}"
-
-[Your personalized message here]
-
-Key points to cover:
-• [Point 1]
-• [Point 2] 
-• [Point 3]
-
-[Call-to-action]
-
-Best regards,
-[Your Name]`
-        }
-      }
-
-      setGeneratedEmail({
-        ...selectedTemplate,
-        prompt: prompt,
-        generated: true,
-        createdAt: new Date().toISOString()
-      })
-
-      toast.success('✨ AI email generated! Review and customize as needed.', { 
-        id: 'ai-email',
-        duration: 4000 
-      })
-      
-    } catch (error) {
-      console.error('Error generating AI email:', error)
-      toast.error('AI email generation failed. Please try again.', { id: 'ai-email' })
-    }
-  }
 
   const pauseCampaign = (campaignId) => {
     setCampaigns(prev => prev.map(campaign =>
@@ -646,6 +520,22 @@ Best regards,
                     className="border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                {/* AI Smart Prompt */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🤖 AI Smart Prompt</label>
+                  <select
+                    value={campaignForm.aiSmartPrompt}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}
+                    className="w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                  >
+                    {aiSmartPrompts.map(prompt => (
+                      <option key={prompt.value} value={prompt.value}>
+                        {prompt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 
                 <textarea
                   placeholder="Campaign Description"
@@ -654,20 +544,32 @@ Best regards,
                   className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows="3"
                 />
+
+                {/* Additional Prompting/Customized */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">✨ Additional Prompting/Customized</label>
+                  <textarea
+                    placeholder="Add specific details to customize your AI-generated email...
+
+Examples:
+• 'Include a 20% discount code for first-time buyers'
+• 'Mention our new mobile app launch'
+• 'Use a friendly, conversational tone'
+• 'Add a customer success story from tech industry'
+• 'Include social proof and testimonials'"
+                    value={campaignForm.additionalPrompt}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, additionalPrompt: e.target.value }))}
+                    className="w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                    rows="4"
+                  />
+                </div>
                 
                 <div className="flex gap-3">
                   <button
                     type="submit"
                     className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Create Campaign
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTemplateModal(true)}
-                    className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Use Template
+                    🚀 Create AI Campaign
                   </button>
                 </div>
               </form>
@@ -836,108 +738,7 @@ Best regards,
             </div>
           )}
         </div>
-
-        {/* Email Templates */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Email Templates</h2>
-          
-          <div className="space-y-4">
-            {emailTemplates.map(template => (
-              <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{template.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                      <span>📧 {template.emails} email{template.emails > 1 ? 's' : ''}</span>
-                      <span>📂 {template.category}</span>
-                      <span>📝 {template.type}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded p-3 mb-3">
-                  <p className="text-sm text-gray-600 italic">"{template.preview}"</p>
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => useTemplate(template)}
-                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                  >
-                    Use Template
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedTemplate(template);
-                      setShowTemplateModal(true);
-                    }}
-                    className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors text-sm"
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-
-      {/* Template Preview Modal */}
-      {showTemplateModal && selectedTemplate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                📧 {selectedTemplate.name} Template
-              </h3>
-              <button
-                onClick={() => {
-                  setShowTemplateModal(false);
-                  setSelectedTemplate(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Line:</label>
-                <div className="bg-gray-50 border rounded-lg p-3">
-                  <code className="text-sm">{selectedTemplate.template.subject}</code>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Content:</label>
-                <div className="bg-gray-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap">{selectedTemplate.template.content}</pre>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowTemplateModal(false);
-                  setSelectedTemplate(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => useTemplate(selectedTemplate)}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Use This Template
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

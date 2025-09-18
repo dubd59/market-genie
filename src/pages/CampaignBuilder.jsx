@@ -798,5 +798,3 @@ function BlockPropertiesPanel({ block, onUpdate, onClose }) {
     </>
   )
 }
-
-export default CampaignBuilder

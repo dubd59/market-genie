@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import FirebaseUserDataService from '../services/firebaseUserData'
+import IntegratedMarketingService from '../services/integratedMarketing'
+import { useGenie } from '../contexts/GenieContext'
 import toast from 'react-hot-toast'
 
 const WorkflowAutomation = () => {
   const { user } = useAuth()
+  const { createWorkflow: genieCreateWorkflow, optimizeWorkflow } = useGenie()
   const [workflows, setWorkflows] = useState([])
   const [loading, setLoading] = useState(true)
   const [showBuilder, setShowBuilder] = useState(false)
   const [editingWorkflow, setEditingWorkflow] = useState(null)
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState('')
+  const [availableCampaigns, setAvailableCampaigns] = useState([])
+  const [availableTags, setAvailableTags] = useState([])
   const [newWorkflow, setNewWorkflow] = useState({
     name: '',
     trigger: '',
@@ -16,7 +23,10 @@ const WorkflowAutomation = () => {
     delay: 0,
     description: '',
     conditions: [],
-    status: 'active'
+    status: 'active',
+    campaignId: '',
+    targetTags: [],
+    aiOptimized: false
   })
 
   // Load workflows from Firebase
@@ -36,6 +46,28 @@ const WorkflowAutomation = () => {
     }
 
     loadWorkflows()
+  }, [user])
+
+  // Load available campaigns and CRM tags for workflow integration
+  useEffect(() => {
+    const loadIntegrationData = async () => {
+      if (!user) return
+      
+      try {
+        // Load automation campaigns
+        const campaigns = await IntegratedMarketingService.getAutomationCampaigns(user.uid)
+        setAvailableCampaigns(campaigns)
+        
+        // Load CRM contacts to extract tags
+        const contacts = await IntegratedMarketingService.getContactsForCampaign(user.uid)
+        const tags = [...new Set(contacts.flatMap(contact => contact.tags || []))]
+        setAvailableTags(tags)
+      } catch (error) {
+        console.error('Error loading integration data:', error)
+      }
+    }
+
+    loadIntegrationData()
   }, [user])
 
   // Save workflows to Firebase
@@ -61,33 +93,70 @@ const WorkflowAutomation = () => {
       return
     }
 
+    // Validate campaign-specific fields
+    if ((newWorkflow.action === 'launch_campaign' || newWorkflow.action === 'add_to_campaign') && !newWorkflow.campaignId) {
+      toast.error('Please select a campaign for this action')
+      return
+    }
+
     // If editing, use update function instead
     if (editingWorkflow) {
       return updateWorkflow(e)
     }
 
-    const workflow = {
-      id: Date.now().toString(),
-      ...newWorkflow,
-      createdAt: new Date().toISOString(),
-      lastTriggered: null,
-      triggerCount: 0
-    }
+    try {
+      const workflow = {
+        id: Date.now().toString(),
+        ...newWorkflow,
+        createdAt: new Date().toISOString(),
+        lastTriggered: null,
+        triggerCount: 0,
+        integrationData: {
+          campaignId: newWorkflow.campaignId,
+          targetTags: newWorkflow.targetTags,
+          aiOptimized: newWorkflow.aiOptimized
+        }
+      }
 
-    const updatedWorkflows = [...workflows, workflow]
-    await saveWorkflows(updatedWorkflows)
-    
-    setNewWorkflow({
-      name: '',
-      trigger: '',
-      action: '',
-      delay: 0,
-      description: '',
-      conditions: [],
-      status: 'active'
-    })
-    setShowBuilder(false)
-    toast.success('Workflow created successfully!')
+      // If this is a campaign-triggering workflow, create the integration trigger
+      if (newWorkflow.action === 'launch_campaign' || newWorkflow.action === 'add_to_campaign') {
+        await IntegratedMarketingService.createWorkflowCampaignTrigger(
+          user.uid,
+          workflow.id,
+          newWorkflow.campaignId,
+          {
+            trigger: newWorkflow.trigger,
+            targetTags: newWorkflow.targetTags,
+            delay: newWorkflow.delay
+          }
+        )
+        
+        toast.success('🚀 Workflow with campaign integration created!')
+      } else {
+        toast.success('Workflow created successfully!')
+      }
+
+      const updatedWorkflows = [...workflows, workflow]
+      await saveWorkflows(updatedWorkflows)
+      
+      setNewWorkflow({
+        name: '',
+        trigger: '',
+        action: '',
+        delay: 0,
+        description: '',
+        conditions: [],
+        status: 'active',
+        campaignId: '',
+        targetTags: [],
+        aiOptimized: false
+      })
+      setShowBuilder(false)
+      
+    } catch (error) {
+      console.error('Error creating workflow:', error)
+      toast.error('Failed to create workflow')
+    }
   }
 
   // Toggle workflow status
@@ -171,7 +240,10 @@ const WorkflowAutomation = () => {
       delay: 0,
       description: '',
       conditions: [],
-      status: 'active'
+      status: 'active',
+      campaignId: '',
+      targetTags: [],
+      aiOptimized: false
     })
   }
 
@@ -195,13 +267,104 @@ const WorkflowAutomation = () => {
 
   const actionOptions = [
     { value: 'send_email', label: 'Send Email' },
+    { value: 'launch_campaign', label: '🚀 Launch Campaign' },
+    { value: 'add_to_campaign', label: '📧 Add to Email Campaign' },
     { value: 'add_to_sequence', label: 'Add to Sequence' },
     { value: 'update_field', label: 'Update Field' },
     { value: 'create_task', label: 'Create Task' },
+    { value: 'add_tag', label: '🏷️ Add Tag' },
     { value: 'send_sms', label: 'Send SMS' },
-    { value: 'add_tag', label: 'Add Tag' },
-    { value: 'webhook_call', label: 'Call Webhook' }
+    { value: 'create_deal', label: '💰 Create Deal' },
+    { value: 'assign_to_user', label: 'Assign to User' },
+    { value: 'webhook', label: 'Send Webhook' }
   ]
+
+  // AI Workflow Suggestions
+  const aiWorkflowTemplates = [
+    {
+      name: 'Welcome New Leads',
+      trigger: 'lead_added',
+      action: 'launch_campaign',
+      description: 'Automatically send welcome email campaign to new leads',
+      tags: ['new_lead'],
+      delay: 0
+    },
+    {
+      name: 'VIP Customer Outreach',
+      trigger: 'contact_tagged',
+      action: 'launch_campaign',
+      description: 'Send exclusive offers to VIP-tagged customers',
+      tags: ['VIP'],
+      delay: 60
+    },
+    {
+      name: 'Re-engage Cold Leads',
+      trigger: 'time_based',
+      action: 'add_to_campaign',
+      description: 'Target leads who haven\'t been contacted in 30 days',
+      tags: ['cold_lead'],
+      delay: 43200 // 30 days in minutes
+    },
+    {
+      name: 'Enterprise Lead Follow-up',
+      trigger: 'form_submitted',
+      action: 'launch_campaign',
+      description: 'Immediate follow-up for enterprise demo requests',
+      tags: ['enterprise'],
+      delay: 15
+    }
+  ]
+
+  // AI Assistant Functions
+  const generateAIWorkflow = async (prompt) => {
+    try {
+      if (!genieCreateWorkflow) {
+        // Fallback to template matching
+        const matchedTemplate = aiWorkflowTemplates.find(template => 
+          prompt.toLowerCase().includes(template.name.toLowerCase().split(' ')[0]) ||
+          prompt.toLowerCase().includes(template.trigger.replace('_', ' '))
+        )
+        
+        if (matchedTemplate) {
+          setNewWorkflow({
+            name: matchedTemplate.name,
+            trigger: matchedTemplate.trigger,
+            action: matchedTemplate.action,
+            description: matchedTemplate.description,
+            targetTags: matchedTemplate.tags,
+            delay: matchedTemplate.delay,
+            conditions: [],
+            status: 'active',
+            campaignId: '',
+            aiOptimized: true
+          })
+          setAiSuggestion(`AI suggested: "${matchedTemplate.name}" - ${matchedTemplate.description}`)
+          return
+        }
+      }
+
+      // Use Genie AI if available
+      const suggestion = await genieCreateWorkflow({
+        prompt,
+        context: 'workflow-automation',
+        availableTriggers: triggerOptions,
+        availableActions: actionOptions,
+        availableTags: availableTags
+      })
+      
+      if (suggestion) {
+        setNewWorkflow(prev => ({
+          ...prev,
+          ...suggestion,
+          aiOptimized: true
+        }))
+        setAiSuggestion(`AI generated workflow based on: "${prompt}"`)
+      }
+    } catch (error) {
+      console.error('Error generating AI workflow:', error)
+      toast.error('AI assistant temporarily unavailable')
+    }
+  }
 
   if (loading) {
     return (
@@ -227,7 +390,73 @@ const WorkflowAutomation = () => {
         >
           {showBuilder ? 'Cancel' : '+ Create Workflow'}
         </button>
+        
+        <button
+          onClick={() => setShowAIAssistant(!showAIAssistant)}
+          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-300 shadow-lg flex items-center gap-2"
+        >
+          🤖 AI Assistant
+        </button>
       </div>
+
+      {/* AI Assistant Panel */}
+      {showAIAssistant && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-lg p-6 mb-8 border border-purple-200">
+          <h3 className="text-xl font-semibold text-purple-800 mb-4 flex items-center gap-2">
+            🤖 AI Workflow Assistant
+          </h3>
+          
+          {aiSuggestion && (
+            <div className="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4">
+              <strong>AI Suggestion:</strong> {aiSuggestion}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* AI Quick Prompts */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Quick AI Templates</h4>
+              <div className="space-y-2">
+                {aiWorkflowTemplates.map((template, index) => (
+                  <button
+                    key={index}
+                    onClick={() => generateAIWorkflow(template.name)}
+                    className="w-full text-left bg-white border border-purple-200 rounded-lg p-3 hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="font-medium text-purple-800">{template.name}</div>
+                    <div className="text-sm text-gray-600">{template.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Custom AI Prompt */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Custom Workflow Request</h4>
+              <div className="space-y-3">
+                <textarea
+                  placeholder="Describe the workflow you want to create... 
+                  
+Examples:
+• 'Send welcome emails to new VIP customers'
+• 'Follow up with leads who visited pricing page'
+• 'Auto-tag enterprise prospects'"
+                  className="w-full border border-purple-200 p-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows="4"
+                  value={aiSuggestion.includes('AI generated') ? '' : aiSuggestion}
+                  onChange={(e) => setAiSuggestion(e.target.value)}
+                />
+                <button
+                  onClick={() => generateAIWorkflow(aiSuggestion)}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors w-full"
+                >
+                  ✨ Generate AI Workflow
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
@@ -312,6 +541,51 @@ const WorkflowAutomation = () => {
                 </select>
               </div>
             </div>
+            
+            {/* Campaign Integration Fields */}
+            {(newWorkflow.action === 'launch_campaign' || newWorkflow.action === 'add_to_campaign') && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                  🚀 Campaign Settings
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Campaign</label>
+                    <select
+                      value={newWorkflow.campaignId}
+                      onChange={(e) => setNewWorkflow({ ...newWorkflow, campaignId: e.target.value })}
+                      className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Choose campaign...</option>
+                      {availableCampaigns.map(campaign => (
+                        <option key={campaign.id} value={campaign.id}>{campaign.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Target Tags (Optional)</label>
+                    <select
+                      multiple
+                      value={newWorkflow.targetTags}
+                      onChange={(e) => setNewWorkflow({ 
+                        ...newWorkflow, 
+                        targetTags: Array.from(e.target.selectedOptions, option => option.value)
+                      })}
+                      className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      size="3"
+                    >
+                      {availableTags.map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Hold Ctrl/Cmd to select multiple tags. Leave empty to target all contacts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea

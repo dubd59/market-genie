@@ -1,12 +1,12 @@
-// AI API Service - Connects to real AI APIs using stored user credentials
+// AI API Service - Connects to real AI APIs using Firebase-stored user credentials
 import toast from 'react-hot-toast';
+import FirebaseUserDataService from './firebaseUserData';
 
 export class AIService {
-  // Get stored API keys from localStorage
-  static getStoredAPIKeys() {
+  // Get stored API keys from Firebase (requires userId)
+  static async getStoredAPIKeys(userId) {
     try {
-      const keys = localStorage.getItem('marketgenie_api_keys');
-      return keys ? JSON.parse(keys) : [];
+      return await FirebaseUserDataService.getAPIKeys(userId);
     } catch (error) {
       console.error('Error loading API keys:', error);
       return [];
@@ -14,8 +14,8 @@ export class AIService {
   }
 
   // Get the first active API key for a specific service
-  static getAPIKey(serviceName) {
-    const apiKeys = this.getStoredAPIKeys();
+  static async getAPIKey(userId, serviceName) {
+    const apiKeys = await this.getStoredAPIKeys(userId);
     const key = apiKeys.find(k => 
       k.service.toLowerCase().includes(serviceName.toLowerCase()) && 
       k.status === 'active'
@@ -24,8 +24,8 @@ export class AIService {
   }
 
   // Generate email content using OpenAI GPT-4
-  static async generateWithOpenAI(prompt, campaignData) {
-    const apiKey = this.getAPIKey('openai');
+  static async generateWithOpenAI(userId, prompt, campaignData) {
+    const apiKey = await this.getAPIKey(userId, 'openai');
     if (!apiKey) {
       throw new Error('No active OpenAI API key found. Please add one in API Keys & Integrations.');
     }
@@ -68,8 +68,8 @@ export class AIService {
   }
 
   // Generate email content using Anthropic Claude
-  static async generateWithClaude(prompt, campaignData) {
-    const apiKey = this.getAPIKey('anthropic');
+  static async generateWithClaude(userId, prompt, campaignData) {
+    const apiKey = await this.getAPIKey(userId, 'anthropic');
     if (!apiKey) {
       throw new Error('No active Anthropic API key found. Please add one in API Keys & Integrations.');
     }
@@ -108,8 +108,8 @@ export class AIService {
   }
 
   // Generate email content using Google Gemini
-  static async generateWithGemini(prompt, campaignData) {
-    const apiKey = this.getAPIKey('gemini');
+  static async generateWithGemini(userId, prompt, campaignData) {
+    const apiKey = await this.getAPIKey(userId, 'gemini');
     if (!apiKey) {
       throw new Error('No active Google Gemini API key found. Please add one in API Keys & Integrations.');
     }
@@ -147,8 +147,8 @@ export class AIService {
   }
 
   // Generate email content using DeepSeek
-  static async generateWithDeepSeek(prompt, campaignData) {
-    const apiKey = this.getAPIKey('deepseek');
+  static async generateWithDeepSeek(userId, prompt, campaignData) {
+    const apiKey = await this.getAPIKey(userId, 'deepseek');
     if (!apiKey) {
       throw new Error('No active DeepSeek API key found. Please add one in API Keys & Integrations.');
     }
@@ -191,7 +191,7 @@ export class AIService {
   }
 
   // Main function to generate email content with AI
-  static async generateEmailContent(campaignData, preferredProvider = null) {
+  static async generateEmailContent(userId, campaignData, preferredProvider = null) {
     const { name, type, targetAudience, subject } = campaignData;
     
     const prompt = `
@@ -213,7 +213,7 @@ Please create an engaging email that:
 The email should be ready to send and include placeholders for personalization like {firstName}, {company}, etc.
     `;
 
-    const apiKeys = this.getStoredAPIKeys();
+    const apiKeys = await this.getStoredAPIKeys(userId);
     const activeKeys = apiKeys.filter(k => k.status === 'active');
 
     if (activeKeys.length === 0) {
@@ -233,7 +233,7 @@ The email should be ready to send and include placeholders for personalization l
       const provider = providers.find(p => p.name === preferredProvider.toLowerCase());
       if (provider && activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
         try {
-          const content = await provider.func.call(this, prompt, campaignData);
+          const content = await provider.func.call(this, userId, prompt, campaignData);
           toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
           return content;
         } catch (error) {
@@ -246,7 +246,7 @@ The email should be ready to send and include placeholders for personalization l
     for (const provider of providers) {
       if (activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
         try {
-          const content = await provider.func.call(this, prompt, campaignData);
+          const content = await provider.func.call(this, userId, prompt, campaignData);
           toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
           return content;
         } catch (error) {

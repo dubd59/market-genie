@@ -23,6 +23,7 @@ import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
 import AIService from './services/aiService'
+import FirebaseUserDataService from './services/firebaseUserData'
 import AISwarmDashboard from './components/AISwarmDashboard'
 import CostControlsDashboard from './components/CostControlsDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
@@ -96,6 +97,7 @@ function SophisticatedDashboard() {
   })
   const [scrapingBudget, setScrapingBudget] = useState(50)
   const [currentBudgetUsage, setCurrentBudgetUsage] = useState(32)
+  const [budgetLoading, setBudgetLoading] = useState(true)
 
   // Campaign State
   const [campaigns, setCampaigns] = useState([
@@ -397,10 +399,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       if (result.success && result.data && result.data.length > 0) {
         toast.success(`Generated ${result.data.length} leads from ${source}!`)
         
-        // Update budget usage and save to localStorage
+        // Update budget usage and save to Firebase
         const newUsage = currentBudgetUsage + (result.data.length * 0.5)
         setCurrentBudgetUsage(newUsage)
-        localStorage.setItem('currentBudgetUsage', newUsage.toString())
+        await saveBudgetToFirebase(scrapingBudget, newUsage);
         
         await loadLeadData()
       } else {
@@ -414,34 +416,53 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
   const updateBudget = async () => {
     try {
-      // Save budget to localStorage for persistence
-      localStorage.setItem('scrapingBudget', scrapingBudget.toString())
+      // Save budget to Firebase for persistence
+      await saveBudgetToFirebase(scrapingBudget, currentBudgetUsage);
       
-      // In a real app, you'd save this to the tenant's profile in Firebase
       if (tenant?.id) {
-        // For now, we'll just store locally
         console.log(`Budget ${scrapingBudget} saved for tenant ${tenant.id}`)
       }
       
-      toast.success('Budget updated successfully!')
+      toast.success('Budget updated and saved to cloud!')
     } catch (error) {
       console.error('Error updating budget:', error)
       toast.error('Failed to update budget')
     }
   }
 
-  // Load saved budget on component mount
+  // Load budget settings from Firebase
   React.useEffect(() => {
-    const savedBudget = localStorage.getItem('scrapingBudget')
-    if (savedBudget) {
-      setScrapingBudget(parseFloat(savedBudget))
+    if (currentUser?.uid) {
+      loadBudgetFromFirebase();
     }
-    
-    const savedUsage = localStorage.getItem('currentBudgetUsage')
-    if (savedUsage) {
-      setCurrentBudgetUsage(parseFloat(savedUsage))
+  }, [currentUser?.uid]);
+
+  const loadBudgetFromFirebase = async () => {
+    try {
+      setBudgetLoading(true);
+      const budgetData = await FirebaseUserDataService.getBudgetSettings(currentUser.uid);
+      setScrapingBudget(budgetData.scrapingBudget);
+      setCurrentBudgetUsage(budgetData.currentBudgetUsage);
+    } catch (error) {
+      console.error('Error loading budget from Firebase:', error);
+      toast.error('Failed to load budget settings');
+    } finally {
+      setBudgetLoading(false);
     }
-  }, [])
+  };
+
+  const saveBudgetToFirebase = async (budget, usage) => {
+    if (currentUser?.uid) {
+      try {
+        await FirebaseUserDataService.saveBudgetSettings(currentUser.uid, {
+          scrapingBudget: budget,
+          currentBudgetUsage: usage
+        });
+      } catch (error) {
+        console.error('Error saving budget to Firebase:', error);
+      }
+    }
+  };
 
   const handleExportCSV = () => {
     try {
@@ -717,7 +738,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   const generateAIEmailContent = async (campaignData, preferredProvider = null) => {
     try {
       // Use real AI APIs with user's stored API keys
-      const content = await AIService.generateEmailContent(campaignData, preferredProvider);
+      const content = await AIService.generateEmailContent(currentUser?.uid, campaignData, preferredProvider);
       return content;
     } catch (error) {
       console.error('AI Email Generation Error:', error);
@@ -1049,7 +1070,12 @@ P.S. This email was generated for the "${name}" campaign.`;
                     min="10" 
                     max="1000" 
                     value={scrapingBudget}
-                    onChange={(e) => setScrapingBudget(parseFloat(e.target.value) || 50)}
+                    onChange={(e) => {
+                      const newBudget = parseFloat(e.target.value) || 50;
+                      setScrapingBudget(newBudget);
+                      // Auto-save to Firebase after a short delay
+                      setTimeout(() => saveBudgetToFirebase(newBudget, currentBudgetUsage), 1000);
+                    }}
                     className="border p-2 rounded w-32" 
                   />
                   <button 

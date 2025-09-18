@@ -2,22 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import IntegrationService from '../services/integrationService';
+import FirebaseUserDataService from '../services/firebaseUserData';
 import toast from 'react-hot-toast';
 
 const APIKeysIntegrations = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
-  const [apiKeys, setApiKeys] = useState(() => {
-    // Load API keys from localStorage on init
-    try {
-      const savedKeys = localStorage.getItem('marketgenie_api_keys');
-      return savedKeys ? JSON.parse(savedKeys) : [];
-    } catch (error) {
-      console.error('Error loading API keys from localStorage:', error);
-      return [];
-    }
-  });
+  const [apiKeys, setApiKeys] = useState([]);
+  const [loadingApiKeys, setLoadingApiKeys] = useState(true);
 
   const [integrations, setIntegrations] = useState([
     {
@@ -224,6 +217,37 @@ const APIKeysIntegrations = () => {
     'Custom API'
   ];
 
+  // Load API keys from Firebase when user is available
+  useEffect(() => {
+    if (user?.uid) {
+      loadApiKeysFromFirebase();
+    }
+  }, [user?.uid]);
+
+  const loadApiKeysFromFirebase = async () => {
+    try {
+      setLoadingApiKeys(true);
+      const keys = await FirebaseUserDataService.getAPIKeys(user.uid);
+      setApiKeys(keys);
+    } catch (error) {
+      console.error('Error loading API keys from Firebase:', error);
+      toast.error('Failed to load API keys from cloud');
+    } finally {
+      setLoadingApiKeys(false);
+    }
+  };
+
+  // Save API keys to Firebase whenever they change
+  const saveApiKeysToFirebase = async (newApiKeys) => {
+    if (user?.uid) {
+      try {
+        await FirebaseUserDataService.saveAPIKeys(user.uid, newApiKeys);
+      } catch (error) {
+        console.error('Error saving API keys to Firebase:', error);
+      }
+    }
+  };
+
   // Load real connection statuses when component mounts
   useEffect(() => {
     if (tenant?.id) {
@@ -231,14 +255,12 @@ const APIKeysIntegrations = () => {
     }
   }, [tenant?.id]);
 
-  // Save API keys to localStorage whenever they change
+  // Save API keys to Firebase whenever they change (removed localStorage)
   useEffect(() => {
-    try {
-      localStorage.setItem('marketgenie_api_keys', JSON.stringify(apiKeys));
-    } catch (error) {
-      console.error('Error saving API keys to localStorage:', error);
+    if (apiKeys.length > 0 && user?.uid) {
+      saveApiKeysToFirebase(apiKeys);
     }
-  }, [apiKeys]);
+  }, [apiKeys, user?.uid]);
 
   const loadIntegrationStatuses = async () => {
     setLoadingStatuses(true);
@@ -301,10 +323,14 @@ const APIKeysIntegrations = () => {
         displayKey: newApiKey.key.slice(0, 6) + '...' + newApiKey.key.slice(-6) // For display only
       };
       
-      setApiKeys(prev => [...prev, newKey]);
+      const updatedKeys = [...apiKeys, newKey];
+      setApiKeys(updatedKeys);
       setNewApiKey({ name: '', service: '', key: '' });
       setShowAddKey(false);
-      toast.success(`${newApiKey.service} API key added successfully!`);
+      
+      // Save immediately to Firebase
+      saveApiKeysToFirebase(updatedKeys);
+      toast.success(`${newApiKey.service} API key added and saved to cloud!`);
     }
   };
 

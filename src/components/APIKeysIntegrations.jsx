@@ -35,6 +35,28 @@ const APIKeysIntegrations = () => {
       features: ['Profile Access', 'Connection Requests', 'Basic Messaging', 'Company Data']
     },
     {
+      id: 21,
+      name: 'Zoho Mail',
+      type: 'Email',
+      status: 'disconnected',
+      icon: '📮',
+      description: 'Send personalized emails through your Zoho Mail account',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Send Emails', 'Email Templates', 'Delivery Tracking', 'Bulk Sending']
+    },
+    {
+      id: 22,
+      name: 'ConvertKit',
+      type: 'Email Marketing',
+      status: 'disconnected',
+      icon: '📧',
+      description: 'Email marketing automation and subscriber management',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Email Campaigns', 'Automation', 'Subscriber Management', 'Analytics']
+    },
+    {
       id: 3,
       name: 'HubSpot',
       type: 'CRM',
@@ -271,7 +293,9 @@ const APIKeysIntegrations = () => {
       'facebook-business',
       'twitter',
       'clearbit',
-      'zoominfo'
+      'zoominfo',
+      'zoho-mail',
+      'convertkit'
     ];
 
     for (const key of integrationKeys) {
@@ -287,7 +311,9 @@ const APIKeysIntegrations = () => {
               'facebook-business': 'Facebook Business',
               'twitter': 'Twitter/X API',
               'clearbit': 'Clearbit',
-              'zoominfo': 'ZoomInfo'
+              'zoominfo': 'ZoomInfo',
+              'zoho-mail': 'Zoho Mail',
+              'convertkit': 'ConvertKit'
             };
             
             if (integration.name === nameMap[key]) {
@@ -374,6 +400,8 @@ const APIKeysIntegrations = () => {
           
         case 'Hunter.io Email Finding':
         case 'Apollo.io':
+        case 'Zoho Mail':
+        case 'ConvertKit':
           // Show API key input modal
           const apiKey = prompt(`Enter your ${integration.name} API key:`);
           if (apiKey) {
@@ -384,6 +412,10 @@ const APIKeysIntegrations = () => {
               result = await IntegrationService.connectHunterIO(tenant.id, apiKey);
             } else if (integration.name === 'Apollo.io') {
               result = await IntegrationService.connectApollo(tenant.id, apiKey);
+            } else if (integration.name === 'Zoho Mail') {
+              result = await IntegrationService.connectZohoMail(tenant.id, apiKey);
+            } else if (integration.name === 'ConvertKit') {
+              result = await IntegrationService.connectConvertKit(tenant.id, apiKey);
             }
             
             if (result.success) {
@@ -469,6 +501,18 @@ const APIKeysIntegrations = () => {
         case 'Apollo.io':
           if (settingsForm.apiKey) {
             result = await IntegrationService.connectApollo(tenant.id, settingsForm.apiKey);
+          }
+          break;
+          
+        case 'Zoho Mail':
+          if (settingsForm.clientId && settingsForm.clientSecret) {
+            result = await IntegrationService.connectZohoMail(tenant.id, settingsForm.clientId, settingsForm.clientSecret);
+          }
+          break;
+          
+        case 'ConvertKit':
+          if (settingsForm.apiKey) {
+            result = await IntegrationService.connectConvertKit(tenant.id, settingsForm.apiKey);
           }
           break;
           
@@ -624,7 +668,9 @@ const APIKeysIntegrations = () => {
         'Facebook Business': 'facebook-business',
         'Twitter/X API': 'twitter',
         'Clearbit': 'clearbit',
-        'ZoomInfo': 'zoominfo'
+        'ZoomInfo': 'zoominfo',
+        'Zoho Mail': 'zoho-mail',
+        'ConvertKit': 'convertkit'
       };
       
       const key = nameMap[integration.name];
@@ -1147,6 +1193,96 @@ const APIKeysIntegrations = () => {
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       Get your credentials from TikTok for Business → Developer Portal
+                    </p>
+                  </div>
+                )}
+
+                {/* Zoho Mail Configuration */}
+                {selectedIntegration.name === 'Zoho Mail' && (
+                  <div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-orange-800 mb-2">Zoho Mail Self Client Integration</h4>
+                      <p className="text-orange-700 text-sm mb-3">
+                        Configure your Zoho Mail self-client application for email sending capabilities.
+                      </p>
+                      <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
+                        <p className="text-orange-800 text-sm font-medium mb-2">OAuth Setup Steps:</p>
+                        <ol className="text-orange-700 text-sm space-y-1 ml-4">
+                          <li>1. Enter your Client ID and Secret below</li>
+                          <li>2. Click "Start OAuth Flow" to get authorization</li>
+                          <li>3. Complete authentication on Zoho's website</li>
+                        </ol>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Client ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settingsForm.clientId}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientId: e.target.value }))}
+                          placeholder="Enter your Zoho Mail Client ID"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Client Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={settingsForm.clientSecret}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientSecret: e.target.value }))}
+                          placeholder="Enter your Zoho Mail Client Secret"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      {settingsForm.clientId && settingsForm.clientSecret && (
+                        <div className="mt-4">
+                          <button
+                            onClick={() => {
+                              const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZohoMail.messages.CREATE&client_id=${settingsForm.clientId}&response_type=code&access_type=offline&redirect_uri=${window.location.origin}/integrations/zoho-callback`;
+                              window.open(authUrl, 'zoho-oauth', 'width=600,height=700');
+                            }}
+                            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors w-full"
+                          >
+                            🔗 Start OAuth Flow
+                          </button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            This will open Zoho's authorization page in a new window
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your credentials from Zoho API Console → Self Client application
+                    </p>
+                  </div>
+                )}
+
+                {/* ConvertKit Configuration */}
+                {selectedIntegration.name === 'ConvertKit' && (
+                  <div>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-purple-800 mb-2">ConvertKit API Integration</h4>
+                      <p className="text-purple-700 text-sm mb-3">
+                        Connect your ConvertKit account for email marketing and automation.
+                      </p>
+                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      API Secret
+                    </label>
+                    <input
+                      type="password"
+                      value={settingsForm.apiKey}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="Enter your ConvertKit API Secret"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Get your API Secret from ConvertKit → Account Settings → Advanced
                     </p>
                   </div>
                 )}

@@ -281,6 +281,201 @@ class IntegrationService {
     }
   }
 
+  // Zoho Mail Integration
+  async connectZohoMail(tenantId, clientId, clientSecret) {
+    try {
+      // For self-client setup, we store credentials and prepare for OAuth
+      await this.saveIntegrationCredentials(tenantId, 'zoho-mail', {
+        clientId: clientId,
+        clientSecret: clientSecret,
+        authType: 'self-client',
+        status: 'credentials-stored',
+        setupInstructions: 'OAuth flow required - use these credentials to generate access token'
+      })
+      
+      return { 
+        success: true, 
+        data: { 
+          message: 'Client credentials stored. OAuth flow needed for access token.',
+          clientId: clientId,
+          nextStep: 'oauth'
+        } 
+      }
+    } catch (error) {
+      console.error('Zoho Mail connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Exchange authorization code for access token
+  async exchangeZohoAuthCode(tenantId, authCode, clientId, clientSecret) {
+    try {
+      const formData = new FormData()
+      formData.append('grant_type', 'authorization_code')
+      formData.append('client_id', clientId)
+      formData.append('client_secret', clientSecret)
+      formData.append('code', authCode)
+      formData.append('redirect_uri', `${window.location.origin}/integrations/zoho-callback`)
+
+      const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.access_token) {
+        // Store the tokens
+        await this.saveIntegrationCredentials(tenantId, 'zoho-mail', {
+          clientId: clientId,
+          clientSecret: clientSecret,
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+          expiresIn: result.expires_in,
+          tokenType: result.token_type,
+          status: 'connected',
+          connectedAt: new Date().toISOString()
+        })
+        
+        return { success: true, data: result }
+      }
+      
+      return { success: false, error: result.error || 'Failed to exchange authorization code' }
+    } catch (error) {
+      console.error('Zoho token exchange error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Refresh Zoho access token
+  async refreshZohoToken(tenantId) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'zoho-mail')
+      if (!credentials.success || !credentials.data.refreshToken) {
+        return { success: false, error: 'No refresh token available' }
+      }
+
+      const formData = new FormData()
+      formData.append('grant_type', 'refresh_token')
+      formData.append('client_id', credentials.data.clientId)
+      formData.append('client_secret', credentials.data.clientSecret)
+      formData.append('refresh_token', credentials.data.refreshToken)
+
+      const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.access_token) {
+        // Update stored credentials with new access token
+        await this.saveIntegrationCredentials(tenantId, 'zoho-mail', {
+          ...credentials.data,
+          accessToken: result.access_token,
+          expiresIn: result.expires_in,
+          updatedAt: new Date().toISOString()
+        })
+        
+        return { success: true, data: result }
+      }
+      
+      return { success: false, error: result.error || 'Failed to refresh token' }
+    } catch (error) {
+      console.error('Zoho token refresh error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Test Zoho Mail connection - for self client, just validate credentials format
+  async testZohoMail(clientId, clientSecret) {
+    try {
+      // Basic validation of client credentials format
+      if (!clientId || !clientSecret) {
+        return { success: false, error: 'Both Client ID and Client Secret are required' }
+      }
+      
+      if (!clientId.includes('.') || clientSecret.length < 32) {
+        return { success: false, error: 'Invalid Zoho client credentials format' }
+      }
+      
+      return { 
+        success: true, 
+        data: { 
+          message: 'Client credentials format valid. Ready for OAuth flow.',
+          clientId: clientId
+        } 
+      }
+    } catch (error) {
+      console.error('Zoho Mail test error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // ConvertKit Integration
+  async connectConvertKit(tenantId, apiSecret) {
+    try {
+      // Test ConvertKit API - Get account info
+      const response = await fetch(`https://api.convertkit.com/v3/account?api_secret=${apiSecret}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.account) {
+        await this.saveIntegrationCredentials(tenantId, 'convertkit', {
+          apiSecret: apiSecret,
+          accountName: result.account.name,
+          primaryEmailAddress: result.account.primary_email_address
+        })
+        return { 
+          success: true, 
+          data: { 
+            name: result.account.name,
+            email: result.account.primary_email_address 
+          } 
+        }
+      }
+      
+      return { success: false, error: result.error || 'Invalid ConvertKit API secret' }
+    } catch (error) {
+      console.error('ConvertKit connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Test ConvertKit connection
+  async testConvertKit(apiSecret) {
+    try {
+      const response = await fetch(`https://api.convertkit.com/v3/account?api_secret=${apiSecret}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.account) {
+        return { 
+          success: true, 
+          data: { 
+            name: result.account.name,
+            email: result.account.primary_email_address 
+          } 
+        }
+      }
+      
+      return { success: false, error: result.error || 'Invalid ConvertKit API secret' }
+    } catch (error) {
+      console.error('ConvertKit test error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Generic OAuth flow starter
   getOAuthURL(provider, tenantId) {
     const redirectUri = `${window.location.origin}/integrations/callback`

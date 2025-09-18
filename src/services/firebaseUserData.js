@@ -350,6 +350,58 @@ export class FirebaseUserDataService {
       };
     }
   }
+
+  // ===== GENERIC DATA METHODS =====
+  static async getUserData(userId, collection) {
+    try {
+      const dataRef = this.getUserDataRef(userId, collection);
+      const doc = await getDoc(dataRef);
+      
+      if (doc.exists()) {
+        return {
+          success: true,
+          data: doc.data()
+        };
+      } else {
+        return {
+          success: true,
+          data: null
+        };
+      }
+    } catch (error) {
+      console.error(`Error loading ${collection}:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  static async saveUserData(userId, collection, data) {
+    try {
+      const dataRef = this.getUserDataRef(userId, collection);
+      await setDoc(dataRef, {
+        ...data,
+        updatedAt: new Date()
+      });
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(`Error saving ${collection}:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // ===== UNIFIED CONTACTS METHOD =====
+  static async getContacts(userId, tenantId = null) {
+    // Use tenantId if provided, otherwise use userId for backwards compatibility
+    const id = tenantId || userId;
+    return this.getUserData(id, 'crm_contacts');
+  }
 }
 
 export default FirebaseUserDataService;

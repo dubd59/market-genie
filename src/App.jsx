@@ -34,6 +34,7 @@ import SuperiorCRMSystem from './components/SuperiorCRMSystem'
 import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 import WorkflowAutomation from './components/WorkflowAutomation'
 import CRMPipeline from './components/CRMPipeline'
+import ContactManager from './components/ContactManager'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -70,6 +71,7 @@ function SophisticatedDashboard() {
     if (path.includes('workflow-automation')) return 'Workflow Automation'
     if (path.includes('appointment-booking')) return 'Appointment Booking'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
+    if (path.includes('contact-manager')) return 'Contact Manager'
     if (path.includes('analytics')) return 'Analytics & Reporting'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
     if (path.includes('admin-panel')) return 'Admin Panel'
@@ -154,8 +156,16 @@ P.S. This offer is exclusive to our valued customers like you!`,
     targetAudience: '',
     sendDate: '',
     aiSmartPrompt: '',
-    additionalPrompt: ''
+    additionalPrompt: '',
+    customSegment: ''
   })
+  
+  // Available CRM tags for custom segments
+  const [availableTags, setAvailableTags] = useState([])
+  
+  // Contacts from ContactManager for campaign targeting
+  const [contacts, setContacts] = useState([])
+  
   const [emailTemplates] = useState([
     { 
       id: 1, 
@@ -324,6 +334,88 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   React.useEffect(() => {
     setIsInitialized(true)
   }, [])
+
+  // Load CRM tags for custom segments
+  React.useEffect(() => {
+    const loadCRMTags = async () => {
+      if (!user || !tenant?.id) return
+      
+      try {
+        // Load contacts from ContactManager to extract tags, companies, and statuses
+        console.log('Loading contacts for tenant:', tenant.id)
+        const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+        console.log('Contacts result:', contactsResult)
+        
+        if (contactsResult.success && contactsResult.data) {
+          console.log('Contacts data:', contactsResult.data)
+          
+          // Store contacts for campaign targeting
+          setContacts(contactsResult.data)
+          
+          // Extract all unique tags, companies, and statuses for segmentation
+          let allSegments = []
+          
+          contactsResult.data.forEach(contact => {
+            console.log('Processing contact:', contact.email)
+            
+            // Add tags
+            if (contact.tags && Array.isArray(contact.tags)) {
+              allSegments.push(...contact.tags)
+            }
+            
+            // Add companies as segments
+            if (contact.company && contact.company.trim()) {
+              allSegments.push(`Company: ${contact.company}`)
+            }
+            
+            // Add statuses as segments
+            if (contact.status && contact.status.trim()) {
+              allSegments.push(`Status: ${contact.status}`)
+            }
+          })
+          
+          // Add default manual segments for immediate use
+          const defaultSegments = [
+            'Gumroad seller', 
+            'New prospects', 
+            'VIP customers', 
+            'Email subscribers',
+            'Webinar attendees',
+            'Course buyers'
+          ]
+          allSegments.push(...defaultSegments)
+          
+          // Get unique segments
+          const uniqueSegments = [...new Set(allSegments)].filter(segment => segment && segment.trim())
+          console.log('Available CRM segments:', uniqueSegments)
+          setAvailableTags(uniqueSegments)
+        } else {
+          // If no contacts yet, provide default segments
+          const defaultSegments = [
+            'Gumroad seller', 
+            'New prospects', 
+            'VIP customers', 
+            'Email subscribers',
+            'Webinar attendees',
+            'Course buyers'
+          ]
+          setAvailableTags(defaultSegments)
+        }
+      } catch (error) {
+        console.error('Error loading CRM segments:', error)
+        // Fallback to default segments on error
+        const defaultSegments = [
+          'Gumroad seller', 
+          'New prospects', 
+          'VIP customers', 
+          'Email subscribers'
+        ]
+        setAvailableTags(defaultSegments)
+      }
+    }
+
+    loadCRMTags()
+  }, [user, tenant?.id])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -704,17 +796,41 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         template: campaignFormData.template,
         emailContent: finalEmailContent,
         targetAudience: campaignFormData.targetAudience,
+        customSegment: campaignFormData.customSegment,
         sendDate: campaignFormData.sendDate,
-        totalContacts: leads.filter(lead => {
+        totalContacts: contacts.filter(contact => {
           // Calculate how many contacts match the target audience
           if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads') {
             return true
           }
           if (campaignFormData.targetAudience === 'New Leads') {
-            return lead.score < 50
+            return contact.status === 'new' || contact.status === 'lead'
           }
           if (campaignFormData.targetAudience === 'Warm Prospects') {
-            return lead.score >= 50
+            return contact.status === 'qualified' || contact.status === 'warm'
+          }
+          if (campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegment) {
+            // Check if contact matches the selected custom segment
+            const segment = campaignFormData.customSegment
+            
+            // Check tags
+            if (contact.tags && contact.tags.includes(segment)) {
+              return true
+            }
+            
+            // Check company segments (format: "Company: CompanyName")
+            if (segment.startsWith('Company: ')) {
+              const companyName = segment.replace('Company: ', '')
+              return contact.company === companyName
+            }
+            
+            // Check status segments (format: "Status: StatusName")
+            if (segment.startsWith('Status: ')) {
+              const statusName = segment.replace('Status: ', '')
+              return contact.status === statusName
+            }
+            
+            return false
           }
           return false
         }).length
@@ -731,7 +847,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         subject: '',
         template: '',
         targetAudience: '',
-        sendDate: ''
+        sendDate: '',
+        aiSmartPrompt: '',
+        additionalPrompt: '',
+        customSegment: ''
       })
 
       toast.success('🤖 Campaign created with AI-generated content! Click "View Email" or "Edit" to see the personalized content.')
@@ -839,6 +958,8 @@ P.S. This email was generated for the "${name}" campaign.`;
         'Workflow Automation': '/dashboard/workflow-automation',
         'Appointment Booking': '/dashboard/appointment-booking',
         'CRM & Pipeline': '/dashboard/crm-pipeline',
+        'Contact Manager': '/dashboard/contact-manager',
+        'Pipeline View': '/dashboard/crm-pipeline',
         'Analytics & Reporting': '/dashboard/analytics',
         'API Keys & Integrations': '/dashboard/api-keys',
         'Admin Panel': '/dashboard/admin-panel'
@@ -1393,7 +1514,9 @@ P.S. This email was generated for the "${name}" campaign.`;
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Target Audience</label>
                       <select 
                         value={campaignFormData.targetAudience}
-                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value }))}
+                        onChange={(e) => {
+                          setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegment: '' }))
+                        }}
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       >
                         <option value="">Select Audience</option>
@@ -1403,6 +1526,105 @@ P.S. This email was generated for the "${name}" campaign.`;
                         <option value="Custom Segment">Custom Segment</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Custom Segment Selection - Shows when Custom Segment is selected */}
+                  {campaignFormData.targetAudience === 'Custom Segment' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                console.log('Manually refreshing tags...')
+                                const leadsResult = await LeadService.getLeads(tenant.id)
+                                if (leadsResult.success && leadsResult.data) {
+                                  console.log('=== MANUAL REFRESH: All fields in first lead ===')
+                                  if (leadsResult.data[0]) {
+                                    Object.keys(leadsResult.data[0]).forEach(key => {
+                                      console.log(`Field "${key}":`, leadsResult.data[0][key])
+                                    })
+                                  }
+                                  console.log('=== END MANUAL REFRESH DEBUG ===')
+                                  
+                                  let allTags = []
+                                  leadsResult.data.forEach(lead => {
+                                    if (lead.tags) {
+                                      if (Array.isArray(lead.tags)) {
+                                        allTags.push(...lead.tags)
+                                      } else if (typeof lead.tags === 'string') {
+                                        allTags.push(lead.tags)
+                                      }
+                                    }
+                                    if (lead.tag) allTags.push(lead.tag)
+                                    if (lead.category) allTags.push(lead.category)
+                                    if (lead.segment) allTags.push(lead.segment)
+                                    // TEMP: Don't include CSV Import as a tag
+                                    if (lead.source && lead.source !== 'CSV Import') allTags.push(lead.source)
+                                    if (lead.type) allTags.push(lead.type)
+                                  })
+                                  
+                                  // TEMPORARY: Add manual segments for now
+                                  const manualSegments = ['Gumroad seller', 'New prospects', 'VIP customers', 'Email subscribers']
+                                  allTags.push(...manualSegments)
+                                  const uniqueTags = [...new Set(allTags)].filter(tag => tag && tag.trim())
+                                  setAvailableTags(uniqueTags)
+                                  toast.success(`Refreshed! Found ${uniqueTags.length} tags: ${uniqueTags.join(', ')}`)
+                                }
+                              } catch (error) {
+                                toast.error('Error refreshing tags: ' + error.message)
+                              }
+                            }}
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                          >
+                            🔄 Refresh Tags
+                          </button>
+                        </div>
+                        <select 
+                          value={campaignFormData.customSegment}
+                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, customSegment: e.target.value }))}
+                          className={`w-full border border-orange-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-orange-50' : 'bg-orange-50'}`}
+                        >
+                          <option value="">Choose a tagged segment...</option>
+                          {availableTags.map(tag => (
+                            <option key={tag} value={tag}>
+                              🏷️ {tag}
+                            </option>
+                          ))}
+                        </select>
+                        {availableTags.length === 0 && (
+                          <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <p>No tagged segments found. Create tags in your CRM first.</p>
+                            <p className="text-blue-600 mt-1">Click "🔄 Refresh Tags" button above to reload from CRM.</p>
+                          </div>
+                        )}
+                        {availableTags.length > 0 && (
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            Found {availableTags.length} tag(s): {availableTags.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>AI Provider</label>
+                        <select 
+                          value={campaignFormData.aiProvider || ''}
+                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, aiProvider: e.target.value }))}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        >
+                          <option value="">Auto-Select (Use Best Available)</option>
+                          <option value="openai">OpenAI GPT-4</option>
+                          <option value="anthropic">Anthropic Claude</option>
+                          <option value="deepseek">DeepSeek</option>
+                          <option value="gemini">Google Gemini</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Provider - Shows when Custom Segment is NOT selected */}
+                  {campaignFormData.targetAudience !== 'Custom Segment' && (
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>AI Provider</label>
                       <select 
@@ -1417,7 +1639,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                         <option value="gemini">Google Gemini</option>
                       </select>
                     </div>
-                  </div>
+                  )}
                   
                   {/* AI Smart Prompt */}
                   <div>
@@ -1480,6 +1702,9 @@ P.S. This email was generated for the "${name}" campaign.`;
                             <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {campaign.type} • {campaign.emailsSent} of {campaign.totalContacts || 0} contacts • Created: {campaign.createdDate}
+                              {campaign.targetAudience === 'Custom Segment' && campaign.customSegment && (
+                                <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegment}</span>
+                              )}
                             </p>
                             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
                               Status: <span className={`px-2 py-1 rounded-full text-xs ${

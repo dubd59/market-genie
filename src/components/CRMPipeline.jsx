@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTenant } from '../contexts/TenantContext'
 import FirebaseUserDataService from '../services/firebaseUserData'
 import toast from 'react-hot-toast'
 
 const CRMPipeline = () => {
   const { user } = useAuth()
+  const { tenant } = useTenant()
   const [contacts, setContacts] = useState([])
   const [deals, setDeals] = useState([])
   const [funnels, setFunnels] = useState([])
@@ -63,16 +65,20 @@ const CRMPipeline = () => {
   // Load CRM data from Firebase
   useEffect(() => {
     const loadCRMData = async () => {
-      if (!user) return
+      if (!user || !tenant?.id) return
       
       try {
-        const [contactsData, dealsData, funnelsData] = await Promise.all([
-          FirebaseUserDataService.getCRMContacts(user.uid),
-          FirebaseUserDataService.getCRMDeals(user.uid),
-          FirebaseUserDataService.getCRMFunnels(user.uid)
-        ])
+        // Use unified contact data source
+        const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+        const dealsData = await FirebaseUserDataService.getCRMDeals(user.uid)
+        const funnelsData = await FirebaseUserDataService.getCRMFunnels(user.uid)
         
-        setContacts(contactsData.contacts || [])
+        if (contactsResult.success && contactsResult.data?.contacts) {
+          setContacts(contactsResult.data.contacts)
+        } else {
+          setContacts([])
+        }
+        
         setDeals(dealsData.deals || [])
         setFunnels(funnelsData.funnels || [])
       } catch (error) {
@@ -84,14 +90,14 @@ const CRMPipeline = () => {
     }
 
     loadCRMData()
-  }, [user])
+  }, [user, tenant?.id])
 
   // Save contacts to Firebase
   const saveContacts = async (updatedContacts) => {
-    if (!user) return
+    if (!user || !tenant?.id) return
 
     try {
-      await FirebaseUserDataService.saveCRMContacts(user.uid, { contacts: updatedContacts })
+      await FirebaseUserDataService.saveUserData(user.uid, 'crm_contacts', { contacts: updatedContacts })
       setContacts(updatedContacts)
       toast.success('Contacts updated successfully')
     } catch (error) {
@@ -869,10 +875,10 @@ const CRMPipeline = () => {
         )}
       </div>
 
-      {/* Recent Contacts Table */}
+      {/* Enhanced Contact Manager */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-genie-teal">Recent Contacts</h3>
+          <h3 className="text-xl font-semibold text-genie-teal">Contact Management</h3>
           <div className="flex gap-3">
             {selectedContactIds.length > 0 && (
               <button
@@ -884,15 +890,21 @@ const CRMPipeline = () => {
             )}
             <button
               onClick={() => setShowImportModal(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
             >
-              Import CSV
+              📥 Import CSV
             </button>
             <button
               onClick={exportContacts}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
             >
-              Export CSV
+              📤 Export CSV
+            </button>
+            <button
+              onClick={() => setShowContactModal(true)}
+              className="bg-genie-teal text-white px-4 py-2 rounded-lg hover:bg-genie-teal/90 transition-colors flex items-center gap-2"
+            >
+              ➕ Add Contact
             </button>
           </div>
         </div>
@@ -901,117 +913,193 @@ const CRMPipeline = () => {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">👥</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Contacts Yet</h3>
-            <p className="text-gray-600 mb-6">Start building your customer database</p>
-            <button
-              onClick={() => setShowContactModal(true)}
-              className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/80 transition-colors"
-            >
-              Add Your First Contact
-            </button>
+            <p className="text-gray-600 mb-6">Start building your customer database with proper segmentation</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/80 transition-colors flex items-center gap-2"
+              >
+                ➕ Add Your First Contact
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                📥 Import from CSV
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
+          <>
+            {/* Contact Statistics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{contacts.length}</div>
+                <div className="text-sm text-blue-600">Total Contacts</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {contacts.filter(c => c.status === 'qualified' || c.status === 'warm').length}
+                </div>
+                <div className="text-sm text-green-600">Qualified Leads</div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {contacts.filter(c => c.status === 'customer' || c.status === 'won').length}
+                </div>
+                <div className="text-sm text-purple-600">Customers</div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {[...new Set(contacts.map(c => c.company).filter(c => c))].length}
+                </div>
+                <div className="text-sm text-orange-600">Companies</div>
+              </div>
             </div>
-            <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
-              <table className="w-full text-left">
-                <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="py-3 px-4 font-medium text-gray-700 w-12">
-                      <input
-                        type="checkbox"
-                        checked={contacts.length > 0 && selectedContactIds.length === contacts.length}
-                        onChange={toggleSelectAll}
-                        className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
-                      />
-                    </th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Contact</th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Company</th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Tags</th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Source</th>
-                    <th className="py-3 px-4 font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contacts.map(contact => (
-                  <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 w-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedContactIds.includes(contact.id)}
-                        onChange={() => toggleContactSelection(contact.id)}
-                        className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
-                      />
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">{contact.name}</div>
-                      <div className="text-sm text-gray-500">{contact.email}</div>
-                      <div className="text-xs text-gray-400">{contact.position}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="text-gray-600">{contact.company}</div>
-                      <div className="text-sm text-gray-500">{contact.phone}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        contact.status === 'new' ? 'bg-blue-100 text-blue-800' :
-                        contact.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
-                        contact.status === 'qualified' ? 'bg-green-100 text-green-800' :
-                        contact.status === 'proposal' ? 'bg-purple-100 text-purple-800' :
-                        contact.status === 'negotiation' ? 'bg-orange-100 text-orange-800' :
-                        contact.status === 'won' ? 'bg-green-200 text-green-900' :
-                        contact.status === 'lost' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {contact.status || 'new'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1 max-w-[150px]">
-                        {(contact.tags || []).slice(0, 2).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex px-1.5 py-0.5 text-xs bg-genie-teal/10 text-genie-teal rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {(contact.tags || []).length > 2 && (
-                          <span className="text-xs text-gray-400">
-                            +{(contact.tags || []).length - 2}
-                          </span>
+
+            {/* Enhanced Contacts Table */}
+            <div className="overflow-x-auto">
+              <div className="mb-4 flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Showing {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
+                  {selectedContactIds.length > 0 && (
+                    <span className="ml-2 text-genie-teal font-medium">
+                      ({selectedContactIds.length} selected)
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <select 
+                    onChange={(e) => {
+                      // Filter functionality can be added here
+                      console.log('Filter by status:', e.target.value)
+                    }}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="won">Customer</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
+                <table className="w-full text-left">
+                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="py-3 px-4 font-medium text-gray-700 w-12">
+                        <input
+                          type="checkbox"
+                          checked={contacts.length > 0 && selectedContactIds.length === contacts.length}
+                          onChange={toggleSelectAll}
+                          className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
+                        />
+                      </th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Contact</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Company</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Status</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Tags</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Source</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map(contact => (
+                    <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedContactIds.includes(contact.id)}
+                          onChange={() => toggleContactSelection(contact.id)}
+                          className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-gray-900">{contact.name}</div>
+                        <div className="text-sm text-gray-500">{contact.email}</div>
+                        {contact.phone && (
+                          <div className="text-sm text-gray-400">{contact.phone}</div>
                         )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-xs text-gray-500 capitalize">
-                        {contact.source?.replace('_', ' ') || 'manual'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setSelectedContact(contact)}
-                          className="text-genie-teal hover:underline text-sm"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => deleteContact(contact.id)}
-                          className="text-red-600 hover:underline text-sm"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-gray-700">
+                          {contact.company || '-'}
+                        </div>
+                        {contact.position && (
+                          <div className="text-sm text-gray-500">{contact.position}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          contact.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                          contact.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                          contact.status === 'qualified' ? 'bg-green-100 text-green-800' :
+                          contact.status === 'proposal' ? 'bg-purple-100 text-purple-800' :
+                          contact.status === 'negotiation' ? 'bg-orange-100 text-orange-800' :
+                          contact.status === 'won' ? 'bg-green-200 text-green-900' :
+                          contact.status === 'lost' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {contact.status || 'new'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+                          {(contact.tags || []).slice(0, 2).map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex px-2 py-1 text-xs bg-genie-teal/10 text-genie-teal rounded-full font-medium"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {(contact.tags || []).length > 2 && (
+                            <span className="text-xs text-gray-400 font-medium">
+                              +{(contact.tags || []).length - 2}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-xs text-gray-500 capitalize">
+                          {contact.source?.replace('_', ' ') || 'manual'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingContact(contact)
+                              setNewContact(contact)
+                              setShowContactModal(true)
+                            }}
+                            className="text-genie-teal hover:underline text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setSelectedContact(contact)}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => deleteContact(contact.id)}
+                            className="text-red-600 hover:underline text-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 

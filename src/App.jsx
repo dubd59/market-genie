@@ -32,6 +32,8 @@ import IntegrationConnectionStatus from './components/IntegrationConnectionStatu
 import AdvancedFunnelBuilder from './components/AdvancedFunnelBuilder'
 import SuperiorCRMSystem from './components/SuperiorCRMSystem'
 import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
+import WorkflowAutomation from './components/WorkflowAutomation'
+import CRMPipeline from './components/CRMPipeline'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -1642,113 +1644,7 @@ P.S. This email was generated for the "${name}" campaign.`;
               )}
             </div>
           )}
-          {activeSection === 'CRM & Pipeline' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">CRM & Pipeline</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="crm" className="text-genie-teal text-3xl mb-2">📋</span>
-                  <div className="text-2xl font-bold text-gray-900">45</div>
-                  <div className="text-gray-500">Active Deals</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="pipeline" className="text-genie-teal text-3xl mb-2">🔗</span>
-                  <div className="text-2xl font-bold text-gray-900">12</div>
-                  <div className="text-gray-500">Pipeline Stages</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="win" className="text-genie-teal text-3xl mb-2">🏆</span>
-                  <div className="text-2xl font-bold text-gray-900">8</div>
-                  <div className="text-gray-500">Closed Won</div>
-                </div>
-              </div>
-              {/* Pipeline Management */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Sales Pipeline</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">Prospects</h4>
-                    <div className="text-2xl font-bold text-blue-900">18</div>
-                    <div className="text-sm text-blue-700">$45,000</div>
-                  </div>
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800 mb-2">Qualified</h4>
-                    <div className="text-2xl font-bold text-yellow-900">12</div>
-                    <div className="text-sm text-yellow-700">$78,000</div>
-                  </div>
-                  <div className="bg-orange-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-orange-800 mb-2">Proposal</h4>
-                    <div className="text-2xl font-bold text-orange-900">8</div>
-                    <div className="text-sm text-orange-700">$95,000</div>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-green-800 mb-2">Closed Won</h4>
-                    <div className="text-2xl font-bold text-green-900">5</div>
-                    <div className="text-sm text-green-700">$67,000</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Management */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Recent Contacts</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-3">Name</th>
-                        <th className="py-3">Company</th>
-                        <th className="py-3">Stage</th>
-                        <th className="py-3">Value</th>
-                        <th className="py-3">Last Contact</th>
-                        <th className="py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b">
-                        <td className="py-3">John Smith</td>
-                        <td className="py-3">Acme Corp</td>
-                        <td className="py-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">Qualified</span></td>
-                        <td className="py-3">$15,000</td>
-                        <td className="py-3">2 days ago</td>
-                        <td className="py-3">
-                          <button className="text-genie-teal mr-2 hover:underline">View</button>
-                          <button className="text-blue-600 hover:underline">Call</button>
-                        </td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-3">Sarah Johnson</td>
-                        <td className="py-3">Tech Startup</td>
-                        <td className="py-3"><span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm">Proposal</span></td>
-                        <td className="py-3">$28,000</td>
-                        <td className="py-3">1 week ago</td>
-                        <td className="py-3">
-                          <button className="text-genie-teal mr-2 hover:underline">View</button>
-                          <button className="text-blue-600 hover:underline">Email</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl shadow p-6 text-center">
-                  <h4 className="font-semibold text-genie-teal mb-4">Add Contact</h4>
-                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">New Contact</button>
-                </div>
-                <div className="bg-white rounded-xl shadow p-6 text-center">
-                  <h4 className="font-semibold text-genie-teal mb-4">Create Deal</h4>
-                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">New Deal</button>
-                </div>
-                <div className="bg-white rounded-xl shadow p-6 text-center">
-                  <h4 className="font-semibold text-genie-teal mb-4">Export Data</h4>
-                  <button className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 w-full">Export CSV</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeSection === 'CRM & Pipeline' && <CRMPipeline />}
           {activeSection === 'Appointments' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h2 className="text-3xl font-bold text-genie-teal mb-8">Appointments</h2>
@@ -1857,87 +1753,7 @@ P.S. This email was generated for the "${name}" campaign.`;
               </div>
             </div>
           )}
-          {activeSection === 'Workflow Automation' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">Workflow Automation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="automation" className="text-genie-teal text-3xl mb-2">🤖</span>
-                  <div className="text-2xl font-bold text-gray-900">12</div>
-                  <div className="text-gray-500">Active Workflows</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="tasks" className="text-genie-teal text-3xl mb-2">📝</span>
-                  <div className="text-2xl font-bold text-gray-900">34</div>
-                  <div className="text-gray-500">Tasks Automated</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="efficiency" className="text-genie-teal text-3xl mb-2">⚙️</span>
-                  <div className="text-2xl font-bold text-gray-900">89%</div>
-                  <div className="text-gray-500">Efficiency</div>
-                </div>
-              </div>
-              {/* Workflow Builder */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Create New Workflow</h3>
-                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" placeholder="Workflow Name" className="border p-3 rounded" required />
-                  <select className="border p-3 rounded">
-                    <option>Select Trigger</option>
-                    <option>New Lead Added</option>
-                    <option>Email Opened</option>
-                    <option>Form Submitted</option>
-                    <option>Deal Stage Changed</option>
-                  </select>
-                  <select className="border p-3 rounded">
-                    <option>Select Action</option>
-                    <option>Send Email</option>
-                    <option>Add to Sequence</option>
-                    <option>Update Field</option>
-                    <option>Create Task</option>
-                  </select>
-                  <input type="number" placeholder="Delay (minutes)" className="border p-3 rounded" />
-                  <textarea placeholder="Workflow Description" className="border p-3 rounded col-span-1 md:col-span-2" />
-                  <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Create Workflow</button>
-                </form>
-              </div>
-
-              {/* Active Workflows */}
-              <div className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Active Workflows</h3>
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">Welcome New Leads</h4>
-                      <p className="text-gray-600">Trigger: New Lead → Send welcome email sequence</p>
-                      <p className="text-sm text-gray-500">Last triggered: 2 hours ago</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
-                      <button className="text-genie-teal hover:underline">Edit</button>
-                      <button className="text-red-500 hover:underline">Pause</button>
-                    </div>
-                  </div>
-                  <div className="border rounded-lg p-4 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">Follow-up Reminder</h4>
-                      <p className="text-gray-600">Trigger: No response after 3 days → Create task</p>
-                      <p className="text-sm text-gray-500">Last triggered: 1 day ago</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
-                      <button className="text-genie-teal hover:underline">Edit</button>
-                      <button className="text-red-500 hover:underline">Pause</button>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end mt-6 gap-2">
-                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">View All</button>
-                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">New Workflow</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeSection === 'Workflow Automation' && <WorkflowAutomation />}
           {activeSection === 'Reporting & Analytics' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h2 className="text-3xl font-bold text-genie-teal mb-8">Reporting & Analytics</h2>

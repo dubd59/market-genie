@@ -55,6 +55,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
     }
     
+    // User data (API keys, budget settings, preferences, etc.)
+    match /userData/{userDataId} {
+      // Allow users to access only their own data (userDataId format: userId_dataType)
+      allow read, write, create: if request.auth != null && 
+        userDataId.matches(request.auth.uid + '_.*');
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

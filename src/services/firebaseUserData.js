@@ -209,6 +209,147 @@ export class FirebaseUserDataService {
       return null;
     }
   }
+
+  // ===== WORKFLOW AUTOMATION =====
+  static async saveWorkflows(userId, workflowData) {
+    try {
+      const workflowRef = this.getUserDataRef(userId, 'workflows');
+      await setDoc(workflowRef, {
+        ...workflowData,
+        updatedAt: new Date()
+      });
+      console.log('Workflows saved to Firebase successfully');
+    } catch (error) {
+      console.error('Error saving workflows:', error);
+      throw error;
+    }
+  }
+
+  static async getWorkflows(userId) {
+    try {
+      const workflowRef = this.getUserDataRef(userId, 'workflows');
+      const doc = await getDoc(workflowRef);
+      
+      if (doc.exists()) {
+        return doc.data();
+      } else {
+        // Return default empty workflows
+        return {
+          workflows: [],
+          templates: []
+        };
+      }
+    } catch (error) {
+      console.error('Error loading workflows:', error);
+      return {
+        workflows: [],
+        templates: []
+      };
+    }
+  }
+
+  // ===== CRM SYSTEM =====
+  static async saveCRMContacts(userId, contactsData) {
+    try {
+      const contactsRef = this.getUserDataRef(userId, 'crm_contacts');
+      await setDoc(contactsRef, {
+        ...contactsData,
+        updatedAt: new Date()
+      });
+      console.log('CRM Contacts saved to Firebase successfully');
+    } catch (error) {
+      console.error('Error saving CRM contacts:', error);
+      throw error;
+    }
+  }
+
+  static async getCRMContacts(userId) {
+    try {
+      const contactsRef = this.getUserDataRef(userId, 'crm_contacts');
+      const doc = await getDoc(contactsRef);
+      
+      if (doc.exists()) {
+        return doc.data();
+      } else {
+        return {
+          contacts: []
+        };
+      }
+    } catch (error) {
+      console.error('Error loading CRM contacts:', error);
+      return {
+        contacts: []
+      };
+    }
+  }
+
+  static async saveCRMDeals(userId, dealsData) {
+    try {
+      const dealsRef = this.getUserDataRef(userId, 'crm_deals');
+      await setDoc(dealsRef, {
+        ...dealsData,
+        updatedAt: new Date()
+      });
+      console.log('CRM Deals saved to Firebase successfully');
+    } catch (error) {
+      console.error('Error saving CRM deals:', error);
+      throw error;
+    }
+  }
+
+  static async getCRMDeals(userId) {
+    try {
+      const dealsRef = this.getUserDataRef(userId, 'crm_deals');
+      const doc = await getDoc(dealsRef);
+      
+      if (doc.exists()) {
+        return doc.data();
+      } else {
+        return {
+          deals: []
+        };
+      }
+    } catch (error) {
+      console.error('Error loading CRM deals:', error);
+      return {
+        deals: []
+      };
+    }
+  }
+
+  static async saveCRMFunnels(userId, funnelsData) {
+    try {
+      const funnelsRef = this.getUserDataRef(userId, 'crm_funnels');
+      await setDoc(funnelsRef, {
+        ...funnelsData,
+        updatedAt: new Date()
+      });
+      console.log('CRM Funnels saved to Firebase successfully');
+    } catch (error) {
+      console.error('Error saving CRM funnels:', error);
+      throw error;
+    }
+  }
+
+  static async getCRMFunnels(userId) {
+    try {
+      const funnelsRef = this.getUserDataRef(userId, 'crm_funnels');
+      const doc = await getDoc(funnelsRef);
+      
+      if (doc.exists()) {
+        return doc.data();
+      } else {
+        return {
+          funnels: []
+        };
+      }
+    } catch (error) {
+      console.error('Error loading CRM funnels:', error);
+      return {
+        funnels: []
+      };
+    }
+  }
 }
 
 export default FirebaseUserDataService;

@@ -432,15 +432,15 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
   // Load budget settings from Firebase
   React.useEffect(() => {
-    if (currentUser?.uid) {
+    if (user?.uid) {
       loadBudgetFromFirebase();
     }
-  }, [currentUser?.uid]);
+  }, [user?.uid]);
 
   const loadBudgetFromFirebase = async () => {
     try {
       setBudgetLoading(true);
-      const budgetData = await FirebaseUserDataService.getBudgetSettings(currentUser.uid);
+      const budgetData = await FirebaseUserDataService.getBudgetSettings(user.uid);
       setScrapingBudget(budgetData.scrapingBudget);
       setCurrentBudgetUsage(budgetData.currentBudgetUsage);
     } catch (error) {
@@ -452,9 +452,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   };
 
   const saveBudgetToFirebase = async (budget, usage) => {
-    if (currentUser?.uid) {
+    if (user?.uid) {
       try {
-        await FirebaseUserDataService.saveBudgetSettings(currentUser.uid, {
+        await FirebaseUserDataService.saveBudgetSettings(user.uid, {
           scrapingBudget: budget,
           currentBudgetUsage: usage
         });
@@ -738,7 +738,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   const generateAIEmailContent = async (campaignData, preferredProvider = null) => {
     try {
       // Use real AI APIs with user's stored API keys
-      const content = await AIService.generateEmailContent(currentUser?.uid, campaignData, preferredProvider);
+      const content = await AIService.generateEmailContent(user?.uid, campaignData, preferredProvider);
       return content;
     } catch (error) {
       console.error('AI Email Generation Error:', error);

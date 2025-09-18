@@ -862,30 +862,34 @@ const CRMPipeline = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-3 font-medium text-gray-700">Contact</th>
-                  <th className="py-3 font-medium text-gray-700">Company</th>
-                  <th className="py-3 font-medium text-gray-700">Status</th>
-                  <th className="py-3 font-medium text-gray-700">Tags</th>
-                  <th className="py-3 font-medium text-gray-700">Source</th>
-                  <th className="py-3 font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.slice(0, 10).map(contact => (
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
+            </div>
+            <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="py-3 px-4 font-medium text-gray-700">Contact</th>
+                    <th className="py-3 px-4 font-medium text-gray-700">Company</th>
+                    <th className="py-3 px-4 font-medium text-gray-700">Status</th>
+                    <th className="py-3 px-4 font-medium text-gray-700">Tags</th>
+                    <th className="py-3 px-4 font-medium text-gray-700">Source</th>
+                    <th className="py-3 px-4 font-medium text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map(contact => (
                   <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <div className="font-medium text-gray-900">{contact.name}</div>
                       <div className="text-sm text-gray-500">{contact.email}</div>
                       <div className="text-xs text-gray-400">{contact.position}</div>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <div className="text-gray-600">{contact.company}</div>
                       <div className="text-sm text-gray-500">{contact.phone}</div>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         contact.status === 'new' ? 'bg-blue-100 text-blue-800' :
                         contact.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
@@ -899,7 +903,7 @@ const CRMPipeline = () => {
                         {contact.status || 'new'}
                       </span>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <div className="flex flex-wrap gap-1 max-w-[150px]">
                         {(contact.tags || []).slice(0, 2).map((tag, index) => (
                           <span
@@ -916,12 +920,12 @@ const CRMPipeline = () => {
                         )}
                       </div>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <span className="text-xs text-gray-500 capitalize">
                         {contact.source?.replace('_', ' ') || 'manual'}
                       </span>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedContact(contact)}
@@ -941,6 +945,7 @@ const CRMPipeline = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

@@ -15,6 +15,7 @@ const CRMPipeline = () => {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showFunnelModal, setShowFunnelModal] = useState(false)
   const [editingFunnel, setEditingFunnel] = useState(null)
+  const [editingContact, setEditingContact] = useState(null)
   const [selectedContact, setSelectedContact] = useState(null)
   const [selectedDeal, setSelectedDeal] = useState(null)
   const [csvFile, setCsvFile] = useState(null)
@@ -145,6 +146,78 @@ const CRMPipeline = () => {
     })
     setShowContactModal(false)
     toast.success('Contact added successfully!')
+  }
+
+  const editContact = (contact) => {
+    setEditingContact(contact)
+    setNewContact({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || '',
+      company: contact.company || '',
+      position: contact.position || '',
+      tags: contact.tags || [],
+      notes: contact.notes || '',
+      funnelId: contact.funnelId || '',
+      source: contact.source || 'manual',
+      status: contact.status || 'new'
+    })
+    setSelectedContact(null) // Close detail modal
+    setShowContactModal(true) // Open edit modal
+  }
+
+  const updateContact = async (e) => {
+    e.preventDefault()
+    
+    if (!newContact.name || !newContact.email) {
+      toast.error('Please fill in name and email')
+      return
+    }
+
+    const updatedContact = {
+      ...editingContact,
+      ...newContact,
+      updatedAt: new Date().toISOString()
+    }
+
+    const updatedContacts = contacts.map(contact => 
+      contact.id === editingContact.id ? updatedContact : contact
+    )
+    
+    await saveContacts(updatedContacts)
+    
+    setNewContact({
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      position: '',
+      tags: [],
+      notes: '',
+      funnelId: '',
+      source: 'manual',
+      status: 'new'
+    })
+    setEditingContact(null)
+    setShowContactModal(false)
+    toast.success('Contact updated successfully!')
+  }
+
+  const cancelContactEdit = () => {
+    setEditingContact(null)
+    setNewContact({
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      position: '',
+      tags: [],
+      notes: '',
+      funnelId: '',
+      source: 'manual',
+      status: 'new'
+    })
+    setShowContactModal(false)
   }
 
   // Add new deal
@@ -877,9 +950,11 @@ const CRMPipeline = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white p-6 border-b border-gray-200 rounded-t-xl">
-              <h3 className="text-xl font-semibold text-genie-teal">Add New Contact</h3>
+              <h3 className="text-xl font-semibold text-genie-teal">
+                {editingContact ? 'Edit Contact' : 'Add New Contact'}
+              </h3>
             </div>
-            <form id="contact-form" onSubmit={addContact} className="p-6 space-y-4">
+            <form id="contact-form" onSubmit={editingContact ? updateContact : addContact} className="p-6 space-y-4">
               <input
                 type="text"
                 placeholder="Full Name"
@@ -1037,11 +1112,11 @@ const CRMPipeline = () => {
                   form="contact-form"
                   className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/80 transition-colors flex-1"
                 >
-                  Add Contact
+                  {editingContact ? 'Update Contact' : 'Add Contact'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowContactModal(false)}
+                  onClick={editingContact ? cancelContactEdit : () => setShowContactModal(false)}
                   className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors flex-1"
                 >
                   Cancel
@@ -1436,6 +1511,12 @@ const CRMPipeline = () => {
 
             {/* Actions */}
             <div className="mt-6 flex gap-3 justify-end">
+              <button
+                onClick={() => editContact(selectedContact)}
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+              >
+                Edit Contact
+              </button>
               <button
                 onClick={() => {
                   // Quick status update buttons

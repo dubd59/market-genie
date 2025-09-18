@@ -156,6 +156,83 @@ export function GenieProvider({ children }) {
     }
   }
 
+  const createWorkflow = async (workflowData) => {
+    try {
+      // AI-powered workflow generation
+      const { prompt, context, availableTriggers, availableActions, availableTags } = workflowData
+      
+      // Template-based AI suggestions based on prompt keywords
+      const aiTemplates = {
+        'welcome': {
+          name: 'Welcome New Leads',
+          trigger: 'lead_added',
+          action: 'launch_campaign',
+          description: 'Automatically send welcome email campaign to new leads',
+          targetTags: ['new_lead'],
+          delay: 0
+        },
+        'vip': {
+          name: 'VIP Customer Outreach',
+          trigger: 'contact_tagged',
+          action: 'launch_campaign',
+          description: 'Send exclusive offers to VIP-tagged customers',
+          targetTags: ['VIP'],
+          delay: 60
+        },
+        'follow': {
+          name: 'Lead Follow-up',
+          trigger: 'time_based',
+          action: 'add_to_campaign',
+          description: 'Follow up with leads after specified time',
+          targetTags: ['prospect'],
+          delay: 1440 // 24 hours
+        },
+        'enterprise': {
+          name: 'Enterprise Lead Response',
+          trigger: 'form_submitted',
+          action: 'launch_campaign',
+          description: 'Immediate response for enterprise inquiries',
+          targetTags: ['enterprise'],
+          delay: 15
+        }
+      }
+      
+      // Find matching template based on prompt
+      const promptLower = prompt.toLowerCase()
+      let matchedWorkflow = null
+      
+      for (const [key, template] of Object.entries(aiTemplates)) {
+        if (promptLower.includes(key) || promptLower.includes(template.trigger.replace('_', ' '))) {
+          matchedWorkflow = template
+          break
+        }
+      }
+      
+      // If no template match, create a custom workflow
+      if (!matchedWorkflow) {
+        matchedWorkflow = {
+          name: `Custom Workflow: ${prompt.slice(0, 30)}...`,
+          trigger: 'lead_added',
+          action: 'launch_campaign',
+          description: `AI-generated workflow based on: "${prompt}"`,
+          targetTags: ['all'],
+          delay: 0
+        }
+      }
+      
+      return {
+        ...matchedWorkflow,
+        aiOptimized: true,
+        conditions: [],
+        status: 'active',
+        campaignId: ''
+      }
+    } catch (error) {
+      console.error('Error creating AI workflow:', error)
+      throw error
+    }
+  }
+
   const updateAnalytics = (analytics) => {
     dispatch({ type: 'UPDATE_ANALYTICS', payload: analytics })
   }
@@ -168,6 +245,7 @@ export function GenieProvider({ children }) {
     ...state,
     grantWish,
     createCampaign,
+    createWorkflow,
     updateAnalytics,
     updateSettings,
   }

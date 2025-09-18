@@ -16,6 +16,7 @@ const CRMPipeline = () => {
   const [showFunnelModal, setShowFunnelModal] = useState(false)
   const [editingFunnel, setEditingFunnel] = useState(null)
   const [editingContact, setEditingContact] = useState(null)
+  const [selectedContactIds, setSelectedContactIds] = useState([])
   const [selectedContact, setSelectedContact] = useState(null)
   const [selectedDeal, setSelectedDeal] = useState(null)
   const [csvFile, setCsvFile] = useState(null)
@@ -268,6 +269,38 @@ const CRMPipeline = () => {
       const updatedContacts = contacts.filter(contact => contact.id !== contactId)
       await saveContacts(updatedContacts)
       toast.success('Contact deleted')
+    }
+  }
+
+  // Bulk selection functions
+  const toggleContactSelection = (contactId) => {
+    setSelectedContactIds(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedContactIds.length === contacts.length) {
+      setSelectedContactIds([])
+    } else {
+      setSelectedContactIds(contacts.map(contact => contact.id))
+    }
+  }
+
+  const deleteSelectedContacts = async () => {
+    if (selectedContactIds.length === 0) {
+      toast.error('Please select contacts to delete')
+      return
+    }
+
+    const count = selectedContactIds.length
+    if (window.confirm(`Are you sure you want to delete ${count} selected contact${count > 1 ? 's' : ''}?`)) {
+      const updatedContacts = contacts.filter(contact => !selectedContactIds.includes(contact.id))
+      await saveContacts(updatedContacts)
+      setSelectedContactIds([])
+      toast.success(`${count} contact${count > 1 ? 's' : ''} deleted successfully`)
     }
   }
 
@@ -840,12 +873,28 @@ const CRMPipeline = () => {
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-genie-teal">Recent Contacts</h3>
-          <button
-            onClick={exportContacts}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Export CSV
-          </button>
+          <div className="flex gap-3">
+            {selectedContactIds.length > 0 && (
+              <button
+                onClick={deleteSelectedContacts}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                🗑️ Delete Selected ({selectedContactIds.length})
+              </button>
+            )}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Import CSV
+            </button>
+            <button
+              onClick={exportContacts}
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
         </div>
         
         {contacts.length === 0 ? (
@@ -869,6 +918,14 @@ const CRMPipeline = () => {
               <table className="w-full text-left">
                 <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="py-3 px-4 font-medium text-gray-700 w-12">
+                      <input
+                        type="checkbox"
+                        checked={contacts.length > 0 && selectedContactIds.length === contacts.length}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
+                      />
+                    </th>
                     <th className="py-3 px-4 font-medium text-gray-700">Contact</th>
                     <th className="py-3 px-4 font-medium text-gray-700">Company</th>
                     <th className="py-3 px-4 font-medium text-gray-700">Status</th>
@@ -880,6 +937,14 @@ const CRMPipeline = () => {
                 <tbody>
                   {contacts.map(contact => (
                   <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedContactIds.includes(contact.id)}
+                        onChange={() => toggleContactSelection(contact.id)}
+                        className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
+                      />
+                    </td>
                     <td className="py-3 px-4">
                       <div className="font-medium text-gray-900">{contact.name}</div>
                       <div className="text-sm text-gray-500">{contact.email}</div>

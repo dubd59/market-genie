@@ -225,7 +225,13 @@ const APIKeysIntegrations = () => {
     clientId: '',
     clientSecret: '',
     accessToken: '',
-    refreshToken: ''
+    refreshToken: '',
+    authCode: '',
+    smtpEmail: '',
+    smtpPassword: '',
+    smtpFromName: '',
+    smtpHost: 'smtp.zoho.com',
+    smtpPort: '587'
   });
 
   const availableServices = [
@@ -400,7 +406,6 @@ const APIKeysIntegrations = () => {
           
         case 'Hunter.io Email Finding':
         case 'Apollo.io':
-        case 'Zoho Mail':
         case 'ConvertKit':
           // Show API key input modal
           const apiKey = prompt(`Enter your ${integration.name} API key:`);
@@ -412,8 +417,6 @@ const APIKeysIntegrations = () => {
               result = await IntegrationService.connectHunterIO(tenant.id, apiKey);
             } else if (integration.name === 'Apollo.io') {
               result = await IntegrationService.connectApollo(tenant.id, apiKey);
-            } else if (integration.name === 'Zoho Mail') {
-              result = await IntegrationService.connectZohoMail(tenant.id, apiKey);
             } else if (integration.name === 'ConvertKit') {
               result = await IntegrationService.connectConvertKit(tenant.id, apiKey);
             }
@@ -505,10 +508,18 @@ const APIKeysIntegrations = () => {
           break;
           
         case 'Zoho Mail':
-          if (settingsForm.clientId && settingsForm.clientSecret && settingsForm.authCode) {
-            result = await IntegrationService.exchangeZohoAuthCode(tenant.id, settingsForm.authCode, settingsForm.clientId, settingsForm.clientSecret);
+          if (settingsForm.smtpEmail && settingsForm.smtpPassword) {
+            // Save SMTP credentials for email sending
+            await IntegrationService.saveIntegrationCredentials(tenant.id, 'zoho_mail_smtp', {
+              smtpEmail: settingsForm.smtpEmail,
+              smtpPassword: settingsForm.smtpPassword,
+              smtpFromName: settingsForm.smtpFromName,
+              smtpHost: settingsForm.smtpHost || 'smtp.zoho.com',
+              smtpPort: settingsForm.smtpPort || '587'
+            });
+            result = { success: true };
           } else {
-            toast.error('Please provide Client ID, Client Secret, and Authorization Code');
+            toast.error('Please provide SMTP email and password');
             return;
           }
           break;
@@ -1204,63 +1215,90 @@ const APIKeysIntegrations = () => {
                 {selectedIntegration.name === 'Zoho Mail' && (
                   <div>
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-orange-800 mb-2">Zoho Mail Self Client Integration</h4>
+                      <h4 className="font-medium text-orange-800 mb-2">Zoho Mail SMTP Configuration</h4>
                       <p className="text-orange-700 text-sm mb-3">
-                        Configure your Zoho Mail self-client application for email sending capabilities.
+                        Configure your Zoho Mail SMTP settings to send emails from your domain.
                       </p>
                       <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
-                        <p className="text-orange-800 text-sm font-medium mb-2">Setup Steps:</p>
-                        <ol className="text-orange-700 text-sm space-y-1 ml-4">
-                          <li>1. Enter your Client ID and Secret below</li>
-                          <li>2. Generate authorization code in Zoho API Console</li>
-                          <li>3. Paste the generated code in the Authorization Code field</li>
-                          <li>4. Click "Connect" to complete setup</li>
-                        </ol>
+                        <p className="text-orange-800 text-sm font-medium mb-2">SMTP Details:</p>
+                        <ul className="text-orange-700 text-sm space-y-1 ml-4">
+                          <li>• Server: smtp.zoho.com</li>
+                          <li>• Port: 587 (TLS) or 465 (SSL)</li>
+                          <li>• Use your business email and password</li>
+                          <li>• Emails will be sent from YOUR domain</li>
+                        </ul>
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Client ID
+                          Email Address
                         </label>
                         <input
-                          type="text"
-                          value={settingsForm.clientId}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientId: e.target.value }))}
-                          placeholder="Enter your Zoho Mail Client ID"
+                          type="email"
+                          value={settingsForm.smtpEmail}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpEmail: e.target.value }))}
+                          placeholder="your@yourbusiness.com"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Client Secret
+                          Password
                         </label>
                         <input
                           type="password"
-                          value={settingsForm.clientSecret}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, clientSecret: e.target.value }))}
-                          placeholder="Enter your Zoho Mail Client Secret"
+                          value={settingsForm.smtpPassword}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpPassword: e.target.value }))}
+                          placeholder="Your Zoho Mail password"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Authorization Code
+                          From Name
                         </label>
                         <input
                           type="text"
-                          value={settingsForm.authCode}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, authCode: e.target.value }))}
-                          placeholder="Paste the generated authorization code from Zoho API Console"
+                          value={settingsForm.smtpFromName}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpFromName: e.target.value }))}
+                          placeholder="Your Business Name"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Generate this code in Zoho API Console → Self Client → Generate Code
+                          This will appear as the sender name in emails
                         </p>
                       </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            SMTP Server
+                          </label>
+                          <input
+                            type="text"
+                            value={settingsForm.smtpHost || 'smtp.zoho.com'}
+                            onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpHost: e.target.value }))}
+                            placeholder="smtp.zoho.com"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Port
+                          </label>
+                          <select
+                            value={settingsForm.smtpPort || '587'}
+                            onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpPort: e.target.value }))}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="587">587 (TLS)</option>
+                            <option value="465">465 (SSL)</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Get your credentials from Zoho API Console → Self Client application
+                    <p className="text-xs text-gray-500 mt-3">
+                      💡 For Gmail users: Use smtp.gmail.com, port 587, and enable "App Passwords" in Google Account security settings.
                     </p>
                   </div>
                 )}
@@ -1369,7 +1407,8 @@ const APIKeysIntegrations = () => {
                   disabled={isConnecting || (
                     !settingsForm.apiKey && 
                     !settingsForm.accessToken && 
-                    !(settingsForm.clientId && settingsForm.clientSecret && settingsForm.authCode)
+                    !(settingsForm.clientId && settingsForm.clientSecret && settingsForm.authCode) &&
+                    !(settingsForm.smtpEmail && settingsForm.smtpPassword)
                   )}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >

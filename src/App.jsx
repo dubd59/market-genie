@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { TenantProvider } from './contexts/TenantContext'
@@ -14,8 +14,9 @@ import LandingPage from './pages/LandingPage'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
-import toast from 'react-hot-toast'
-import { Toaster } from 'react-hot-toast'
+import toast, { Toaster } from 'react-hot-toast'
+import { functions } from './firebase'
+import { httpsCallable } from 'firebase/functions'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
 import Sidebar from './components/Sidebar'
@@ -23,6 +24,7 @@ import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
 import AIService from './services/aiService'
+import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
 import AISwarmDashboard from './components/AISwarmDashboard'
 import CostControlsDashboard from './components/CostControlsDashboard'
@@ -104,44 +106,7 @@ function SophisticatedDashboard() {
   const [budgetLoading, setBudgetLoading] = useState(true)
 
   // Campaign State
-  const [campaigns, setCampaigns] = useState([
-    {
-      id: 1,
-      name: "Summer Product Launch",
-      status: "Active",
-      type: "Email",
-      emailsSent: 1234,
-      openRate: 68,
-      responseRate: 24,
-      createdDate: "2024-01-15",
-      subject: "🌞 Summer Sale - 50% Off Everything!",
-      emailContent: `Hi {firstName},
-
-Summer is here and we're celebrating with our biggest sale of the year!
-
-🌞 50% OFF EVERYTHING 🌞
-Valid until July 31st
-
-This is the perfect time to upgrade your marketing automation tools and take your business to the next level.
-
-What's included:
-• All premium features unlocked
-• Priority customer support
-• Advanced analytics dashboard
-• Custom integrations
-
-Don't miss out - this offer expires soon!
-
-[SHOP NOW - 50% OFF]
-
-Best regards,
-The MarketGenie Team
-
-P.S. This offer is exclusive to our valued customers like you!`,
-      template: "Product Launch",
-      targetAudience: "All Leads"
-    }
-  ])
+  const [campaigns, setCampaigns] = useState([])
   const [campaignStats, setCampaignStats] = useState({
     totalCampaigns: 12,
     totalEmailsSent: 2430,
@@ -349,13 +314,23 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         if (contactsResult.success && contactsResult.data) {
           console.log('Contacts data:', contactsResult.data)
           
+          // Handle the nested contacts structure
+          let contactsArray = []
+          if (Array.isArray(contactsResult.data)) {
+            contactsArray = contactsResult.data
+          } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
+            contactsArray = contactsResult.data.contacts
+          }
+          
+          console.log('Processed contacts array:', contactsArray.length, contactsArray.slice(0, 2))
+          
           // Store contacts for campaign targeting
-          setContacts(contactsResult.data)
+          setContacts(contactsArray)
           
           // Extract all unique tags, companies, and statuses for segmentation
           let allSegments = []
           
-          contactsResult.data.forEach(contact => {
+          contactsArray.forEach(contact => {
             console.log('Processing contact:', contact.email)
             
             // Add tags
@@ -388,6 +363,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           // Get unique segments
           const uniqueSegments = [...new Set(allSegments)].filter(segment => segment && segment.trim())
           console.log('Available CRM segments:', uniqueSegments)
+        console.log('Total contacts:', contacts.length)
+        console.log('Sample contact structure:', contacts[0])
+        console.log('Contacts with tags:', contacts.filter(c => c.tags && c.tags.length > 0).map(c => ({ email: c.email, tags: c.tags })))
           setAvailableTags(uniqueSegments)
         } else {
           // If no contacts yet, provide default segments
@@ -416,6 +394,251 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
     loadCRMTags()
   }, [user, tenant?.id])
+
+  // Load campaigns from Firebase
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      if (!user?.uid || !tenant?.id) return
+      
+      try {
+        console.log('Loading campaigns for user:', user.uid)
+        const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
+        console.log('Campaigns loaded:', campaignsResult)
+        console.log('Campaign data type:', typeof campaignsResult.data)
+        console.log('Campaign data is array:', Array.isArray(campaignsResult.data))
+        console.log('Campaign data content:', campaignsResult.data)
+        
+        if (campaignsResult.success && campaignsResult.data) {
+          let loadedCampaigns = []
+          
+          // Handle different data structures
+          if (Array.isArray(campaignsResult.data)) {
+            loadedCampaigns = campaignsResult.data
+          } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
+            // If it's an object, extract campaigns (filter out metadata like updatedAt)
+            if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
+              loadedCampaigns = campaignsResult.data.campaigns
+            } else {
+              // Filter object values to only include valid campaign objects
+              loadedCampaigns = Object.values(campaignsResult.data).filter(item => 
+                item && 
+                typeof item === 'object' && 
+                item.id && 
+                item.name && 
+                typeof item.name === 'string' &&
+                (typeof item.id === 'number' || (typeof item.id === 'string' && !isNaN(item.id))) // Valid campaign ID
+              )
+            }
+          }
+          
+          console.log('Final loaded campaigns:', loadedCampaigns)
+          setCampaigns(loadedCampaigns)
+        } else {
+          console.log('No campaigns data found, setting empty array')
+          setCampaigns([])
+        }
+      } catch (error) {
+        console.error('Error loading campaigns:', error)
+      }
+    }
+    
+    loadCampaigns()
+  }, [user?.uid, tenant?.id])
+
+  // Save campaigns to Firebase whenever campaigns change
+  const saveCampaignsToFirebase = async (campaignsData) => {
+    if (!user?.uid) return
+    
+    try {
+      console.log('Saving campaigns to Firebase:', campaignsData)
+      const result = await FirebaseUserDataService.saveUserData(user.uid, `${user.uid}_campaigns`, campaignsData)
+      console.log('Save result:', result)
+    } catch (error) {
+      console.error('Error saving campaigns:', error)
+    }
+  }
+
+  // Send campaign emails using Zoho Mail
+  const sendCampaignNow = async (campaign) => {
+    try {
+      console.log('Sending campaign emails...')
+      // toast.info('Sending campaign emails...')
+      
+      // Check if SMTP credentials are configured
+      const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'zoho_mail_smtp')
+      if (!smtpCredentials.success) {
+        console.log('SMTP not configured. Please configure email settings in Integrations.')
+        toast.error('Email settings not configured. Please set up SMTP in Integrations → Zoho Mail.')
+        return
+      }
+
+      // Filter contacts based on campaign targeting
+      console.log('Campaign targeting:', {
+        targetAudience: campaign.targetAudience,
+        customSegment: campaign.customSegment
+      })
+      console.log('Total contacts available:', contacts.length)
+      
+      const targetContacts = (Array.isArray(contacts) ? contacts : []).filter(contact => {
+        if (!campaign.targetAudience || campaign.targetAudience === 'All Leads') {
+          return true
+        }
+        if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
+          // Check if contact matches the selected custom segment
+          const segment = campaign.customSegment
+          
+          // Check tags (handle both exact match and common variations)
+          if (contact.tags && (
+            contact.tags.includes(segment) ||
+            (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+            (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+            (segment === 'New prospects' && contact.tags.includes('New'))
+          )) {
+            return true
+          }
+          
+          // Check company
+          if (contact.company && segment.startsWith('Company: ') && contact.company === segment.replace('Company: ', '')) {
+            return true
+          }
+          
+          // Check status
+          if (contact.status && segment.startsWith('Status: ') && contact.status === segment.replace('Status: ', '')) {
+            return true
+          }
+        }
+        return false
+      })
+      
+      console.log('Contacts after filtering:', targetContacts.length)
+      console.log('Sample contact structure:', contacts[0])
+
+      if (targetContacts.length === 0) {
+        console.log('No contacts match the campaign targeting criteria')
+        // toast.error('No contacts match the campaign targeting criteria')
+        
+        // Reset campaign status back to Draft since no emails were sent
+        const resetCampaigns = campaigns.map(c => 
+          c.id === campaign.id ? { ...c, status: 'Draft' } : c
+        )
+        setCampaigns(resetCampaigns)
+        await saveCampaignsToFirebase(resetCampaigns)
+        return
+      }
+
+      console.log(`Sending to ${targetContacts.length} contacts:`, targetContacts)
+      
+      let emailsSent = 0
+      const errors = []
+
+      // Send emails to each contact
+      for (const contact of targetContacts) {
+        try {
+          // Personalize email content
+          let personalizedContent = campaign.emailContent
+          personalizedContent = personalizedContent.replace(/{firstName}/g, contact.name?.split(' ')[0] || 'there')
+          personalizedContent = personalizedContent.replace(/{company}/g, contact.company || 'your company')
+          personalizedContent = personalizedContent.replace(/{name}/g, contact.name || 'there')
+
+          // Send email via Firebase Function
+          const emailData = {
+            to: contact.email,
+            subject: campaign.subject,
+            content: personalizedContent
+          }
+
+          // Call Firebase Function for email sending
+          const sendResult = await sendEmailViaFirebase(emailData, tenant.id)
+          
+          if (sendResult.success) {
+            emailsSent++
+            console.log(`Email sent to ${contact.email}`)
+          } else {
+            errors.push(`Failed to send to ${contact.email}: ${sendResult.error}`)
+          }
+          
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+        } catch (error) {
+          console.error(`Error sending to ${contact.email}:`, error)
+          errors.push(`Error sending to ${contact.email}: ${error.message}`)
+        }
+      }
+
+      // Update campaign stats
+      const updatedCampaigns = campaigns.map(c => {
+        if (c.id === campaign.id) {
+          return {
+            ...c,
+            status: 'Sent',
+            emailsSent: emailsSent,
+            totalContacts: targetContacts.length,
+            lastSent: new Date().toISOString()
+          }
+        }
+        return c
+      })
+      
+      setCampaigns(updatedCampaigns)
+      await saveCampaignsToFirebase(updatedCampaigns)
+
+      if (emailsSent > 0) {
+        console.log(`Campaign sent! ${emailsSent} emails delivered successfully.`)
+        // toast.success(`Campaign sent! ${emailsSent} emails delivered successfully.`)
+      }
+      
+      if (errors.length > 0) {
+        console.error('Email sending errors:', errors)
+        console.log(`${errors.length} emails failed to send. Check console for details.`)
+        // toast.error(`${errors.length} emails failed to send. Check console for details.`)
+      }
+      
+    } catch (error) {
+      console.error('Error sending campaign:', error)
+      console.log('Failed to send campaign: ' + error.message)
+      // toast.error('Failed to send campaign: ' + error.message)
+    }
+  }
+
+  // Helper function to send email via Firebase Function
+  const sendEmailViaFirebase = async (emailData, tenantId) => {
+    try {
+      console.log('📧 Sending email via Firebase Function to:', emailData.to)
+      console.log('📧 TenantId:', tenantId)
+      console.log('📧 Email data:', emailData)
+      
+      // Get the callable function
+      const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail')
+      
+      // Prepare the payload
+      const payload = {
+        to: emailData.to,
+        subject: emailData.subject,
+        content: emailData.content,
+        tenantId: tenantId
+      }
+      
+      console.log('📧 Payload being sent:', payload)
+      
+      // Call the function with tenantId
+      const result = await sendCampaignEmail(payload)
+      
+      console.log('📧 Email sent successfully:', result.data)
+      
+      return {
+        success: true,
+        data: result.data
+      }
+      
+    } catch (error) {
+      console.error('📧 Error sending email:', error)
+      return { 
+        success: false, 
+        error: error.message 
+      }
+    }
+  }
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -750,6 +973,49 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     })
   }
 
+  // Helper function to calculate target contacts for a campaign
+  const calculateTargetContacts = (campaign, contactsList = contacts) => {
+    return (Array.isArray(contactsList) ? contactsList : []).filter(contact => {
+      if (!campaign.targetAudience || campaign.targetAudience === 'All Leads') {
+        return true
+      }
+      if (campaign.targetAudience === 'New Leads') {
+        return contact.status === 'new' || contact.status === 'lead'
+      }
+      if (campaign.targetAudience === 'Warm Prospects') {
+        return contact.status === 'qualified' || contact.status === 'warm'
+      }
+      if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
+        const segment = campaign.customSegment
+        
+        // Check tags (handle both exact match and common variations)
+        if (contact.tags && (
+          contact.tags.includes(segment) ||
+          (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+          (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+          (segment === 'New prospects' && contact.tags.includes('New'))
+        )) {
+          return true
+        }
+        
+        // Check company segments (format: "Company: CompanyName")
+        if (segment.startsWith('Company: ')) {
+          const companyName = segment.replace('Company: ', '')
+          return contact.company === companyName
+        }
+        
+        // Check status segments (format: "Status: StatusName")
+        if (segment.startsWith('Status: ')) {
+          const statusName = segment.replace('Status: ', '')
+          return contact.status === statusName
+        }
+        
+        return false
+      }
+      return false
+    })
+  }
+
   // Update stats whenever campaigns change
   React.useEffect(() => {
     updateCampaignStats()
@@ -798,7 +1064,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         targetAudience: campaignFormData.targetAudience,
         customSegment: campaignFormData.customSegment,
         sendDate: campaignFormData.sendDate,
-        totalContacts: contacts.filter(contact => {
+        totalContacts: (Array.isArray(contacts) ? contacts : []).filter(contact => {
           // Calculate how many contacts match the target audience
           if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads') {
             return true
@@ -813,8 +1079,13 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             // Check if contact matches the selected custom segment
             const segment = campaignFormData.customSegment
             
-            // Check tags
-            if (contact.tags && contact.tags.includes(segment)) {
+            // Check tags (handle both exact match and common variations)
+            if (contact.tags && (
+              contact.tags.includes(segment) ||
+              (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+              (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+              (segment === 'New prospects' && contact.tags.includes('New'))
+            )) {
               return true
             }
             
@@ -836,7 +1107,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         }).length
       }
 
-      setCampaigns([...campaigns, newCampaign])
+      const updatedCampaigns = [...campaigns, newCampaign]
+      console.log('Creating new campaign:', newCampaign)
+      console.log('Updated campaigns array:', updatedCampaigns)
+      setCampaigns(updatedCampaigns)
+      await saveCampaignsToFirebase(updatedCampaigns)
       
       // Stats will be automatically updated by useEffect
 
@@ -860,33 +1135,46 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  const handleCampaignAction = (campaignId, action) => {
+  const handleCampaignAction = async (campaignId, action) => {
     console.log('handleCampaignAction called:', { campaignId, action })
     const campaign = campaigns.find(c => c.id === campaignId)
     
     if (action === 'edit') {
       setEditingCampaign(campaign)
       setShowEditModal(true)
-      toast.info('Opening campaign editor...')
+      console.log('Opening campaign editor...')
+      // toast.info('Opening campaign editor...')
       return
     }
     
-    setCampaigns(campaigns.map(campaign => {
+    if (action === 'delete') {
+      const updatedCampaigns = campaigns.filter(c => c.id !== campaignId)
+      setCampaigns(updatedCampaigns)
+      await saveCampaignsToFirebase(updatedCampaigns)
+      console.log('Campaign deleted successfully')
+      // toast.success('Campaign deleted successfully')
+      return
+    }
+    
+    const updatedCampaigns = campaigns.map(campaign => {
       if (campaign.id === campaignId) {
         switch (action) {
           case 'pause':
             const newStatus = campaign.status === 'Active' ? 'Paused' : 'Active'
             toast.success(`Campaign ${newStatus === 'Paused' ? 'paused' : 'resumed'} successfully`)
             return { ...campaign, status: newStatus }
-          case 'delete':
-            toast.success('Campaign deleted')
-            return null
+          case 'send_now':
+            sendCampaignNow(campaign)
+            return { ...campaign, status: 'Sending' }
           default:
             return campaign
         }
       }
       return campaign
-    }).filter(Boolean))
+    })
+    
+    setCampaigns(updatedCampaigns)
+    await saveCampaignsToFirebase(updatedCampaigns)
   }
 
   // AI-powered email content generation based on campaign settings
@@ -1701,7 +1989,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                           <div>
                             <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                              {campaign.type} • {campaign.emailsSent} of {campaign.totalContacts || 0} contacts • Created: {campaign.createdDate}
+                              {campaign.type} • {campaign.emailsSent} of {calculateTargetContacts(campaign).length} contacts • Created: {campaign.createdDate}
                               {campaign.targetAudience === 'Custom Segment' && campaign.customSegment && (
                                 <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegment}</span>
                               )}
@@ -1741,6 +2029,13 @@ P.S. This email was generated for the "${name}" campaign.`;
                               className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
                             >
                               Edit
+                            </button>
+                            <button 
+                              onClick={() => handleCampaignAction(campaign.id, 'send_now')}
+                              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition-colors"
+                              disabled={campaign.status === 'Sending'}
+                            >
+                              {campaign.status === 'Sending' ? 'Sending...' : '📧 Send Now'}
                             </button>
                             <button 
                               onClick={() => handleCampaignAction(campaign.id, 'pause')}

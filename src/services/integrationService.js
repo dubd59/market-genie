@@ -10,15 +10,35 @@ class IntegrationService {
   // Save integration credentials securely
   async saveIntegrationCredentials(tenantId, integrationName, credentials) {
     try {
+      console.log('Attempting to save credentials:', { tenantId, integrationName, credentialsKeys: Object.keys(credentials) });
+      
+      // Clean the credentials object to remove undefined values
+      const cleanCredentials = Object.entries(credentials).reduce((clean, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          clean[key] = value;
+        }
+        return clean;
+      }, {});
+
+      console.log('Cleaned credentials:', { cleanCredentialsKeys: Object.keys(cleanCredentials) });
+
       const credentialsDoc = doc(db, 'tenants', tenantId, 'integrations', integrationName)
-      await setDoc(credentialsDoc, {
-        ...credentials,
-        connectedAt: new Date(),
+      console.log('Document path:', credentialsDoc.path);
+      
+      const saveData = {
+        ...cleanCredentials,
+        connectedAt: new Date().toISOString(),
         status: 'connected'
-      })
+      };
+      
+      console.log('About to save data with keys:', Object.keys(saveData));
+      
+      await setDoc(credentialsDoc, saveData)
+      console.log('Credentials saved successfully');
       return { success: true }
     } catch (error) {
       console.error('Error saving credentials:', error)
+      console.error('Error details:', { name: error.name, message: error.message, code: error.code });
       return { success: false, error: error.message }
     }
   }
@@ -26,15 +46,31 @@ class IntegrationService {
   // Get stored credentials
   async getIntegrationCredentials(tenantId, integrationName) {
     try {
+      console.log(`Getting credentials for tenant: ${tenantId}, integration: ${integrationName}`);
       const credentialsDoc = doc(db, 'tenants', tenantId, 'integrations', integrationName)
+      console.log('Reading from document path:', credentialsDoc.path);
+      
       const docSnap = await getDoc(credentialsDoc)
+      console.log(`Document exists: ${docSnap.exists()}`);
       
       if (docSnap.exists()) {
-        return { success: true, data: docSnap.data() }
+        const data = docSnap.data();
+        console.log('Retrieved data keys:', Object.keys(data));
+        console.log('Data status:', data.status);
+        console.log('Has accessToken:', !!data.accessToken);
+        console.log('Has refreshToken:', !!data.refreshToken);
+        if (data.expiresAt) {
+          console.log('Token expires:', data.expiresAt);
+          console.log('Token expired:', new Date(data.expiresAt) < new Date());
+        }
+        return { success: true, data }
       }
+      
+      console.log('No credentials found for', integrationName);
       return { success: false, error: 'No credentials found' }
     } catch (error) {
       console.error('Error getting credentials:', error)
+      console.error('Error details:', { name: error.name, message: error.message, code: error.code });
       return { success: false, error: error.message }
     }
   }
@@ -476,6 +512,300 @@ class IntegrationService {
     }
   }
 
+  // Zoho Campaigns API Integration
+  async connectZohoCampaigns(tenantId, credentials) {
+    try {
+      // Prepare the data object with only defined values
+      const credentialsData = {
+        clientId: credentials.clientId,
+        clientSecret: credentials.clientSecret,
+        domain: credentials.domain || 'com', // .com, .eu, .in, etc.
+        status: 'credentials_saved'
+      };
+
+      // Only add optional fields if they exist
+      if (credentials.fromEmail) {
+        credentialsData.fromEmail = credentials.fromEmail;
+      }
+      
+      if (credentials.fromName) {
+        credentialsData.fromName = credentials.fromName;
+      }
+
+      // Only save the basic credentials first, tokens will be added after OAuth
+      const result = await this.saveIntegrationCredentials(tenantId, 'zoho_campaigns', credentialsData)
+      
+      if (result.success) {
+        // Generate OAuth URL for Zoho Campaigns
+        const redirectUri = encodeURIComponent(`${window.location.origin}/oauth/zoho/callback`)
+        const state = btoa(JSON.stringify({ tenantId, service: 'zoho_campaigns' }))
+        const scope = encodeURIComponent('ZohoCampaigns.campaign.ALL,ZohoCampaigns.contact.ALL')
+        
+        console.log('OAuth URL generation:', {
+          origin: window.location.origin,
+          redirectUri: redirectUri,
+          clientId: credentials.clientId,
+          domain: credentials.domain || 'com'
+        });
+        
+        const authUrl = `https://accounts.zoho.${credentials.domain || 'com'}/oauth/v2/auth?` +
+          `response_type=code&` +
+          `client_id=${credentials.clientId}&` +
+          `scope=${scope}&` +
+          `redirect_uri=${redirectUri}&` +
+          `state=${state}&` +
+          `access_type=offline`
+        
+        console.log('Generated OAuth URL:', authUrl);
+        
+        return { 
+          success: true, 
+          authUrl: authUrl,
+          message: 'Credentials saved. Redirecting to OAuth...'
+        }
+      }
+      
+      return result
+    } catch (error) {
+      console.error('Zoho Campaigns connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Handle Zoho OAuth callback
+  async handleZohoOAuthCallback(tenantId, authorizationCode) {
+    try {
+      console.log('Starting OAuth callback handling...', { tenantId, codeLength: authorizationCode.length });
+      
+      // Check if we've already processed this code (prevent duplicate exchanges)
+      const cacheKey = `oauth_${tenantId}_${authorizationCode.substring(0, 20)}`;
+      if (window[cacheKey]) {
+        console.log('OAuth code already processed, skipping duplicate exchange');
+        return { success: true, message: 'OAuth already completed' };
+      }
+      window[cacheKey] = true;
+      
+      // Get existing credentials to get client ID and secret
+      const credentials = await this.getIntegrationCredentials(tenantId, 'zoho_campaigns');
+      console.log('Retrieved credentials:', { success: credentials.success, hasData: !!credentials.data });
+      
+      if (!credentials.success) {
+        console.error('No Zoho credentials found');
+        return { success: false, error: 'No Zoho credentials found' };
+      }
+
+      const { clientId, clientSecret, domain = 'com' } = credentials.data;
+      console.log('Using credentials:', { clientId: clientId?.substring(0, 10) + '...', domain });
+
+      // Exchange authorization code for access token
+      const tokenUrl = `https://accounts.zoho.${domain}/oauth/v2/token`;
+      const redirectUri = `${window.location.origin}/oauth/zoho/callback`;
+
+      console.log('Token exchange request:', { tokenUrl, redirectUri });
+
+      const tokenResponse = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          code: authorizationCode
+        })
+      });
+
+      const tokenData = await tokenResponse.json();
+      console.log('Token response:', { ok: tokenResponse.ok, status: tokenResponse.status, hasAccessToken: !!tokenData.access_token });
+      console.log('Token data details:', { 
+        hasAccessToken: !!tokenData.access_token,
+        hasRefreshToken: !!tokenData.refresh_token,
+        expiresIn: tokenData.expires_in,
+        tokenType: tokenData.token_type
+      });
+
+      if (!tokenResponse.ok) {
+        console.error('Token exchange failed:', tokenData);
+        throw new Error(tokenData.error_description || tokenData.error || 'Token exchange failed');
+      }
+
+      // Check if we actually got tokens
+      if (!tokenData.access_token) {
+        console.error('No access token received:', tokenData);
+        throw new Error('No access token received from Zoho. The authorization code may have already been used.');
+      }
+
+      // Save the tokens
+      const expiresIn = parseInt(tokenData.expires_in) || 3600; // Default to 1 hour if invalid
+      const expiresAtTime = Date.now() + (expiresIn * 1000);
+      
+      const updateData = {
+        ...credentials.data,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt: new Date(expiresAtTime).toISOString(),
+        expiresIn: expiresIn,
+        tokenType: tokenData.token_type || 'Bearer',
+        status: 'connected',
+        lastUpdated: new Date().toISOString()
+      };
+      
+      console.log('Saving updated credentials...', { hasAccessToken: !!updateData.accessToken, status: updateData.status });
+      
+      const updateResult = await this.saveIntegrationCredentials(tenantId, 'zoho_campaigns', updateData);
+      console.log('Save result:', updateResult);
+
+      if (updateResult.success) {
+        console.log('OAuth callback completed successfully');
+        return { success: true, message: 'OAuth completed successfully' };
+      } else {
+        console.error('Failed to save tokens:', updateResult.error);
+        throw new Error('Failed to save tokens');
+      }
+
+    } catch (error) {
+      console.error('Zoho OAuth callback error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Test Zoho Campaigns connection
+  async testZohoCampaigns(tenantId) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'zoho_campaigns')
+      if (!credentials.success) {
+        return { success: false, error: 'No Zoho Campaigns credentials found' }
+      }
+
+      const { accessToken, domain = 'com' } = credentials.data
+      const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/getorganizationdetails`
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Zoho-oauthtoken ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.status === 'success') {
+        return { 
+          success: true, 
+          data: { 
+            organizationName: result.organization_name,
+            industryType: result.industry_type,
+            accountType: result.account_type
+          } 
+        }
+      }
+      
+      return { success: false, error: result.message || 'Zoho Campaigns test failed' }
+    } catch (error) {
+      console.error('Zoho Campaigns test error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Send email via Zoho Campaigns
+  async sendZohoCampaignEmail(tenantId, emailData) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'zoho_campaigns')
+      if (!credentials.success) {
+        return { success: false, error: 'No Zoho Campaigns credentials found' }
+      }
+
+      const { accessToken, domain = 'com' } = credentials.data
+      const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/campaigns/quickcampaign`
+      
+      const campaignData = {
+        campaignname: emailData.subject || 'Market Genie Campaign',
+        fromname: emailData.fromName || 'Market Genie',
+        subject: emailData.subject,
+        htmlcontent: emailData.content,
+        recipients: emailData.to, // Can be email address or mailing list ID
+        campaigntype: 'instant'
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Zoho-oauthtoken ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(campaignData)
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.status === 'success') {
+        return { 
+          success: true, 
+          data: { 
+            campaignId: result.campaign_key,
+            message: 'Email campaign sent successfully'
+          } 
+        }
+      }
+      
+      return { success: false, error: result.message || 'Failed to send email campaign' }
+    } catch (error) {
+      console.error('Zoho Campaigns email error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Add contact to Zoho Campaigns
+  async addZohoCampaignContact(tenantId, contactData) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'zoho_campaigns')
+      if (!credentials.success) {
+        return { success: false, error: 'No Zoho Campaigns credentials found' }
+      }
+
+      const { accessToken, domain = 'com' } = credentials.data
+      const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/listsubscribe`
+      
+      const subscribeData = {
+        listkey: contactData.listId, // Zoho mailing list ID
+        contactinfo: JSON.stringify([{
+          'Contact Email': contactData.email,
+          'First Name': contactData.firstName || '',
+          'Last Name': contactData.lastName || '',
+          'Company': contactData.company || ''
+        }])
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Zoho-oauthtoken ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(subscribeData)
+      })
+
+      const result = await response.json()
+      
+      if (response.ok && result.status === 'success') {
+        return { 
+          success: true, 
+          data: { 
+            message: 'Contact added successfully'
+          } 
+        }
+      }
+      
+      return { success: false, error: result.message || 'Failed to add contact' }
+    } catch (error) {
+      console.error('Zoho Campaigns contact error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Generic OAuth flow starter
   getOAuthURL(provider, tenantId) {
     const redirectUri = `${window.location.origin}/integrations/callback`
@@ -483,7 +813,8 @@ class IntegrationService {
     const urls = {
       'linkedin-sales': `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.VITE_LINKEDIN_CLIENT_ID}&redirect_uri=${redirectUri}&scope=r_liteprofile%20r_emailaddress%20w_member_social&state=${tenantId}`,
       'facebook-business': `https://www.facebook.com/v18.0/dialog/oauth?client_id=${process.env.VITE_FACEBOOK_APP_ID}&redirect_uri=${redirectUri}&scope=pages_manage_ads,pages_read_engagement,leads_retrieval&state=${tenantId}`,
-      'twitter': `https://api.twitter.com/oauth/authorize?oauth_token=${process.env.VITE_TWITTER_OAUTH_TOKEN}&oauth_callback=${redirectUri}&state=${tenantId}`
+      'twitter': `https://api.twitter.com/oauth/authorize?oauth_token=${process.env.VITE_TWITTER_OAUTH_TOKEN}&oauth_callback=${redirectUri}&state=${tenantId}`,
+      'zoho-campaigns': `https://accounts.zoho.com/oauth/v2/auth?scope=ZohoCampaigns.contact.ALL,ZohoCampaigns.campaign.ALL&client_id=${process.env.VITE_ZOHO_CLIENT_ID}&state=${tenantId}&response_type=code&redirect_uri=${redirectUri}&access_type=offline`
     }
     
     return urls[provider]

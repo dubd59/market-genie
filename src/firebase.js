@@ -1,9 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableNetwork, disableNetwork } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
-import { getFunctions } from "firebase/functions";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,15 +16,35 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore(app, 'marketgenie');
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const analytics = getAnalytics(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, 'us-central1'); // Explicitly specify region
 export const googleProvider = new GoogleAuthProvider();
 
 googleProvider.setCustomParameters({
   prompt: 'select_account',
 });
+
+// Add connection retry logic for localhost development
+let retryCount = 0;
+const maxRetries = 3;
+
+export const retryFirebaseConnection = async () => {
+  if (retryCount < maxRetries) {
+    try {
+      await disableNetwork(db);
+      await enableNetwork(db);
+      retryCount++;
+      console.log(`Firebase connection retry ${retryCount}/${maxRetries}`);
+      return true;
+    } catch (error) {
+      console.error('Firebase retry failed:', error);
+      return false;
+    }
+  }
+  return false;
+};
 
 export default app;

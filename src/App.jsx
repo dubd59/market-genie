@@ -11,11 +11,13 @@ import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/RegisterSimple'
 import LandingPage from './pages/LandingPage'
+import OAuthCallback from './pages/OAuthCallback'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
+import integrationService from './services/integrationService'
 import toast, { Toaster } from 'react-hot-toast'
-import { functions } from './firebase'
+import { functions, auth } from './firebase'
 import { httpsCallable } from 'firebase/functions'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
@@ -325,7 +327,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           console.log('Processed contacts array:', contactsArray.length, contactsArray.slice(0, 2))
           
           // Store contacts for campaign targeting
+          console.log('SETTING CONTACTS STATE:', contactsArray.length, 'contacts')
           setContacts(contactsArray)
+          console.log('CONTACTS STATE SET - First few contacts:', contactsArray.slice(0, 3))
           
           // Extract all unique tags, companies, and statuses for segmentation
           let allSegments = []
@@ -363,9 +367,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           // Get unique segments
           const uniqueSegments = [...new Set(allSegments)].filter(segment => segment && segment.trim())
           console.log('Available CRM segments:', uniqueSegments)
-        console.log('Total contacts:', contacts.length)
-        console.log('Sample contact structure:', contacts[0])
-        console.log('Contacts with tags:', contacts.filter(c => c.tags && c.tags.length > 0).map(c => ({ email: c.email, tags: c.tags })))
+          console.log('Total contacts:', contactsArray.length)
+          console.log('Sample contact structure:', contactsArray[0])
+          console.log('Contacts with tags:', contactsArray.filter(c => c.tags && c.tags.length > 0).map(c => ({ email: c.email, tags: c.tags })))
           setAvailableTags(uniqueSegments)
         } else {
           // If no contacts yet, provide default segments
@@ -464,11 +468,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       console.log('Sending campaign emails...')
       // toast.info('Sending campaign emails...')
       
-      // Check if SMTP credentials are configured
-      const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'zoho_mail_smtp')
+      // Check if Zoho Campaigns OAuth credentials are configured
+      const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'zoho_campaigns')
       if (!smtpCredentials.success) {
-        console.log('SMTP not configured. Please configure email settings in Integrations.')
-        toast.error('Email settings not configured. Please set up SMTP in Integrations → Zoho Mail.')
+        console.log('Zoho Campaigns not configured. Please configure OAuth integration.')
+        toast.error('Zoho Campaigns not configured. Please set up OAuth in Integrations → Zoho Campaigns.')
         return
       }
 
@@ -480,7 +484,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       console.log('Total contacts available:', contacts.length)
       
       const targetContacts = (Array.isArray(contacts) ? contacts : []).filter(contact => {
-        if (!campaign.targetAudience || campaign.targetAudience === 'All Leads') {
+        if (!campaign.targetAudience || campaign.targetAudience === 'All Leads' || campaign.targetAudience === 'All Contacts') {
           return true
         }
         if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
@@ -601,15 +605,25 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // Helper function to send email via Firebase Function
+  // Helper function to send email via Firebase Function (fixed)
   const sendEmailViaFirebase = async (emailData, tenantId) => {
     try {
       console.log('📧 Sending email via Firebase Function to:', emailData.to)
       console.log('📧 TenantId:', tenantId)
       console.log('📧 Email data:', emailData)
       
-      // Get the callable function
-      const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail')
+      // Check authentication state
+      console.log('📧 Current user:', auth.currentUser)
+      console.log('📧 User UID:', auth.currentUser?.uid)
+      console.log('📧 User email:', auth.currentUser?.email)
+      
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated')
+      }
+      
+      // Get the user's ID token
+      const idToken = await auth.currentUser.getIdToken(true)
+      console.log('📧 Got ID token:', idToken ? 'Yes' : 'No')
       
       // Prepare the payload
       const payload = {
@@ -620,11 +634,44 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
       
       console.log('📧 Payload being sent:', payload)
-      
-      // Call the function with tenantId
-      const result = await sendCampaignEmail(payload)
-      
-      console.log('📧 Email sent successfully:', result.data)
+
+      // Try HTTP function first for testing
+      try {
+        console.log('📧 Trying FIXED HTTP function...')
+        const httpResponse = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/sendCampaignEmailFixed', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify(payload)
+        })
+        
+        const httpResult = await httpResponse.json()
+        console.log('📧 HTTP function response:', httpResult)
+        
+        if (httpResult.success) {
+          console.log('📧 Email sent successfully via HTTP function:', httpResult.data)
+          return {
+            success: true,
+            data: httpResult.data
+          }
+        } else {
+          throw new Error(`HTTP function error: ${httpResult.error}`)
+        }
+      } catch (httpError) {
+        console.error('📧 HTTP function failed, falling back to callable:', httpError)
+        
+        // Fallback to callable function
+        const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail')
+        const result = await sendCampaignEmail(payload)
+        console.log('📧 Email sent successfully via callable:', result.data)
+        
+        return {
+          success: true,
+          data: result.data
+        }
+      }
       
       return {
         success: true,
@@ -975,8 +1022,18 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
   // Helper function to calculate target contacts for a campaign
   const calculateTargetContacts = (campaign, contactsList = contacts) => {
-    return (Array.isArray(contactsList) ? contactsList : []).filter(contact => {
-      if (!campaign.targetAudience || campaign.targetAudience === 'All Leads') {
+    console.log('calculateTargetContacts DEBUG:', {
+      contactsList: contactsList,
+      contactsListLength: contactsList?.length,
+      contactsListType: typeof contactsList,
+      contactsListIsArray: Array.isArray(contactsList),
+      campaign: campaign,
+      campaignTargetAudience: campaign?.targetAudience,
+      campaignName: campaign?.name
+    })
+    
+    const result = (Array.isArray(contactsList) ? contactsList : []).filter(contact => {
+      if (!campaign.targetAudience || campaign.targetAudience === 'All Leads' || campaign.targetAudience === 'All Contacts') {
         return true
       }
       if (campaign.targetAudience === 'New Leads') {
@@ -1014,6 +1071,16 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
       return false
     })
+    
+    console.log('calculateTargetContacts called:', { 
+      campaignName: campaign.name, 
+      targetAudience: campaign.targetAudience, 
+      contactsCount: contactsList.length, 
+      resultCount: result.length,
+      callerContext: new Error().stack.split('\n')[1]?.trim()
+    })
+    
+    return result
   }
 
   // Update stats whenever campaigns change
@@ -1066,7 +1133,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         sendDate: campaignFormData.sendDate,
         totalContacts: (Array.isArray(contacts) ? contacts : []).filter(contact => {
           // Calculate how many contacts match the target audience
-          if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads') {
+          if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads' || campaignFormData.targetAudience === 'All Contacts') {
             return true
           }
           if (campaignFormData.targetAudience === 'New Leads') {
@@ -1809,10 +1876,30 @@ P.S. This email was generated for the "${name}" campaign.`;
                       >
                         <option value="">Select Audience</option>
                         <option value="All Leads">All Leads</option>
+                        <option value="All Contacts">All Contacts</option>
                         <option value="New Leads">New Leads</option>
                         <option value="Warm Prospects">Warm Prospects</option>
                         <option value="Custom Segment">Custom Segment</option>
                       </select>
+                      
+                      {/* Contact Count Display */}
+                      {campaignFormData.targetAudience && (
+                        <div className={`mt-2 p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-blue-50 text-blue-700'}`}>
+                          <div className="flex items-center text-sm">
+                            <span className="mr-2">📧</span>
+                            <span>
+                              Campaign will send to <strong>{calculateTargetContacts(campaignFormData).length}</strong> contacts
+                              {campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegment && 
+                                ` with "${campaignFormData.customSegment}" tag`
+                              }
+                            </span>
+                          </div>
+                          <div className="text-xs mt-1 opacity-70">
+                            Debug: Total contacts in state: {Array.isArray(contacts) ? contacts.length : 'Not an array'}, 
+                            Type: {typeof contacts}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1892,6 +1979,19 @@ P.S. This email was generated for the "${name}" campaign.`;
                           <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                             Found {availableTags.length} tag(s): {availableTags.join(', ')}
                           </p>
+                        )}
+                        
+                        {/* Contact Count Display for Custom Segment */}
+                        {campaignFormData.customSegment && (
+                          <div className={`mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-orange-50 text-orange-700'}`}>
+                            <div className="flex items-center text-sm">
+                              <span className="mr-2">🏷️</span>
+                              <span>
+                                Campaign will send to <strong>{calculateTargetContacts(campaignFormData).length}</strong> contacts 
+                                with "{campaignFormData.customSegment}" tag
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
                       <div>
@@ -1989,7 +2089,21 @@ P.S. This email was generated for the "${name}" campaign.`;
                           <div>
                             <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaign.name}</h4>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                              {campaign.type} • {campaign.emailsSent} of {calculateTargetContacts(campaign).length} contacts • Created: {campaign.createdDate}
+                              {(() => {
+                                const calculatedContacts = calculateTargetContacts(campaign).length;
+                                console.log('CAMPAIGN DISPLAY DEBUG:', {
+                                  campaignName: campaign.name,
+                                  emailsSent: campaign.emailsSent,
+                                  calculatedContacts: calculatedContacts,
+                                  totalContacts: campaign.totalContacts,
+                                  displayText: `${campaign.emailsSent} of ${calculatedContacts} contacts`
+                                });
+                                return `${campaign.type} • ${campaign.emailsSent} of ${calculatedContacts} contacts • Created: ${campaign.createdDate}`;
+                              })()}
+                              {/* Debug info */}
+                              <span className="text-xs text-blue-500 ml-2">
+                                [DEBUG: totalContacts:{campaign.totalContacts}, calculated:{calculateTargetContacts(campaign).length}, audience:{campaign.targetAudience}]
+                              </span>
                               {campaign.targetAudience === 'Custom Segment' && campaign.customSegment && (
                                 <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegment}</span>
                               )}
@@ -2134,6 +2248,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                         >
                           <option value="">Select Audience</option>
                           <option value="All Leads">All Leads</option>
+                          <option value="All Contacts">All Contacts</option>
                           <option value="New Leads">New Leads</option>
                           <option value="Warm Prospects">Warm Prospects</option>
                           <option value="Custom Segment">Custom Segment</option>
@@ -2171,9 +2286,14 @@ P.S. This email was generated for the "${name}" campaign.`;
                     <div className="flex gap-3 mt-6">
                       <button 
                         onClick={() => {
-                          setCampaigns(campaigns.map(c => 
+                          const updatedCampaigns = campaigns.map(c => 
                             c.id === editingCampaign.id ? editingCampaign : c
-                          ))
+                          )
+                          setCampaigns(updatedCampaigns)
+                          
+                          // Recalculate campaign stats after editing
+                          updateCampaignStats()
+                          
                           setShowEditModal(false)
                           toast.success('Campaign updated successfully!')
                         }}
@@ -3378,50 +3498,55 @@ function AdminPage() {
 // Main App Component with Routing
 function App() {
   return (
-    <FounderSetup>
-      <AuthProvider>
-        <TenantProvider>
-          <GenieProvider>
-            <Toaster position="top-right" />
-            <Routes>
-              {/* Landing Page - Public sales page */}
-              <Route path="/" element={<LandingPage />} />
-              
-              {/* Auth Routes - Public */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              {/* Dashboard - Protected User workspace */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <SophisticatedDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard/*" element={
-                <ProtectedRoute>
-                  <SophisticatedDashboard />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Panel - Protected Admin only */}
-              <Route path="/admin" element={
-                <ProtectedRoute>
+    <AuthProvider>
+      <TenantProvider>
+        <GenieProvider>
+          <Toaster position="top-right" />
+          <Routes>
+            {/* Landing Page - Public sales page */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Auth Routes - Public */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* OAuth Callback Route - Public */}
+            <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />
+            
+            {/* Dashboard - Protected User workspace */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <SophisticatedDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/*" element={
+              <ProtectedRoute>
+                <SophisticatedDashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin Panel - Protected Admin only with Founder Setup */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <FounderSetup>
                   <AdminPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/*" element={
-                <ProtectedRoute>
+                </FounderSetup>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/*" element={
+              <ProtectedRoute>
+                <FounderSetup>
                   <AdminPage />
-                </ProtectedRoute>
-              } />
-              
-              {/* Catch all - redirect to landing */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </GenieProvider>
-        </TenantProvider>
-      </AuthProvider>
-    </FounderSetup>
+                </FounderSetup>
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch all - redirect to landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </GenieProvider>
+      </TenantProvider>
+    </AuthProvider>
   )
 }
 

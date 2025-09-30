@@ -12,28 +12,60 @@ export class TenantService {
       // Try to sign in first
       let userCredential
       try {
+        console.log('Attempting to sign in founder...')
         userCredential = await signInWithEmailAndPassword(auth, founderEmail, founderPassword)
+        console.log('Founder signed in successfully')
       } catch (signInError) {
         // If sign in fails, create the account
-        console.log('Creating founder account...')
-        userCredential = await createUserWithEmailAndPassword(auth, founderEmail, founderPassword)
+        console.log('Creating founder account...', signInError.code)
+        if (signInError.code === 'auth/user-not-found') {
+          userCredential = await createUserWithEmailAndPassword(auth, founderEmail, founderPassword)
+          console.log('Founder account created successfully')
+        } else {
+          throw signInError
+        }
       }
       
       const user = userCredential.user
+      console.log('Authenticated user:', user.uid, user.email)
       
-      // Check if tenant already exists
-      const existingTenant = await this.getCurrentUserTenant()
+      // Add a delay to ensure auth state is propagated
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Check if tenant already exists with timeout
+      console.log('Checking for existing tenant...')
+      const existingTenant = await Promise.race([
+        this.getCurrentUserTenant(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Tenant check timeout')), 15000)
+        )
+      ])
       
       if (!existingTenant.data) {
         // Create founder tenant
         console.log('Setting up founder workspace...')
         await this.createTenantForUser(user)
+      } else {
+        console.log('Existing tenant found:', existingTenant.data.id)
       }
       
       return { success: true, user }
     } catch (error) {
       console.error('Founder setup error:', error)
-      return { success: false, error }
+      
+      // Provide more specific error messages
+      let errorMessage = 'Unknown error occurred'
+      if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network connection failed. Please check your internet connection.'
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Database permission denied. Please check Firestore rules.'
+      } else if (error.message === 'Tenant check timeout') {
+        errorMessage = 'Database connection timeout. Please try again.'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      return { success: false, error: { message: errorMessage, code: error.code } }
     }
   }
   // Get current user's tenant
@@ -45,9 +77,14 @@ export class TenantService {
     try {
       console.log('Searching for tenant for user:', auth.currentUser.uid, auth.currentUser.email)
       
-      // First check if user has an existing tenant
-      const result = await FirebaseService.query('tenants', [
-        { field: 'ownerId', operator: '==', value: auth.currentUser.uid }
+      // First check if user has an existing tenant with timeout
+      const result = await Promise.race([
+        FirebaseService.query('tenants', [
+          { field: 'ownerId', operator: '==', value: auth.currentUser.uid }
+        ]),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout')), 10000)
+        )
       ])
 
       console.log('Tenant query result:', result)
@@ -59,9 +96,20 @@ export class TenantService {
 
       // If no tenant exists, create one automatically
       console.log('No tenant found, creating new tenant for user')
-      return await this.createTenantForUser(auth.currentUser)
+      return await Promise.race([
+        this.createTenantForUser(auth.currentUser),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Tenant creation timeout')), 15000)
+        )
+      ])
     } catch (error) {
       console.error('getCurrentUserTenant error:', error)
+      
+      // Provide more specific error handling
+      if (error.message === 'Query timeout' || error.message === 'Tenant creation timeout') {
+        return { data: null, error: { message: 'Database connection timeout. Please check your internet connection.' } }
+      }
+      
       return { data: null, error }
     }
   }

@@ -15,11 +15,14 @@ service cloud.firestore {
       
       // Allow read/write if user owns the tenant (existing tenant)
       allow read, write: if request.auth != null && 
-        resource.data.ownerId == request.auth.uid;
+        resource != null && resource.data.ownerId == request.auth.uid;
       
       // Allow creation if the new tenant is owned by the current user
       allow create: if request.auth != null && 
         request.resource.data.ownerId == request.auth.uid;
+      
+      // Allow read operations for authenticated users to check their own tenants
+      allow read: if request.auth != null;
       
       // Tenant sub-collections (leads, campaigns, etc.)
       match /{subcollection}/{document} {
@@ -29,6 +32,7 @@ service cloud.firestore {
         
         // Users can only access data within their own tenant
         allow read, write, create: if request.auth != null && 
+          exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
           get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
           
         // Allow nested documents within tenant subcollections
@@ -39,6 +43,7 @@ service cloud.firestore {
           
           // Regular user access
           allow read, write, create: if request.auth != null && 
+            exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
             get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == request.auth.uid;
         }
       }

@@ -11,6 +11,7 @@ const APIKeysIntegrations = () => {
   
   const [apiKeys, setApiKeys] = useState([]);
   const [loadingApiKeys, setLoadingApiKeys] = useState(true);
+  const [renderKey, setRenderKey] = useState(0); // Force re-render trigger
 
   const [integrations, setIntegrations] = useState([
     {
@@ -40,10 +41,10 @@ const APIKeysIntegrations = () => {
       type: 'Email',
       status: 'disconnected',
       icon: '📮',
-      description: 'Send personalized emails through your Zoho Mail account',
+      description: 'Send professional emails through your Zoho account via API',
       lastSync: 'Never',
       account: 'Not connected',
-      features: ['Send Emails', 'Email Templates', 'Delivery Tracking', 'Bulk Sending']
+      features: ['Custom Domain Email', 'API Integration', 'Delivery Tracking', 'Professional Sending']
     },
     {
       id: 22,
@@ -55,6 +56,17 @@ const APIKeysIntegrations = () => {
       lastSync: 'Never',
       account: 'Not connected',
       features: ['Email Campaigns', 'Automation', 'Subscriber Management', 'Analytics']
+    },
+    {
+      id: 23,
+      name: 'Zoho Campaigns',
+      type: 'Email Marketing',
+      status: 'disconnected',
+      icon: '🎯',
+      description: 'Professional email marketing with your custom domain',
+      lastSync: 'Never',
+      account: 'Not connected',
+      features: ['Custom Domain Email', 'Campaign Analytics', 'Contact Management', 'Professional Templates']
     },
     {
       id: 3,
@@ -280,6 +292,9 @@ const APIKeysIntegrations = () => {
   useEffect(() => {
     if (tenant?.id) {
       loadIntegrationStatuses();
+    } else {
+      // If no tenant, stop loading immediately
+      setLoadingStatuses(false);
     }
   }, [tenant?.id]);
 
@@ -301,43 +316,132 @@ const APIKeysIntegrations = () => {
       'clearbit',
       'zoominfo',
       'zoho-mail',
+      'zoho_campaigns',
       'convertkit'
     ];
 
-    for (const key of integrationKeys) {
-      try {
-        const result = await IntegrationService.getIntegrationCredentials(tenant.id, key);
-        if (result.success) {
-          // Update the integration status to connected
-          setIntegrations(prev => prev.map(integration => {
-            const nameMap = {
-              'hunter-io': 'Hunter.io Email Finding',
-              'apollo': 'Apollo.io',
-              'linkedin-sales': 'LinkedIn Sales Navigator',
-              'facebook-business': 'Facebook Business',
-              'twitter': 'Twitter/X API',
-              'clearbit': 'Clearbit',
-              'zoominfo': 'ZoomInfo',
-              'zoho-mail': 'Zoho Mail',
-              'convertkit': 'ConvertKit'
-            };
+    try {
+      // Add timeout to prevent infinite loading
+      const loadPromises = integrationKeys.map(async (key) => {
+        try {
+          // Add timeout for each individual query
+          const result = await Promise.race([
+            IntegrationService.getIntegrationCredentials(tenant.id, key),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Query timeout')), 5000)
+            )
+          ]);
+          
+          if (result.success) {
+            console.log(`Integration ${key} data:`, result.data);
             
-            if (integration.name === nameMap[key]) {
-              return {
-                ...integration,
-                status: 'connected',
-                lastSync: 'Connected',
-                account: 'API Connected'
-              };
+            // Check if it's actually connected (has required tokens/credentials)
+            let isActuallyConnected = false;
+            
+            if (key === 'zoho_campaigns') {
+              // For OAuth integrations, check for access token
+              isActuallyConnected = result.data && result.data.accessToken && result.data.status === 'connected';
+              console.log(`Zoho Campaigns connection check:`, {
+                hasData: !!result.data,
+                hasAccessToken: !!result.data?.accessToken,
+                status: result.data?.status,
+                isActuallyConnected
+              });
+            } else {
+              // For API key integrations, check for API key
+              isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken);
             }
-            return integration;
-          }));
+            
+            console.log(`${key} isActuallyConnected:`, isActuallyConnected);
+            
+            if (isActuallyConnected) {
+              console.log(`Updating UI for ${key} to connected`);
+              
+              // CRITICAL: Stop loading immediately and force UI update
+              setLoadingStatuses(false);
+              
+              // Small delay to ensure loading state is set, then update integration
+              setTimeout(() => {
+                setIntegrations(prev => {
+                  const nameMap = {
+                    'hunter-io': 'Hunter.io Email Finding',
+                    'apollo': 'Apollo.io',
+                    'linkedin-sales': 'LinkedIn Sales Navigator',
+                    'facebook-business': 'Facebook Business',
+                    'twitter': 'Twitter/X API',
+                    'clearbit': 'Clearbit',
+                    'zoominfo': 'ZoomInfo',
+                    'zoho-mail': 'Zoho Mail',
+                    'zoho_campaigns': 'Zoho Campaigns',
+                    'convertkit': 'ConvertKit'
+                  };
+                  
+                  console.log('Before state update - current integrations for', key, ':', 
+                    prev.find(int => int.name === nameMap[key])
+                  );
+                  
+                  const updated = prev.map(integration => {
+                    if (integration.name === nameMap[key]) {
+                      const lastSync = result.data.lastUpdated ? 
+                        new Date(result.data.lastUpdated).toLocaleDateString() : 'Connected';
+                      
+                      console.log(`Setting ${integration.name} to connected with lastSync:`, lastSync);
+                      console.log('Before update - current integration:', integration);
+                      
+                      const updatedIntegration = {
+                        ...integration,
+                        status: 'connected',
+                        lastSync: lastSync,
+                        account: key === 'zoho_campaigns' ? 'OAuth Connected' : 'API Connected'
+                      };
+                      
+                      console.log('After update - new integration:', updatedIntegration);
+                      return updatedIntegration;
+                    }
+                    return integration;
+                  });
+                  
+                  console.log('After state update - updated integrations for', key, ':', 
+                    updated.find(int => int.name === nameMap[key])
+                  );
+                  
+                  console.log('Current loadingStatuses:', loadingStatuses);
+                  console.log('Current integrations state after update:', updated.length, 'items');
+                  
+                  // NUCLEAR OPTION: Force complete re-render
+                  setTimeout(() => {
+                    setRenderKey(prev => prev + 1);
+                    setLoadingStatuses(false);
+                    // Force another state update to trigger re-render
+                    setIntegrations(current => [...current]);
+                  }, 100);
+                  
+                  return updated;
+                });
+              }, 50);
+            } else {
+              console.log(`Not updating UI for ${key} - not actually connected`);
+            }
+          }
+        } catch (error) {
+          console.log(`${key} not connected:`, error.message);
         }
-      } catch (error) {
-        console.log(`${key} not connected:`, error.message);
-      }
+      });
+
+      // Wait for all checks to complete with a global timeout
+      await Promise.race([
+        Promise.allSettled(loadPromises),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Global timeout')), 15000)
+        )
+      ]);
+      
+    } catch (error) {
+      console.error('Error loading integration statuses:', error);
+      toast.error('Some integrations may not be properly loaded');
+    } finally {
+      setLoadingStatuses(false);
     }
-    setLoadingStatuses(false);
   };
 
   const addApiKey = (e) => {
@@ -376,6 +480,138 @@ const APIKeysIntegrations = () => {
 
   const deleteApiKey = (keyId) => {
     setApiKeys(prev => prev.filter(key => key.id !== keyId));
+  };
+
+  const handleOAuthConnect = async (integrationName) => {
+    if (!tenant?.id) {
+      toast.error('Tenant not found');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      switch(integrationName) {
+        case 'Zoho Mail':
+          console.log('Starting Zoho OAuth - Tenant:', tenant.id);
+          console.log('Zoho credentials check:', {
+            hasClientId: !!settingsForm.zohoClientId,
+            hasClientSecret: !!settingsForm.zohoClientSecret
+          });
+
+          // Validate required fields
+          if (!settingsForm.zohoClientId || !settingsForm.zohoClientSecret) {
+            throw new Error('Please enter both Client ID and Client Secret');
+          }
+
+          // Prepare credentials object with only defined values
+          const credentials = {
+            clientId: settingsForm.zohoClientId,
+            clientSecret: settingsForm.zohoClientSecret
+          };
+
+          // Only add optional fields if they have values
+          if (settingsForm.fromEmail && settingsForm.fromEmail.trim()) {
+            credentials.fromEmail = settingsForm.fromEmail.trim();
+          }
+          
+          if (settingsForm.fromName && settingsForm.fromName.trim()) {
+            credentials.fromName = settingsForm.fromName.trim();
+          }
+
+          console.log('Saving credentials for OAuth...');
+          // First save the credentials
+          const saveResult = await IntegrationService.saveIntegrationCredentials(tenant.id, 'zoho_campaigns', credentials);
+          
+          console.log('Credentials save result:', saveResult);
+          
+          if (!saveResult.success) {
+            throw new Error('Failed to save credentials: ' + saveResult.error);
+          }
+
+          console.log('Starting OAuth flow...');
+          // Start OAuth flow
+          const oauthResult = await IntegrationService.connectZohoCampaigns(tenant.id, {
+            clientId: settingsForm.zohoClientId,
+            clientSecret: settingsForm.zohoClientSecret
+          });
+          
+          console.log('OAuth result:', oauthResult);
+          
+          if (oauthResult.success && oauthResult.authUrl) {
+            // Set up message listener for OAuth popup
+            const handleMessage = (event) => {
+              if (event.origin !== window.location.origin) return;
+              
+              if (event.data.type === 'OAUTH_SUCCESS') {
+                toast.dismiss(); // Clear loading toast
+                toast.success('✅ Zoho Campaigns account connected successfully!');
+                
+                // Update integration status immediately for UI feedback
+                setIntegrations(prev => prev.map(int =>
+                  int.name === 'Zoho Campaigns'
+                    ? { ...int, status: 'connected', lastSync: 'Just now', account: 'Connected' }
+                    : int
+                ));
+                
+                // Reload integration statuses from database to ensure persistence
+                setTimeout(() => {
+                  loadIntegrationStatuses();
+                }, 1000);
+                
+                window.removeEventListener('message', handleMessage);
+                setIsConnecting(false);
+              } else if (event.data.type === 'OAUTH_ERROR') {
+                toast.dismiss(); // Clear loading toast
+                toast.error(`OAuth failed: ${event.data.error}`);
+                window.removeEventListener('message', handleMessage);
+                setIsConnecting(false);
+              }
+            };
+
+            window.addEventListener('message', handleMessage);
+
+            // Open OAuth window
+            const popup = window.open(oauthResult.authUrl, 'zoho-oauth', 'width=600,height=600');
+            toast.loading('Redirecting to Zoho for authorization...', { duration: 0 });
+            
+            // Check if popup was blocked
+            if (!popup) {
+              toast.dismiss();
+              toast.error('Popup blocked! Please allow popups and try again.');
+              window.removeEventListener('message', handleMessage);
+              setIsConnecting(false);
+              return;
+            }
+
+            // Monitor popup closure
+            const checkClosed = setInterval(() => {
+              if (popup.closed) {
+                clearInterval(checkClosed);
+                toast.dismiss();
+                if (isConnecting) {
+                  toast.error('OAuth was cancelled');
+                  setIsConnecting(false);
+                }
+                window.removeEventListener('message', handleMessage);
+              }
+            }, 1000);
+            
+            // Close modal after starting OAuth
+            setShowSettingsModal(false);
+          } else {
+            throw new Error(oauthResult.error || 'Failed to start OAuth flow');
+          }
+          break;
+          
+        default:
+          toast.error('OAuth not supported for this integration');
+      }
+    } catch (error) {
+      console.error('OAuth connect error:', error);
+      toast.error(error.message || 'Failed to connect');
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const connectIntegration = async (integrationId) => {
@@ -434,6 +670,12 @@ const APIKeysIntegrations = () => {
           }
           break;
           
+        case 'Zoho Mail':
+          // Show the settings modal for API configuration
+          showSettings(integration);
+          toast.info('Configure your Zoho API credentials in the settings panel');
+          break;
+          
         default:
           // For other integrations, use the existing placeholder behavior
           setIntegrations(prev => prev.map(integration =>
@@ -462,16 +704,116 @@ const APIKeysIntegrations = () => {
     ));
   };
 
-  const openSettingsModal = (integration) => {
+  const openSettingsModal = async (integration) => {
     setSelectedIntegration(integration);
-    setSettingsForm({
+    
+    // Initialize form with empty values
+    let formData = {
       apiKey: '',
       clientId: '',
       clientSecret: '',
       accessToken: '',
-      refreshToken: ''
-    });
+      refreshToken: '',
+      authCode: '',
+      smtpEmail: '',
+      smtpPassword: '',
+      smtpFromName: '',
+      smtpHost: 'smtp.zoho.com',
+      smtpPort: '587'
+    };
+
+    // Load existing credentials if available
+    if (tenant?.id) {
+      try {
+        // Map integration names to their storage keys
+        const integrationKeyMap = {
+          'Zoho Mail': 'zoho_campaigns', // Updated to use the new API-based storage
+          'Apollo.io': 'apollo',
+          'Hunter.io Email Finding': 'hunter',
+          'Clearbit': 'clearbit',
+          'ZoomInfo': 'zoominfo',
+          'Gmail': 'gmail',
+          'Slack': 'slack',
+          'YouTube Data API': 'youtube',
+          'TikTok for Business': 'tiktok'
+        };
+        
+        const integrationKey = integrationKeyMap[integration.name] || 
+                              integration.name.toLowerCase().replace(/\s+/g, '-');
+        
+        const existingCredentials = await IntegrationService.getIntegrationCredentials(
+          tenant.id, 
+          integrationKey
+        );
+        
+        if (existingCredentials.success && existingCredentials.data) {
+          formData = { ...formData, ...existingCredentials.data };
+          
+          // Special mapping for Zoho Mail to ensure correct field names
+          if (integration.name === 'Zoho Mail') {
+            formData.zohoClientId = existingCredentials.data.clientId || '';
+            formData.zohoClientSecret = existingCredentials.data.clientSecret || '';
+            formData.fromEmail = existingCredentials.data.fromEmail || '';
+            formData.fromName = existingCredentials.data.fromName || '';
+          }
+        }
+      } catch (error) {
+        console.log('No existing credentials found for', integration.name);
+      }
+    }
+
+    setSettingsForm(formData);
     setShowSettingsModal(true);
+  };
+
+  const testZohoMailConfig = async () => {
+    console.log('Test Zoho Campaigns API - Tenant:', tenant);
+    console.log('Test Zoho Campaigns API - Settings Form:', settingsForm);
+    
+    if (!tenant?.id || !settingsForm.zohoClientId || !settingsForm.zohoClientSecret) {
+      console.log('Missing required fields:', {
+        hasTenant: !!tenant?.id,
+        hasClientId: !!settingsForm.zohoClientId,
+        hasClientSecret: !!settingsForm.zohoClientSecret
+      });
+      toast.error('Please fill in all Zoho API configuration fields');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      console.log('Testing Zoho Campaigns API for tenant:', tenant.id);
+      
+      // Test the Zoho Campaigns API connection
+      const testResult = await IntegrationService.testZohoCampaigns(tenant.id, {
+        clientId: settingsForm.zohoClientId,
+        clientSecret: settingsForm.zohoClientSecret,
+        fromEmail: settingsForm.fromEmail,
+        fromName: settingsForm.fromName
+      });
+      
+      console.log('Test API result:', testResult);
+      
+      if (testResult.success) {
+        toast.success('✅ Zoho Campaigns API connection successful! Ready to connect your account.');
+        
+        // Show OAuth instructions
+        const oauthMessage = `
+          API connection verified! Next steps:
+          1. Click "Connect Zoho Account" to authorize
+          2. You'll be redirected to Zoho for secure login
+          3. After authorization, you can send emails through your custom domain
+        `;
+        toast.success(oauthMessage, { duration: 8000 });
+      } else {
+        throw new Error(testResult.error || 'API connection failed');
+      }
+    } catch (error) {
+      console.error('SMTP test failed:', error);
+      toast.error('❌ SMTP test failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const closeSettingsModal = () => {
@@ -482,7 +824,13 @@ const APIKeysIntegrations = () => {
       clientId: '',
       clientSecret: '',
       accessToken: '',
-      refreshToken: ''
+      refreshToken: '',
+      authCode: '',
+      smtpEmail: '',
+      smtpPassword: '',
+      smtpFromName: '',
+      smtpHost: 'smtp.zoho.com',
+      smtpPort: '587'
     });
   };
 
@@ -906,7 +1254,7 @@ const APIKeysIntegrations = () => {
                   </div>
                 )}
                 {!loadingStatuses && integrations.map(integration => (
-                  <div key={integration.id} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
+                  <div key={`${integration.id}-${renderKey}`} className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{integration.icon}</span>
@@ -1215,44 +1563,60 @@ const APIKeysIntegrations = () => {
                 {selectedIntegration.name === 'Zoho Mail' && (
                   <div>
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-orange-800 mb-2">Zoho Mail SMTP Configuration</h4>
+                      <h4 className="font-medium text-orange-800 mb-2">Zoho Campaigns API Configuration</h4>
                       <p className="text-orange-700 text-sm mb-3">
-                        Configure your Zoho Mail SMTP settings to send emails from your domain.
+                        Connect your Zoho developer app to send emails through your custom domain using the Zoho Campaigns API.
                       </p>
                       <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
-                        <p className="text-orange-800 text-sm font-medium mb-2">SMTP Details:</p>
+                        <p className="text-orange-800 text-sm font-medium mb-2">Setup Steps:</p>
                         <ul className="text-orange-700 text-sm space-y-1 ml-4">
-                          <li>• Server: smtp.zoho.com</li>
-                          <li>• Port: 587 (TLS) or 465 (SSL)</li>
-                          <li>• Use your business email and password</li>
-                          <li>• Emails will be sent from YOUR domain</li>
+                          <li>• Create a Zoho developer app at api-console.zoho.com</li>
+                          <li>• Use "Server-based Applications" type</li>
+                          <li>• Add your client credentials below</li>
+                          <li>• Authorize your Zoho account via OAuth</li>
+                          <li>• Send emails from YOUR custom domain</li>
                         </ul>
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email Address
+                          Client ID
                         </label>
                         <input
-                          type="email"
-                          value={settingsForm.smtpEmail}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpEmail: e.target.value }))}
-                          placeholder="your@yourbusiness.com"
+                          type="text"
+                          value={settingsForm.zohoClientId || ''}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, zohoClientId: e.target.value }))}
+                          placeholder="Your Zoho app client ID"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Password
+                          Client Secret
                         </label>
                         <input
                           type="password"
-                          value={settingsForm.smtpPassword}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpPassword: e.target.value }))}
-                          placeholder="Your Zoho Mail password"
+                          value={settingsForm.zohoClientSecret || ''}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, zohoClientSecret: e.target.value }))}
+                          placeholder="Your Zoho app client secret"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          From Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={settingsForm.fromEmail || ''}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, fromEmail: e.target.value }))}
+                          placeholder="your@yourbusiness.com"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          This should be your custom domain email address
+                        </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1260,8 +1624,8 @@ const APIKeysIntegrations = () => {
                         </label>
                         <input
                           type="text"
-                          value={settingsForm.smtpFromName}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpFromName: e.target.value }))}
+                          value={settingsForm.fromName || ''}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, fromName: e.target.value }))}
                           placeholder="Your Business Name"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -1269,37 +1633,34 @@ const APIKeysIntegrations = () => {
                           This will appear as the sender name in emails
                         </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            SMTP Server
-                          </label>
-                          <input
-                            type="text"
-                            value={settingsForm.smtpHost || 'smtp.zoho.com'}
-                            onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpHost: e.target.value }))}
-                            placeholder="smtp.zoho.com"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Port
-                          </label>
-                          <select
-                            value={settingsForm.smtpPort || '587'}
-                            onChange={(e) => setSettingsForm(prev => ({ ...prev, smtpPort: e.target.value }))}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="587">587 (TLS)</option>
-                            <option value="465">465 (SSL)</option>
-                          </select>
-                        </div>
-                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-3">
-                      💡 For Gmail users: Use smtp.gmail.com, port 587, and enable "App Passwords" in Google Account security settings.
-                    </p>
+                    {/* OAuth Connection Button */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => handleOAuthConnect('Zoho Mail')}
+                        disabled={isConnecting || !settingsForm.zohoClientId || !settingsForm.zohoClientSecret}
+                        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                          isConnecting || !settingsForm.zohoClientId || !settingsForm.zohoClientSecret
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-orange-600 text-white hover:bg-orange-700'
+                        }`}
+                      >
+                        {isConnecting ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Connecting to Zoho...
+                          </span>
+                        ) : (
+                          '� Connect Zoho Account'
+                        )}
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        This will redirect you to Zoho for secure OAuth authorization
+                      </p>
+                    </div>
                   </div>
                 )}
 

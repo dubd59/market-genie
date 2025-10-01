@@ -876,6 +876,30 @@ Visit: marketgenie.com for more tools and templates`;
   const generatePreviewImages = async (data, id) => {
     alert('Preview images feature coming soon! 📸\n\nThis will generate:\n• Landing page screenshot\n• Thank you page preview\n• Mobile responsive previews\n• Social media ready images');
   };
+
+  // Generate branded preview of their actual funnel
+  const previewBrandedFunnel = (data) => {
+    const funnelId = `${data.industry.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+    const funnelName = `${data.companyName || data.industry} ${data.goalType} Funnel`;
+    
+    // Generate the actual branded HTML
+    const funnelPackage = generateCompleteFunnelHTML(data, funnelId, funnelName);
+    
+    // Create a blob with the branded HTML and open it
+    const blob = new Blob([funnelPackage['index.html']], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    // Open the branded preview in a new tab
+    const previewWindow = window.open(url, '_blank');
+    
+    // Clean up the URL after a delay
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 5000);
+    
+    // Return the window reference in case we need it
+    return previewWindow;
+  };
   
   // AI-Enhanced Funnels (what ClickFunnels CAN'T do)
   const [aiFunnels] = useState([
@@ -1709,11 +1733,11 @@ Visit: marketgenie.com for more tools and templates`;
           {/* Traditional Buttons */}
           <div className="flex justify-center space-x-4">
             <button 
-              onClick={() => window.open(funnelUrl, '_blank')}
+              onClick={() => previewBrandedFunnel(aiWizardData)}
               className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all flex items-center space-x-2"
             >
               <Eye className="w-5 h-5" />
-              <span>Preview First</span>
+              <span>Preview Your Branded Funnel</span>
             </button>
             <button
               onClick={() => setBuilderMode('dashboard')}

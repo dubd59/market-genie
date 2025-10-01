@@ -468,11 +468,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       console.log('Sending campaign emails...')
       // toast.info('Sending campaign emails...')
       
-      // Check if Zoho Campaigns OAuth credentials are configured
-      const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'zoho_campaigns')
+      // Check if Gmail SMTP credentials are configured
+      const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'gmail')
       if (!smtpCredentials.success) {
-        console.log('Zoho Campaigns not configured. Please configure OAuth integration.')
-        toast.error('Zoho Campaigns not configured. Please set up OAuth in Integrations → Zoho Campaigns.')
+        console.log('Gmail SMTP not configured. Please configure Gmail integration.')
+        toast.error('Gmail SMTP not configured. Please set up Gmail in Integrations → Gmail.')
         return
       }
 
@@ -635,47 +635,32 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       
       console.log('📧 Payload being sent:', payload)
 
-      // Try HTTP function first for testing
-      try {
-        console.log('📧 Trying FIXED HTTP function...')
-        const httpResponse = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/sendCampaignEmailFixed', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify(payload)
-        })
-        
-        const httpResult = await httpResponse.json()
-        console.log('📧 HTTP function response:', httpResult)
-        
-        if (httpResult.success) {
-          console.log('📧 Email sent successfully via HTTP function:', httpResult.data)
-          return {
-            success: true,
-            data: httpResult.data
-          }
-        } else {
-          throw new Error(`HTTP function error: ${httpResult.error}`)
-        }
-      } catch (httpError) {
-        console.error('📧 HTTP function failed, falling back to callable:', httpError)
-        
-        // Fallback to callable function
-        const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail')
-        const result = await sendCampaignEmail(payload)
-        console.log('📧 Email sent successfully via callable:', result.data)
-        
+      // Use simple SMTP email sending (works with existing Zoho email account)
+      console.log('📧 Sending via SMTP function...')
+      const smtpResponse = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/sendCampaignEmailSMTP', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      const smtpResult = await smtpResponse.json()
+      console.log('📧 SMTP function response:', smtpResult)
+      
+      if (smtpResult.success) {
+        console.log('📧 Email sent successfully via SMTP:', smtpResult.message)
         return {
           success: true,
-          data: result.data
+          data: smtpResult
         }
-      }
-      
-      return {
-        success: true,
-        data: result.data
+      } else {
+        console.error('📧 SMTP function failed:', smtpResult.error)
+        return {
+          success: false,
+          error: smtpResult.error || 'Email sending failed'
+        }
       }
       
     } catch (error) {

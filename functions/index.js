@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const { Resend } = require('resend');
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -9,7 +10,7 @@ const db = admin.firestore();
 
 // Create transporter with user's SMTP credentials
 const createTransporter = (smtpConfig) => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: smtpConfig.smtpHost || 'smtp.zoho.com',
     port: parseInt(smtpConfig.smtpPort) || 587,
     secure: (smtpConfig.smtpPort === '465'), // true for 465, false for other ports
@@ -704,6 +705,536 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
     return res.status(500).json({ 
       success: false, 
       error: 'Failed to send campaign email: ' + error.message 
+    });
+  }
+});
+
+// Kit (formerly ConvertKit) V4 API email sending function
+exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
+  console.log('=== sendCampaignEmailKit function called ===');
+  
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+  
+  console.log('Request method:', req.method);
+  console.log('Request body:', req.body);
+  
+  try {
+    const { to, subject, content, tenantId } = req.body;
+    
+    // Validate input
+    if (!to || !subject || !content || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
+      });
+    }
+    
+    console.log('Fetching Kit credentials for tenant:', tenantId);
+    
+    // Fetch Kit credentials from database
+    const credentialsDoc = await db
+      .collection('tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('kit')
+      .get();
+    
+    console.log('Credentials document exists:', credentialsDoc.exists);
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Kit credentials not found for tenant'
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    console.log('Retrieved data keys:', Object.keys(credentials));
+    console.log('Data status:', credentials.status);
+    console.log('Has apiKey:', !!credentials.apiKey);
+    
+    if (!credentials.apiKey || credentials.status !== 'connected') {
+      return res.status(400).json({
+        success: false,
+        error: 'Kit API key not found or not connected'
+      });
+    }
+    
+    console.log('Sending via Kit V4 API...');
+    
+    // Prepare Kit broadcast data
+    const broadcastData = {
+      content: content,
+      description: `Campaign: ${subject}`,
+      public: false,
+      published_at: new Date().toISOString(),
+      send_at: new Date().toISOString(),
+      subject: subject,
+      subscriber_filter: {
+        email_address: to
+      }
+    };
+    
+    console.log('Sending broadcast via Kit V4 API:', {
+      apiUrl: 'https://api.kit.com/v4/broadcasts',
+      broadcastData: broadcastData
+    });
+    
+    // Send broadcast via Kit V4 API
+    const response = await axios.post(
+      'https://api.kit.com/v4/broadcasts',
+      broadcastData,
+      {
+        headers: {
+          'X-Kit-Api-Key': credentials.apiKey,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+    
+    console.log('Kit V4 API response:', {
+      status: response.status,
+      data: response.data
+    });
+    
+    if (response.status === 200 || response.status === 201) {
+      return res.status(200).json({
+        success: true,
+        message: 'Email sent successfully via Kit',
+        broadcastId: response.data.id || 'unknown'
+      });
+    } else {
+      console.error('Kit API error response:', response.data);
+      return res.status(500).json({
+        success: false,
+        error: 'Kit API error: ' + (response.data.message || 'Unknown error'),
+        details: response.data
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in sendCampaignEmailKit:', error);
+    
+    if (error.response) {
+      console.error('Kit API error response:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Kit API error: ' + (error.response.data?.message || error.response.statusText),
+        details: error.response.data
+      });
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Timeout while contacting Kit API'
+      });
+    }
+    
+    if (error.code && error.code.startsWith('E')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Network error while contacting Kit API'
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send campaign email: ' + error.message
+    });
+  }
+});
+
+// Resend API email sending function
+exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => {
+  console.log('=== sendCampaignEmailResend function called ===');
+  
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+  
+  console.log('Request method:', req.method);
+  console.log('Request body:', req.body);
+  
+  try {
+    const { to, subject, content, tenantId } = req.body;
+    
+    // Validate input
+    if (!to || !subject || !content || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
+      });
+    }
+    
+    console.log('Fetching Resend credentials for tenant:', tenantId);
+    
+    // Fetch Resend credentials from database
+    const credentialsDoc = await db
+      .collection('tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('resend')
+      .get();
+    
+    console.log('Credentials document exists:', credentialsDoc.exists);
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Resend credentials not found for tenant'
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    console.log('Retrieved data keys:', Object.keys(credentials));
+    console.log('Data status:', credentials.status);
+    console.log('Has apiKey:', !!credentials.apiKey);
+    
+    if (!credentials.apiKey || credentials.status !== 'connected') {
+      return res.status(400).json({
+        success: false,
+        error: 'Resend API key not found or not connected'
+      });
+    }
+    
+    console.log('Sending via Resend SDK...');
+    
+    // Initialize Resend with the tenant's API key
+    const resend = new Resend(credentials.apiKey);
+    
+    // Prepare Resend email data
+    const emailData = {
+      from: 'Market Genie <onboarding@resend.dev>', // Use verified Resend domain
+      to: [to],
+      subject: subject,
+      html: content.replace(/\n/g, '<br>'), // Convert newlines to HTML breaks
+      text: content // Plain text version
+    };
+    
+    console.log('Sending email via Resend SDK:', {
+      emailData: emailData
+    });
+    
+    // Send email via Resend SDK
+    const result = await resend.emails.send(emailData);
+    
+    console.log('Resend SDK response:', result);
+    
+    if (result.data && result.data.id) {
+      return res.status(200).json({
+        success: true,
+        message: 'Email sent successfully via Resend',
+        emailId: result.data.id
+      });
+    } else if (result.error) {
+      console.error('Resend SDK error:', result.error);
+      
+      // Check if this is a domain verification error
+      const errorMessage = result.error.message || '';
+      if (errorMessage.includes('You can only send testing emails to your own email address')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Domain not verified: You can only send test emails to your own email address (dubdproducts@gmail.com) until you verify a domain at resend.com/domains',
+          details: result.error,
+          suggestion: 'To send to any email address, please verify your domain in Resend dashboard'
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Resend API error: ' + errorMessage,
+        details: result.error
+      });
+    } else {
+      console.error('Unexpected Resend response:', result);
+      return res.status(500).json({
+        success: false,
+        error: 'Unexpected response from Resend API',
+        details: result
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in sendCampaignEmailResend:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send campaign email: ' + error.message
+    });
+  }
+});
+
+// Test Resend API connection
+exports.testResendConnection = functions.https.onRequest(async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send();
+  }
+  
+  console.log('=== testResendConnection function called ===');
+  
+  try {
+    // Verify authentication
+    const authToken = req.get('Authorization');
+    if (!authToken || !authToken.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing or invalid authorization token'
+      });
+    }
+    
+    const idToken = authToken.split('Bearer ')[1];
+    
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+    
+    // Get API key from request body
+    const { apiKey } = req.body;
+    
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'API key is required'
+      });
+    }
+    
+    // Validate API key format (Resend keys start with "re_")
+    if (!apiKey.startsWith('re_')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Resend API key format. Keys must start with "re_"'
+      });
+    }
+    
+    console.log('Testing Resend API with key:', apiKey.substring(0, 10) + '...');
+    
+    try {
+      // First try to get domains (works with full access keys)
+      const response = await axios.get('https://api.resend.com/domains', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Resend API response:', response.data);
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          name: 'Resend Account',
+          domains: response.data.data ? response.data.data.length : 0,
+          apiKeyValid: true,
+          keyType: 'full_access'
+        },
+        message: 'Resend API connection successful'
+      });
+      
+    } catch (domainError) {
+      // If domains call fails, check if it's a restricted key
+      if (domainError.response && domainError.response.status === 401) {
+        const errorData = domainError.response.data;
+        
+        if (errorData && errorData.name === 'restricted_api_key') {
+          // This is a restricted key that can only send emails
+          console.log('Detected restricted API key - can only send emails');
+          
+          return res.status(200).json({
+            success: true,
+            data: {
+              name: 'Resend Account (Restricted)',
+              domains: 0,
+              apiKeyValid: true,
+              keyType: 'restricted',
+              restriction: 'This key can only send emails'
+            },
+            message: 'Resend API key validated (restricted to sending only)'
+          });
+        }
+      }
+      
+      // Re-throw other errors to be handled by outer catch
+      throw domainError;
+    }
+    
+  } catch (error) {
+    console.error('Error testing Resend connection:', error);
+    
+    if (error.response) {
+      // Resend API error
+      const status = error.response.status;
+      const message = error.response.data?.message || 'Invalid API key';
+      
+      return res.status(400).json({
+        success: false,
+        error: `Resend API error (${status}): ${message}`
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to test Resend connection: ' + error.message
+    });
+  }
+});
+
+// Simple SMTP Email Function - Works with any email provider (Zoho, Gmail, etc.)
+exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send();
+  }
+  
+  console.log('=== sendCampaignEmailSMTP function called ===');
+  
+  try {
+    // Verify authentication
+    const authToken = req.get('Authorization');
+    if (!authToken || !authToken.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing or invalid authorization token'
+      });
+    }
+    
+    const idToken = authToken.split('Bearer ')[1];
+    
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+    
+    const { to, subject, content, tenantId } = req.body;
+    
+    // Validate input
+    if (!to || !subject || !content || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
+      });
+    }
+    
+    console.log('Fetching SMTP credentials for tenant:', tenantId);
+    
+    // Fetch Gmail SMTP credentials from database (stored in gmail integration)
+    const credentialsDoc = await db
+      .collection('tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('gmail')
+      .get();
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail SMTP credentials not configured. Please set up Gmail in integrations.',
+        setup: 'Go to Integrations → Gmail → Add your email and app password'
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    console.log('Gmail SMTP credentials found for:', credentials.email);
+    
+    // Prepare Gmail SMTP configuration
+    const smtpConfig = {
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: '587',
+      smtpEmail: credentials.email,
+      smtpPassword: credentials.appPassword || credentials.password
+    };
+    
+    if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail credentials missing. Please add your Gmail email and app password.',
+        setup: 'Generate app password at: myaccount.google.com/apppasswords'
+      });
+    }
+    
+    console.log('Creating SMTP transporter for:', smtpConfig.smtpEmail);
+    
+    // Create SMTP transporter
+    const transporter = createTransporter(smtpConfig);
+    
+    // Prepare email
+    const mailOptions = {
+      from: `"Market Genie" <${smtpConfig.smtpEmail}>`,
+      to: to,
+      subject: subject,
+      text: content,
+      html: content.replace(/\n/g, '<br>')
+    };
+    
+    console.log('Sending email via SMTP...');
+    
+    // Send email
+    const result = await transporter.sendMail(mailOptions);
+    
+    console.log('SMTP email sent successfully:', result.messageId);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Email sent successfully via SMTP',
+      messageId: result.messageId
+    });
+    
+  } catch (error) {
+    console.error('Error in sendCampaignEmailSMTP:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send email via SMTP: ' + error.message
     });
   }
 });

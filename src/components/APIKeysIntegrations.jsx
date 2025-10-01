@@ -46,28 +46,18 @@ const APIKeysIntegrations = () => {
       account: 'Not connected',
       features: ['Custom Domain Email', 'API Integration', 'Delivery Tracking', 'Professional Sending']
     },
-    {
-      id: 22,
-      name: 'ConvertKit',
-      type: 'Email Marketing',
-      status: 'disconnected',
-      icon: '📧',
-      description: 'Email marketing automation and subscriber management',
-      lastSync: 'Never',
-      account: 'Not connected',
-      features: ['Email Campaigns', 'Automation', 'Subscriber Management', 'Analytics']
-    },
-    {
-      id: 23,
-      name: 'Zoho Campaigns',
-      type: 'Email Marketing',
-      status: 'disconnected',
-      icon: '🎯',
-      description: 'Professional email marketing with your custom domain',
-      lastSync: 'Never',
-      account: 'Not connected',
-      features: ['Custom Domain Email', 'Campaign Analytics', 'Contact Management', 'Professional Templates']
-    },
+    // DISABLED: Zoho Campaigns - Using Kit instead for better reliability
+    // {
+    //   id: 23,
+    //   name: 'Zoho Campaigns',
+    //   type: 'Email Marketing',
+    //   status: 'disconnected',
+    //   icon: '🎯',
+    //   description: 'Professional email marketing with your custom domain',
+    //   lastSync: 'Never',
+    //   account: 'Not connected',
+    //   features: ['Custom Domain Email', 'Campaign Analytics', 'Contact Management', 'Professional Templates']
+    // },
     {
       id: 3,
       name: 'HubSpot',
@@ -316,8 +306,10 @@ const APIKeysIntegrations = () => {
       'clearbit',
       'zoominfo',
       'zoho-mail',
-      'zoho_campaigns',
-      'convertkit'
+      'gmail'  // Only Gmail for email sending
+      // DISABLED: 'resend' - Using Gmail SMTP instead
+      // DISABLED: 'kit' - Removed ConvertKit completely
+      // DISABLED: 'zoho_campaigns' - Using Gmail SMTP instead
     ];
 
     try {
@@ -347,6 +339,15 @@ const APIKeysIntegrations = () => {
                 status: result.data?.status,
                 isActuallyConnected
               });
+            } else if (key === 'gmail') {
+              // For Gmail SMTP, check for email and password
+              isActuallyConnected = result.data && result.data.email && (result.data.appPassword || result.data.password);
+              console.log(`Gmail SMTP connection check:`, {
+                hasData: !!result.data,
+                hasEmail: !!result.data?.email,
+                hasPassword: !!(result.data?.appPassword || result.data?.password),
+                isActuallyConnected
+              });
             } else {
               // For API key integrations, check for API key
               isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken);
@@ -372,8 +373,10 @@ const APIKeysIntegrations = () => {
                     'clearbit': 'Clearbit',
                     'zoominfo': 'ZoomInfo',
                     'zoho-mail': 'Zoho Mail',
-                    'zoho_campaigns': 'Zoho Campaigns',
-                    'convertkit': 'ConvertKit'
+                    'gmail': 'Gmail'  // Only Gmail for email sending
+                    // REMOVED: 'resend': 'Resend' - Using Gmail SMTP instead
+                    // REMOVED: 'kit': 'ConvertKit' - Disabled completely
+                    // REMOVED: 'zoho_campaigns': 'Zoho Campaigns' - Disabled
                   };
                   
                   console.log('Before state update - current integrations for', key, ':', 
@@ -392,7 +395,8 @@ const APIKeysIntegrations = () => {
                         ...integration,
                         status: 'connected',
                         lastSync: lastSync,
-                        account: key === 'zoho_campaigns' ? 'OAuth Connected' : 'API Connected'
+                        account: key === 'gmail' ? (result.data.email || 'Gmail SMTP Connected') : 
+                                key === 'zoho_campaigns' ? 'OAuth Connected' : 'API Connected'
                       };
                       
                       console.log('After update - new integration:', updatedIntegration);
@@ -603,6 +607,41 @@ const APIKeysIntegrations = () => {
           }
           break;
           
+        case 'Gmail':
+          console.log('Connecting Gmail SMTP');
+          
+          // Validate required fields
+          if (!settingsForm.email || !settingsForm.appPassword) {
+            throw new Error('Please enter both Gmail address and App Password');
+          }
+
+          // Connect Gmail
+          const gmailResult = await IntegrationService.connectGmail(
+            tenant.id, 
+            settingsForm.email, 
+            settingsForm.appPassword
+          );
+          
+          if (gmailResult.success) {
+            toast.success('✅ Gmail SMTP connected successfully!');
+            
+            // Update integration status
+            setIntegrations(prev => prev.map(int =>
+              int.name === 'Gmail'
+                ? { ...int, status: 'connected', lastSync: 'Just now', account: settingsForm.email }
+                : int
+            ));
+            
+            // Close settings modal
+            closeSettingsModal();
+            
+            // Reload statuses
+            await loadIntegrationStatuses();
+          } else {
+            throw new Error(gmailResult.error || 'Failed to connect Gmail');
+          }
+          break;
+          
         default:
           toast.error('OAuth not supported for this integration');
       }
@@ -642,7 +681,6 @@ const APIKeysIntegrations = () => {
           
         case 'Hunter.io Email Finding':
         case 'Apollo.io':
-        case 'ConvertKit':
           // Show API key input modal
           const apiKey = prompt(`Enter your ${integration.name} API key:`);
           if (apiKey) {
@@ -653,11 +691,9 @@ const APIKeysIntegrations = () => {
               result = await IntegrationService.connectHunterIO(tenant.id, apiKey);
             } else if (integration.name === 'Apollo.io') {
               result = await IntegrationService.connectApollo(tenant.id, apiKey);
-            } else if (integration.name === 'ConvertKit') {
-              result = await IntegrationService.connectConvertKit(tenant.id, apiKey);
             }
             
-            if (result.success) {
+            if (result && result.success) {
               setIntegrations(prev => prev.map(int =>
                 int.id === integrationId
                   ? { ...int, status: 'connected', lastSync: 'Just now', account: 'Connected' }
@@ -674,6 +710,12 @@ const APIKeysIntegrations = () => {
           // Show the settings modal for API configuration
           showSettings(integration);
           toast.info('Configure your Zoho API credentials in the settings panel');
+          break;
+          
+        case 'Gmail':
+          // Show the settings modal for Gmail SMTP configuration
+          showSettings(integration);
+          toast.info('Configure your Gmail SMTP credentials in the settings panel');
           break;
           
         default:
@@ -872,12 +914,6 @@ const APIKeysIntegrations = () => {
           }
           break;
           
-        case 'ConvertKit':
-          if (settingsForm.apiKey) {
-            result = await IntegrationService.connectConvertKit(tenant.id, settingsForm.apiKey);
-          }
-          break;
-          
         case 'Clearbit':
           if (settingsForm.apiKey) {
             // Test Clearbit API key
@@ -1032,7 +1068,9 @@ const APIKeysIntegrations = () => {
         'Clearbit': 'clearbit',
         'ZoomInfo': 'zoominfo',
         'Zoho Mail': 'zoho-mail',
-        'ConvertKit': 'convertkit'
+        'Gmail': 'gmail'  // Only Gmail for email sending
+        // REMOVED: 'Resend': 'resend' - Using Gmail SMTP instead
+        // REMOVED: 'ConvertKit': 'kit' - Disabled completely
       };
       
       const key = nameMap[integration.name];
@@ -1392,22 +1430,61 @@ const APIKeysIntegrations = () => {
                   </div>
                 )}
 
-                {/* Gmail OAuth Configuration */}
+                {/* Gmail SMTP Configuration */}
                 {selectedIntegration.name === 'Gmail' && (
                   <div>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-blue-800 mb-2">Gmail OAuth Integration</h4>
+                      <h4 className="font-medium text-blue-800 mb-2">Gmail SMTP Integration</h4>
                       <p className="text-blue-700 text-sm mb-3">
-                        This integration uses OAuth for secure Gmail access. Click "Connect" to start the authorization process.
+                        Use your Gmail account to send emails. Simple, reliable, and works immediately.
                       </p>
+                      <p className="text-blue-600 text-xs mb-3">
+                        <strong>✨ Why Gmail:</strong> 500 emails/day, excellent deliverability, no DNS setup required.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Gmail Address
+                        </label>
+                        <input
+                          type="email"
+                          value={settingsForm.email}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="your-email@gmail.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          App Password
+                        </label>
+                        <input
+                          type="password"
+                          value={settingsForm.appPassword}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, appPassword: e.target.value }))}
+                          placeholder="Enter Gmail App Password"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Generate at: myaccount.google.com/apppasswords
+                        </p>
+                      </div>
+                      
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="text-green-700 text-sm">
+                          <strong>Quick Setup:</strong> 1) Enable 2FA on Gmail 2) Generate App Password 3) Enter credentials above
+                        </p>
+                      </div>
+                      
                       <button
-                        onClick={() => {
-                          closeSettingsModal();
-                          connectIntegration(selectedIntegration.id);
-                        }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        onClick={() => handleOAuthConnect('Gmail')}
+                        disabled={!settingsForm.email || !settingsForm.appPassword || isConnecting}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        Connect Gmail
+                        {isConnecting ? 'Connecting...' : 'Connect Gmail SMTP'}
                       </button>
                     </div>
                   </div>
@@ -1661,31 +1738,6 @@ const APIKeysIntegrations = () => {
                         This will redirect you to Zoho for secure OAuth authorization
                       </p>
                     </div>
-                  </div>
-                )}
-
-                {/* ConvertKit Configuration */}
-                {selectedIntegration.name === 'ConvertKit' && (
-                  <div>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-medium text-purple-800 mb-2">ConvertKit API Integration</h4>
-                      <p className="text-purple-700 text-sm mb-3">
-                        Connect your ConvertKit account for email marketing and automation.
-                      </p>
-                    </div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      API Secret
-                    </label>
-                    <input
-                      type="password"
-                      value={settingsForm.apiKey}
-                      onChange={(e) => setSettingsForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                      placeholder="Enter your ConvertKit API Secret"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Get your API Secret from ConvertKit → Account Settings → Advanced
-                    </p>
                   </div>
                 )}
 

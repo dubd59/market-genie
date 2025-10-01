@@ -1,6 +1,6 @@
 // Integration Service - Real API connections for lead scraping
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from '../firebase.js'
+import { auth, db } from '../firebase.js'
 
 class IntegrationService {
   constructor() {
@@ -448,67 +448,194 @@ class IntegrationService {
     }
   }
 
-  // ConvertKit Integration
-  async connectConvertKit(tenantId, apiSecret) {
+  // Kit (formerly ConvertKit) V4 API Integration
+  async connectConvertKit(tenantId, apiKey) {
     try {
-      // Test ConvertKit API - Get account info
-      const response = await fetch(`https://api.convertkit.com/v3/account?api_secret=${apiSecret}`, {
+      // Test Kit V4 API - Get account info using X-Kit-Api-Key header
+      const response = await fetch(`https://api.kit.com/v4/account`, {
         method: 'GET',
         headers: {
+          'X-Kit-Api-Key': apiKey,
           'Content-Type': 'application/json'
         }
       })
 
       const result = await response.json()
       
-      if (response.ok && result.account) {
-        await this.saveIntegrationCredentials(tenantId, 'convertkit', {
-          apiSecret: apiSecret,
-          accountName: result.account.name,
-          primaryEmailAddress: result.account.primary_email_address
+      if (response.ok && result) {
+        // Save to 'kit' instead of 'convertkit' for V4 API
+        await this.saveIntegrationCredentials(tenantId, 'kit', {
+          apiKey: apiKey,
+          accountName: result.name || result.email || 'Kit Account',
+          primaryEmailAddress: result.email || 'Unknown'
         })
         return { 
           success: true, 
           data: { 
-            name: result.account.name,
-            email: result.account.primary_email_address 
+            name: result.name || result.email || 'Kit Account',
+            email: result.email || 'Unknown'
           } 
         }
       }
       
-      return { success: false, error: result.error || 'Invalid ConvertKit API secret' }
+      return { success: false, error: result.error || result.message || 'Invalid Kit V4 API key' }
     } catch (error) {
-      console.error('ConvertKit connection error:', error)
+      console.error('Kit V4 connection error:', error)
       return { success: false, error: error.message }
     }
   }
 
-  // Test ConvertKit connection
-  async testConvertKit(apiSecret) {
+  // Test Kit V4 API connection
+  async testConvertKit(apiKey) {
     try {
-      const response = await fetch(`https://api.convertkit.com/v3/account?api_secret=${apiSecret}`, {
+      const response = await fetch(`https://api.kit.com/v4/account`, {
         method: 'GET',
         headers: {
+          'X-Kit-Api-Key': apiKey,
           'Content-Type': 'application/json'
         }
       })
 
       const result = await response.json()
       
-      if (response.ok && result.account) {
+      if (response.ok && result) {
         return { 
           success: true, 
           data: { 
-            name: result.account.name,
-            email: result.account.primary_email_address 
+            name: result.name || result.email || 'Kit Account',
+            email: result.email || 'Unknown'
           } 
         }
       }
       
-      return { success: false, error: result.error || 'Invalid ConvertKit API secret' }
+      return { success: false, error: result.error || result.message || 'Invalid Kit V4 API key' }
     } catch (error) {
-      console.error('ConvertKit test error:', error)
+      console.error('Kit V4 test error:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  // Resend API Integration
+  async connectResend(tenantId, apiKey) {
+    try {
+      // Get the user's ID token for authentication
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const idToken = await user.getIdToken();
+      
+      // Test Resend API via Firebase Function
+      const response = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/testResendConnection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ apiKey })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Save Resend credentials
+        await this.saveIntegrationCredentials(tenantId, 'resend', {
+          apiKey: apiKey,
+          accountName: 'Resend Account',
+          fromEmail: 'noreply@yourdomain.com', // Will be updated when domain is configured
+          status: 'connected',
+          connectedAt: new Date().toISOString()
+        });
+        
+        return { 
+          success: true, 
+          data: result.data
+        };
+      }
+      
+      return { success: false, error: result.error || 'Invalid Resend API key' };
+    } catch (error) {
+      console.error('Resend connection error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Test Resend API connection
+  async testResend(apiKey) {
+    try {
+      // Get the user's ID token for authentication
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const idToken = await user.getIdToken();
+      
+      // Test Resend API via Firebase Function
+      const response = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/testResendConnection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ apiKey })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return { 
+          success: true, 
+          data: result.data
+        };
+      }
+      
+      return { success: false, error: result.error || 'Invalid Resend API key' };
+    } catch (error) {
+      console.error('Resend test error:', error);
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Gmail SMTP Integration
+  async connectGmail(tenantId, email, appPassword) {
+    try {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@gmail\.com$/;
+      if (!emailRegex.test(email)) {
+        return { success: false, error: 'Please enter a valid Gmail address (must end with @gmail.com)' };
+      }
+
+      // Clean app password by removing all spaces and validate
+      const cleanAppPassword = appPassword.replace(/\s+/g, '');
+      if (!cleanAppPassword || cleanAppPassword.length !== 16) {
+        return { success: false, error: 'Please enter a valid Gmail App Password (16 characters, spaces will be removed automatically)' };
+      }
+
+      console.log('Connecting Gmail SMTP for:', email);
+
+      // Save Gmail credentials with cleaned app password
+      await this.saveIntegrationCredentials(tenantId, 'gmail', {
+        email: email,
+        appPassword: cleanAppPassword,  // Store without spaces
+        host: 'smtp.gmail.com',
+        port: 587,
+        status: 'connected',
+        connectedAt: new Date().toISOString()
+      });
+
+      return { 
+        success: true, 
+        data: { 
+          email: email,
+          host: 'smtp.gmail.com',
+          status: 'connected'
+        } 
+      };
+    } catch (error) {
+      console.error('Gmail connection error:', error);
+      return { success: false, error: error.message };
     }
   }
 

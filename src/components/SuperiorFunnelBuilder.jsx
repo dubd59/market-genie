@@ -101,208 +101,231 @@ const SuperiorFunnelBuilder = () => {
             background: linear-gradient(135deg, #f3e8ff 0%, #fef3c7 100%);
             min-height: 100vh;
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        /* Better Container Sizing - More Compact */
+        .container { 
+            max-width: 850px; 
+            margin: 0 auto; 
+            padding: 15px; 
+        }
         
-        /* Genie Magic Header Styles */
+        /* Refined Company Header - More Compact */
         .company-header {
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
             text-align: center;
-            margin-bottom: 30px;
-            border: 2px solid rgba(147, 51, 234, 0.1);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid rgba(147, 51, 234, 0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .company-header h1 { 
-            font-size: 2.5rem; 
-            margin-bottom: 10px; 
+            font-size: 2.2rem; 
+            margin-bottom: 8px; 
             background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         .company-header .subtitle { 
-            font-size: 1.2rem; 
+            font-size: 1.1rem; 
             color: #6b7280; 
-            margin-bottom: 15px; 
+            margin-bottom: 12px; 
         }
         .company-contact { 
-            font-size: 0.95rem; 
+            font-size: 0.9rem; 
             color: #9333ea; 
             font-weight: 500;
         }
         
-        /* Hero Section with Genie Magic */
+        /* Streamlined Hero - Compact */
         .hero { 
             text-align: center; 
-            padding: 80px 20px; 
+            padding: 35px 25px; 
             background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
-            border-radius: 25px;
-            margin-bottom: 40px;
-            box-shadow: 0 25px 50px rgba(147, 51, 234, 0.3);
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.2);
             color: white; 
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .hero h1 { 
-            font-size: 3.5rem; 
-            margin-bottom: 20px; 
+            font-size: 2.3rem; 
+            margin-bottom: 12px; 
             font-weight: bold; 
-            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
         .hero h2 { 
-            font-size: 1.8rem; 
-            margin-bottom: 20px; 
+            font-size: 1.3rem; 
+            margin-bottom: 12px; 
             opacity: 0.95; 
-            font-weight: 600;
+            font-weight: 500;
         }
         .hero p { 
-            font-size: 1.3rem; 
-            margin-bottom: 40px; 
+            font-size: 1rem; 
+            margin-bottom: 20px; 
             opacity: 0.9; 
-            max-width: 800px;
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
         }
         
-        /* Beautiful CTA Section */
+        /* Refined CTA Section */
         .cta-section { 
             background: rgba(255,255,255,0.95); 
             backdrop-filter: blur(10px);
-            padding: 60px 40px; 
-            margin: 40px 0; 
-            border-radius: 25px; 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
-            border: 1px solid rgba(147, 51, 234, 0.1);
+            padding: 40px 35px; 
+            margin: 35px auto; 
+            border-radius: 20px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            border: 1px solid rgba(147, 51, 234, 0.08);
+            max-width: 650px;
         }
         .cta-section h2 {
             background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 2.2rem;
-            margin-bottom: 15px;
+            font-size: 1.9rem;
+            margin-bottom: 12px;
         }
         .cta-section .subtitle {
             color: #6b7280;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
+            font-size: 1rem;
+            margin-bottom: 25px;
         }
         
-        /* Gorgeous Form Styling */
-        .lead-form { max-width: 500px; margin: 0 auto; }
-        .form-group { margin-bottom: 25px; }
+        /* Optimized Form Styling */
+        .lead-form { max-width: 450px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
         .form-group label { 
             display: block; 
-            margin-bottom: 8px; 
-            font-weight: bold; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
             color: #374151;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
         .form-group input, .form-group select { 
             width: 100%; 
-            padding: 18px 20px; 
+            padding: 14px 16px; 
             border: 2px solid #e5e7eb; 
-            border-radius: 15px; 
-            font-size: 16px;
+            border-radius: 12px; 
+            font-size: 15px;
             transition: all 0.3s ease;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
         }
         .form-group input:focus, .form-group select:focus { 
             border-color: #9333ea; 
             outline: none;
-            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.08);
+            transform: translateY(-1px);
         }
         
-        /* Magical Submit Button */
+        /* Refined Submit Button */
         .submit-btn { 
             background: linear-gradient(135deg, #9333ea 0%, #eab308 100%); 
             color: white; 
-            padding: 20px 40px; 
+            padding: 16px 32px; 
             border: none; 
-            border-radius: 15px; 
-            font-size: 18px; 
-            font-weight: bold; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: 600; 
             cursor: pointer; 
             width: 100%; 
             transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(147, 51, 234, 0.3);
+            box-shadow: 0 6px 20px rgba(147, 51, 234, 0.25);
             position: relative;
             overflow: hidden;
         }
         .submit-btn:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 15px 35px rgba(147, 51, 234, 0.4);
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.35);
         }
         .submit-btn:before {
             content: '✨';
             position: absolute;
-            left: 20px;
+            left: 16px;
             top: 50%;
             transform: translateY(-50%);
         }
         
-        /* Beautiful Features Grid */
+        /* Smaller, Elegant Features Grid */
         .features { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 30px; 
-            margin: 60px 0; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 25px; 
+            margin: 45px auto; 
+            max-width: 900px;
         }
         .feature { 
-            background: rgba(255,255,255,0.9); 
+            background: rgba(255,255,255,0.92); 
             backdrop-filter: blur(10px);
-            padding: 35px; 
-            border-radius: 20px; 
+            padding: 25px 20px; 
+            border-radius: 16px; 
             text-align: center; 
-            box-shadow: 0 15px 35px rgba(147, 51, 234, 0.1);
-            border: 1px solid rgba(147, 51, 234, 0.1);
+            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.08);
+            border: 1px solid rgba(147, 51, 234, 0.06);
             transition: all 0.3s ease;
         }
         .feature:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 45px rgba(147, 51, 234, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(147, 51, 234, 0.12);
         }
         .feature h3 { 
-            margin-bottom: 15px; 
-            font-size: 1.5rem;
+            margin-bottom: 12px; 
+            font-size: 1.3rem;
             background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .feature p { color: #6b7280; font-size: 1rem; }
+        .feature p { color: #6b7280; font-size: 0.95rem; line-height: 1.5; }
         
-        /* Professional Footer */
+        /* Streamlined Footer */
         .footer { 
             background: rgba(17, 24, 39, 0.95);
             backdrop-filter: blur(10px);
             color: white;
             text-align: center; 
-            padding: 40px 20px; 
-            border-radius: 20px;
-            margin-top: 60px;
+            padding: 30px 25px; 
+            border-radius: 16px;
+            margin: 45px auto 0;
+            max-width: 800px;
         }
-        .footer p { margin-bottom: 10px; }
+        .footer p { margin-bottom: 8px; font-size: 0.95rem; }
         .footer a { color: #fbbf24; text-decoration: none; transition: color 0.3s ease; }
         .footer a:hover { color: #f59e0b; }
         .footer .powered-by {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: 15px;
+            padding-top: 15px;
             border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.8;
         }
         
-        /* Responsive Magic */
+        /* Better Responsive Scaling */
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .hero h2 { font-size: 1.5rem; }
-            .hero p { font-size: 1.1rem; }
-            .company-header h1 { font-size: 2rem; }
-            .cta-section { padding: 40px 20px; }
-            .features { grid-template-columns: 1fr; }
-            .feature { padding: 25px; }
+            .container { padding: 15px; }
+            .hero { padding: 35px 20px; }
+            .hero h1 { font-size: 2.2rem; }
+            .hero h2 { font-size: 1.3rem; }
+            .hero p { font-size: 1rem; }
+            .company-header { padding: 18px 20px; margin-bottom: 20px; }
+            .company-header h1 { font-size: 1.9rem; }
+            .cta-section { padding: 30px 20px; margin: 25px 15px; }
+            .features { grid-template-columns: 1fr; gap: 20px; }
+            .feature { padding: 20px 15px; }
+        }
+        
+        @media (min-width: 1200px) {
+            .hero h1 { font-size: 3.2rem; }
+            .hero h2 { font-size: 1.7rem; }
+            .company-header h1 { font-size: 2.4rem; }
         }
         
         /* Genie Magic Animations */
@@ -1336,15 +1359,37 @@ Visit: marketgenie.com for more tools and templates`;
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Logo URL (optional)
+                    Company Logo
                   </label>
                   <input
-                    type="url"
-                    value={aiWizardData.logoUrl}
-                    onChange={(e) => setAiWizardData(prev => ({...prev, logoUrl: e.target.value}))}
-                    placeholder="https://yourlogo.com/logo.png"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setAiWizardData(prev => ({...prev, logoUrl: event.target.result}));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Upload PNG, JPEG, or other image formats</p>
+                  {aiWizardData.logoUrl && (
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700 flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Logo uploaded successfully!
+                      </p>
+                      <img 
+                        src={aiWizardData.logoUrl} 
+                        alt="Logo preview" 
+                        className="mt-2 max-h-16 max-w-32 object-contain border rounded"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

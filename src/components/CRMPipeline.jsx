@@ -714,10 +714,10 @@ const CRMPipeline = () => {
             + Create Deal
           </button>
           <button
-            onClick={() => setShowFunnelModal(true)}
+            onClick={() => setActiveTab('ai-funnels')}
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
-            🚀 Create Funnel
+            🤖 Create AI Funnel
           </button>
         </div>
       </div>

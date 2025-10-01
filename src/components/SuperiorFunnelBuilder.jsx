@@ -64,8 +64,10 @@ const SuperiorFunnelBuilder = () => {
 
   // 🚀 THE MAGIC FUNCTION - Download Complete Funnel System!
   const downloadCompleteFunnel = async (funnelData, type = 'html') => {
+    console.log('🔍 Downloading funnel with branding data:', funnelData); // Debug log
+    
     const funnelId = `${funnelData.industry.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-    const funnelName = `${funnelData.industry} ${funnelData.goalType} Funnel`;
+    const funnelName = `${funnelData.companyName || funnelData.industry} ${funnelData.goalType} Funnel`;
     
     if (type === 'html') {
       // Generate the complete funnel package
@@ -90,7 +92,7 @@ const SuperiorFunnelBuilder = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${name} - Powered by MarketGenie</title>
+    <title>${data.companyName ? `${data.companyName} - ${name}` : name} | Powered by MarketGenie</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -136,13 +138,34 @@ const SuperiorFunnelBuilder = () => {
 <body>
     <div class="container">
         ${data.logoUrl ? `<div style="text-align: center; margin-bottom: 20px;"><img src="${data.logoUrl}" alt="${data.companyName}" style="max-height: 60px; max-width: 200px;"></div>` : ''}
+        
+        ${data.companyName ? `
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; border: 2px solid rgba(255,255,255,0.2);">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; color: white;">${data.companyName}</h1>
+            <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 10px;">${data.industry} Excellence & ${data.goalType}</p>
+            ${data.contactName ? `<p style="font-size: 1.1rem; opacity: 0.8;">Led by ${data.contactName}</p>` : ''}
+            <div style="margin-top: 15px; font-size: 0.95rem; opacity: 0.8;">
+                ${data.phone ? `📞 ${data.phone}` : ''} 
+                ${data.email ? `${data.phone ? ' • ' : ''}📧 ${data.email}` : ''}
+                ${data.website ? `${(data.phone || data.email) ? ' • ' : ''}🌐 ${data.website.replace(/^https?:\/\//, '')}` : ''}
+            </div>
+        </div>
+        ` : ''}
+        
         <div class="hero">
-            <h1>Transform Your ${data.industry} Business with ${data.companyName}</h1>
-            <p>Join thousands of ${data.targetAudience.toLowerCase()} who are already succeeding with our proven system</p>
+            <h1>${data.companyName ? `Welcome to ${data.companyName}` : `Transform Your ${data.industry} Business Today`}</h1>
+            <h2 style="font-size: 1.8rem; margin-top: 10px; color: rgba(255,255,255,0.95);">
+                ${data.companyName ? `${data.industry} Excellence by ${data.companyName}` : `Transform Your ${data.industry} Business Today`}
+            </h2>
+            <p>Join thousands of ${data.targetAudience.toLowerCase()} who are already succeeding with ${data.companyName ? `${data.companyName}'s proven system` : 'our proven system'}</p>
+            ${data.contactName ? `<p style="margin-top: 15px; font-size: 1.1rem; opacity: 0.9;">Led by ${data.contactName} ${data.phone ? `• ${data.phone}` : ''}</p>` : ''}
         </div>
 
         <div class="cta-section">
-            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Get Started - ${data.goalType} Made Simple</h2>
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">
+                ${data.companyName ? `Ready to Work with ${data.companyName}?` : `Get Started - ${data.goalType} Made Simple`}
+            </h2>
+            ${data.contactName ? `<p style="text-align: center; margin-bottom: 20px; color: #666; font-size: 1.1rem;">Connect directly with ${data.contactName} and our ${data.industry.toLowerCase()} experts</p>` : ''}
             <form class="lead-form" id="leadForm" onsubmit="submitForm(event)">
                 <div class="form-group">
                     <label for="name">Full Name *</label>
@@ -160,22 +183,24 @@ const SuperiorFunnelBuilder = () => {
                     <label for="company">Company/Business</label>
                     <input type="text" id="company" name="company">
                 </div>
-                <button type="submit" class="submit-btn">Get My Free ${data.goalType} Strategy →</button>
+                <button type="submit" class="submit-btn">
+                    ${data.companyName ? `Connect with ${data.companyName} →` : `Get My Free ${data.goalType} Strategy →`}
+                </button>
             </form>
         </div>
 
         <div class="features">
             <div class="feature">
                 <h3>🚀 Proven Results</h3>
-                <p>Our ${data.industry.toLowerCase()} strategies have helped businesses increase conversions by 340%</p>
+                <p>${data.companyName ? `${data.companyName}'s ${data.industry.toLowerCase()} strategies` : `Our ${data.industry.toLowerCase()} strategies`} have helped businesses increase conversions by 340%</p>
             </div>
             <div class="feature">
                 <h3>⚡ Fast Implementation</h3>
-                <p>Get up and running in under 24 hours with our step-by-step system</p>
+                <p>Get up and running in under 24 hours with ${data.companyName ? `${data.companyName}'s step-by-step system` : 'our step-by-step system'}</p>
             </div>
             <div class="feature">
                 <h3>💎 Premium Support</h3>
-                <p>Direct access to ${data.contactName || 'our team'} and other ${data.industry.toLowerCase()} experts</p>
+                <p>Direct access to ${data.contactName || `${data.companyName ? data.companyName : 'our'} team`} and other ${data.industry.toLowerCase()} experts</p>
             </div>
         </div>
     </div>

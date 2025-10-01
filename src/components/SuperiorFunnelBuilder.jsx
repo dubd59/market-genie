@@ -98,53 +98,231 @@ const SuperiorFunnelBuilder = () => {
         body { 
             font-family: 'Arial', sans-serif; 
             line-height: 1.6; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f3e8ff 0%, #fef3c7 100%);
             min-height: 100vh;
         }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .hero { text-align: center; padding: 80px 20px; color: white; }
-        .hero h1 { font-size: 3.5rem; margin-bottom: 20px; font-weight: bold; }
-        .hero p { font-size: 1.3rem; margin-bottom: 40px; opacity: 0.9; }
-        .cta-section { background: white; padding: 60px 20px; margin: 40px 0; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .lead-form { max-width: 500px; margin: 0 auto; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        .form-group input, .form-group select { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
-        .form-group input:focus, .form-group select:focus { border-color: #667eea; outline: none; }
-        .submit-btn { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        
+        /* Genie Magic Header Styles */
+        .company-header {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid rgba(147, 51, 234, 0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .company-header h1 { 
+            font-size: 2.5rem; 
+            margin-bottom: 10px; 
+            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .company-header .subtitle { 
+            font-size: 1.2rem; 
+            color: #6b7280; 
+            margin-bottom: 15px; 
+        }
+        .company-contact { 
+            font-size: 0.95rem; 
+            color: #9333ea; 
+            font-weight: 500;
+        }
+        
+        /* Hero Section with Genie Magic */
+        .hero { 
+            text-align: center; 
+            padding: 80px 20px; 
+            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
+            border-radius: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 25px 50px rgba(147, 51, 234, 0.3);
             color: white; 
-            padding: 18px 40px; 
+        }
+        .hero h1 { 
+            font-size: 3.5rem; 
+            margin-bottom: 20px; 
+            font-weight: bold; 
+            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .hero h2 { 
+            font-size: 1.8rem; 
+            margin-bottom: 20px; 
+            opacity: 0.95; 
+            font-weight: 600;
+        }
+        .hero p { 
+            font-size: 1.3rem; 
+            margin-bottom: 40px; 
+            opacity: 0.9; 
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Beautiful CTA Section */
+        .cta-section { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px);
+            padding: 60px 40px; 
+            margin: 40px 0; 
+            border-radius: 25px; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+            border: 1px solid rgba(147, 51, 234, 0.1);
+        }
+        .cta-section h2 {
+            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+        .cta-section .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        /* Gorgeous Form Styling */
+        .lead-form { max-width: 500px; margin: 0 auto; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #374151;
+            font-size: 1rem;
+        }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 18px 20px; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 15px; 
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.8);
+        }
+        .form-group input:focus, .form-group select:focus { 
+            border-color: #9333ea; 
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Magical Submit Button */
+        .submit-btn { 
+            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%); 
+            color: white; 
+            padding: 20px 40px; 
             border: none; 
-            border-radius: 10px; 
+            border-radius: 15px; 
             font-size: 18px; 
             font-weight: bold; 
             cursor: pointer; 
             width: 100%; 
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(147, 51, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
-        .submit-btn:hover { transform: translateY(-2px); }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin: 60px 0; }
-        .feature { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; text-align: center; color: white; }
-        .feature h3 { margin-bottom: 15px; font-size: 1.5rem; }
-        .footer { text-align: center; padding: 20px; color: rgba(255,255,255,0.7); }
-        .footer a { color: rgba(255,255,255,0.9); text-decoration: none; }
+        .submit-btn:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 35px rgba(147, 51, 234, 0.4);
+        }
+        .submit-btn:before {
+            content: '✨';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        /* Beautiful Features Grid */
+        .features { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 30px; 
+            margin: 60px 0; 
+        }
+        .feature { 
+            background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(10px);
+            padding: 35px; 
+            border-radius: 20px; 
+            text-align: center; 
+            box-shadow: 0 15px 35px rgba(147, 51, 234, 0.1);
+            border: 1px solid rgba(147, 51, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 45px rgba(147, 51, 234, 0.15);
+        }
+        .feature h3 { 
+            margin-bottom: 15px; 
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .feature p { color: #6b7280; font-size: 1rem; }
+        
+        /* Professional Footer */
+        .footer { 
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            text-align: center; 
+            padding: 40px 20px; 
+            border-radius: 20px;
+            margin-top: 60px;
+        }
+        .footer p { margin-bottom: 10px; }
+        .footer a { color: #fbbf24; text-decoration: none; transition: color 0.3s ease; }
+        .footer a:hover { color: #f59e0b; }
+        .footer .powered-by {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* Responsive Magic */
         @media (max-width: 768px) {
             .hero h1 { font-size: 2.5rem; }
+            .hero h2 { font-size: 1.5rem; }
             .hero p { font-size: 1.1rem; }
+            .company-header h1 { font-size: 2rem; }
+            .cta-section { padding: 40px 20px; }
+            .features { grid-template-columns: 1fr; }
+            .feature { padding: 25px; }
         }
+        
+        /* Genie Magic Animations */
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        .sparkle { animation: sparkle 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
     <div class="container">
-        ${data.logoUrl ? `<div style="text-align: center; margin-bottom: 20px;"><img src="${data.logoUrl}" alt="${data.companyName}" style="max-height: 60px; max-width: 200px;"></div>` : ''}
+        ${data.logoUrl ? `<div style="text-align: center; margin-bottom: 30px;"><img src="${data.logoUrl}" alt="${data.companyName}" style="max-height: 80px; max-width: 250px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>` : ''}
         
         ${data.companyName ? `
-        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; border: 2px solid rgba(255,255,255,0.2);">
-            <h1 style="font-size: 2.5rem; margin-bottom: 10px; color: white;">${data.companyName}</h1>
-            <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 10px;">${data.industry} Excellence & ${data.goalType}</p>
-            ${data.contactName ? `<p style="font-size: 1.1rem; opacity: 0.8;">Led by ${data.contactName}</p>` : ''}
-            <div style="margin-top: 15px; font-size: 0.95rem; opacity: 0.8;">
+        <div class="company-header sparkle">
+            <h1>${data.companyName}</h1>
+            <p class="subtitle">${data.industry} Excellence & ${data.goalType}</p>
+            ${data.contactName ? `<p style="font-size: 1.1rem; color: #6b7280; margin-bottom: 15px;">Led by ${data.contactName}</p>` : ''}
+            <div class="company-contact">
                 ${data.phone ? `📞 ${data.phone}` : ''} 
                 ${data.email ? `${data.phone ? ' • ' : ''}📧 ${data.email}` : ''}
                 ${data.website ? `${(data.phone || data.email) ? ' • ' : ''}🌐 ${data.website.replace(/^https?:\/\//, '')}` : ''}
@@ -154,18 +332,18 @@ const SuperiorFunnelBuilder = () => {
         
         <div class="hero">
             <h1>${data.companyName ? `Welcome to ${data.companyName}` : `Transform Your ${data.industry} Business Today`}</h1>
-            <h2 style="font-size: 1.8rem; margin-top: 10px; color: rgba(255,255,255,0.95);">
+            <h2>
                 ${data.companyName ? `${data.industry} Excellence by ${data.companyName}` : `Transform Your ${data.industry} Business Today`}
             </h2>
             <p>Join thousands of ${data.targetAudience.toLowerCase()} who are already succeeding with ${data.companyName ? `${data.companyName}'s proven system` : 'our proven system'}</p>
-            ${data.contactName ? `<p style="margin-top: 15px; font-size: 1.1rem; opacity: 0.9;">Led by ${data.contactName} ${data.phone ? `• ${data.phone}` : ''}</p>` : ''}
+            ${data.contactName ? `<p style="margin-top: 15px; font-size: 1.1rem; opacity: 0.9;">✨ Led by ${data.contactName} and our expert team ✨</p>` : ''}
         </div>
 
         <div class="cta-section">
-            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">
+            <h2>
                 ${data.companyName ? `Ready to Work with ${data.companyName}?` : `Get Started - ${data.goalType} Made Simple`}
             </h2>
-            ${data.contactName ? `<p style="text-align: center; margin-bottom: 20px; color: #666; font-size: 1.1rem;">Connect directly with ${data.contactName} and our ${data.industry.toLowerCase()} experts</p>` : ''}
+            ${data.contactName ? `<p class="subtitle">Connect directly with ${data.contactName} and our ${data.industry.toLowerCase()} experts</p>` : ''}
             <form class="lead-form" id="leadForm" onsubmit="submitForm(event)">
                 <div class="form-group">
                     <label for="name">Full Name *</label>
@@ -184,7 +362,7 @@ const SuperiorFunnelBuilder = () => {
                     <input type="text" id="company" name="company">
                 </div>
                 <button type="submit" class="submit-btn">
-                    ${data.companyName ? `Connect with ${data.companyName} →` : `Get My Free ${data.goalType} Strategy →`}
+                    ${data.companyName ? `Connect with ${data.companyName}` : `Get My Free ${data.goalType} Strategy`}
                 </button>
             </form>
         </div>
@@ -192,29 +370,29 @@ const SuperiorFunnelBuilder = () => {
         <div class="features">
             <div class="feature">
                 <h3>🚀 Proven Results</h3>
-                <p>${data.companyName ? `${data.companyName}'s ${data.industry.toLowerCase()} strategies` : `Our ${data.industry.toLowerCase()} strategies`} have helped businesses increase conversions by 340%</p>
+                <p>${data.companyName ? `${data.companyName}'s ${data.industry.toLowerCase()} strategies` : `Our ${data.industry.toLowerCase()} strategies`} have helped businesses increase conversions by 340% with Genie magic</p>
             </div>
             <div class="feature">
                 <h3>⚡ Fast Implementation</h3>
-                <p>Get up and running in under 24 hours with ${data.companyName ? `${data.companyName}'s step-by-step system` : 'our step-by-step system'}</p>
+                <p>Get up and running in under 24 hours with ${data.companyName ? `${data.companyName}'s step-by-step system` : 'our step-by-step system'} powered by AI</p>
             </div>
             <div class="feature">
                 <h3>💎 Premium Support</h3>
-                <p>Direct access to ${data.contactName || `${data.companyName ? data.companyName : 'our'} team`} and other ${data.industry.toLowerCase()} experts</p>
+                <p>Direct access to ${data.contactName || `${data.companyName ? data.companyName : 'our'} team`} and other ${data.industry.toLowerCase()} experts who understand your unique challenges</p>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        ${data.companyName ? `<p><strong>${data.companyName}</strong></p>` : ''}
-        ${data.email ? `<p>Contact: <a href="mailto:${data.email}">${data.email}</a></p>` : ''}
-        ${data.phone ? `<p>Phone: <a href="tel:${data.phone}">${data.phone}</a></p>` : ''}
-        ${data.website ? `<p>Website: <a href="${data.website}" target="_blank">${data.website}</a></p>` : ''}
-        ${data.address ? `<p>${data.address}</p>` : ''}
-        <p style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px;">
-            Powered by <a href="#" target="_blank">MarketGenie</a> - AI-Powered Marketing Solutions
-        </p>
-        <p style="margin-top: 10px; font-size: 12px;">© ${new Date().getFullYear()} ${data.companyName || 'Your Company'}. All rights reserved.</p>
+        ${data.companyName ? `<h3 style="margin-bottom: 15px; color: #fbbf24;">${data.companyName}</h3>` : ''}
+        ${data.email ? `<p>📧 Contact: <a href="mailto:${data.email}">${data.email}</a></p>` : ''}
+        ${data.phone ? `<p>📞 Phone: <a href="tel:${data.phone}">${data.phone}</a></p>` : ''}
+        ${data.website ? `<p>🌐 Website: <a href="${data.website}" target="_blank">${data.website}</a></p>` : ''}
+        ${data.address ? `<p>📍 ${data.address}</p>` : ''}
+        <div class="powered-by">
+            <p>✨ Powered by <a href="#" target="_blank">MarketGenie</a> - AI-Powered Marketing Solutions with Genie Magic ✨</p>
+            <p style="font-size: 12px; margin-top: 10px;">© ${new Date().getFullYear()} ${data.companyName || 'Your Company'}. All rights reserved.</p>
+        </div>
     </div>
 
     <script>

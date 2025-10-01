@@ -1,10 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Plus, 
+  Play, 
+  Pause, 
+  Save, 
+  Eye, 
+  Settings,
+  Mail,
+  MessageSquare,
+  Share2,
+  Users,
+  Clock,
+  Target,
+  Zap,
+  AlertTriangle,
+  CheckCircle,
+  Sparkles,
+  ArrowDown,
+  ArrowRight,
+  Trash2,
+  Copy,
+  Brain,
+  TrendingUp,
+  BarChart3,
+  Wand2,
+  Rocket,
+  Crown,
+  Star,
+  Lightbulb
+} from 'lucide-react';
 
 const AdvancedFunnelBuilder = () => {
   const [activeFunnels, setActiveFunnels] = useState([
     {
       id: 1,
-      name: 'SaaS Product Demo Funnel',
+      name: 'AI-Optimized SaaS Demo Funnel',
       type: 'Lead Generation',
       status: 'live',
       visitors: 12847,
@@ -13,11 +44,15 @@ const AdvancedFunnelBuilder = () => {
       conversionRate: 16.8,
       pages: 5,
       aiOptimized: true,
-      lastOptimized: '2 hours ago'
+      lastOptimized: '2 hours ago',
+      aiScore: 95,
+      wishesGranted: 247,
+      predictedRevenue: '$425,000',
+      smartFeatures: ['AI Headlines', 'Dynamic Pricing', 'Behavior Triggers', 'Exit Intent AI']
     },
     {
       id: 2,
-      name: 'E-commerce Sales Funnel',
+      name: 'Genie-Powered E-commerce Flow',
       type: 'Sales',
       status: 'live',
       visitors: 8923,
@@ -26,11 +61,15 @@ const AdvancedFunnelBuilder = () => {
       conversionRate: 20.5,
       pages: 4,
       aiOptimized: true,
-      lastOptimized: '45 minutes ago'
+      lastOptimized: '45 minutes ago',
+      aiScore: 92,
+      wishesGranted: 189,
+      predictedRevenue: '$210,000',
+      smartFeatures: ['Personalized Offers', 'Smart Upsells', 'Cart Recovery AI', 'Price Optimization']
     },
     {
       id: 3,
-      name: 'Webinar Registration Flow',
+      name: 'Magical Webinar Registration',
       type: 'Event',
       status: 'live',
       visitors: 5642,
@@ -39,11 +78,15 @@ const AdvancedFunnelBuilder = () => {
       conversionRate: 60.6,
       pages: 3,
       aiOptimized: true,
-      lastOptimized: '1 hour ago'
+      lastOptimized: '1 hour ago',
+      aiScore: 98,
+      wishesGranted: 421,
+      predictedRevenue: '$125,000',
+      smartFeatures: ['Time-Based Urgency', 'Social Proof AI', 'Dynamic CTAs', 'Audience Matching']
     },
     {
       id: 4,
-      name: 'Coaching Program Funnel',
+      name: 'Wish-Granting High-Ticket Funnel',
       type: 'High-Ticket',
       status: 'live',
       visitors: 2134,
@@ -52,58 +95,74 @@ const AdvancedFunnelBuilder = () => {
       conversionRate: 13.4,
       pages: 7,
       aiOptimized: true,
-      lastOptimized: '30 minutes ago'
+      lastOptimized: '30 minutes ago',
+      aiScore: 94,
+      wishesGranted: 87,
+      predictedRevenue: '$750,000',
+      smartFeatures: ['Psychology AI', 'Trust Signals', 'Objection Handling', 'Authority Building']
     }
   ]);
 
   const [funnelTemplates] = useState([
     {
-      name: 'AI-Powered Lead Magnet',
+      name: 'AI Genie Lead Magnet',
       type: 'Lead Generation',
       pages: 3,
-      features: ['Smart Forms', 'AI Personalization', 'Auto-Segmentation'],
-      conversionRate: '25-35%',
-      icon: '🧲'
+      features: ['AI-Generated Headlines', 'Smart Form Fields', 'Behavioral Triggers', 'Auto-Segmentation'],
+      conversionRate: '35-45%',
+      icon: '�‍♂️',
+      description: 'AI creates personalized lead magnets that adapt to each visitor',
+      aiPowered: true
     },
     {
-      name: 'Video Sales Letter (VSL)',
+      name: 'Wish-Granting VSL',
       type: 'Sales',
       pages: 2,
-      features: ['Interactive Video', 'Dynamic Pricing', 'Exit-Intent'],
-      conversionRate: '15-25%',
-      icon: '🎬'
+      features: ['AI Video Personalization', 'Dynamic Script Optimization', 'Smart Pricing', 'Exit-Intent Magic'],
+      conversionRate: '25-35%',
+      icon: '✨',
+      description: 'Video sales letters that grant conversion wishes with AI optimization',
+      aiPowered: true
     },
     {
-      name: 'Webinar Registration + Replay',
+      name: 'Magical Webinar Funnel',
       type: 'Event',
       pages: 4,
-      features: ['Smart Scheduling', 'Auto-Reminders', 'Replay Optimization'],
-      conversionRate: '45-65%',
-      icon: '🎯'
+      features: ['AI Attendance Prediction', 'Smart Scheduling', 'Engagement AI', 'Replay Optimization'],
+      conversionRate: '55-75%',
+      icon: '�',
+      description: 'Webinars that magically adapt to audience behavior and interests',
+      aiPowered: true
     },
     {
-      name: 'High-Ticket Consultation',
+      name: 'Golden High-Ticket Funnel',
       type: 'High-Ticket',
       pages: 5,
-      features: ['Calendar Integration', 'Qualification Quiz', 'Social Proof'],
-      conversionRate: '8-15%',
-      icon: '💎'
+      features: ['Psychology AI', 'Trust Score Algorithm', 'Objection Predictor', 'Authority Builder'],
+      conversionRate: '15-25%',
+      icon: '�',
+      description: 'High-ticket funnels with AI-powered trust and authority building',
+      aiPowered: true
     },
     {
-      name: 'Product Launch Sequence',
+      name: 'Genie Launch Sequence',
       type: 'Launch',
       pages: 8,
-      features: ['Countdown Timers', 'Scarcity Elements', 'Multi-Step Forms'],
-      conversionRate: '12-20%',
-      icon: '🚀'
+      features: ['AI Hype Generator', 'Smart Scarcity', 'Viral Mechanics', 'Conversion Prediction'],
+      conversionRate: '20-30%',
+      icon: '🚀',
+      description: 'Product launches that create magical buzz and irresistible demand',
+      aiPowered: true
     },
     {
-      name: 'Membership Site Funnel',
+      name: 'Enchanted Membership Funnel',
       type: 'Recurring',
       pages: 4,
-      features: ['Trial Offers', 'Payment Plans', 'Member Onboarding'],
+      features: ['Retention AI', 'Churn Prevention', 'Value Optimization', 'Loyalty Rewards'],
       conversionRate: '18-28%',
-      icon: '🏛️'
+      icon: '🏰',
+      description: 'Membership funnels that keep subscribers enchanted and engaged',
+      aiPowered: true
     }
   ]);
 

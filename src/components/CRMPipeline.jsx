@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTenant } from '../contexts/TenantContext'
 import FirebaseUserDataService from '../services/firebaseUserData'
+import SuperiorFunnelBuilder from './SuperiorFunnelBuilder'
 import toast from 'react-hot-toast'
 
 const CRMPipeline = () => {
@@ -10,6 +11,7 @@ const CRMPipeline = () => {
   const [contacts, setContacts] = useState([])
   const [deals, setDeals] = useState([])
   const [funnels, setFunnels] = useState([])
+  const [activeTab, setActiveTab] = useState('ai-funnels') // Default to AI Funnels
   const [loading, setLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
@@ -749,6 +751,41 @@ const CRMPipeline = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-xl shadow-lg mb-8">
+        <div className="flex border-b border-gray-200">
+          {[
+            { id: 'pipeline', name: 'Sales Pipeline', icon: '📊' },
+            { id: 'ai-funnels', name: 'AI Funnels', icon: '🧞‍♂️' },
+            { id: 'contacts', name: 'Contacts', icon: '👥' },
+            { id: 'deals', name: 'Deals', icon: '💼' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center px-6 py-4 font-medium text-sm transition-all ${
+                activeTab === tab.id
+                  ? 'text-yellow-600 border-b-2 border-yellow-600 bg-yellow-50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.name}
+              {tab.id === 'ai-funnels' && (
+                <span className="ml-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-2 py-1 rounded-full">
+                  AI
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'ai-funnels' && <SuperiorFunnelBuilder />}
+      
+      {activeTab === 'pipeline' && (
+        <>
       {/* Sales Pipeline */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
         <h3 className="text-xl font-semibold text-genie-teal mb-6">Sales Pipeline</h3>
@@ -774,107 +811,11 @@ const CRMPipeline = () => {
           ))}
         </div>
       </div>
+        </>
+      )}
 
-      {/* Funnels Management */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-genie-teal">Active Funnels</h3>
-          <button
-            onClick={() => setShowFunnelModal(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            + Create Funnel
-          </button>
-        </div>
-        
-        {funnels.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🚀</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Funnels Yet</h3>
-            <p className="text-gray-600 mb-6">Create funnels to track lead progression like ClickFunnels</p>
-            <button
-              onClick={() => setShowFunnelModal(true)}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Create Your First Funnel
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {funnels.map(funnel => {
-              const stats = getFunnelStats(funnel.id)
-              return (
-                <div key={funnel.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-gray-900">{funnel.name}</h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => editFunnel(funnel)}
-                        className="text-blue-500 hover:text-blue-700 text-sm font-medium"
-                        title="Edit Funnel"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => deleteFunnel(funnel.id)}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                        title="Delete Funnel"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-sm mb-4">{funnel.description}</p>
-                  
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-blue-600">{stats.contactCount}</div>
-                      <div className="text-xs text-gray-500">Contacts</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-green-600">{stats.conversionRate}%</div>
-                      <div className="text-xs text-gray-500">Conversion</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-600">{stats.dealCount}</div>
-                      <div className="text-xs text-gray-500">Deals</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-orange-600">${stats.totalValue.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Value</div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3">
-                    <div className="text-xs text-gray-500 mb-1">Funnel Stages:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {funnel.stages.map((stage, index) => (
-                        <span key={index} className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
-                          {stage.replace('_', ' ')}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {funnel.landingPageUrl && (
-                    <div className="mt-3">
-                      <a 
-                        href={funnel.landingPageUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        View Landing Page →
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
+      {activeTab === 'contacts' && (
+        <>
       {/* Enhanced Contact Manager */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
         <div className="flex justify-between items-center mb-6">
@@ -1102,7 +1043,21 @@ const CRMPipeline = () => {
           </>
         )}
       </div>
+        </>
+      )}
 
+      {activeTab === 'deals' && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-genie-teal mb-6">Deal Management</h3>
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">💼</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Deal Management</h3>
+            <p className="text-gray-600 mb-6">Advanced deal tracking and management coming soon</p>
+          </div>
+        </div>
+      )}
+
+      {/* All Modals - These appear regardless of active tab */}
       {/* Contact Modal */}
       {showContactModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

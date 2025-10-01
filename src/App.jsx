@@ -16,6 +16,7 @@ import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
 import integrationService from './services/integrationService'
+import stabilityMonitor from './services/stabilityMonitor'
 import toast, { Toaster } from 'react-hot-toast'
 import { functions, auth } from './firebase'
 import { httpsCallable } from 'firebase/functions'
@@ -25,6 +26,7 @@ import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
+import FirebaseStabilityManager from './components/FirebaseStabilityManager'
 import AIService from './services/aiService'
 import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
@@ -39,6 +41,7 @@ import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 import WorkflowAutomation from './components/WorkflowAutomation'
 import CRMPipeline from './components/CRMPipeline'
 import ContactManager from './components/ContactManager'
+import FunnelPreview from './pages/FunnelPreview'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -3486,10 +3489,14 @@ function App() {
     <AuthProvider>
       <TenantProvider>
         <GenieProvider>
+          <FirebaseStabilityManager />
           <Toaster position="top-right" />
           <Routes>
             {/* Landing Page - Public sales page */}
             <Route path="/" element={<LandingPage />} />
+            
+            {/* Funnel Preview - Public generated funnels */}
+            <Route path="/funnel/:funnelId" element={<FunnelPreview />} />
             
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />

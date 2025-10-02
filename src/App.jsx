@@ -26,7 +26,7 @@ import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
-import FirebaseStabilityManager from './components/FirebaseStabilityManager'
+import EnhancedFirebaseStabilityManager from './components/EnhancedFirebaseStabilityManager'
 import AIService from './services/aiService'
 import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
@@ -3489,14 +3489,14 @@ function App() {
     <AuthProvider>
       <TenantProvider>
         <GenieProvider>
-          <FirebaseStabilityManager />
-          <Toaster position="top-right" />
-          <Routes>
-            {/* Landing Page - Public sales page */}
-            <Route path="/" element={<LandingPage />} />
-            
-            {/* Funnel Preview - Public generated funnels */}
-            <Route path="/funnel/:funnelId" element={<FunnelPreview />} />
+          <EnhancedFirebaseStabilityManager>
+            <Toaster position="top-right" />
+            <Routes>
+              {/* Landing Page - Public sales page */}
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Funnel Preview - Public generated funnels */}
+              <Route path="/funnel/:funnelId" element={<FunnelPreview />} />
             
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
@@ -3536,6 +3536,7 @@ function App() {
             {/* Catch all - redirect to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </EnhancedFirebaseStabilityManager>
         </GenieProvider>
       </TenantProvider>
     </AuthProvider>

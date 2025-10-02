@@ -34,54 +34,97 @@ export function TenantProvider({ children }) {
   }, [user, authLoading])
 
   const loadUserTenant = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const attemptLoad = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-      console.log('Loading tenant for user:', user?.email)
-      const result = await TenantService.getCurrentUserTenant()
-      
-      if (result.error) {
-        console.error('Tenant loading error:', result.error)
-        setError(result.error)
+        console.log('Loading tenant for user:', user?.email)
+        const result = await TenantService.getCurrentUserTenant()
         
-        // More specific error message for debugging
-        if (result.error.message?.includes('permission')) {
-          toast.error('Permission denied. Checking Firestore rules...')
-        } else {
-          toast.error('Failed to load workspace: ' + result.error.message)
-        }
-        return
-      }
-
-      if (result.data) {
-        console.log('Tenant loaded:', result.data)
-        setTenant(result.data)
-        
-        // Initialize tenant collections if this is a new tenant
-        if (!result.data.initialized) {
-          console.log('Initializing tenant collections...')
-          await TenantService.initializeTenantCollections(result.data.id)
-          await TenantService.updateTenantSettings(result.data.id, { initialized: true })
+        if (result.error) {
+          console.error('Tenant loading error:', result.error)
           
-          // Reload tenant data
-          const updatedResult = await TenantService.getCurrentUserTenant()
-          if (updatedResult.data) {
-            setTenant(updatedResult.data)
+          // Check if it's a connection-related error
+          if (result.error.message?.includes('offline') || 
+              result.error.message?.includes('CORS') ||
+              result.error.message?.includes('ERR_FAILED') ||
+              result.error.message?.includes('Failed to fetch')) {
+            
+            if (retryCount < maxRetries) {
+              retryCount++;
+              console.log(`🔄 Connection error detected, retrying... (${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+              return await attemptLoad();
+            } else {
+              console.error('❌ Max retries reached for tenant loading');
+              toast.error('Connection issues detected. Please check your internet connection and try again.', {
+                duration: 8000
+              });
+            }
+          }
+          
+          setError(result.error)
+          
+          // More specific error message for debugging
+          if (result.error.message?.includes('permission')) {
+            toast.error('Permission denied. Checking Firestore rules...')
+          } else if (!result.error.message?.includes('offline')) {
+            toast.error('Failed to load workspace: ' + result.error.message)
+          }
+          return
+        }
+
+        if (result.data) {
+          console.log('✅ Tenant loaded successfully:', result.data)
+          setTenant(result.data)
+          
+          // Initialize tenant collections if this is a new tenant
+          if (!result.data.initialized) {
+            console.log('Initializing tenant collections...')
+            await TenantService.initializeTenantCollections(result.data.id)
+            await TenantService.updateTenantSettings(result.data.id, { initialized: true })
+            
+            // Reload tenant data
+            const updatedResult = await TenantService.getCurrentUserTenant()
+            if (updatedResult.data) {
+              setTenant(updatedResult.data)
+            }
+          }
+
+          // Welcome toast removed per user request
+        } else {
+          console.log('No tenant found, will create one on first sign-in')
+        }
+      } catch (err) {
+        console.error('Tenant loading exception:', err)
+        
+        // Enhanced error handling for connection issues
+        if (err.message?.includes('offline') || 
+            err.message?.includes('CORS') ||
+            err.message?.includes('ERR_FAILED') ||
+            err.message?.includes('Failed to fetch')) {
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`🔄 Exception caught, retrying... (${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+            return await attemptLoad();
           }
         }
-
-        // Welcome toast removed per user request
-      } else {
-        console.log('No tenant found, will create one on first sign-in')
+        
+        setError(err)
+        toast.error('Failed to load workspace: ' + err.message)
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error('Tenant loading exception:', err)
-      setError(err)
-      toast.error('Failed to load workspace: ' + err.message)
-    } finally {
-      setLoading(false)
-    }
+    };
+    
+    // Start the loading attempt
+    await attemptLoad();
   }
 
   const updateTenantSettings = async (settings) => {

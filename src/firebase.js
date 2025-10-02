@@ -19,7 +19,54 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize services with improved settings
 export const auth = getAuth(app);
+
+// Initialize Firestore with enhanced connection settings
 export const db = getFirestore(app);
+
+// Connection stability enhancements
+const initializeFirebaseWithRetry = async () => {
+  try {
+    // Enable network explicitly
+    await enableNetwork(db);
+    console.log('✅ Firebase connection established successfully');
+    
+    // Set up connection monitoring
+    let isOnline = true;
+    
+    window.addEventListener('online', async () => {
+      if (!isOnline) {
+        console.log('🔄 Network back online - reconnecting to Firebase...');
+        try {
+          await enableNetwork(db);
+          isOnline = true;
+          console.log('✅ Firebase reconnected successfully');
+        } catch (error) {
+          console.error('❌ Failed to reconnect to Firebase:', error);
+        }
+      }
+    });
+    
+    window.addEventListener('offline', async () => {
+      console.log('📴 Network offline - Firebase will use cache');
+      isOnline = false;
+    });
+    
+  } catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+    
+    // Retry connection after delay
+    setTimeout(() => {
+      console.log('🔄 Retrying Firebase connection...');
+      initializeFirebaseWithRetry();
+    }, 2000);
+  }
+};
+
+// Initialize connection monitoring
+if (typeof window !== 'undefined') {
+  initializeFirebaseWithRetry();
+}
+
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');
 
@@ -28,6 +75,24 @@ export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : nul
 
 // Configure Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+// Export enhanced connection utilities
+export const reconnectFirebase = async () => {
+  try {
+    await disableNetwork(db);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await enableNetwork(db);
+    return true;
+  } catch (error) {
+    console.error('Firebase reconnection failed:', error);
+    return false;
+  }
+};
+
+export default app;
 googleProvider.setCustomParameters({
   prompt: 'select_account',
 });

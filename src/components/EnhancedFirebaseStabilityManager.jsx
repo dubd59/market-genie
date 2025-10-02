@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db, reconnectFirebase } from '../firebase';
+import { db, reconnectFirebase, checkConnectionHealth } from '../firebase';
 import { enableNetwork, disableNetwork } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
@@ -9,25 +9,33 @@ const EnhancedFirebaseStabilityManager = ({ children }) => {
   const [isStable, setIsStable] = useState(false);
 
   useEffect(() => {
-    console.log('🚀 Enhanced Firebase Stability Manager starting...');
+    console.log('🚀 COCKROACH-PROOF Stability Manager starting...');
     
     let connectionCheckInterval;
     let stabilityTimeout;
     
     const checkConnection = async () => {
       try {
-        // Test Firestore connection with a lightweight operation
-        const testDoc = db._delegate || db;
+        // Use our bulletproof connection checker
+        const isHealthy = await checkConnectionHealth();
         
-        // Set connection status to connected
-        setConnectionStatus('connected');
-        
-        if (!isStable) {
-          // Wait for connection to stabilize
-          stabilityTimeout = setTimeout(() => {
-            setIsStable(true);
-            console.log('✅ Firebase connection stabilized');
-          }, 3000);
+        if (isHealthy) {
+          setConnectionStatus('connected');
+          setRetryCount(0);
+          
+          if (!isStable) {
+            // Wait for connection to stabilize
+            stabilityTimeout = setTimeout(() => {
+              setIsStable(true);
+              console.log('✅ Firebase connection stabilized');
+              toast.success('🔥 Firebase Connected!', {
+                duration: 2000,
+                position: 'top-right'
+              });
+            }, 2000);
+          }
+        } else {
+          throw new Error('Connection health check failed');
         }
         
       } catch (error) {
@@ -35,24 +43,33 @@ const EnhancedFirebaseStabilityManager = ({ children }) => {
         setConnectionStatus('error');
         setIsStable(false);
         
-        if (retryCount < 5) {
-          console.log(`🔄 Attempting reconnection (${retryCount + 1}/5)...`);
+        if (retryCount < 3) {
+          console.log(`🔄 Attempting reconnection (${retryCount + 1}/3)...`);
           setRetryCount(prev => prev + 1);
+          
+          toast.error(`� Connection issue detected! Attempt ${retryCount + 1}/3`, {
+            duration: 2000,
+            position: 'top-right'
+          });
           
           try {
             const success = await reconnectFirebase();
             if (success) {
               console.log('✅ Firebase reconnection successful');
               setRetryCount(0);
+              toast.success('✅ Connection restored!', {
+                duration: 2000,
+                position: 'top-right'
+              });
             }
           } catch (reconnectError) {
             console.error('❌ Reconnection failed:', reconnectError);
           }
         } else {
-          console.error('❌ Max retry attempts reached');
-          toast.error('Connection issues detected. Please refresh the page.', {
-            duration: 10000,
-            id: 'firebase-connection-error'
+          console.error('💀 Maximum reconnection attempts reached');
+          toast.error('🚨 Connection failed - Operating in offline mode', {
+            duration: 5000,
+            position: 'top-right'
           });
         }
       }
@@ -61,8 +78,8 @@ const EnhancedFirebaseStabilityManager = ({ children }) => {
     // Initial connection check
     checkConnection();
     
-    // Periodic connection monitoring
-    connectionCheckInterval = setInterval(checkConnection, 10000);
+    // Periodic connection monitoring (check every 15 seconds)
+    connectionCheckInterval = setInterval(checkConnection, 15000);
     
     // Enhanced online/offline handling
     const handleOnline = async () => {
@@ -72,84 +89,85 @@ const EnhancedFirebaseStabilityManager = ({ children }) => {
     };
     
     const handleOffline = () => {
-      console.log('📴 Network offline detected');
+      console.log('📴 Network offline - entering offline mode');
       setConnectionStatus('offline');
       setIsStable(false);
+      clearTimeout(stabilityTimeout);
     };
+
+    // Add event listeners for network status
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     
-    // Enhanced error handling for CORS and connection issues
-    const handleUnhandledRejection = (event) => {
-      if (event.reason?.message?.includes('CORS') || 
-          event.reason?.message?.includes('Failed to fetch') ||
-          event.reason?.message?.includes('ERR_FAILED')) {
-        console.warn('🔴 Network/CORS error detected:', event.reason);
-        
-        // Attempt automatic recovery
-        setTimeout(async () => {
-          console.log('🔄 Attempting automatic recovery...');
-          await checkConnection();
-        }, 5000);
-        
-        event.preventDefault();
+    // Enhanced visibility change handling
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Page visible - checking Firebase connection...');
+        checkConnection();
       }
     };
     
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
     return () => {
       clearInterval(connectionCheckInterval);
       clearTimeout(stabilityTimeout);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [retryCount, isStable]);
 
-  // Show loading state until connection is stable
-  if (!isStable) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-20 h-20 border-4 border-purple-200 rounded-full animate-spin border-t-purple-600 mx-auto mb-4"></div>
-            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full border-t-blue-400 animate-spin" style={{ animationDelay: '0.5s', animationDuration: '1.5s' }}></div>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            Initializing MarketGenie
-          </h3>
-          <p className="text-gray-500 mb-4">
-            {connectionStatus === 'connecting' && 'Establishing secure connection...'}
-            {connectionStatus === 'connected' && 'Stabilizing connection...'}
-            {connectionStatus === 'error' && `Reconnecting... (${retryCount}/5)`}
-            {connectionStatus === 'offline' && 'Waiting for network...'}
-          </p>
-          
-          {retryCount > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-md mx-auto">
-              <p className="text-sm text-yellow-700">
-                Connection issue detected. Attempting automatic recovery...
-              </p>
-            </div>
-          )}
-          
-          <div className="mt-6">
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
-              <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-400' : connectionStatus === 'error' ? 'bg-red-400' : 'bg-yellow-400'}`}></div>
-              <span>
-                {connectionStatus === 'connected' ? 'Connected' : 
-                 connectionStatus === 'error' ? 'Reconnecting' : 
-                 connectionStatus === 'offline' ? 'Offline' : 'Connecting'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Connection status indicator
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return '#10B981'; // Green
+      case 'connecting': return '#F59E0B'; // Orange  
+      case 'error': return '#EF4444'; // Red
+      case 'offline': return '#6B7280'; // Gray
+      default: return '#6B7280';
+    }
+  };
 
-  return children;
+  const getStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return isStable ? '🔥 Cockroach-Free Zone' : '🔄 Stabilizing...';
+      case 'connecting': return '🔄 Hunting Cockroaches...';
+      case 'error': return '🐛 Cockroach Detected!';
+      case 'offline': return '📴 Offline Mode';
+      default: return '⚡ Initializing...';
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Connection Status Indicator - Removed for production */}
+      {/* 
+      <div
+        style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          backgroundColor: getStatusColor(),
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '12px',
+          fontWeight: '600',
+          zIndex: 9999,
+          opacity: connectionStatus === 'connected' && isStable ? 0.7 : 1,
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {getStatusText()}
+      </div>
+      */}
+
+      {/* Render children - app continues to work even with connection issues */}
+      {children}
+    </div>
+  );
 };
 
 export default EnhancedFirebaseStabilityManager;

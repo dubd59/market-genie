@@ -1,4 +1,4 @@
-import { db, retryFirebaseConnection } from '../firebase';
+import { db, reconnectFirebase, checkConnectionHealth } from '../firebase';
 import { enableNetwork, disableNetwork } from 'firebase/firestore';
 
 class ConnectionService {
@@ -85,7 +85,7 @@ class ConnectionService {
       // If this was the last attempt, try the legacy retry method
       if (this.retryAttempts >= this.maxRetries) {
         try {
-          const legacyResult = await retryFirebaseConnection();
+          const legacyResult = await reconnectFirebase();
           if (legacyResult) {
             this.isConnected = true;
             this.retryAttempts = 0;

@@ -86,6 +86,25 @@ const SuperiorFunnelBuilder = () => {
   const generateCompleteFunnelHTML = (data, id, name) => {
     const timestamp = new Date().toISOString();
     
+    // Industry-specific light gradient backgrounds
+    const getIndustryGradient = (industry) => {
+      const gradients = {
+        'E-commerce': 'linear-gradient(135deg, #fef7f7 0%, #fff2e5 50%, #f0f9ff 100%)',
+        'SaaS': 'linear-gradient(135deg, #f0f9ff 0%, #f8fafc 50%, #f1f5f9 100%)',
+        'Coaching': 'linear-gradient(135deg, #fefce8 0%, #fef3c7 50%, #ecfdf5 100%)',
+        'Real Estate': 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)',
+        'Healthcare': 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 50%, #a7f3d0 100%)',
+        'Education': 'linear-gradient(135deg, #fdf4ff 0%, #fae8ff 50%, #e9d5ff 100%)',
+        'Food Service': 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #fb923c 100%)',
+        'Construction': 'linear-gradient(135deg, #fefce8 0%, #fde047 50%, #facc15 100%)',
+        'Manufacturing': 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 50%, #94a3b8 100%)',
+        'Professional Services': 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+        'Fitness & Wellness': 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 50%, #86efac 100%)',
+        'Beauty & Salon': 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)'
+      };
+      return gradients[industry] || 'linear-gradient(135deg, #fefce8 0%, #fef3c7 50%, #f0f9ff 100%)';
+    };
+    
     // 1. LANDING PAGE (Main funnel page)
     const landingPageHTML = `<!DOCTYPE html>
 <html lang="en">
@@ -93,330 +112,628 @@ const SuperiorFunnelBuilder = () => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${data.companyName ? `${data.companyName} - ${name}` : name} | Powered by MarketGenie</title>
+    <script src="https://cdn.emailjs.com/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body { 
-            font-family: 'Arial', sans-serif; 
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             line-height: 1.6; 
-            background: linear-gradient(135deg, #f3e8ff 0%, #fef3c7 100%);
+            background: ${getIndustryGradient(data.industry)};
             min-height: 100vh;
-        }
-        /* Better Container Sizing - More Compact */
-        .container { 
-            max-width: 850px; 
-            margin: 0 auto; 
-            padding: 15px; 
-        }
-        
-        /* Refined Company Header - More Compact */
-        .company-header {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-            border: 1px solid rgba(147, 51, 234, 0.08);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .company-header h1 { 
-            font-size: 2.2rem; 
-            margin-bottom: 8px; 
-            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .company-header .subtitle { 
-            font-size: 1.1rem; 
-            color: #6b7280; 
-            margin-bottom: 12px; 
-        }
-        .company-contact { 
-            font-size: 0.9rem; 
-            color: #9333ea; 
-            font-weight: 500;
-        }
-        
-        /* Streamlined Hero - Compact */
-        .hero { 
-            text-align: center; 
-            padding: 35px 25px; 
-            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.2);
-            color: white; 
-            max-width: 750px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .hero h1 { 
-            font-size: 2.3rem; 
-            margin-bottom: 12px; 
-            font-weight: bold; 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.15);
-        }
-        .hero h2 { 
-            font-size: 1.3rem; 
-            margin-bottom: 12px; 
-            opacity: 0.95; 
-            font-weight: 500;
-        }
-        .hero p { 
-            font-size: 1rem; 
-            margin-bottom: 20px; 
-            opacity: 0.9; 
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        /* Refined CTA Section */
-        .cta-section { 
-            background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(10px);
-            padding: 40px 35px; 
-            margin: 35px auto; 
-            border-radius: 20px; 
-            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-            border: 1px solid rgba(147, 51, 234, 0.08);
-            max-width: 650px;
-        }
-        .cta-section h2 {
-            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 1.9rem;
-            margin-bottom: 12px;
-        }
-        .cta-section .subtitle {
-            color: #6b7280;
-            font-size: 1rem;
-            margin-bottom: 25px;
-        }
-        
-        /* Optimized Form Styling */
-        .lead-form { max-width: 450px; margin: 0 auto; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { 
-            display: block; 
-            margin-bottom: 6px; 
-            font-weight: 600; 
             color: #374151;
-            font-size: 0.95rem;
-        }
-        .form-group input, .form-group select { 
-            width: 100%; 
-            padding: 14px 16px; 
-            border: 2px solid #e5e7eb; 
-            border-radius: 12px; 
-            font-size: 15px;
-            transition: all 0.3s ease;
-            background: rgba(255,255,255,0.9);
-        }
-        .form-group input:focus, .form-group select:focus { 
-            border-color: #9333ea; 
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.08);
-            transform: translateY(-1px);
         }
         
-        /* Refined Submit Button */
-        .submit-btn { 
-            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%); 
-            color: white; 
-            padding: 16px 32px; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            width: 100%; 
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(147, 51, 234, 0.25);
+        /* Full Width Layout - No Cards */
+        .full-width { width: 100%; }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px; 
+        }
+        
+        /* Top Banner */
+        .top-banner {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 12px 0;
+        }
+        .top-banner .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .company-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .company-logo img {
+            max-height: 40px;
+            width: auto;
+        }
+        .company-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .contact-info {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        .contact-info a {
+            color: #6b7280;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .contact-info a:hover {
+            color: #374151;
+        }
+        
+        /* Hero Section - Full Width, No Cards */
+        .hero-section {
+            padding: 80px 0 100px;
+            text-align: center;
             position: relative;
             overflow: hidden;
         }
-        .submit-btn:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.35);
-        }
-        .submit-btn:before {
-            content: '✨';
+        .hero-section::before {
+            content: '';
             position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(1px);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 10;
+        }
+        .hero-logo {
+            margin-bottom: 30px;
+        }
+        .hero-logo img {
+            max-height: 120px;
+            max-width: 300px;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .hero-headline {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: #111827;
+            letter-spacing: -0.02em;
+        }
+        .hero-subheadline {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #4b5563;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            color: #6b7280;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+        .hero-cta-primary {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            margin-bottom: 60px;
+        }
+        .hero-cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
         }
         
-        /* Smaller, Elegant Features Grid */
-        .features { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 25px; 
-            margin: 45px auto; 
-            max-width: 900px;
+        /* Feature Image in Hero */
+        .hero-feature-image {
+            margin-top: 40px;
+            text-align: center;
         }
-        .feature { 
-            background: rgba(255,255,255,0.92); 
+        .hero-feature-image img {
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border: 4px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Main Content Sections */
+        .content-section {
+            padding: 80px 0;
+            background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(10px);
-            padding: 25px 20px; 
-            border-radius: 16px; 
-            text-align: center; 
-            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.08);
-            border: 1px solid rgba(147, 51, 234, 0.06);
+        }
+        .content-section:nth-child(even) {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Lead Capture Form - Clean Design */
+        .lead-capture {
+            background: white;
+            padding: 60px 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .form-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+        .form-subtitle {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        .lead-form {
+            text-align: left;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 18px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Features Section */
+        .features-section {
+            padding: 80px 0;
+            background: rgba(255, 255, 255, 0.4);
+        }
+        .features-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #111827;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .feature-item {
+            text-align: center;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
         }
-        .feature:hover {
+        .feature-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+        .feature-description {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        
+        /* Company Features Cards */
+        .company-features {
+            padding: 80px 0;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .company-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .company-feature-card {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+        .company-feature-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(147, 51, 234, 0.12);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
         }
-        .feature h3 { 
-            margin-bottom: 12px; 
+        .feature-emoji {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .feature-headline {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .feature-description {
+            font-size: 1rem;
+            color: #6b7280;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .company-feature-card h3 {
             font-size: 1.3rem;
-            background: linear-gradient(135deg, #9333ea 0%, #eab308 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
         }
-        .feature p { color: #6b7280; font-size: 0.95rem; line-height: 1.5; }
         
-        /* Streamlined Footer */
-        .footer { 
-            background: rgba(17, 24, 39, 0.95);
+        /* Impact Statements */
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .impact-item {
+            text-align: center;
+            padding: 40px 30px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
             backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+        .impact-item:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-color: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .impact-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .impact-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+        .impact-description {
+            color: #4b5563;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
             color: white;
-            text-align: center; 
-            padding: 30px 25px; 
-            border-radius: 16px;
-            margin: 45px auto 0;
-            max-width: 800px;
+            padding: 60px 0 40px;
+            text-align: center;
         }
-        .footer p { margin-bottom: 8px; font-size: 0.95rem; }
-        .footer a { color: #fbbf24; text-decoration: none; transition: color 0.3s ease; }
-        .footer a:hover { color: #f59e0b; }
-        .footer .powered-by {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 13px;
-            opacity: 0.8;
+        .footer-company {
+            margin-bottom: 30px;
+        }
+        .footer-company h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #f9fafb;
+        }
+        .footer-contact {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .footer-contact a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-contact a:hover {
+            color: #f9fafb;
+        }
+        .footer-powered {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 30px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        .footer-powered a {
+            color: #60a5fa;
+            text-decoration: none;
         }
         
-        /* Better Responsive Scaling */
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .hero { padding: 35px 20px; }
-            .hero h1 { font-size: 2.2rem; }
-            .hero h2 { font-size: 1.3rem; }
-            .hero p { font-size: 1rem; }
-            .company-header { padding: 18px 20px; margin-bottom: 20px; }
-            .company-header h1 { font-size: 1.9rem; }
-            .cta-section { padding: 30px 20px; margin: 25px 15px; }
-            .features { grid-template-columns: 1fr; gap: 20px; }
-            .feature { padding: 20px 15px; }
+            .hero-headline { font-size: 2.5rem; }
+            .hero-subheadline { font-size: 1.2rem; }
+            .hero-feature-image img { max-height: 200px; }
+            .form-row { grid-template-columns: 1fr; }
+            .features-grid { grid-template-columns: 1fr; gap: 30px; }
+            .footer-contact { flex-direction: column; gap: 15px; }
+            .contact-info { display: none; }
         }
-        
-        @media (min-width: 1200px) {
-            .hero h1 { font-size: 3.2rem; }
-            .hero h2 { font-size: 1.7rem; }
-            .company-header h1 { font-size: 2.4rem; }
-        }
-        
-        /* Genie Magic Animations */
-        @keyframes sparkle {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
-        }
-        .sparkle { animation: sparkle 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
-    <div class="container">
-        ${data.logoUrl ? `<div style="text-align: center; margin-bottom: 30px;"><img src="${data.logoUrl}" alt="${data.companyName}" style="max-height: 80px; max-width: 250px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>` : ''}
-        
-        ${data.companyName ? `
-        <div class="company-header sparkle">
-            <h1>${data.companyName}</h1>
-            <p class="subtitle">${data.industry} Excellence & ${data.goalType}</p>
-            ${data.contactName ? `<p style="font-size: 1.1rem; color: #6b7280; margin-bottom: 15px;">Led by ${data.contactName}</p>` : ''}
-            <div class="company-contact">
-                ${data.phone ? `📞 ${data.phone}` : ''} 
-                ${data.email ? `${data.phone ? ' • ' : ''}📧 ${data.email}` : ''}
-                ${data.website ? `${(data.phone || data.email) ? ' • ' : ''}🌐 ${data.website.replace(/^https?:\/\//, '')}` : ''}
+    <!-- Top Banner -->
+    <div class="top-banner">
+        <div class="container">
+            <div class="company-logo">
+                ${data.logoUrl ? `<img src="${data.logoUrl}" alt="${data.companyName}">` : ''}
+                ${data.companyName ? `<span class="company-name">${data.companyName}</span>` : ''}
             </div>
-        </div>
-        ` : ''}
-        
-        <div class="hero">
-            <h1>${data.companyName ? `Welcome to ${data.companyName}` : `Transform Your ${data.industry} Business Today`}</h1>
-            <h2>
-                ${data.companyName ? `${data.industry} Excellence by ${data.companyName}` : `Transform Your ${data.industry} Business Today`}
-            </h2>
-            <p>Join thousands of ${data.targetAudience.toLowerCase()} who are already succeeding with ${data.companyName ? `${data.companyName}'s proven system` : 'our proven system'}</p>
-            ${data.contactName ? `<p style="margin-top: 15px; font-size: 1.1rem; opacity: 0.9;">✨ Led by ${data.contactName} and our expert team ✨</p>` : ''}
-        </div>
-
-        <div class="cta-section">
-            <h2>
-                ${data.companyName ? `Ready to Work with ${data.companyName}?` : `Get Started - ${data.goalType} Made Simple`}
-            </h2>
-            ${data.contactName ? `<p class="subtitle">Connect directly with ${data.contactName} and our ${data.industry.toLowerCase()} experts</p>` : ''}
-            <form class="lead-form" id="leadForm" onsubmit="submitForm(event)">
-                <div class="form-group">
-                    <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" name="phone">
-                </div>
-                <div class="form-group">
-                    <label for="company">Company/Business</label>
-                    <input type="text" id="company" name="company">
-                </div>
-                <button type="submit" class="submit-btn">
-                    ${data.companyName ? `Connect with ${data.companyName}` : `Get My Free ${data.goalType} Strategy`}
-                </button>
-            </form>
-        </div>
-
-        <div class="features">
-            <div class="feature">
-                <h3>🚀 Proven Results</h3>
-                <p>${data.companyName ? `${data.companyName}'s ${data.industry.toLowerCase()} strategies` : `Our ${data.industry.toLowerCase()} strategies`} have helped businesses increase conversions by 340% with Genie magic</p>
-            </div>
-            <div class="feature">
-                <h3>⚡ Fast Implementation</h3>
-                <p>Get up and running in under 24 hours with ${data.companyName ? `${data.companyName}'s step-by-step system` : 'our step-by-step system'} powered by AI</p>
-            </div>
-            <div class="feature">
-                <h3>💎 Premium Support</h3>
-                <p>Direct access to ${data.contactName || `${data.companyName ? data.companyName : 'our'} team`} and other ${data.industry.toLowerCase()} experts who understand your unique challenges</p>
+            <div class="contact-info">
+                ${data.phone ? `<a href="tel:${data.phone}">📞 ${data.phone}</a>` : ''}
+                ${data.email ? `<a href="mailto:${data.email}">📧 ${data.email}</a>` : ''}
+                ${data.website ? `<a href="${data.website}" target="_blank">🌐 Website</a>` : ''}
             </div>
         </div>
     </div>
 
-    <div class="footer">
-        ${data.companyName ? `<h3 style="margin-bottom: 15px; color: #fbbf24;">${data.companyName}</h3>` : ''}
-        ${data.email ? `<p>📧 Contact: <a href="mailto:${data.email}">${data.email}</a></p>` : ''}
-        ${data.phone ? `<p>📞 Phone: <a href="tel:${data.phone}">${data.phone}</a></p>` : ''}
-        ${data.website ? `<p>🌐 Website: <a href="${data.website}" target="_blank">${data.website}</a></p>` : ''}
-        ${data.address ? `<p>📍 ${data.address}</p>` : ''}
-        <div class="powered-by">
-            <p>✨ Powered by <a href="#" target="_blank">MarketGenie</a> - AI-Powered Marketing Solutions with Genie Magic ✨</p>
-            <p style="font-size: 12px; margin-top: 10px;">© ${new Date().getFullYear()} ${data.companyName || 'Your Company'}. All rights reserved.</p>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                ${data.logoUrl && !data.companyName ? `
+                <div class="hero-logo">
+                    <img src="${data.logoUrl}" alt="Company Logo">
+                </div>
+                ` : ''}
+                
+                <h1 class="hero-headline">
+                    ${data.companyName ? `Transform Your Business with ${data.companyName}` : `Transform Your ${data.industry} Business Today`}
+                </h1>
+                
+                <p class="hero-subheadline">
+                    ${data.companyName ? `${data.industry} Excellence by ${data.companyName}` : `Professional ${data.industry} Solutions That Deliver Results`}
+                </p>
+                
+                <p class="hero-description">
+                    Join satisfied ${data.targetAudience.toLowerCase()} who are already succeeding with ${data.companyName ? `${data.companyName}'s proven system` : 'our proven system'}. Get the results you deserve with industry-leading expertise.
+                </p>
+                
+                <a href="#get-started" class="hero-cta-primary">
+                    ${data.companyName ? `Work with ${data.companyName}` : `Get Started Today`}
+                </a>
+                
+                ${data.featureImageUrl ? `
+                <div class="hero-feature-image">
+                    <img src="${data.featureImageUrl}" alt="${data.companyName ? `${data.companyName} - ` : ''}Our Business" />
+                </div>
+                ` : ''}
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Lead Capture Section -->
+    <section class="lead-capture" id="get-started">
+        <div class="container">
+            <div class="form-container">
+                <h2 class="form-title">
+                    ${data.companyName ? `Ready to Work with ${data.companyName}?` : `Get Your Free ${data.goalType} Strategy`}
+                </h2>
+                <p class="form-subtitle">
+                    ${data.contactName ? `Connect directly with ${data.contactName} and our expert team` : 'Take the first step towards transforming your business'}
+                </p>
+                
+                <form class="lead-form" id="leadForm" onsubmit="submitForm(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="company">Company/Business</label>
+                            <input type="text" id="company" name="company">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        ${data.companyName ? `Connect with ${data.companyName}` : `Get My Free ${data.goalType} Strategy`}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Company Features Section -->
+    ${data.feature1 || data.feature2 || data.feature3 || data.feature4 ? `
+    <section class="company-features">
+        <div class="container">
+            <h2 class="features-title">What We Offer</h2>
+            <div class="company-features-grid">
+                ${data.feature1 ? `
+                <div class="company-feature-card">
+                    <span class="feature-emoji">🚀</span>
+                    <h3 class="feature-headline">${data.feature1}</h3>
+                    <p class="feature-description">Professional service delivery that exceeds expectations</p>
+                </div>
+                ` : ''}
+                ${data.feature2 ? `
+                <div class="company-feature-card">
+                    <span class="feature-emoji">✨</span>
+                    <h3 class="feature-headline">${data.feature2}</h3>
+                    <p class="feature-description">Quality solutions tailored to your specific needs</p>
+                </div>
+                ` : ''}
+                ${data.feature3 ? `
+                <div class="company-feature-card">
+                    <span class="feature-emoji">💯</span>
+                    <h3 class="feature-headline">${data.feature3}</h3>
+                    <p class="feature-description">Reliable results you can count on every time</p>
+                </div>
+                ` : ''}
+                ${data.feature4 ? `
+                <div class="company-feature-card">
+                    <span class="feature-emoji">🎯</span>
+                    <h3 class="feature-headline">${data.feature4}</h3>
+                    <p class="feature-description">Focused expertise that delivers real value</p>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    </section>
+    ` : ''}
+
+    <!-- Why Choose Us Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="features-title">Why Choose ${data.companyName || 'Our Services'}?</h2>
+            <div class="impact-grid">
+                ${data.impact1 ? `
+                <div class="impact-item">
+                    <span class="impact-icon">⭐</span>
+                    <h3 class="impact-title">Our Promise</h3>
+                    <p class="impact-description">${data.impact1}</p>
+                </div>
+                ` : ''}
+                ${data.impact2 ? `
+                <div class="impact-item">
+                    <span class="impact-icon">🎯</span>
+                    <h3 class="impact-title">Our Advantage</h3>
+                    <p class="impact-description">${data.impact2}</p>
+                </div>
+                ` : ''}
+                ${data.impact3 ? `
+                <div class="impact-item">
+                    <span class="impact-icon">💎</span>
+                    <h3 class="impact-title">Our Commitment</h3>
+                    <p class="impact-description">${data.impact3}</p>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            ${data.companyName ? `
+            <div class="footer-company">
+                <h3>${data.companyName}</h3>
+                <p>${data.industry} Excellence & ${data.goalType}</p>
+            </div>
+            ` : ''}
+            
+            <div class="footer-contact">
+                ${data.email ? `<a href="mailto:${data.email}">📧 ${data.email}</a>` : ''}
+                ${data.phone ? `<a href="tel:${data.phone}">📞 ${data.phone}</a>` : ''}
+                ${data.website ? `<a href="${data.website}" target="_blank">🌐 ${data.website}</a>` : ''}
+                ${data.address ? `<span>📍 ${data.address}</span>` : ''}
+            </div>
+            
+            <div class="footer-powered">
+                <p>✨ Powered by <a href="#" target="_blank">MarketGenie</a> - AI-Powered Marketing Solutions ✨</p>
+                <p style="margin-top: 10px;">© ${new Date().getFullYear()} ${data.companyName || 'Your Company'}. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <script>
         // Lead capture with validation
@@ -448,7 +765,6 @@ const SuperiorFunnelBuilder = () => {
         
         function storeLeadData(data) {
             // Store in localStorage for demo purposes
-            // In production, this would send to your backend
             const leads = JSON.parse(localStorage.getItem('funnel-leads') || '[]');
             leads.push({
                 ...data,
@@ -458,8 +774,71 @@ const SuperiorFunnelBuilder = () => {
             });
             localStorage.setItem('funnel-leads', JSON.stringify(leads));
             
+            // 🔥 SEND EMAIL TO BUSINESS OWNER
+            sendLeadNotification(data);
+            
             // Analytics tracking
             trackConversion('lead-captured', data);
+        }
+        
+        function sendLeadNotification(leadData) {
+            // Create email content
+            const emailSubject = 'New Lead from Your Landing Page!';
+            const emailBody = \`
+NEW LEAD SUBMISSION from ${data.companyName || 'Your Funnel'}!
+
+📋 LEAD DETAILS:
+• Name: \${leadData.name}
+• Email: \${leadData.email}
+• Phone: \${leadData.phone || 'Not provided'}
+• Company: \${leadData.company || 'Not provided'}
+• Submitted: \${new Date().toLocaleString()}
+• From Page: \${window.location.href}
+
+🎯 NEXT STEPS:
+1. Contact this lead within 24 hours for best results
+2. Reference your ${data.industry} expertise
+3. Follow up with your custom proposal
+
+Generated by MarketGenie - Your AI Marketing Assistant
+            \`.trim();
+            
+            // Method 1: EmailJS (Recommended for client-side)
+            if (typeof emailjs !== 'undefined') {
+                emailjs.send('default_service', 'template_new_lead', {
+                    to_email: '${data.email}',
+                    to_name: '${data.contactName || data.companyName}',
+                    from_name: leadData.name,
+                    from_email: leadData.email,
+                    message: emailBody,
+                    subject: emailSubject
+                });
+            }
+            
+            // Method 2: Formspree (Alternative)
+            fetch('https://formspree.io/f/YOUR_FORM_ID', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: '${data.email}',
+                    subject: emailSubject,
+                    message: emailBody,
+                    _replyto: leadData.email
+                })
+            });
+            
+            // Method 3: Simple mailto (Fallback)
+            const mailtoLink = \`mailto:${data.email}?subject=\${encodeURIComponent(emailSubject)}&body=\${encodeURIComponent(emailBody)}\`;
+            
+            // Auto-open email client as backup
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = mailtoLink;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 2000);
         }
         
         function trackConversion(event, data) {
@@ -476,6 +855,11 @@ const SuperiorFunnelBuilder = () => {
         
         // Track page view
         trackConversion('page-view', { page: 'landing' });
+        
+        // Track page view on load
+        window.addEventListener('load', function() {
+            trackConversion('page-loaded', { timestamp: new Date().toISOString() });
+        });
     </script>
 </body>
 </html>`;
@@ -549,13 +933,17 @@ const SuperiorFunnelBuilder = () => {
             </ul>
         </div>
         
-        <p><strong>In the meantime, follow us for daily ${data.industry.toLowerCase()} tips and strategies:</strong></p>
+        ${data.website || data.email || data.phone ? `
+        <p><strong>Stay connected with ${data.companyName || 'us'}:</strong></p>
         
         <div class="social-links">
-            <a href="#">Follow on LinkedIn</a>
-            <a href="#">Join Our Community</a>
-            <a href="#">Download Free Guide</a>
+            ${data.website ? `<a href="${data.website}" target="_blank">Visit Our Website</a>` : ''}
+            ${data.email ? `<a href="mailto:${data.email}">Send Us an Email</a>` : ''}
+            ${data.phone ? `<a href="tel:${data.phone}">Call Us Now</a>` : ''}
         </div>
+        ` : `
+        <p><strong>We'll be in touch soon!</strong></p>
+        `}
         
         <div class="footer">
             <p>Powered by <strong>MarketGenie</strong> - AI-Powered Marketing Solutions</p>
@@ -778,7 +1166,8 @@ ${data.contactName ? `- Contact: ${data.contactName}` : ''}
 ${data.email ? `- Email: ${data.email}` : ''}
 ${data.phone ? `- Phone: ${data.phone}` : ''}
 ${data.website ? `- Website: ${data.website}` : ''}
-${data.logoUrl ? `- Logo: ${data.logoUrl}` : ''}
+${data.logoUrl ? `- Logo: ✅ Uploaded and included in your funnel` : ''}
+${data.featureImageUrl ? `- Feature Image: ✅ Uploaded and included in your funnel` : ''}
 
 ### Deployment Options
 
@@ -1181,7 +1570,7 @@ Visit: marketgenie.com for more tools and templates`;
         title: "What's Your Business?",
         description: "Tell us about your industry",
         field: 'industry',
-        options: ['E-commerce', 'SaaS', 'Coaching', 'Real Estate', 'Healthcare', 'Education', 'Other']
+        options: ['E-commerce', 'SaaS', 'Coaching', 'Real Estate', 'Healthcare', 'Education', 'Food Service', 'Construction', 'Manufacturing', 'Professional Services', 'Fitness & Wellness', 'Beauty & Salon', 'Other']
       },
       {
         title: "What's Your Goal?",
@@ -1361,33 +1750,130 @@ Visit: marketgenie.com for more tools and templates`;
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Company Logo
                   </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setAiWizardData(prev => ({...prev, logoUrl: event.target.result}));
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Upload PNG, JPEG, or other image formats</p>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          // Validate file size (max 5MB)
+                          if (file.size > 5 * 1024 * 1024) {
+                            alert('File size must be less than 5MB. Please choose a smaller image.');
+                            return;
+                          }
+                          
+                          // Validate file type
+                          if (!file.type.startsWith('image/')) {
+                            alert('Please upload a valid image file (PNG, JPEG, GIF, etc.)');
+                            return;
+                          }
+                          
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setAiWizardData(prev => ({
+                              ...prev, 
+                              logoUrl: event.target.result,
+                              logoName: file.name
+                            }));
+                          };
+                          reader.onerror = () => {
+                            alert('Error reading file. Please try again.');
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Upload PNG, JPEG, or other image formats (max 5MB)</p>
+                  
                   {aiWizardData.logoUrl && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-700 flex items-center">
+                    <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700 flex items-center mb-2">
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        Logo uploaded successfully!
+                        Logo uploaded successfully! {aiWizardData.logoName && `(${aiWizardData.logoName})`}
                       </p>
-                      <img 
-                        src={aiWizardData.logoUrl} 
-                        alt="Logo preview" 
-                        className="mt-2 max-h-16 max-w-32 object-contain border rounded"
-                      />
+                      <div className="flex items-center space-x-4">
+                        <img 
+                          src={aiWizardData.logoUrl} 
+                          alt="Logo preview" 
+                          className="max-h-16 max-w-32 object-contain border rounded shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAiWizardData(prev => ({...prev, logoUrl: '', logoName: ''}))}
+                          className="text-red-600 hover:text-red-800 text-sm underline"
+                        >
+                          Remove Logo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Feature Image
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          // Validate file size (max 5MB)
+                          if (file.size > 5 * 1024 * 1024) {
+                            alert('File size must be less than 5MB. Please choose a smaller image.');
+                            return;
+                          }
+                          
+                          // Validate file type
+                          if (!file.type.startsWith('image/')) {
+                            alert('Please upload a valid image file (PNG, JPEG, GIF, etc.)');
+                            return;
+                          }
+                          
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setAiWizardData(prev => ({
+                              ...prev, 
+                              featureImageUrl: event.target.result,
+                              featureImageName: file.name
+                            }));
+                          };
+                          reader.onerror = () => {
+                            alert('Error reading file. Please try again.');
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Upload a photo of your business, storefront, work, or team (max 5MB)</p>
+                  
+                  {aiWizardData.featureImageUrl && (
+                    <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700 flex items-center mb-2">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Feature image uploaded! {aiWizardData.featureImageName && `(${aiWizardData.featureImageName})`}
+                      </p>
+                      <div className="flex items-center space-x-4">
+                        <img 
+                          src={aiWizardData.featureImageUrl} 
+                          alt="Feature image preview" 
+                          className="max-h-20 max-w-40 object-cover border rounded shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAiWizardData(prev => ({...prev, featureImageUrl: '', featureImageName: ''}))}
+                          className="text-red-600 hover:text-red-800 text-sm underline"
+                        >
+                          Remove Image
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1406,12 +1892,76 @@ Visit: marketgenie.com for more tools and templates`;
                 />
               </div>
 
+              {/* Company Features Section */}
+              <div className="md:col-span-2 mt-8">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center">
+                    <span className="text-2xl mr-2">🏢</span>
+                    Company Features
+                  </h3>
+                  <p className="text-gray-600 mb-4">Add 3-4 key features or services your company offers. These will appear as cards on your landing page.</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map(num => (
+                    <div key={num}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Feature {num} {num <= 3 ? '*' : '(Optional)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={aiWizardData[`feature${num}`] || ''}
+                        onChange={(e) => setAiWizardData(prev => ({...prev, [`feature${num}`]: e.target.value}))}
+                        placeholder={`e.g., ${num === 1 ? 'Expert Consultation' : num === 2 ? '24/7 Support' : num === 3 ? 'Custom Solutions' : 'Industry Leadership'}`}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Impact Statements Section */}
+              <div className="md:col-span-2 mt-8">
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center">
+                    <span className="text-2xl mr-2">⭐</span>
+                    Why Choose Your Company?
+                  </h3>
+                  <p className="text-gray-600 mb-4">Add 3 compelling reasons why customers should choose your company. Be truthful and specific to your business.</p>
+                </div>
+                
+                <div className="space-y-4">
+                  {[1, 2, 3].map(num => (
+                    <div key={num}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Impact Statement {num} *
+                      </label>
+                      <textarea
+                        value={aiWizardData[`impact${num}`] || ''}
+                        onChange={(e) => setAiWizardData(prev => ({...prev, [`impact${num}`]: e.target.value}))}
+                        placeholder={`e.g., ${num === 1 ? 'We have 15+ years of proven experience in [your industry]' : num === 2 ? 'Our clients typically see results within 30 days' : 'We provide personalized solutions tailored to your specific needs'}`}
+                        rows={2}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Continue Button */}
               <div className="text-center mt-8">
                 <button
                   onClick={() => {
                     if (!aiWizardData.companyName || !aiWizardData.contactName || !aiWizardData.email) {
                       alert('Please fill in the required fields (Company Name, Your Name, Email)');
+                      return;
+                    }
+                    if (!aiWizardData.feature1 || !aiWizardData.feature2 || !aiWizardData.feature3) {
+                      alert('Please fill in at least the first 3 company features');
+                      return;
+                    }
+                    if (!aiWizardData.impact1 || !aiWizardData.impact2 || !aiWizardData.impact3) {
+                      alert('Please fill in all 3 impact statements');
                       return;
                     }
                     generateAIFunnel();

@@ -27,6 +27,9 @@ import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
 import EnhancedFirebaseStabilityManager from './components/EnhancedFirebaseStabilityManager'
+import DailyQuoteWidget from './components/DailyQuoteWidget'
+import WorldClockWidget from './components/WorldClockWidget'
+import MetricsService from './services/MetricsService'
 import AIService from './services/aiService'
 import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
@@ -95,6 +98,17 @@ function SophisticatedDashboard() {
   // Lead Generation State
   const [leads, setLeads] = useState([])
   const [leadStats, setLeadStats] = useState({})
+  
+  // Real Dashboard Metrics State
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    leadCount: 0,
+    pipelineValue: 0,
+    activeCampaigns: 0,
+    conversionRate: 0,
+    recentActivity: [],
+    isLoading: true,
+    lastUpdated: null
+  })
   const [leadFormData, setLeadFormData] = useState({
     name: '',
     email: '',
@@ -109,6 +123,53 @@ function SophisticatedDashboard() {
   const [scrapingBudget, setScrapingBudget] = useState(50)
   const [currentBudgetUsage, setCurrentBudgetUsage] = useState(32)
   const [budgetLoading, setBudgetLoading] = useState(true)
+
+  // Load real-time dashboard metrics
+  useEffect(() => {
+    const loadDashboardMetrics = async () => {
+      if (activeSection === 'SuperGenie Dashboard') {
+        setDashboardMetrics(prev => ({ ...prev, isLoading: true }));
+        
+        try {
+          const metrics = await MetricsService.getAllMetrics();
+          
+          setDashboardMetrics({
+            leadCount: metrics.leadCount,
+            pipelineValue: metrics.pipelineValue,
+            activeCampaigns: metrics.activeCampaigns,
+            conversionRate: metrics.conversionRate,
+            lastUpdated: Date.now(),
+            isLoading: false
+          });
+          
+          console.log('✅ Dashboard metrics loaded successfully:', metrics);
+        } catch (error) {
+          console.error('❌ Failed to load dashboard metrics:', error);
+          
+          // Fallback to default values with error indication
+          setDashboardMetrics({
+            leadCount: '—',
+            pipelineValue: 0,
+            activeCampaigns: '—',
+            conversionRate: '—',
+            lastUpdated: Date.now(),
+            isLoading: false
+          });
+        }
+      }
+    };
+
+    loadDashboardMetrics();
+    
+    // Set up auto-refresh every 5 minutes for dashboard
+    const refreshInterval = setInterval(() => {
+      if (activeSection === 'SuperGenie Dashboard') {
+        loadDashboardMetrics();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [activeSection]); // Re-run when section changes
 
   // Campaign State
   const [campaigns, setCampaigns] = useState([])
@@ -134,6 +195,33 @@ function SophisticatedDashboard() {
   const [availableTags, setAvailableTags] = useState([])
   
   // Contacts from ContactManager for campaign targeting
+  const [contactsForCampaigns, setContactsForCampaigns] = useState([])
+  
+  // Load real dashboard metrics
+  useEffect(() => {
+    const loadDashboardMetrics = async () => {
+      if (!tenant?.id) return;
+      
+      setDashboardMetrics(prev => ({ ...prev, isLoading: true }));
+      
+      try {
+        const metrics = await MetricsService.getAllMetrics(tenant.id);
+        setDashboardMetrics({
+          ...metrics,
+          isLoading: false
+        });
+      } catch (error) {
+        console.error('Error loading dashboard metrics:', error);
+        setDashboardMetrics(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    loadDashboardMetrics();
+    
+    // Refresh metrics every 5 minutes
+    const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [tenant?.id]);
   const [contacts, setContacts] = useState([])
   
   const [emailTemplates] = useState([
@@ -1333,11 +1421,13 @@ P.S. This email was generated for the "${name}" campaign.`;
 
   return (
     <GenieProvider>
-      <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`} style={{ display: 'flex', minHeight: '100vh' }}>
+      <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
         <Sidebar activeSection={activeSection} onSelect={setSecureActiveSection} />
-        <div className="flex-1 flex flex-col">
-          {/* Top Bar */}
-          <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex justify-between items-center`}>
+        
+        {/* Main Content Area - Fixed left margin for sidebar */}
+        <div className="ml-60 min-h-screen">
+          {/* Top Bar - Scrolls naturally */}
+          <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex justify-between items-center shadow-sm`}>
             <div>
               <h1 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {activeSection}
@@ -1430,69 +1520,101 @@ P.S. This email was generated for the "${name}" campaign.`;
             </div>
           </header>
           
-          <main className={`flex-1 p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+          {/* Main Content - Remove mobile padding top */}
+          <main className={`flex-1 p-4 lg:p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} overflow-auto`}>
           {/* Section content rendering */}
           {activeSection === 'SuperGenie Dashboard' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h1 className="text-4xl font-bold text-genie-teal mb-8">Welcome to Market Genie</h1>
+            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-4 lg:p-8">
+              <div className="flex items-center justify-between mb-6 lg:mb-8">
+                <h1 className="text-2xl lg:text-4xl font-bold text-genie-teal">Welcome to Market Genie</h1>
+                {dashboardMetrics.lastUpdated && (
+                  <div className="text-sm text-gray-500">
+                    Last updated: {new Date(dashboardMetrics.lastUpdated).toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
               
-              {/* Interactive Stat Boxes */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+              {/* Real Metrics Cards - Connected to Database */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
                 <button 
                   onClick={() => setActiveSection('Lead Generation')}
-                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
                 >
-                  <div className="bg-genie-teal/10 p-3 rounded-full">
-                    <span role="img" aria-label="users" className="text-genie-teal text-2xl">👥</span>
+                  <div className="bg-teal-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                    <span role="img" aria-label="users" className="text-teal-600 text-xl lg:text-2xl">👥</span>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">{tenant?.usage?.leads || 0}</div>
-                    <div className="text-gray-500">Total Leads</div>
+                  <div className="min-w-0">
+                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                      {dashboardMetrics.isLoading ? '...' : dashboardMetrics.leadCount}
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base">Total Leads</div>
+                    <div className="text-xs text-teal-600 font-medium">📈 Real Data</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('CRM & Pipeline')}
-                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
                 >
-                  <div className="bg-genie-teal/10 p-3 rounded-full">
-                    <span role="img" aria-label="revenue" className="text-genie-teal text-2xl">💰</span>
+                  <div className="bg-green-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                    <span role="img" aria-label="revenue" className="text-green-600 text-xl lg:text-2xl">💰</span>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">$12,400</div>
-                    <div className="text-gray-500">Pipeline Value</div>
+                  <div className="min-w-0">
+                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                      {dashboardMetrics.isLoading ? '...' : MetricsService.formatCurrency(dashboardMetrics.pipelineValue)}
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base">Pipeline Value</div>
+                    <div className="text-xs text-green-600 font-medium">💎 Live CRM</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('Outreach Automation')}
-                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
                 >
-                  <div className="bg-genie-teal/10 p-3 rounded-full">
-                    <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl">⚡</span>
+                  <div className="bg-purple-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                    <span role="img" aria-label="campaigns" className="text-purple-600 text-xl lg:text-2xl">⚡</span>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">{tenant?.usage?.campaigns || 0}</div>
-                    <div className="text-gray-500">Active Campaigns</div>
+                  <div className="min-w-0">
+                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                      {dashboardMetrics.isLoading ? '...' : dashboardMetrics.activeCampaigns}
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base">Active Campaigns</div>
+                    <div className="text-xs text-purple-600 font-medium">🚀 Running Now</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('Reporting & Analytics')}
-                  className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left"
+                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
                 >
-                  <div className="bg-genie-teal/10 p-3 rounded-full">
-                    <span role="img" aria-label="conversion" className="text-genie-teal text-2xl">📈</span>
+                  <div className="bg-blue-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                    <span role="img" aria-label="conversion" className="text-blue-600 text-xl lg:text-2xl">📈</span>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">23%</div>
-                    <div className="text-gray-500">Conversion Rate</div>
+                  <div className="min-w-0">
+                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                      {dashboardMetrics.isLoading ? '...' : `${dashboardMetrics.conversionRate}%`}
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base">Conversion Rate</div>
+                    <div className="text-xs text-blue-600 font-medium">🎯 Calculated</div>
                   </div>
                 </button>
               </div>
-              
-              {/* AI Agent Helper / Chatbot */}
-              <AIAgentHelper />
+
+              {/* Enhanced Dashboard Widgets */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <DailyQuoteWidget />
+                <WorldClockWidget />
+              </div>
+
+              {/* AI Assistant Integration */}
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🤖</span>
+                  AI Marketing Assistant
+                </h3>
+                <AIAgentHelper />
+              </div>
               
               {/* Quick Actions */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">

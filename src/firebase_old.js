@@ -14,7 +14,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log('🔥 Initializing Enhanced Firebase Connection');
+console.log('🔥 INITIALIZING COCKROACH-PROOF FIREBASE CONNECTION');
 
 // Initialize Firebase with ENHANCED error handling
 const app = initializeApp(firebaseConfig);
@@ -58,7 +58,7 @@ const initializeFirebaseWithCockroachCrusher = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         isConnected = true;
-        console.log('✅ Firebase connection established successfully');
+        console.log('✅ COCKROACH CRUSHED! Firebase connection established');
         resolve(true);
         return;
         
@@ -74,44 +74,31 @@ const initializeFirebaseWithCockroachCrusher = async () => {
     }
     
     if (!isConnected) {
-      console.error('💀 All connection attempts failed - entering offline mode');
+      console.error('� All connection attempts failed - entering offline mode');
       resolve(false);
     }
   });
   
   return connectionPromise;
 };
-
-// 🌐 NETWORK MONITORING with cockroach resistance
-const setupNetworkMonitoring = () => {
-  let isOnline = navigator.onLine;
-  
-  const handleOnline = async () => {
-    if (!isOnline) {
-      console.log('🌐 Network back online - reconnecting to Firebase...');
-      isOnline = true;
-      connectionAttempts = 0;
-      isConnected = false;
-      connectionPromise = null;
-      await initializeFirebaseWithCockroachCrusher();
-    }
-  };
-  
-  const handleOffline = () => {
-    console.log('📴 Network offline - entering cockroach-resistant offline mode');
-    isOnline = false;
-    isConnected = false;
-  };
-  
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-  
-  // Cleanup function
-  return () => {
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
-  };
+      isOnline = false;
+    });
+    
+  } catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+    
+    // Retry connection after delay
+    setTimeout(() => {
+      console.log('🔄 Retrying Firebase connection...');
+      initializeFirebaseWithRetry();
+    }, 2000);
+  }
 };
+
+// Initialize connection monitoring
+if (typeof window !== 'undefined') {
+  initializeFirebaseWithRetry();
+}
 
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'us-central1');
@@ -125,66 +112,63 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// 🔥 COCKROACH CRUSHER UTILITIES
+// Export enhanced connection utilities
 export const reconnectFirebase = async () => {
-  console.log('🔄 FORCING FIREBASE RECONNECTION - COCKROACH KILLER ACTIVATED');
   try {
-    isConnected = false;
-    connectionAttempts = 0;
-    connectionPromise = null;
-    
     await disableNetwork(db);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return await initializeFirebaseWithCockroachCrusher();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await enableNetwork(db);
+    return true;
   } catch (error) {
-    console.error('❌ Cockroach crusher reconnection failed:', error);
+    console.error('Firebase reconnection failed:', error);
     return false;
   }
 };
+googleProvider.setCustomParameters({
+  prompt: 'select_account',
+});
 
-// 🚀 ENHANCED CONNECTION STATUS CHECKER
-export const checkConnectionHealth = async () => {
-  try {
-    if (!isConnected) {
-      await initializeFirebaseWithCockroachCrusher();
+// Enhanced connection management
+let isOnline = true;
+let retryCount = 0;
+const maxRetries = 3;
+
+// Monitor connection status
+export const monitorConnection = () => {
+  window.addEventListener('online', () => {
+    console.log('Network online - re-enabling Firestore');
+    isOnline = true;
+    enableNetwork(db);
+  });
+  
+  window.addEventListener('offline', () => {
+    console.log('Network offline - using Firestore offline mode');
+    isOnline = false;
+  });
+};
+
+export const retryFirebaseConnection = async () => {
+  if (retryCount < maxRetries && isOnline) {
+    try {
+      console.log(`Attempting Firebase connection retry ${retryCount + 1}/${maxRetries}`);
+      await disableNetwork(db);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      await enableNetwork(db);
+      retryCount++;
+      console.log(`Firebase connection retry ${retryCount}/${maxRetries} successful`);
+      return true;
+    } catch (error) {
+      console.error('Firebase retry failed:', error);
+      retryCount++;
+      return false;
     }
-    return isConnected;
-  } catch (error) {
-    console.error('🩸 Connection health check failed:', error);
-    return false;
   }
+  return false;
 };
 
-// 💥 CORS HEADERS INTERCEPTOR - Cockroach Buster
-const setupCORSInterceptor = () => {
-  // Intercept fetch requests to add proper headers
-  const originalFetch = window.fetch;
-  window.fetch = function(...args) {
-    const [resource, config = {}] = args;
-    
-    // Add CORS headers for Firebase requests
-    if (typeof resource === 'string' && resource.includes('firestore.googleapis.com')) {
-      config.headers = {
-        ...config.headers,
-        'Content-Type': 'application/json',
-        'Access-Control-Request-Method': 'POST, GET, OPTIONS',
-        'Access-Control-Request-Headers': 'Content-Type, Authorization'
-      };
-      
-      // Remove credentials for CORS compliance
-      delete config.credentials;
-    }
-    
-    return originalFetch.apply(this, [resource, config]);
-  };
-};
-
-// Initialize everything when in browser
+// Initialize connection monitoring
 if (typeof window !== 'undefined') {
-  console.log('🔥 STARTING COCKROACH-PROOF FIREBASE INITIALIZATION');
-  setupCORSInterceptor();
-  setupNetworkMonitoring();
-  initializeFirebaseWithCockroachCrusher();
+  monitorConnection();
 }
 
 export default app;

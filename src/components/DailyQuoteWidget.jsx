@@ -65,27 +65,34 @@ const DailyQuoteWidget = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl p-6 shadow-lg border border-teal-100">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <span className="text-2xl">💡</span>
-          Daily Inspiration
-        </h3>
-        <button
-          onClick={getNewQuote}
-          className="text-teal-600 hover:text-teal-700 transition-colors duration-200 p-2 rounded-lg hover:bg-teal-100"
-          title="Get new quote"
-        >
-          🔄
-        </button>
+    <div className="bg-white rounded-xl shadow-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">💡</span>
+            <h3 className="text-lg font-semibold text-gray-800">Daily Inspiration</h3>
+          </div>
+          <button
+            onClick={getNewQuote}
+            className="text-teal-600 hover:text-teal-700 transition-colors duration-200 p-1 rounded-lg hover:bg-teal-50"
+            title="Get new quote"
+          >
+            🔄
+          </button>
+        </div>
+        <div className="text-xs text-gray-500">
+          Daily motivation 🚀
+        </div>
       </div>
       
-      <div className={`transition-opacity duration-300 ${fadeClass}`}>
-        <blockquote className="text-gray-700 italic text-lg leading-relaxed mb-3">
-          "{quote.quote}"
-        </blockquote>
-        <div className="text-right">
-          <cite className="text-teal-600 font-medium">— {quote.author}</cite>
+      <div className={`transition-opacity duration-300 ${fadeClass} mt-4`}>
+        <div className="flex items-center justify-between">
+          <blockquote className="text-gray-700 italic text-sm leading-relaxed flex-1 pr-4">
+            "{quote.quote}"
+          </blockquote>
+          <div className="text-right">
+            <cite className="text-xs text-gray-500 font-medium whitespace-nowrap">— {quote.author}</cite>
+          </div>
         </div>
       </div>
     </div>

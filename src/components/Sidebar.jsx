@@ -25,7 +25,6 @@ const sections = [
   { name: 'AI Swarm', icon: SparklesIcon },
   { name: 'API Keys & Integrations', icon: KeyIcon },
   { name: 'Cost Controls', icon: CurrencyDollarIcon },
-  { name: 'Reporting & Analytics', icon: ChartBarIcon },
   { name: 'White-Label SaaS', icon: BuildingStorefrontIcon }
 ];
 

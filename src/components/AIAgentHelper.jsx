@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 
-const AIAgentHelper = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const AIAgentHelper = ({ embedded = false, onClose = null, forceOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(embedded ? true : forceOpen);
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -25,6 +25,12 @@ const AIAgentHelper = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (forceOpen) {
+      setIsOpen(true);
+    }
+  }, [forceOpen]);
 
   const predefinedResponses = {
     'lead generation': "I can help you generate high-quality leads! Here's what we can do:\n\n🎯 **Smart Lead Scraping**: Budget-aware prospect discovery\n📊 **Lead Scoring**: AI-powered qualification\n💰 **Cost Optimization**: Maximum ROI on lead generation\n📧 **Contact Enrichment**: Complete prospect profiles\n\nWould you like me to start a new lead generation campaign for you?",
@@ -110,6 +116,91 @@ const AIAgentHelper = () => {
     { text: "Budget controls", action: () => setInputText("Help me with budget management") }
   ];
 
+  // If embedded mode, always show the chat interface
+  if (embedded) {
+    return (
+      <div className="w-full">
+        <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+          {/* Messages */}
+          <div className="h-64 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.type === 'user'
+                      ? 'bg-genie-teal text-white'
+                      : 'bg-white border border-gray-200 text-gray-800'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    {message.timestamp.toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-lg p-3 text-gray-800">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="border-t border-gray-200 p-3">
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={action.action}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
+                >
+                  {action.text}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-gray-200 p-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Ask me anything about marketing..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-genie-teal text-sm"
+                disabled={isTyping}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputText.trim() || isTyping}
+                className="bg-genie-teal hover:bg-genie-teal/90 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Floating mode (original behavior)
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
@@ -137,7 +228,10 @@ const AIAgentHelper = () => {
             </div>
           </div>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false);
+              onClose && onClose();
+            }}
             className="text-white/80 hover:text-white transition-colors"
           >
             ✕

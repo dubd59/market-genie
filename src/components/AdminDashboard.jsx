@@ -1,5 +1,6 @@
 import React from 'react'
 import Sidebar from '../components/Sidebar'
+import SecurityStatus from '../components/SecurityStatus'
 
 function AdminDashboard() {
   return (
@@ -14,6 +15,11 @@ function AdminDashboard() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Security Status Monitor */}
+        <div className="mb-8">
+          <SecurityStatus />
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* User Management */}
           <div className="bg-white overflow-hidden shadow rounded-lg">

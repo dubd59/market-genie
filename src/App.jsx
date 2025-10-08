@@ -28,7 +28,6 @@ import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
 import EnhancedFirebaseStabilityManager from './components/EnhancedFirebaseStabilityManager'
 import DailyQuoteWidget from './components/DailyQuoteWidget'
-import SecurityStatus from './components/SecurityStatus'
 import WorldClockWidget from './components/WorldClockWidget'
 import MetricsService from './services/MetricsService'
 import AIService from './services/aiService'
@@ -4276,9 +4275,6 @@ function App() {
             {/* Catch all - redirect to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          
-          {/* 🛡️ Security Status Monitor - Always Visible */}
-          <SecurityStatus />
           
           </EnhancedFirebaseStabilityManager>
         </GenieProvider>

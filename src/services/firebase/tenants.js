@@ -83,7 +83,7 @@ export class TenantService {
       
       // Use connection service to handle potential CORS/network issues
       const result = await connectionService.executeWithRetry(
-        () => FirebaseService.query('tenants', [
+        () => FirebaseService.query('MarketGenie_tenants', [
           { field: 'ownerId', operator: '==', value: auth.currentUser.uid }
         ]),
         'Query user tenant'
@@ -198,7 +198,7 @@ export class TenantService {
       }
     }
 
-    const result = await FirebaseService.create('tenants', tenantData)
+    const result = await FirebaseService.create('MarketGenie_tenants', tenantData)
     
     if (result.error) {
       console.error('Failed to create tenant:', result.error)
@@ -238,18 +238,18 @@ export class TenantService {
       founder: isFounder
     }
 
-    return await FirebaseService.create('users', userProfile, user.uid)
+    return await FirebaseService.create('MarketGenie_users', userProfile, user.uid)
   }
 
   // Update tenant settings
   static async updateTenantSettings(tenantId, settings) {
-    return await FirebaseService.update('tenants', tenantId, { settings })
+    return await FirebaseService.update('MarketGenie_tenants', tenantId, { settings })
   }
 
   // Get tenant usage statistics
   static async getTenantUsage(tenantId) {
     try {
-      const tenant = await FirebaseService.getById('tenants', tenantId)
+      const tenant = await FirebaseService.getById('MarketGenie_tenants', tenantId)
       return { data: tenant.data?.usage || {}, error: null }
     } catch (error) {
       return { data: null, error }
@@ -258,18 +258,18 @@ export class TenantService {
 
   // Update tenant usage
   static async updateTenantUsage(tenantId, usageUpdate) {
-    const tenant = await FirebaseService.getById('tenants', tenantId)
+    const tenant = await FirebaseService.getById('MarketGenie_tenants', tenantId)
     if (tenant.data) {
       const currentUsage = tenant.data.usage || {}
       const newUsage = { ...currentUsage, ...usageUpdate }
-      return await FirebaseService.update('tenants', tenantId, { usage: newUsage })
+      return await FirebaseService.update('MarketGenie_tenants', tenantId, { usage: newUsage })
     }
     return { data: null, error: { message: 'Tenant not found' } }
   }
 
   // Check if user has permission for a feature
   static async checkFeatureLimit(tenantId, feature, currentCount) {
-    const tenant = await FirebaseService.getById('tenants', tenantId)
+    const tenant = await FirebaseService.getById('MarketGenie_tenants', tenantId)
     if (tenant.data) {
       const limit = tenant.data.features[feature]
       return currentCount < limit

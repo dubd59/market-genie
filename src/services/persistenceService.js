@@ -17,7 +17,7 @@ class PersistenceService {
   // Generic save function for any component data
   async saveData(userId, componentName, data) {
     try {
-      const docRef = doc(db, 'userData', userId, 'components', componentName);
+      const docRef = doc(db, 'MarketGenie_userData', userId, 'components', componentName);
       await setDoc(docRef, {
         ...data,
         lastUpdated: serverTimestamp(),
@@ -43,7 +43,7 @@ class PersistenceService {
         return this.cache.get(cacheKey);
       }
 
-      const docRef = doc(db, 'userData', userId, 'components', componentName);
+      const docRef = doc(db, 'MarketGenie_userData', userId, 'components', componentName);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
@@ -65,7 +65,7 @@ class PersistenceService {
 
   // Real-time listener for component data
   subscribeToData(userId, componentName, callback) {
-    const docRef = doc(db, 'userData', userId, 'components', componentName);
+    const docRef = doc(db, 'MarketGenie_userData', userId, 'components', componentName);
     const listenerKey = `${userId}_${componentName}`;
     
     // Unsubscribe existing listener if any
@@ -88,7 +88,7 @@ class PersistenceService {
   // Update specific field in component data
   async updateField(userId, componentName, fieldPath, value) {
     try {
-      const docRef = doc(db, 'userData', userId, 'components', componentName);
+      const docRef = doc(db, 'MarketGenie_userData', userId, 'components', componentName);
       await updateDoc(docRef, {
         [fieldPath]: value,
         lastUpdated: serverTimestamp()

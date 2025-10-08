@@ -20,7 +20,7 @@ export class IntegratedMarketingService {
   // ===== UNIFIED DATA MODELS =====
   
   static getUserDataRef(userId, dataType) {
-    return doc(db, 'userData', `${userId}_${dataType}`)
+    return doc(db, 'MarketGenie_userData', `${userId}_${dataType}`)
   }
 
   // ===== AUTOMATION CAMPAIGNS =====

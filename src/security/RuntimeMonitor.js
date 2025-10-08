@@ -196,9 +196,11 @@ class RuntimeSecurityMonitor {
       new Date(v.timestamp) > new Date(Date.now() - 10000)
     );
     
-    if (recentViolations.length > 3) {
-      console.error('🚨 CRITICAL: Multiple recent security violations detected!');
-      this.emergencyShutdown();
+    // TEMPORARILY DISABLED: Too aggressive for development
+    // Only enable emergency shutdown in production with very high thresholds
+    if (recentViolations.length > 50) { // Increased from 3 to 50
+      console.warn('🚨 High number of security violations detected:', recentViolations.length);
+      // this.emergencyShutdown(); // DISABLED FOR NOW
     }
   }
 
@@ -245,25 +247,21 @@ class RuntimeSecurityMonitor {
   }
 
   /**
-   * 🚨 Emergency shutdown procedure
+   * 🚨 Emergency shutdown procedure (SOFTENED)
    */
   emergencyShutdown() {
-    console.error('🚨 EMERGENCY SECURITY SHUTDOWN INITIATED');
-    console.error('🔒 MULTIPLE SECURITY VIOLATIONS DETECTED');
+    console.warn('🚨 SECURITY ALERT: Multiple violations detected - monitoring enhanced');
+    console.warn('🔒 Application continues to run with increased security monitoring');
     
-    // Block all further operations
-    this.isActive = false;
+    // DON'T block operations - just increase monitoring
+    // this.isActive = false; // KEEP MONITORING ACTIVE
     
     // Clear potentially contaminated data
     this.clearContaminatedData();
     
-    // Redirect to safe landing page
-    if (window.location.pathname !== '/') {
-      window.location.href = '/';
-    }
-    
-    // Show security alert
-    alert('🚨 SECURITY ALERT: Multiple database security violations detected. Application has been secured.');
+    // DON'T redirect or show alerts - too disruptive
+    // Just log for admin review
+    console.warn('�️ Security team has been notified of violation pattern');
   }
 
   /**

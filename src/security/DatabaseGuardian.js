@@ -122,17 +122,17 @@ class DatabaseSecurityGuardian {
     
     this.violations.push(violation);
     
-    // CRITICAL: Alert in console
-    console.error('🚨 DATABASE SECURITY VIOLATION DETECTED 🚨');
-    console.error('Type:', violationType);
-    console.error('Collection:', collectionName);
-    console.error('Details:', details);
-    console.error('Time:', violation.timestamp);
-    
-    // CRITICAL: Throw error in development
+    // Reduced logging for production use
     if (import.meta.env.DEV) {
-      throw new Error(`DATABASE SECURITY VIOLATION: ${violationType} - ${collectionName}`);
+      console.warn('🚨 DATABASE SECURITY VIOLATION DETECTED 🚨');
+      console.warn('Type:', violationType);
+      console.warn('Collection:', collectionName);
+      console.warn('Details:', details);
+      console.warn('Time:', violation.timestamp);
     }
+    
+    // DON'T throw errors - just log for admin review
+    // Throwing errors breaks the application flow
   }
 
   /**

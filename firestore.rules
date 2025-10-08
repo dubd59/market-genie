@@ -77,6 +77,41 @@ service cloud.firestore {
       allow read, write, create: if request.auth != null;
     }
     
+    // MarketGenie secure collections - NEW PREFIXED COLLECTIONS
+    match /MarketGenie_tenants/{tenantId} {
+      // Allow super admin (dubdproducts@gmail.com) full access to all tenants
+      allow read, write, create: if request.auth != null && 
+        request.auth.token.email == 'dubdproducts@gmail.com';
+      
+      // Allow read/write if user owns the tenant
+      allow read, write: if request.auth != null && 
+        resource != null && resource.data.ownerId == request.auth.uid;
+      
+      // Allow creation if the new tenant is owned by the current user
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+      
+      // Allow read operations for authenticated users to check their own tenants
+      allow read: if request.auth != null;
+    }
+    
+    match /MarketGenie_users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /MarketGenie_userData/{userDataId} {
+      // Allow users to access only their own data (userDataId format: userId_dataType)
+      allow read, write, create: if request.auth != null && 
+        userDataId.matches(request.auth.uid + '_.*');
+        
+      // Subcollections for component data
+      match /components/{componentName} {
+        allow read, write, create: if request.auth != null && 
+          userDataId.matches(request.auth.uid + '_.*');
+      }
+    }
+
     // User-specific campaigns (format: userId_campaigns)
     match /{userCampaignCollection}/{document} {
       allow read, write, create: if request.auth != null && 

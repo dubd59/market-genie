@@ -22,8 +22,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize services with BULLETPROOF settings
 export const auth = getAuth(app);
 
-// Initialize Firestore with ENHANCED connection settings  
-export const db = getFirestore(app);
+// Initialize Firestore with ENHANCED connection settings - MARKET GENIE DATABASE
+export const db = getFirestore(app, 'marketgenie');
 
 // 🚀 COCKROACH CRUSHER: Advanced connection management
 let connectionAttempts = 0;
@@ -33,16 +33,16 @@ let connectionPromise = null;
 // BULLETPROOF Firebase initialization
 const initializeFirebaseWithCockroachCrusher = async () => {
   if (connectionPromise) return connectionPromise;
-  
+
   connectionPromise = new Promise(async (resolve, reject) => {
     const maxAttempts = 5;
     const baseDelay = 1000;
-    
+
     while (connectionAttempts < maxAttempts && !isConnected) {
       try {
         connectionAttempts++;
         console.log(`🔄 Connection attempt ${connectionAttempts}/${maxAttempts}`);
-        
+
         // Clear any existing connections
         try {
           await disableNetwork(db);
@@ -50,21 +50,21 @@ const initializeFirebaseWithCockroachCrusher = async () => {
         } catch (e) {
           // Ignore disable errors on first attempt
         }
-        
+
         // Enable with retry logic
         await enableNetwork(db);
-        
+
         // Test connection with a simple operation
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         isConnected = true;
         console.log('✅ COCKROACH CRUSHED! Firebase connection established');
         resolve(true);
         return;
-        
+
       } catch (error) {
         console.error(`❌ Connection attempt ${connectionAttempts} failed:`, error);
-        
+
         if (connectionAttempts < maxAttempts) {
           const delay = baseDelay * Math.pow(2, connectionAttempts - 1);
           console.log(`⏳ Waiting ${delay}ms before retry...`);
@@ -72,27 +72,27 @@ const initializeFirebaseWithCockroachCrusher = async () => {
         }
       }
     }
-    
+
     if (!isConnected) {
       console.error('� All connection attempts failed - entering offline mode');
       resolve(false);
     }
   });
-  
+
   return connectionPromise;
 };
-      isOnline = false;
+isOnline = false;
     });
     
   } catch (error) {
-    console.error('❌ Firebase initialization failed:', error);
-    
-    // Retry connection after delay
-    setTimeout(() => {
-      console.log('🔄 Retrying Firebase connection...');
-      initializeFirebaseWithRetry();
-    }, 2000);
-  }
+  console.error('❌ Firebase initialization failed:', error);
+
+  // Retry connection after delay
+  setTimeout(() => {
+    console.log('🔄 Retrying Firebase connection...');
+    initializeFirebaseWithRetry();
+  }, 2000);
+}
 };
 
 // Initialize connection monitoring
@@ -140,7 +140,7 @@ export const monitorConnection = () => {
     isOnline = true;
     enableNetwork(db);
   });
-  
+
   window.addEventListener('offline', () => {
     console.log('Network offline - using Firestore offline mode');
     isOnline = false;

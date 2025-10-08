@@ -9,6 +9,21 @@ const APIKeysIntegrations = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+  
+  // Check for dark mode preference
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+  
   const [apiKeys, setApiKeys] = useState([]);
   const [loadingApiKeys, setLoadingApiKeys] = useState(true);
   const [renderKey, setRenderKey] = useState(0); // Force re-render trigger

@@ -8,6 +8,22 @@ import toast from 'react-hot-toast'
 const CRMPipeline = () => {
   const { user } = useAuth()
   const { tenant } = useTenant()
+  
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+  
+  // Check for dark mode preference
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+  
   const [contacts, setContacts] = useState([])
   const [deals, setDeals] = useState([])
   const [funnels, setFunnels] = useState([])
@@ -691,9 +707,9 @@ const CRMPipeline = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-white to-blue-50'}`}>
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-genie-teal">CRM & Pipeline</h2>
+        <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>CRM & Pipeline</h2>
         <div className="flex gap-3">
           <button
             onClick={() => setShowImportModal(true)}

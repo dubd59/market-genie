@@ -6,6 +6,21 @@ const LeadGenerationWorkflows = () => {
   const { user } = useAuth();
   const [hasLoaded, setHasLoaded] = useState(false); // Prevent saving during initial load
   
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+  
+  // Check for dark mode preference
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+  
   const [workflows, setWorkflows] = useState([
     {
       id: 1,
@@ -183,46 +198,46 @@ const LeadGenerationWorkflows = () => {
   const getActiveWorkflows = () => workflows.filter(w => w.status === 'active' || w.status === 'running').length;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
+    <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-lg p-6 border ${isDarkMode ? 'border-gray-700' : 'border-purple-100'}`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-2xl font-bold text-purple-800 flex items-center gap-3">
+          <h3 className={`text-2xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-purple-400' : 'text-purple-800'}`}>
             <span className="text-3xl">⚡</span>
             Lead Generation Automation Workflows
           </h3>
-          <p className="text-gray-600 mt-1">Intelligent automation connecting social media scraping to your sales pipeline</p>
+          <p className={`mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Intelligent automation connecting social media scraping to your sales pipeline</p>
         </div>
         <div className="text-right">
-          <div className="text-sm text-gray-500">Total Leads Generated</div>
-          <div className="text-2xl font-bold text-purple-600">{getTotalLeads()}</div>
-          <div className="text-xs text-gray-500">{getActiveWorkflows()} workflows active</div>
+          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Leads Generated</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>{getTotalLeads()}</div>
+          <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{getActiveWorkflows()} workflows active</div>
         </div>
       </div>
 
       {/* Automation Rules */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 mb-6 border border-purple-200">
-        <h4 className="font-semibold text-purple-800 mb-3">Global Automation Settings</h4>
+      <div className={`rounded-lg p-4 mb-6 border ${isDarkMode ? 'bg-gradient-to-r from-gray-700 to-gray-600 border-gray-600' : 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'}`}>
+        <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-purple-400' : 'text-purple-800'}`}>Global Automation Settings</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Daily Budget ($)</label>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Daily Budget ($)</label>
             <input
               type="number"
               value={automationRules.dailyBudget}
               onChange={(e) => setAutomationRules(prev => ({ ...prev, dailyBudget: Number(e.target.value) }))}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Leads/Day</label>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max Leads/Day</label>
             <input
               type="number"
               value={automationRules.maxLeadsPerDay}
               onChange={(e) => setAutomationRules(prev => ({ ...prev, maxLeadsPerDay: Number(e.target.value) }))}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quality Threshold (%)</label>
+            <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Quality Threshold (%)</label>
             <input
               type="range"
               min="50"

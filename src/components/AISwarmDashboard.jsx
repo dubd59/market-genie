@@ -8,6 +8,21 @@ const AISwarmDashboard = () => {
   const { user } = useAuth();
   const [hasLoaded, setHasLoaded] = useState(false); // Prevent saving during initial load
   
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+  
+  // Check for dark mode preference
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+  
   const [swarmStatus, setSwarmStatus] = useState('idle'); // idle, running, paused
   const [agents, setAgents] = useState([
     {
@@ -192,21 +207,21 @@ const AISwarmDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 p-8">
+    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700' : 'bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100'}`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 mb-4">
+          <h1 className={`text-4xl font-bold mb-4 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600'}`}>
             AI Swarm Command Center
           </h1>
-          <p className="text-gray-600 text-lg">Orchestrate multiple AI agents working simultaneously on your marketing automation</p>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Orchestrate multiple AI agents working simultaneously on your marketing automation</p>
         </div>
 
         {/* Swarm Control Panel */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-purple-100">
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-2xl shadow-xl p-8 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-purple-100'}`}>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Swarm Status</h2>
+              <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Swarm Status</h2>
               <div className="flex items-center gap-3">
                 <div className={`w-4 h-4 rounded-full ${
                   swarmStatus === 'running' ? 'bg-green-500 animate-pulse' :

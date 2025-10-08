@@ -8,6 +8,22 @@ import toast from 'react-hot-toast'
 const WorkflowAutomation = () => {
   const { user } = useAuth()
   const { createWorkflow: genieCreateWorkflow, optimizeWorkflow } = useGenie()
+  
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+  
+  // Check for dark mode preference
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+  
   const [workflows, setWorkflows] = useState([])
   const [loading, setLoading] = useState(true)
   const [showBuilder, setShowBuilder] = useState(false)

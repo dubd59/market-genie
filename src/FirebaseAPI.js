@@ -7,10 +7,12 @@ import {
   getDocs,
   orderBy,
   query,
-  serverTimestamp,
   updateDoc,
   where,
-  limit,
+  limit
+} from "./security/SecureFirebase.js";
+import { 
+  serverTimestamp,
   startAfter,
   onSnapshot,
   increment

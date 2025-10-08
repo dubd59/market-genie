@@ -28,6 +28,7 @@ import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
 import EnhancedFirebaseStabilityManager from './components/EnhancedFirebaseStabilityManager'
 import DailyQuoteWidget from './components/DailyQuoteWidget'
+import SecurityStatus from './components/SecurityStatus'
 import WorldClockWidget from './components/WorldClockWidget'
 import MetricsService from './services/MetricsService'
 import AIService from './services/aiService'
@@ -127,11 +128,11 @@ function SophisticatedDashboard() {
   // Load real-time dashboard metrics
   useEffect(() => {
     const loadDashboardMetrics = async () => {
-      if (activeSection === 'SuperGenie Dashboard') {
+      if (activeSection === 'SuperGenie Dashboard' && tenant?.id) {
         setDashboardMetrics(prev => ({ ...prev, isLoading: true }));
         
         try {
-          const metrics = await MetricsService.getAllMetrics();
+          const metrics = await MetricsService.getAllMetrics(tenant.id);
           
           setDashboardMetrics({
             leadCount: metrics.leadCount,
@@ -169,7 +170,7 @@ function SophisticatedDashboard() {
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(refreshInterval);
-  }, [activeSection]); // Re-run when section changes
+  }, [activeSection, tenant?.id]); // Re-run when section changes or tenant is loaded
 
   // Campaign State
   const [campaigns, setCampaigns] = useState([])
@@ -4275,6 +4276,9 @@ function App() {
             {/* Catch all - redirect to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          
+          {/* 🛡️ Security Status Monitor - Always Visible */}
+          <SecurityStatus />
           
           </EnhancedFirebaseStabilityManager>
         </GenieProvider>

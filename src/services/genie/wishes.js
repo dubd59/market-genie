@@ -2,9 +2,9 @@ import { supabase } from '../supabase/client'
 
 export const grantWish = async (wishText, userId) => {
   try {
-    // 1. Check Office Genie connection (if available)
-    if (window.OfficeGenie?.isConnected) {
-      return await window.OfficeGenie.ask(wishText)
+    // 1. Check Market Genie AI connection (isolated from other genies)
+    if (window.MarketGenie?.isConnected) {
+      return await window.MarketGenie.ask(wishText)
     }
     
     // 2. Use Supabase Edge Function for AI processing

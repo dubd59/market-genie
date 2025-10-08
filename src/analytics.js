@@ -1,11 +1,12 @@
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection } from "./security/SecureFirebase.js";
+import { serverTimestamp } from "firebase/firestore";
 import { db, auth } from './firebase';
 
 export const trackEvent = async (eventName, eventData = {}) => {
   try {
-    await addDoc(collection(db, "analytics"), {
+    await addDoc(collection(db, "MarketGenie_Analytics"), {
       event: eventName,
-      app: import.meta.env.VITE_APP_NAME,
+      app: 'MarketGenie',
       data: eventData,
       timestamp: serverTimestamp(),
       userId: auth.currentUser?.uid,

@@ -3,10 +3,9 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  updateDoc, 
-  onSnapshot,
-  serverTimestamp 
-} from 'firebase/firestore';
+  updateDoc
+} from '../security/SecureFirebase.js';
+import { onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 class PersistenceService {

@@ -5,7 +5,7 @@ import {
   signOut,
   onAuthStateChanged 
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "./security/SecureFirebase.js";
 import { auth, googleProvider, db } from './firebase';
 
 export const signInWithGoogle = async () => {

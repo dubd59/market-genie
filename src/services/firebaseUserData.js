@@ -80,6 +80,16 @@ export class FirebaseUserDataService {
 
   static async getBudgetSettings(userId) {
     try {
+      // 🛡️ DEFENSIVE CHECK: Ensure userId is valid
+      if (!userId || userId === 'undefined' || typeof userId !== 'string') {
+        console.warn('FirebaseUserDataService.getBudgetSettings: Invalid userId provided:', userId);
+        return {
+          scrapingBudget: 100,
+          currentBudgetUsage: 0,
+          budgetPeriod: 'monthly'
+        };
+      }
+
       const budgetRef = this.getUserDataRef(userId, 'budget');
       const doc = await getDoc(budgetRef);
       
@@ -95,6 +105,7 @@ export class FirebaseUserDataService {
       }
     } catch (error) {
       console.error('Error loading budget settings:', error);
+      // Return sensible defaults on any error
       return {
         scrapingBudget: 100,
         currentBudgetUsage: 0,

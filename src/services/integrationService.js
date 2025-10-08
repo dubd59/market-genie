@@ -1,5 +1,5 @@
 // Integration Service - Real API connections for lead scraping
-import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, updateDoc } from '../security/SecureFirebase.js'
 import { auth, db } from '../firebase.js'
 
 class IntegrationService {
@@ -22,7 +22,7 @@ class IntegrationService {
 
       console.log('Cleaned credentials:', { cleanCredentialsKeys: Object.keys(cleanCredentials) });
 
-      const credentialsDoc = doc(db, 'tenants', tenantId, 'integrations', integrationName)
+      const credentialsDoc = doc(db, 'MarketGenie_tenants', tenantId, 'integrations', integrationName)
       console.log('Document path:', credentialsDoc.path);
       
       const saveData = {
@@ -47,7 +47,7 @@ class IntegrationService {
   async getIntegrationCredentials(tenantId, integrationName) {
     try {
       console.log(`Getting credentials for tenant: ${tenantId}, integration: ${integrationName}`);
-      const credentialsDoc = doc(db, 'tenants', tenantId, 'integrations', integrationName)
+      const credentialsDoc = doc(db, 'MarketGenie_tenants', tenantId, 'integrations', integrationName)
       console.log('Reading from document path:', credentialsDoc.path);
       
       const docSnap = await getDoc(credentialsDoc)

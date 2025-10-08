@@ -11,7 +11,7 @@ import {
   where, 
   orderBy, 
   limit 
-} from 'firebase/firestore'
+} from '../../security/SecureFirebase.js'
 import { db } from '../../firebase'
 
 // Firebase service for database operations

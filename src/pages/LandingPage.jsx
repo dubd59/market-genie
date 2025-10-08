@@ -157,9 +157,9 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-emerald-700 to-slate-600">
       {/* Navigation */}
-      <nav className="relative z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
+      <nav className="relative z-50 bg-black/40 backdrop-blur-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
@@ -170,10 +170,10 @@ export default function LandingPage() {
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
-              <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors">Reviews</a>
-              <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Sign In</Link>
+              <a href="#features" className="text-gray-200 hover:text-white transition-colors">Features</a>
+              <a href="#pricing" className="text-gray-200 hover:text-white transition-colors">Pricing</a>
+              <a href="#testimonials" className="text-gray-200 hover:text-white transition-colors">Reviews</a>
+              <Link to="/login" className="text-gray-200 hover:text-white transition-colors">Sign In</Link>
               <button 
                 onClick={scrollToPricing}
                 className="bg-gradient-to-r from-emerald-500 to-yellow-500 text-white px-6 py-2 rounded-lg hover:from-emerald-600 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105"
@@ -241,7 +241,7 @@ export default function LandingPage() {
                 Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </button>
-              <button className="border border-white/30 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
+              <button className="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
                 Watch Demo
               </button>
             </motion.div>
@@ -270,13 +270,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-black/20 backdrop-blur-sm">
+      <section id="features" className="py-20 bg-black/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
               Why Market Genie Dominates The Competition
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto">
               While others offer basic automation, we deliver intelligent AI that actually thinks and optimizes for you
             </p>
           </div>
@@ -288,11 +288,11 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:border-cyan-500/50 transition-all duration-300 hover:transform hover:scale-105"
+                className="bg-white/15 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-cyan-500/50 transition-all duration-300 hover:transform hover:scale-105"
               >
                 <feature.icon className="w-12 h-12 text-cyan-400 mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
+                <p className="text-gray-300">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -367,7 +367,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-black/20 backdrop-blur-sm">
+      <section id="testimonials" className="py-20 bg-black/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>

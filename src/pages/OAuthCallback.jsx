@@ -50,7 +50,7 @@ const OAuthCallback = () => {
           // Handle both test state and real state
           if (state === 'test') {
             // For manual testing
-            stateData = { tenantId: 'supportgenie-tenant', service: 'zoho_campaigns' };
+            stateData = { tenantId: 'marketgenie-tenant', service: 'zoho_campaigns' };
           } else {
             stateData = JSON.parse(atob(state));
           }

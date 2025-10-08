@@ -10,9 +10,9 @@ import {
   orderBy,
   addDoc,
   updateDoc,
-  deleteDoc,
-  writeBatch
-} from 'firebase/firestore'
+  deleteDoc
+} from '../security/SecureFirebase.js'
+import { writeBatch } from 'firebase/firestore'
 import { db } from '../firebase'
 
 export class IntegratedMarketingService {

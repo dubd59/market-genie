@@ -1,5 +1,6 @@
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from '../security/SecureFirebase.js';
+import { serverTimestamp } from 'firebase/firestore';
 
 // Budget Control API
 export async function getBudget(userId) {

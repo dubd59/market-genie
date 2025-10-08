@@ -1,12 +1,18 @@
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from '../security/SecureFirebase.js';
 
 export class MetricsService {
   
   // Get real lead count from database
   static async getLeadCount(tenantId) {
     try {
-      const leadsRef = collection(db, 'leads');
+      // 🛡️ DEFENSIVE CHECK: Ensure tenantId is valid
+      if (!tenantId || tenantId === 'undefined' || typeof tenantId !== 'string') {
+        console.warn('MetricsService.getLeadCount: Invalid tenantId provided:', tenantId);
+        return 0;
+      }
+
+      const leadsRef = collection(db, 'MarketGenie_leads');
       const q = query(leadsRef, where('tenantId', '==', tenantId));
       const snapshot = await getDocs(q);
       return snapshot.size;
@@ -19,7 +25,13 @@ export class MetricsService {
   // Calculate real pipeline value from CRM data
   static async getPipelineValue(tenantId) {
     try {
-      const pipelineRef = collection(db, 'pipeline');
+      // 🛡️ DEFENSIVE CHECK: Ensure tenantId is valid
+      if (!tenantId || tenantId === 'undefined' || typeof tenantId !== 'string') {
+        console.warn('MetricsService.getPipelineValue: Invalid tenantId provided:', tenantId);
+        return 0;
+      }
+
+      const pipelineRef = collection(db, 'MarketGenie_pipeline');
       const q = query(
         pipelineRef, 
         where('tenantId', '==', tenantId),
@@ -43,7 +55,13 @@ export class MetricsService {
   // Get active campaign count
   static async getActiveCampaigns(tenantId) {
     try {
-      const campaignsRef = collection(db, 'campaigns');
+      // 🛡️ DEFENSIVE CHECK: Ensure tenantId is valid
+      if (!tenantId || tenantId === 'undefined' || typeof tenantId !== 'string') {
+        console.warn('MetricsService.getActiveCampaigns: Invalid tenantId provided:', tenantId);
+        return 0;
+      }
+
+      const campaignsRef = collection(db, 'MarketGenie_campaigns');
       const q = query(
         campaignsRef, 
         where('tenantId', '==', tenantId),
@@ -60,8 +78,14 @@ export class MetricsService {
   // Calculate real conversion rate
   static async getConversionRate(tenantId) {
     try {
+      // 🛡️ DEFENSIVE CHECK: Ensure tenantId is valid
+      if (!tenantId || tenantId === 'undefined' || typeof tenantId !== 'string') {
+        console.warn('MetricsService.getConversionRate: Invalid tenantId provided:', tenantId);
+        return 0;
+      }
+
       // Get total leads
-      const leadsRef = collection(db, 'leads');
+      const leadsRef = collection(db, 'MarketGenie_leads');
       const leadsQuery = query(leadsRef, where('tenantId', '==', tenantId));
       const leadsSnapshot = await getDocs(leadsQuery);
       const totalLeads = leadsSnapshot.size;
@@ -69,7 +93,7 @@ export class MetricsService {
       if (totalLeads === 0) return 0;
 
       // Get converted leads (customers)
-      const customersRef = collection(db, 'customers');
+      const customersRef = collection(db, 'MarketGenie_customers');
       const customersQuery = query(customersRef, where('tenantId', '==', tenantId));
       const customersSnapshot = await getDocs(customersQuery);
       const totalCustomers = customersSnapshot.size;
@@ -85,7 +109,13 @@ export class MetricsService {
   // Get recent activity for dashboard
   static async getRecentActivity(tenantId, limitCount = 5) {
     try {
-      const activitiesRef = collection(db, 'activities');
+      // 🛡️ DEFENSIVE CHECK: Ensure tenantId is valid
+      if (!tenantId || tenantId === 'undefined' || typeof tenantId !== 'string') {
+        console.warn('MetricsService.getRecentActivity: Invalid tenantId provided:', tenantId);
+        return [];
+      }
+
+      const activitiesRef = collection(db, 'MarketGenie_activities');
       const q = query(
         activitiesRef,
         where('tenantId', '==', tenantId),
@@ -159,7 +189,7 @@ export class MetricsService {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       // Get leads from last 30 days
-      const leadsRef = collection(db, 'leads');
+      const leadsRef = collection(db, 'MarketGenie_leads');
       const recentLeadsQuery = query(
         leadsRef,
         where('tenantId', '==', tenantId),

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
@@ -14,16 +14,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log('🔥 Initializing Enhanced Firebase Connection');
+console.log('🔥 STARTING COCKROACH-PROOF FIREBASE INITIALIZATION');
 
-// Initialize Firebase with ENHANCED error handling
+// Initialize Firebase with enhanced error handling
 const app = initializeApp(firebaseConfig);
 
-// Initialize services with BULLETPROOF settings
+// Initialize services with bulletproof settings
 export const auth = getAuth(app);
 
-// Initialize Firestore with ENHANCED connection settings  
-export const db = getFirestore(app);
+// Initialize Firestore with enhanced persistence and connection settings
+export const db = initializeFirestore(app, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+  ignoreUndefinedProperties: true,
+  experimentalForceLongPolling: false,
+  experimentalAutoDetectLongPolling: true,
+});
 
 // 🚀 COCKROACH CRUSHER: Advanced connection management
 let connectionAttempts = 0;

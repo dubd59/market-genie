@@ -1,13 +1,15 @@
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection } from "./security/SecureFirebase.js";
+import { serverTimestamp } from "firebase/firestore";
 import { db } from './firebase';
 
+// MARKET GENIE ISOLATED - NO CROSS-APP SHARING
 export const shareAcrossApps = async (dataType, data, targetApps) => {
   const shareDoc = {
-    sourceApp: import.meta.env.VITE_APP_NAME,
-    targetApps,
+    sourceApp: 'MarketGenie',
+    targetApps: ['MarketGenie'], // ISOLATED TO MARKET GENIE ONLY
     dataType,
     data,
     sharedAt: serverTimestamp()
   };
-  await addDoc(collection(db, "cross_app_sharing"), shareDoc);
+  await addDoc(collection(db, "MarketGenie_InternalSharing"), shareDoc);
 };

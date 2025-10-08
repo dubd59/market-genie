@@ -1,5 +1,6 @@
 import { FirebaseAPI } from '../FirebaseAPI.js'
-import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc } from '../security/SecureFirebase.js'
+import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 class LeadService {
@@ -7,9 +8,9 @@ class LeadService {
     // We'll create the path dynamically based on tenant
   }
 
-  // Get the correct collection path for tenant
+  // Get the correct collection path for tenant - MARKET GENIE ISOLATED
   getLeadsCollection(tenantId) {
-    return collection(db, 'tenants', tenantId, 'leads')
+    return collection(db, 'MarketGenie_tenants', tenantId, 'leads')
   }
 
   // Create a new lead
@@ -68,7 +69,7 @@ class LeadService {
   // Update a lead
   async updateLead(tenantId, leadId, updateData) {
     try {
-      const leadDoc = doc(db, 'tenants', tenantId, 'leads', leadId)
+      const leadDoc = doc(db, 'MarketGenie_tenants', tenantId, 'leads', leadId)
       await updateDoc(leadDoc, {
         ...updateData,
         updatedAt: serverTimestamp()
@@ -83,7 +84,7 @@ class LeadService {
   // Delete a lead
   async deleteLead(tenantId, leadId) {
     try {
-      const leadDoc = doc(db, 'tenants', tenantId, 'leads', leadId)
+      const leadDoc = doc(db, 'MarketGenie_tenants', tenantId, 'leads', leadId)
       await deleteDoc(leadDoc)
       return { success: true }
     } catch (error) {

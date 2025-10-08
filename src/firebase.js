@@ -1,9 +1,9 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator } from "firebase/firestore";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { disableNetwork, enableNetwork, getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,8 +22,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize services with BULLETPROOF settings
 export const auth = getAuth(app);
 
-// Initialize Firestore with ENHANCED connection settings  
-export const db = getFirestore(app);
+// Initialize Firestore with ENHANCED connection settings - MARKET GENIE DATABASE
+export const db = getFirestore(app, 'marketgenie');
 
 // 🚀 COCKROACH CRUSHER: Advanced connection management
 let connectionAttempts = 0;
@@ -33,16 +33,16 @@ let connectionPromise = null;
 // BULLETPROOF Firebase initialization
 const initializeFirebaseWithCockroachCrusher = async () => {
   if (connectionPromise) return connectionPromise;
-  
+
   connectionPromise = new Promise(async (resolve, reject) => {
     const maxAttempts = 5;
     const baseDelay = 1000;
-    
+
     while (connectionAttempts < maxAttempts && !isConnected) {
       try {
         connectionAttempts++;
         console.log(`🔄 Connection attempt ${connectionAttempts}/${maxAttempts}`);
-        
+
         // Clear any existing connections
         try {
           await disableNetwork(db);
@@ -50,21 +50,21 @@ const initializeFirebaseWithCockroachCrusher = async () => {
         } catch (e) {
           // Ignore disable errors on first attempt
         }
-        
+
         // Enable with retry logic
         await enableNetwork(db);
-        
+
         // Test connection with a simple operation
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         isConnected = true;
         console.log('✅ Firebase connection established successfully');
         resolve(true);
         return;
-        
+
       } catch (error) {
         console.error(`❌ Connection attempt ${connectionAttempts} failed:`, error);
-        
+
         if (connectionAttempts < maxAttempts) {
           const delay = baseDelay * Math.pow(2, connectionAttempts - 1);
           console.log(`⏳ Waiting ${delay}ms before retry...`);
@@ -72,20 +72,20 @@ const initializeFirebaseWithCockroachCrusher = async () => {
         }
       }
     }
-    
+
     if (!isConnected) {
       console.error('💀 All connection attempts failed - entering offline mode');
       resolve(false);
     }
   });
-  
+
   return connectionPromise;
 };
 
 // 🌐 NETWORK MONITORING with cockroach resistance
 const setupNetworkMonitoring = () => {
   let isOnline = navigator.onLine;
-  
+
   const handleOnline = async () => {
     if (!isOnline) {
       console.log('🌐 Network back online - reconnecting to Firebase...');
@@ -96,16 +96,16 @@ const setupNetworkMonitoring = () => {
       await initializeFirebaseWithCockroachCrusher();
     }
   };
-  
+
   const handleOffline = () => {
     console.log('📴 Network offline - entering cockroach-resistant offline mode');
     isOnline = false;
     isConnected = false;
   };
-  
+
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
-  
+
   // Cleanup function
   return () => {
     window.removeEventListener('online', handleOnline);
@@ -132,7 +132,7 @@ export const reconnectFirebase = async () => {
     isConnected = false;
     connectionAttempts = 0;
     connectionPromise = null;
-    
+
     await disableNetwork(db);
     await new Promise(resolve => setTimeout(resolve, 2000));
     return await initializeFirebaseWithCockroachCrusher();
@@ -159,9 +159,9 @@ export const checkConnectionHealth = async () => {
 const setupCORSInterceptor = () => {
   // Intercept fetch requests to add proper headers
   const originalFetch = window.fetch;
-  window.fetch = function(...args) {
+  window.fetch = function (...args) {
     const [resource, config = {}] = args;
-    
+
     // Add CORS headers for Firebase requests
     if (typeof resource === 'string' && resource.includes('firestore.googleapis.com')) {
       config.headers = {
@@ -170,11 +170,11 @@ const setupCORSInterceptor = () => {
         'Access-Control-Request-Method': 'POST, GET, OPTIONS',
         'Access-Control-Request-Headers': 'Content-Type, Authorization'
       };
-      
+
       // Remove credentials for CORS compliance
       delete config.credentials;
     }
-    
+
     return originalFetch.apply(this, [resource, config]);
   };
 };

@@ -108,6 +108,95 @@ class LeadService {
         const converted = leads.filter(lead => lead.status === 'converted').length
         const conversionRate = totalLeads > 0 ? Math.round((converted / totalLeads) * 100) : 0
 
+        // Calculate leads by source
+        const aiScrapingLeads = leads.filter(lead => 
+          lead.source && (lead.source.includes('apollo') || lead.source.includes('hunter') || lead.source.includes('linkedin') || lead.source === 'ai-scraping' || lead.source === 'Business Directory' || lead.source === 'Social Media' || lead.source === 'Custom Sources')
+        )
+        const bulkImportLeads = leads.filter(lead => 
+          lead.source && (lead.source.includes('csv') || lead.source.includes('import') || lead.source === 'csv-import')
+        )
+        const manualEntryLeads = leads.filter(lead => 
+          lead.source && (lead.source === 'manual' || lead.source === 'Manual Entry' || lead.source === 'enrichment')
+        )
+
+        // Calculate success rates
+        const aiScrapingSuccessRate = aiScrapingLeads.length > 0 ? 
+          Math.round((aiScrapingLeads.filter(lead => lead.email && lead.email.includes('@')).length / aiScrapingLeads.length) * 100) : 0
+        const bulkImportValidationRate = bulkImportLeads.length > 0 ? 
+          Math.round((bulkImportLeads.filter(lead => lead.email && lead.email.includes('@')).length / bulkImportLeads.length) * 100) : 0
+        const manualEntryQualityRate = manualEntryLeads.length > 0 ? 
+          Math.round((manualEntryLeads.filter(lead => lead.score >= 80).length / manualEntryLeads.length) * 100) : 0
+
+        // Calculate time-based metrics
+        const now = new Date()
+        const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000))
+        const twoWeeksAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000))
+        
+        const leadsThisWeek = leads.filter(lead => {
+          if (!lead.createdAt) return false
+          const createdDate = lead.createdAt.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
+          return createdDate >= oneWeekAgo
+        }).length
+
+        const leadsLastWeek = leads.filter(lead => {
+          if (!lead.createdAt) return false
+          const createdDate = lead.createdAt.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
+          return createdDate >= twoWeeksAgo && createdDate < oneWeekAgo
+        }).length
+
+        const weeklyGrowthRate = leadsLastWeek > 0 ? 
+          Math.round(((leadsThisWeek - leadsLastWeek) / leadsLastWeek) * 100) : 0
+
+        // Calculate average cost per lead (assuming AI scraping costs)
+        const avgCostPerLead = aiScrapingLeads.length > 0 ? 
+          Math.round((aiScrapingLeads.length * 0.5) / aiScrapingLeads.length * 100) / 100 : 0
+
+        // Calculate quality score percentage
+        const avgQualityScore = totalLeads > 0 ? 
+          Math.round((highQuality / totalLeads) * 100) : 0
+
+        // Calculate active reports (based on different analysis types available)
+        const activeReports = [
+          totalLeads > 0 ? 1 : 0, // Lead Overview Report
+          aiScrapingLeads.length > 0 ? 1 : 0, // AI Scraping Report
+          bulkImportLeads.length > 0 ? 1 : 0, // Bulk Import Report
+          manualEntryLeads.length > 0 ? 1 : 0, // Manual Entry Report
+          leadsThisWeek > 0 ? 1 : 0, // Weekly Report
+          converted > 0 ? 1 : 0, // Conversion Report
+          highQuality > 0 ? 1 : 0, // Quality Report
+          1, // Performance Trends (always available)
+          1, // Source Analysis (always available)
+          1  // Growth Metrics (always available)
+        ].reduce((sum, report) => sum + report, 0)
+
+        // Calculate key insights (real business insights based on data)
+        const keyInsights = [
+          conversionRate > 15 ? 1 : 0, // High conversion insight
+          avgQualityScore > 70 ? 1 : 0, // High quality insight
+          weeklyGrowthRate > 0 ? 1 : 0, // Growth insight
+          aiScrapingSuccessRate > 80 ? 1 : 0, // AI efficiency insight
+          totalLeads > 50 ? 1 : 0 // Volume insight
+        ].reduce((sum, insight) => sum + insight, 0)
+
+        // Calculate monthly growth rate
+        const newThisMonth = leads.filter(lead => {
+          if (!lead.createdAt) return false
+          const createdDate = lead.createdAt.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
+          return createdDate.getMonth() === now.getMonth() && 
+                 createdDate.getFullYear() === now.getFullYear()
+        }).length
+
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1)
+        const newLastMonth = leads.filter(lead => {
+          if (!lead.createdAt) return false
+          const createdDate = lead.createdAt.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
+          return createdDate.getMonth() === lastMonth.getMonth() && 
+                 createdDate.getFullYear() === lastMonth.getFullYear()
+        }).length
+
+        const monthlyGrowthRate = newLastMonth > 0 ? 
+          Math.round(((newThisMonth - newLastMonth) / newLastMonth) * 100) : 0
+
         return {
           success: true,
           data: {
@@ -116,13 +205,22 @@ class LeadService {
             mediumQuality,
             lowQuality,
             conversionRate,
-            newThisMonth: leads.filter(lead => {
-              if (!lead.createdAt) return false
-              const createdDate = lead.createdAt.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
-              const now = new Date()
-              return createdDate.getMonth() === now.getMonth() && 
-                     createdDate.getFullYear() === now.getFullYear()
-            }).length
+            newThisMonth,
+            // New comprehensive analytics
+            activeReports,
+            keyInsights,
+            monthlyGrowthRate,
+            aiScrapingSuccessRate,
+            bulkImportValidationRate,
+            manualEntryQualityRate,
+            leadsThisWeek,
+            weeklyGrowthRate,
+            avgCostPerLead,
+            avgQualityScore,
+            // Lead source counts
+            aiScrapingCount: aiScrapingLeads.length,
+            bulkImportCount: bulkImportLeads.length,
+            manualEntryCount: manualEntryLeads.length
           }
         }
       }

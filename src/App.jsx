@@ -2393,17 +2393,17 @@ P.S. This email was generated for the "${name}" campaign.`;
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-blue-500">
                       <span className="text-blue-500 text-3xl mb-2">📊</span>
-                      <div className="text-2xl font-bold text-gray-900">12</div>
+                      <div className="text-2xl font-bold text-gray-900">{leadStats.activeReports || 0}</div>
                       <div className="text-gray-500">Active Reports</div>
                     </div>
                     <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-green-500">
-                      <span className="text-green-500 text-3xl mb-2">�</span>
-                      <div className="text-2xl font-bold text-gray-900">5</div>
+                      <span className="text-green-500 text-3xl mb-2">💡</span>
+                      <div className="text-2xl font-bold text-gray-900">{leadStats.keyInsights || 0}</div>
                       <div className="text-gray-500">Key Insights</div>
                     </div>
                     <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-purple-500">
-                      <span className="text-purple-500 text-3xl mb-2">�📈</span>
-                      <div className="text-2xl font-bold text-gray-900">22%</div>
+                      <span className="text-purple-500 text-3xl mb-2">📈</span>
+                      <div className="text-2xl font-bold text-gray-900">{leadStats.monthlyGrowthRate || 0}%</div>
                       <div className="text-gray-500">Growth Rate</div>
                     </div>
                     <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-teal-500">
@@ -2428,7 +2428,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                             <span className="font-medium">AI Scraping</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-blue-600">85%</div>
+                            <div className="text-lg font-bold text-blue-600">{leadStats.aiScrapingSuccessRate || 0}%</div>
                             <div className="text-xs text-gray-500">Success Rate</div>
                           </div>
                         </div>
@@ -2438,7 +2438,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                             <span className="font-medium">Bulk Import</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-green-600">92%</div>
+                            <div className="text-lg font-bold text-green-600">{leadStats.bulkImportValidationRate || 0}%</div>
                             <div className="text-xs text-gray-500">Validation Rate</div>
                           </div>
                         </div>
@@ -2448,7 +2448,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                             <span className="font-medium">Manual Entry</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-purple-600">98%</div>
+                            <div className="text-lg font-bold text-purple-600">{leadStats.manualEntryQualityRate || 0}%</div>
                             <div className="text-xs text-gray-500">Quality Score</div>
                           </div>
                         </div>
@@ -2495,19 +2495,21 @@ P.S. This email was generated for the "${name}" campaign.`;
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">+{Math.floor(Math.random() * 15) + 5}</div>
+                        <div className="text-2xl font-bold text-blue-600">+{leadStats.leadsThisWeek || 0}</div>
                         <div className="text-sm text-blue-700">Leads This Week</div>
-                        <div className="text-xs text-green-600 mt-1">↗ +12% from last week</div>
+                        <div className={`text-xs mt-1 ${(leadStats.weeklyGrowthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(leadStats.weeklyGrowthRate || 0) >= 0 ? '↗' : '↘'} {Math.abs(leadStats.weeklyGrowthRate || 0)}% from last week
+                        </div>
                       </div>
                       <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{Math.floor((leadStats.highQuality || 0) / (leadStats.totalLeads || 1) * 100)}%</div>
+                        <div className="text-2xl font-bold text-green-600">{leadStats.avgQualityScore || 0}%</div>
                         <div className="text-sm text-green-700">Avg Quality Score</div>
-                        <div className="text-xs text-green-600 mt-1">↗ +5% improvement</div>
+                        <div className="text-xs text-green-600 mt-1">↗ Based on high-quality leads</div>
                       </div>
                       <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">$0.75</div>
+                        <div className="text-2xl font-bold text-purple-600">${leadStats.avgCostPerLead || 0}</div>
                         <div className="text-sm text-purple-700">Avg Cost Per Lead</div>
-                        <div className="text-xs text-green-600 mt-1">↗ -8% cost reduction</div>
+                        <div className="text-xs text-green-600 mt-1">↗ From AI scraping</div>
                       </div>
                     </div>
                   </div>

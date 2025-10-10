@@ -214,7 +214,7 @@ export default function LandingPage() {
               <img 
                 src="/marketG.png" 
                 alt="Market Genie Platform" 
-                className="max-w-lg w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
+                className="max-w-xs w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
               />
             </motion.div>
             

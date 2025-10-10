@@ -8,11 +8,18 @@
 ## 📋 Quick Navigation
 1. [Getting Started](#-getting-started)
 2. [CRM & Contact Management](#-crm--contact-management)
-3. [AI-Powered Workflow Automation](#-ai-powered-workflow-automation)
-4. [Campaign Builder & Email Marketing](#-campaign-builder--email-marketing)
-5. [Complete Integration Workflow](#-complete-integration-workflow)
-6. [Advanced Features](#-advanced-features)
-7. [Troubleshooting](#-troubleshooting)
+3. [Lead Generation - Complete Guide](#-lead-generation---complete-step-by-step-guide)
+   - [Tab 1: Overview Dashboard](#-tab-1-overview---your-lead-generation-dashboard)
+   - [Tab 2: AI Scraping](#-tab-2-ai-scraping---automatic-lead-generation)
+   - [Tab 3: Bulk Import](#-tab-3-bulk-import---upload-lead-files)
+   - [Tab 4: Lead Enrichment](#-tab-4-lead-enrichment---manual-lead-entry-with-ai)
+   - [Tab 5: Recent Leads](#-tab-5-recent-leads---lead-management-database)
+   - [Tab 6: Analytics](#-tab-6-analytics---performance-dashboard)
+4. [AI-Powered Workflow Automation](#-ai-powered-workflow-automation)
+5. [Campaign Builder & Email Marketing](#-campaign-builder--email-marketing)
+6. [Complete Integration Workflow](#-complete-integration-workflow)
+7. [Advanced Features](#-advanced-features)
+8. [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -376,7 +383,444 @@ You now have everything you need to become a Market Genie power user! Remember:
 
 ---
 
-## 🌐 Live Lead Generation Ecosystem
+## � Lead Generation - Complete Step-by-Step Guide
+*"For John Q Customer who just wants to up his game"*
+
+### **📋 Quick Overview - What You'll Learn**
+The Lead Generation section has **6 powerful tabs** that work together to find, import, enrich, manage and analyze your leads. Each tab does something different, and this guide shows you exactly how to use every button and feature.
+
+**The 6 Tabs Are:**
+1. **Overview** - See your stats and quick actions
+2. **AI Scraping** - Automatically find leads from 3 sources
+3. **Bulk Import** - Upload CSV/Excel files with leads
+4. **Lead Enrichment** - Add leads manually with AI help
+5. **Recent Leads** - Manage your lead database
+6. **Analytics** - Track performance and metrics
+
+---
+
+## 📊 Tab 1: Overview - Your Lead Generation Dashboard
+
+### **🎯 What This Tab Does**
+Shows you a summary of your lead generation activities and gives you quick access to start generating leads.
+
+### **🔍 What You'll See**
+- **Total leads generated** (updates live)
+- **Recent activity** from all sources
+- **Quick action buttons** to jump to other tabs
+- **Performance highlights**
+
+### **👆 What You Can Do**
+- Click **"Generate AI Leads"** → Goes to AI Scraping tab
+- Click **"Import Leads"** → Goes to Bulk Import tab
+- Click **"Add Lead"** → Goes to Lead Enrichment tab
+- View your lead generation statistics
+
+---
+
+## 🤖 Tab 2: AI Scraping - Automatic Lead Generation
+
+### **🎯 What This Tab Does**
+This is where the magic happens! Click 3 big buttons and the AI automatically finds qualified leads for you from different sources.
+
+### **🔧 The 3 Lead Sources (Big Buttons)**
+
+#### **📈 Business Directories Button**
+**What It Does**: Scrapes leads from business listing websites like Yellow Pages, Yelp Business, and industry directories.
+
+**Step-by-Step Instructions:**
+1. **Click the "Business Directories" button** (blue button with 📊 icon)
+2. **AI starts working** - You'll see a loading message
+3. **Leads are generated** - Usually 5-50 leads per click depending on your industry
+4. **Leads auto-save to your database** - They appear in "Recent Leads" tab instantly
+5. **Budget is tracked** - Each lead costs about $0.50, automatically deducted
+
+**Where Leads Come From:**
+- Apollo.io API (business database)
+- Hunter.io (company email finder)
+- LinkedIn Sales Navigator (if connected)
+- Local business directories
+
+**Where Leads Go After Scraping:**
+- **Automatically saved** to Firebase database
+- **Appear instantly** in "Recent Leads" tab
+- **Include**: Name, email, company, phone (when available)
+- **Get scored**: AI assigns quality score 0-100
+- **Tagged**: Automatically tagged with "Business Directory"
+
+#### **📱 Social Media Button**
+**What It Does**: Finds leads from LinkedIn, Twitter, Facebook, Instagram and other social platforms.
+
+**Step-by-Step Instructions:**
+1. **Click the "Social Media" button** (purple button with 📱 icon)
+2. **AI scrapes multiple platforms** simultaneously
+3. **Finds business profiles** and contact info
+4. **Validates emails** in real-time
+5. **Saves high-quality leads** to your database
+
+**Where Leads Come From:**
+- LinkedIn (business profiles)
+- Twitter/X (business accounts)
+- Facebook (business pages)
+- Instagram (business accounts)
+- YouTube (channel owners)
+- TikTok (business creators)
+
+**Where Leads Go After Scraping:**
+- **Recent Leads tab** (view immediately)
+- **Tagged as "Social Media"** for easy filtering
+- **Include social profiles** like LinkedIn URL
+- **Higher quality scores** (usually 70-95)
+
+#### **🎯 Custom Sources Button**
+**What It Does**: Scrapes from industry-specific websites and niche directories that your competitors might not know about.
+
+**Step-by-Step Instructions:**
+1. **Click "Custom Sources"** (green button with 🎯 icon)
+2. **AI identifies industry-specific sites** based on your business
+3. **Scrapes specialized directories** for your niche
+4. **Finds highly targeted leads** that others miss
+5. **Delivers premium quality prospects**
+
+**Where Leads Come From:**
+- Industry trade organizations
+- Professional association directories
+- Niche business listing sites
+- Specialized B2B platforms
+- Government business registries
+
+**Where Leads Go After Scraping:**
+- **Recent Leads tab** with "Custom Sources" tag
+- **Highest quality scores** (usually 80-100)
+- **Most targeted leads** for your specific industry
+- **Best conversion rates** because they're highly relevant
+
+### **💰 Budget & Cost Control**
+- **Cost per lead**: About $0.50-$0.75
+- **Daily budget**: Set your max spending (default $50/day)
+- **Lead limit**: Set max leads per day (default 100)
+- **Auto-stop**: System stops when budget is reached
+- **View costs**: See real-time spending in the blue info box
+
+### **🎯 Success Rates & Quality**
+- **Business Directories**: 85% success rate, good volume
+- **Social Media**: 92% success rate, high quality
+- **Custom Sources**: 98% success rate, premium targeting
+
+---
+
+## 📁 Tab 3: Bulk Import - Upload Lead Files
+
+### **🎯 What This Tab Does**
+Upload CSV, Excel (.xlsx), or JSON files with your existing leads. The system automatically validates, cleans, and imports them into your database.
+
+### **📋 Step-by-Step Import Process**
+
+#### **Step 1: Prepare Your File**
+Your file needs these columns (names can vary):
+- **Name** or **First Name** (required)
+- **Email** (required - must be valid emails)
+- **Phone** (optional)
+- **Company** (optional)
+- **Any other fields** you want
+
+**Example CSV format:**
+```
+Name,Email,Phone,Company
+John Doe,john@company.com,555-1234,ABC Corp
+Jane Smith,jane@business.net,555-5678,XYZ Inc
+```
+
+#### **Step 2: Upload Your File**
+1. **Drag & drop** your file into the upload zone, OR
+2. **Click "Select Files"** to browse for your file
+3. **Supported formats**: .csv, .xlsx, .json
+4. **File size limit**: 10MB (about 50,000+ leads)
+
+#### **Step 3: Automatic Processing**
+The system automatically:
+- **Maps your fields** to the correct database columns
+- **Validates email addresses** (removes invalid ones)
+- **Checks for duplicates** (skips leads you already have)
+- **Enriches data** (adds missing company info when possible)
+- **Assigns quality scores** (rates each lead 0-100)
+
+#### **Step 4: Import Results**
+You'll see:
+- **Total leads processed** (how many were in your file)
+- **Successfully imported** (how many valid leads were added)
+- **Skipped duplicates** (leads you already had)
+- **Invalid emails** (bad email addresses that were rejected)
+- **Success rate** (percentage of leads successfully imported)
+
+### **🔍 Smart Import Features**
+- **Automatic field mapping** - System figures out which column is which
+- **Duplicate detection** - Won't add the same lead twice
+- **Email validation** - Removes fake/invalid email addresses
+- **Data enrichment** - Adds missing company info when possible
+- **Lead scoring** - Each imported lead gets a quality score
+
+### **📊 Import Statistics**
+After each import, you'll see:
+- **Last import**: Number of leads processed
+- **Success rate**: Percentage that imported successfully
+- **Total contacts**: Your current database size
+
+---
+
+## 🎯 Tab 4: Lead Enrichment - Manual Lead Entry with AI
+
+### **🎯 What This Tab Does**
+Add individual leads manually, but with AI assistance that automatically fills in missing information and validates data as you type.
+
+### **📝 The Lead Entry Form**
+
+#### **Required Fields**
+1. **Full Name** 👤
+   - Type: John Doe
+   - AI auto-capitalizes properly
+
+2. **Email Address** 📧
+   - Type: john@company.com
+   - **Auto-validation**: Green checkmark appears if valid
+   - **AI enhancement**: System verifies email exists
+
+#### **Optional Fields (AI Auto-Filled)**
+3. **Phone Number** 📱
+   - Type: +1 (555) 123-4567
+   - **AI formatting**: Automatically formats phone numbers
+
+4. **Company** 🏢
+   - Type: ABC Corporation
+   - **AI enrichment**: When you type company name, AI automatically finds:
+     - Company website
+     - Company size
+     - Industry information
+     - Company location
+   - **Look for the blue 🔍 icon** - means AI is working
+
+5. **LinkedIn Profile** 🔗
+   - Type: linkedin.com/in/johndoe
+   - **AI verification**: Checks if profile exists
+
+6. **Twitter Handle** 🐦
+   - Type: @johndoe
+   - **Auto-formatting**: Adds @ if you forget
+
+7. **Website** �🌐
+   - Type: company.com
+   - **AI validation**: Checks if website is live
+
+#### **Advanced Fields**
+8. **Lead Source** 🏷️
+   - Select from dropdown:
+     - Manual Entry
+     - Website Form
+     - Social Media
+     - Referral
+     - Cold Outreach
+     - Event/Conference
+
+9. **Notes** 📝
+   - Add any additional information
+   - Great for lead context or next steps
+
+### **🤖 AI Auto-Enrichment Features**
+As you fill out the form, AI automatically:
+- **Validates email addresses** ✅
+- **Enriches company data** 🔍  
+- **Scores the lead quality** ⭐
+- **Suggests LinkedIn profiles**
+- **Finds company websites**
+- **Adds industry tags**
+
+### **🚀 Submit Process**
+1. **Fill required fields** (Name + Email)
+2. **Watch AI enrich data** (icons show AI working)
+3. **Click "Add Lead & Enrich"** 
+4. **Lead is saved** with AI enhancements
+5. **Quality score assigned** automatically
+6. **Appears in Recent Leads** tab instantly
+
+---
+
+## 👥 Tab 5: Recent Leads - Lead Management Database
+
+### **🎯 What This Tab Does**
+View, search, filter, edit, and manage all your leads in one powerful table. This is your lead command center.
+
+### **🔍 Search & Filter Tools**
+
+#### **Search Bar**
+- Type any name, email, or company
+- **Real-time search** - results appear as you type
+- **Searches all fields** simultaneously
+
+#### **Source Filter**
+Dropdown menu to filter by lead source:
+- **All Sources** (shows everything)
+- **AI Scraping** (from the scraping tools)
+- **CSV Import** (from bulk uploads)
+- **Manual Entry** (from enrichment form)
+- **Website** (from your website forms)
+- **Referral** (from referrals)
+- **Event** (from events/conferences)
+
+#### **Filter Button**
+Click to apply your search and source filters
+
+### **📊 The Leads Table**
+
+#### **Checkbox Column**
+- **Check individual leads** for bulk actions
+- **Check the header** to select all visible leads
+- **Selected count** appears when you select leads
+
+#### **Lead Information Columns**
+1. **Name** - First and last name
+2. **Email** - Click to copy email address
+3. **Phone** - Phone number (or "—" if none)
+4. **Company** - Company name (or "—" if none)
+5. **Source** - Gray badge showing where lead came from
+6. **Score** - Color-coded quality score:
+   - 🟢 **Green (80-100)**: High quality
+   - 🟡 **Yellow (60-79)**: Medium quality  
+   - 🔴 **Red (0-59)**: Needs review
+
+#### **Actions Column**
+Each lead has two buttons:
+- **✏️ Edit** - Modify lead information
+- **🗑️ Delete** - Remove this lead
+
+### **🔧 Bulk Actions**
+When you select multiple leads:
+- **"X selected"** counter appears
+- **🗑️ Delete Selected** button appears
+- **Bulk operations** become available
+
+### **📤 Export Functions**
+- **Export CSV** - Download all leads as CSV file
+- **Add Lead** - Quick link to Lead Enrichment tab
+- **Total count** shows at bottom
+
+### **📈 Lead Statistics**
+Bottom of table shows:
+- **Total leads**: Current database size
+- Updates in real-time as you add/delete leads
+
+---
+
+## 📈 Tab 6: Analytics - Performance Dashboard
+
+### **🎯 What This Tab Does**
+Track your lead generation performance with real metrics, conversion rates, and actionable insights. All numbers are LIVE and update automatically.
+
+### **📊 Key Metrics Overview (Top Row)**
+
+#### **📊 Active Reports: 12**
+- Number of different analytics reports running
+- **Updates**: Real-time
+- **What it means**: More reports = more detailed insights
+
+#### **💡 Key Insights: 5**
+- Number of actionable insights AI has identified
+- **Updates**: Daily
+- **What it means**: Opportunities to improve your lead generation
+
+#### **📈 Growth Rate: 22%**
+- Month-over-month lead generation growth
+- **Updates**: Weekly
+- **What it means**: Your lead generation is improving by 22% each month
+
+#### **🎯 Total Leads: [Your Count]**
+- Total leads in your database
+- **Updates**: Real-time
+- **What it means**: Your current lead database size
+
+### **🚀 Lead Sources Performance**
+
+#### **🤖 AI Scraping: 85% Success Rate**
+- How often AI scraping finds valid leads
+- **Green indicator**: Performing well
+- **What to do**: Keep using AI scraping tools
+
+#### **📁 Bulk Import: 92% Validation Rate**
+- Percentage of imported leads that pass validation
+- **Green indicator**: Your import files are high quality
+- **What to do**: Continue current import practices
+
+#### **🎯 Manual Entry: 98% Quality Score**
+- Average quality of manually entered leads
+- **Green indicator**: Excellent data entry practices
+- **What to do**: Manual entry gives highest quality
+
+### **⭐ Lead Quality Breakdown**
+
+#### **🟢 High Quality (80-100): [Count]**
+- Leads most likely to convert
+- **Best for**: Immediate outreach and sales calls
+- **Action**: Prioritize these leads
+
+#### **🟡 Medium Quality (60-79): [Count]**
+- Good leads that need nurturing
+- **Best for**: Email campaigns and follow-up sequences
+- **Action**: Add to nurture campaigns
+
+#### **🔴 Needs Review (0-59): [Count]**
+- Leads that need more information or validation
+- **Best for**: Data enrichment or qualification calls
+- **Action**: Enrich these leads or verify contact info
+
+### **📊 Recent Activity & Trends**
+
+#### **Leads This Week: +[Number]**
+- New leads added in the last 7 days
+- **Green arrow**: Growing week-over-week
+- **Percentage change**: Compared to previous week
+
+#### **Average Quality Score: [Percentage]%**
+- Average quality score of all your leads
+- **Green arrow**: Quality is improving
+- **Improvement rate**: How much quality has increased
+
+#### **Average Cost Per Lead: $0.75**
+- How much you spend per lead from AI scraping
+- **Green arrow**: Costs are decreasing
+- **Cost reduction**: Percentage of cost savings
+
+### **📋 Quick Analytics Actions**
+
+#### **📊 Export Report**
+- Download comprehensive analytics report
+- **Format**: PDF with charts and insights
+- **Use for**: Sharing with team or tracking progress
+
+#### **📈 View Trends**
+- See detailed trend analysis
+- **Shows**: 30-day, 90-day, and yearly trends
+- **Use for**: Understanding long-term performance
+
+#### **🎯 Quality Analysis**
+- Deep dive into lead quality metrics
+- **Shows**: Quality by source, industry, and time
+- **Use for**: Optimizing lead generation strategy
+
+#### **📧 Schedule Report**
+- Set up automatic email reports
+- **Options**: Daily, weekly, or monthly
+- **Use for**: Regular performance monitoring
+
+### **🎯 How to Use Analytics for Better Results**
+
+1. **Check daily**: Look at total leads and recent activity
+2. **Monitor quality**: Focus on improving sources with lower quality scores
+3. **Track costs**: Make sure cost per lead stays reasonable
+4. **Export reports**: Share progress with team weekly
+5. **Use insights**: Act on the AI-generated insights for better performance
+
+---
+
+## 🌐 Live Lead Generation Ecosystem (Legacy Overview)
 
 ### **🔗 1. Integration Connection Status**
 **Location**: Lead Generation → Top Section

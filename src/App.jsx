@@ -41,7 +41,6 @@ import IntegrationConnectionStatus from './components/IntegrationConnectionStatu
 import AdvancedFunnelBuilder from './components/AdvancedFunnelBuilder'
 import SuperiorCRMSystem from './components/SuperiorCRMSystem'
 import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
-import WorkflowAutomation from './components/WorkflowAutomation'
 import CRMPipeline from './components/CRMPipeline'
 import ContactManager from './components/ContactManager'
 import FunnelPreview from './pages/FunnelPreview'
@@ -78,7 +77,6 @@ function SophisticatedDashboard() {
     const path = location.pathname
     if (path.includes('lead-generation')) return 'Lead Generation'
     if (path.includes('outreach-automation')) return 'Outreach Automation'
-    if (path.includes('workflow-automation')) return 'Workflow Automation'
     if (path.includes('appointment-booking')) return 'Appointment Booking'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
@@ -1478,7 +1476,6 @@ P.S. This email was generated for the "${name}" campaign.`;
         'SuperGenie Dashboard': '/dashboard',
         'Lead Generation': '/dashboard/lead-generation',
         'Outreach Automation': '/dashboard/outreach-automation',
-        'Workflow Automation': '/dashboard/workflow-automation',
         'Appointment Booking': '/dashboard/appointment-booking',
         'CRM & Pipeline': '/dashboard/crm-pipeline',
         'Contact Manager': '/dashboard/contact-manager',
@@ -3167,7 +3164,6 @@ P.S. This email was generated for the "${name}" campaign.`;
               </div>
             </div>
           )}
-          {activeSection === 'Workflow Automation' && <WorkflowAutomation />}
           {activeSection === 'White-Label SaaS' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
               <h2 className="text-3xl font-bold text-genie-teal mb-8">White-Label SaaS</h2>

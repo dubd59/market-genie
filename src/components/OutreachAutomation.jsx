@@ -11,6 +11,9 @@ const OutreachAutomation = () => {
   const { user } = useAuth();
   const { createCampaign: genieCreateCampaign } = useGenie();
   
+  // Main View State
+  const [activeView, setActiveView] = useState('campaigns');
+  
   // Campaign State
   const [campaigns, setCampaigns] = useState([]);
   const [stats, setStats] = useState({
@@ -20,6 +23,15 @@ const OutreachAutomation = () => {
     activecampaigns: 0,
     totalRecipients: 0,
     avgOpenRate: 0
+  });
+  
+  // Workflow State
+  const [workflows, setWorkflows] = useState([]);
+  const [workflowStats, setWorkflowStats] = useState({
+    activeWorkflows: 0,
+    triggeredToday: 0,
+    automatedLeads: 0,
+    conversionRate: 0
   });
   
   // Form States
@@ -73,7 +85,20 @@ const OutreachAutomation = () => {
       loadStats();
     }
   }, [tenant?.id]);
+
   const loadCampaigns = async () => {
+    try {
+      const sampleCampaigns = [
+        {
+          id: 1,
+          name: 'Welcome Series',
+          description: 'Onboard new customers with a 3-email welcome sequence',
+          type: 'sequence',
+          emails: 3,
+          category: 'onboarding',
+          preview: 'Welcome to our community! Let\'s get you started...',
+          template: {
+            subject: 'Welcome to [Company Name] - Let\'s Get Started! 🎉',
         content: `Hi [First Name],
 
 Welcome to [Company Name]! We're thrilled to have you join our community.

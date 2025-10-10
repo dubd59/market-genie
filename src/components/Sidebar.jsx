@@ -21,7 +21,6 @@ const sections = [
   { name: 'Outreach Automation', icon: SpeakerWaveIcon },
   { name: 'CRM & Pipeline', icon: BuildingOfficeIcon },
   { name: 'Appointments', icon: CalendarDaysIcon },
-  { name: 'Workflow Automation', icon: Cog6ToothIcon },
   { name: 'AI Swarm', icon: SparklesIcon },
   { name: 'API Keys & Integrations', icon: KeyIcon },
   { name: 'Cost Controls', icon: CurrencyDollarIcon },

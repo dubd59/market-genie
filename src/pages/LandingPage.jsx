@@ -197,59 +197,132 @@ export default function LandingPage() {
               className="text-5xl md:text-7xl font-bold mb-6"
             >
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-500" style={{textShadow: '2px 2px 2px rgba(0,0,0,0.4), -1px -1px 1px rgba(0,0,0,0.2)'}}>
-                Marketing Automation
-              </span>
-              <span className="bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400 bg-clip-text text-transparent block" style={{textShadow: '2px 2px 2px rgba(0,0,0,0.4), -1px -1px 1px rgba(0,0,0,0.2)'}}>
-                That Grants Your Wishes
+                Your Marketing Just Grew an AI Brain
               </span>
             </motion.h1>
             
-            {/* Hero Image */}
-            <motion.div
+            <motion.h2 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="mb-8 flex justify-center"
+              className="text-2xl md:text-3xl font-bold mb-8 text-gray-200"
             >
-              <img 
-                src="/marketG.png" 
-                alt="Market Genie Platform" 
-                className="max-w-xs w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
-              />
-            </motion.div>
+              The Only Platform That Automates, Optimizes & Even Fixes Itself
+            </motion.h2>
             
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto"
             >
-              The AI-powered marketing platform that outperforms ClickFunnels and HighLevel. 
-              Generate leads, automate campaigns, and scale your business with intelligent automation.
+              <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
             </motion.p>
+            
+            {/* Hero Image */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mb-8 flex justify-center"
+            >
+              <img 
+                src="/marketG.png" 
+                alt="Market Genie Platform" 
+                className="max-w-32 w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
+              />
+            </motion.div>
+
+            {/* Video Player Placeholder */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mb-8 flex justify-center"
+            >
+              <div className="bg-black/30 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
+                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-white font-semibold text-lg mb-2">Watch Market Genie in Action</h3>
+                    <p className="text-gray-300 text-sm">See how AI transforms your marketing in under 3 minutes</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* AI Features Grid */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8"
+            >
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-yellow-300 mb-3 flex items-center">
+                  🧠 AI That Actually Works For You
+                </h3>
+                <ul className="text-gray-300 space-y-2 text-left">
+                  <li><strong className="text-white">Natural Language Commands</strong> - "Find me more leads like my top customers"</li>
+                  <li><strong className="text-white">Self-Healing Campaigns</strong> - Automatically fixes underperforming sequences</li>
+                  <li><strong className="text-white">Voice-Activated Control</strong> - Hands-free marketing management</li>
+                  <li><strong className="text-white">Predictive Analytics</strong> - Know which leads will convert before you contact them</li>
+                </ul>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-yellow-300 mb-3 flex items-center">
+                  🚀 Everything You Need. Nothing You Don't.
+                </h3>
+                <div className="text-gray-300 text-left">
+                  <div className="text-lg font-semibold text-white mb-2">
+                    Generate Leads → Automate Campaigns → Close Deals → Analyze Results
+                  </div>
+                  <p className="italic text-yellow-200">All in one unified platform that replaces 10+ tools</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Testimonial */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10 max-w-2xl mx-auto mb-8"
+            >
+              <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ See The Magic In Action</h3>
+              <blockquote className="text-lg text-gray-300 italic mb-3">
+                "Setup our entire lead generation system in one afternoon - something that used to take weeks"
+              </blockquote>
+              <p className="text-sm text-gray-400">- E-commerce Brand Director</p>
+            </motion.div>
             
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <button 
                 onClick={scrollToPricing}
                 className="bg-gradient-to-r from-emerald-500 to-yellow-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-emerald-600 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 flex items-center justify-center"
               >
-                Start Your Free Trial
+                🧞‍♂️ Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </button>
               <button className="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
-                Watch Demo
+                Watch 3-Min Demo →
               </button>
             </motion.div>
 
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
               className="mt-12 flex items-center justify-center space-x-8 text-gray-400"
             >
               <div className="flex items-center space-x-2">
@@ -270,7 +343,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-black/30 backdrop-blur-sm">
+      <section id="features" className="py-20 bg-black/10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
@@ -300,7 +373,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20">
+      <section id="pricing" className="py-20 bg-black/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
@@ -367,7 +440,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-black/30 backdrop-blur-sm">
+      <section id="testimonials" className="py-20 bg-black/10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
@@ -409,7 +482,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
+      <section className="py-20 bg-black/5 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -435,17 +508,106 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-12 bg-black/20 backdrop-blur-sm">
+      <footer className="border-t border-white/10 py-16 bg-black/10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            
+            {/* Company Info */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-white">Market Genie</span>
               </div>
-              <span className="text-xl font-bold text-white">Market Genie</span>
+              <p className="text-gray-300 mb-6 max-w-sm">
+                AI-powered marketing automation that learns, optimizes, and fixes itself. 
+                Transform your business with intelligent campaigns that grow with you.
+              </p>
+              <div className="flex space-x-4">
+                <a href="https://twitter.com/marketgenie" className="text-gray-400 hover:text-white transition-colors">
+                  <MessageSquare className="w-5 h-5" />
+                </a>
+                <a href="https://facebook.com/marketgenie" className="text-gray-400 hover:text-white transition-colors">
+                  <Globe className="w-5 h-5" />
+                </a>
+                <a href="https://linkedin.com/company/marketgenie" className="text-gray-400 hover:text-white transition-colors">
+                  <Users className="w-5 h-5" />
+                </a>
+              </div>
             </div>
-            <div className="text-gray-400">
+
+            {/* Product Links */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
+                <li><a href="/integrations" className="hover:text-white transition-colors">Integrations</a></li>
+                <li><a href="/api" className="hover:text-white transition-colors">API</a></li>
+                <li><a href="/security" className="hover:text-white transition-colors">Security</a></li>
+              </ul>
+            </div>
+
+            {/* Support Links */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="https://help.marketgenie.app" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="/documentation" className="hover:text-white transition-colors">Documentation</a></li>
+                <li><a href="/tutorials" className="hover:text-white transition-colors">Video Tutorials</a></li>
+                <li><a href="/community" className="hover:text-white transition-colors">Community</a></li>
+                <li><a href="/status" className="hover:text-white transition-colors">System Status</a></li>
+                <li><a href="/contact" className="hover:text-white transition-colors">Contact Support</a></li>
+              </ul>
+            </div>
+
+            {/* Company Links */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="/careers" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="/press" className="hover:text-white transition-colors">Press Kit</a></li>
+                <li><a href="/partners" className="hover:text-white transition-colors">Partners</a></li>
+                <li><a href="/affiliates" className="hover:text-white transition-colors">Affiliate Program</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="border-t border-white/10 mt-12 pt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center md:text-left">
+                <h4 className="text-white font-semibold mb-2">📧 Email Support</h4>
+                <p className="text-gray-300">support@marketgenie.app</p>
+                <p className="text-gray-300">sales@marketgenie.app</p>
+              </div>
+              <div className="text-center">
+                <h4 className="text-white font-semibold mb-2">💬 Live Chat</h4>
+                <p className="text-gray-300">Available 24/7</p>
+                <a href="https://help.marketgenie.app/chat" className="text-yellow-400 hover:text-yellow-300 transition-colors">Start Chat</a>
+              </div>
+              <div className="text-center md:text-right">
+                <h4 className="text-white font-semibold mb-2">📞 Phone Support</h4>
+                <p className="text-gray-300">1-800-MKTGENIE</p>
+                <p className="text-gray-300">Mon-Fri 9AM-6PM EST</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-white/10 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="text-gray-400 mb-4 md:mb-0">
               © 2025 Market Genie. All rights reserved.
+            </div>
+            <div className="flex space-x-6 text-gray-400">
+              <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="/cookies" className="hover:text-white transition-colors">Cookie Policy</a>
+              <a href="/gdpr" className="hover:text-white transition-colors">GDPR</a>
             </div>
           </div>
         </div>

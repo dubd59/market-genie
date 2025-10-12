@@ -1,14 +1,10 @@
 {
   "projects": {
-    "default": "genie-labs-81b9b"
+    "default": "market-genie-f2d41"
   },
   "targets": {
-    "genie-labs-81b9b": {
-      "hosting": {
-        "market-genie-app": [
-          "market-genie-app"
-        ]
-      }
+    "market-genie-f2d41": {
+      "hosting": {}
     }
   },
   "etags": {}

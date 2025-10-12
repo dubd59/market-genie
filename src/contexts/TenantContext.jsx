@@ -2,7 +2,17 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import TenantService from '../services/firebase/tenants'
+import { multiTenantDB } from '../services/multiTenantDatabase'
 import toast from 'react-hot-toast'
+
+/**
+ * ENHANCED TENANT CONTEXT WITH SECURITY
+ * 
+ * CRITICAL SECURITY FEATURES:
+ * - Enforces tenant isolation at context level
+ * - Validates tenant access on every operation
+ * - Prevents cross-tenant data leakage
+ */
 
 const TenantContext = createContext({})
 

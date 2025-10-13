@@ -2865,24 +2865,10 @@ P.S. This email was generated for the "${name}" campaign.`;
                           </div>
                           <div className="flex gap-2">
                             <button 
-                              onClick={() => {
-                                if (campaign.emailContent) {
-                                  toast.success(`📧 Email Preview for "${campaign.name}":\n\nSubject: ${campaign.subject}\n\nContent:\n${campaign.emailContent.substring(0, 300)}${campaign.emailContent.length > 300 ? '...' : ''}`, {
-                                    duration: 10000
-                                  })
-                                } else {
-                                  toast.error('No email content available. Click Edit to add content.')
-                                }
-                              }}
-                              className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600 transition-colors"
-                            >
-                              View Email
-                            </button>
-                            <button 
                               onClick={() => handleCampaignAction(campaign.id, 'edit')}
                               className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
                             >
-                              Edit
+                              📝 Edit Campaign
                             </button>
                             <button 
                               onClick={() => handleCampaignAction(campaign.id, 'send_now')}
@@ -4218,6 +4204,8 @@ function AdminPage() {
       {showAIAssistant && (
         <AIAgentHelper forceOpen={true} onClose={() => setShowAIAssistant(false)} />
       )}
+
+
     </div>
   )
 }

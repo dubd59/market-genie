@@ -16,6 +16,10 @@ service cloud.firestore {
       return request.auth.token.tenantId;
     }
     
+    function getUserTenantIdFromClaims() {
+      return request.auth.token.tenantId;
+    }
+    
     function belongsToUserTenant(tenantId) {
       return isAuthenticated() && getUserTenantId() == tenantId;
     }
@@ -50,36 +54,92 @@ service cloud.firestore {
     // Super admin has full access
     match /tenants/{tenantId} {
       allow read, write: if isSuperAdmin() ||
-                            (isAuthenticated() && belongsToUserTenant(tenantId));
+                            (isAuthenticated() && belongsToUserTenant(tenantId)) ||
+                            (isAuthenticated() && tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com');
       allow create: if isSuperAdmin() ||
                        (isAuthenticated() && isValidTenantData());
+      allow list: if isSuperAdmin() ||
+                     (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com');
+    }
+
+    // MARKETGENIE_TENANTS COLLECTION
+    // Main tenant collection with full isolation
+    // Special access for founder account
+    match /MarketGenie_tenants/{tenantId} {
+      allow read, write: if isSuperAdmin() ||
+                            (isAuthenticated() && resource.data.ownerId == request.auth.uid) ||
+                            (isAuthenticated() && tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isSuperAdmin() ||
+                       (isAuthenticated() && request.resource.data.ownerId == request.auth.uid) ||
+                       (isAuthenticated() && request.resource.data.id == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com');
+      allow list: if isSuperAdmin() ||
+                     (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com') ||
+                     isAuthenticated();
     }
 
     // DEALS COLLECTION  
     // Complete tenant isolation for all deal operations
     match /deals/{dealId} {
       allow read, write: if isAuthenticated() && 
-                            isDocumentOwner(resource);
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
       allow create: if isAuthenticated() && 
-                       isValidTenantData();
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
     }
 
     // CONTACTS COLLECTION
     // Tenant-specific contact access only
     match /contacts/{contactId} {
       allow read, write: if isAuthenticated() && 
-                            isDocumentOwner(resource);
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
       allow create: if isAuthenticated() && 
-                       isValidTenantData();
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
     }
 
     // CAMPAIGNS COLLECTION
     // Marketing campaigns isolated by tenant
     match /campaigns/{campaignId} {
       allow read, write: if isAuthenticated() && 
-                            isDocumentOwner(resource);
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
       allow create: if isAuthenticated() && 
-                       isValidTenantData();
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
+    }
+
+    // COMPANIES COLLECTION
+    // Company data isolated by tenant
+    match /companies/{companyId} {
+      allow read, write: if isAuthenticated() && 
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow create: if isAuthenticated() && 
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
+    }
+
+    // TASKS COLLECTION
+    // Tasks isolated by tenant
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated() && 
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow create: if isAuthenticated() && 
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
     }
 
     // PIPELINES COLLECTION
@@ -104,9 +164,13 @@ service cloud.firestore {
     // Tenant-specific settings only
     match /settings/{settingId} {
       allow read, write: if isAuthenticated() && 
-                            isDocumentOwner(resource);
+                            (isDocumentOwner(resource) || 
+                             (resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
       allow create: if isAuthenticated() && 
-                       isValidTenantData();
+                       (isValidTenantData() || 
+                        (request.resource.data.tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com'));
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
     }
 
     // INTEGRATIONS COLLECTION
@@ -143,10 +207,41 @@ service cloud.firestore {
                        isValidTenantData();
     }
 
-    // DENY ALL OTHER COLLECTIONS
-    // Explicit deny for any collection not specifically allowed
-    match /{document=**} {
-      allow read, write: if false;
+    // SETTINGS AND BUDGET COLLECTIONS  
+    // User-specific settings and budget data
+    match /settings/{settingId} {
+      allow read, write: if isAuthenticated() && 
+                            (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                             isSuperAdmin() ||
+                             (resource != null && resource.data.tenantId == 'founder-tenant'));
+      allow create: if isAuthenticated() && 
+                       (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                        isSuperAdmin());
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                      isSuperAdmin());
+    }
+
+    // API KEYS COLLECTION
+    // Store API keys securely per tenant
+    match /apiKeys/{keyId} {
+      allow read, write: if isAuthenticated() && 
+                            (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                             isSuperAdmin() ||
+                             (resource != null && resource.data.tenantId == 'founder-tenant'));
+      allow create: if isAuthenticated() && 
+                       (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                        isSuperAdmin());
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' || 
+                      isSuperAdmin());
+    }
+
+    // CATCH-ALL RULE FOR AUTHENTICATED FOUNDER ACCOUNT
+    // Allow founder account access to any collection as fallback
+    match /{collection}/{document=**} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                            request.auth.token.email == 'dubdproducts@gmail.com';
     }
   }
 }

@@ -1,0 +1,244 @@
+{
+  "tenants": {
+    "founder-tenant": {
+      "id": "founder-tenant",
+      "name": "Market Genie - Founder Account",
+      "domain": "marketgenie.com",
+      "plan": "enterprise",
+      "status": "active",
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "settings": {
+        "maxUsers": 1000,
+        "maxDeals": 50000,
+        "maxContacts": 100000,
+        "featuresEnabled": {
+          "crm": true,
+          "automation": true,
+          "analytics": true,
+          "integrations": true,
+          "aiFeatures": true,
+          "socialMedia": true,
+          "emailMarketing": true,
+          "voiceControl": true
+        }
+      },
+      "billing": {
+        "plan": "enterprise",
+        "status": "active"
+      }
+    }
+  },
+  "deals": {
+    "deal1": {
+      "tenantId": "founder-tenant",
+      "title": "Enterprise SaaS Implementation",
+      "value": 50000,
+      "stage": "negotiation",
+      "probability": 75,
+      "contactId": "contact1",
+      "companyId": "company1",
+      "assignedTo": "founder",
+      "expectedCloseDate": {"__datatype__": "timestamp", "__value__": "2025-10-27T15:00:00.000Z"},
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "notes": "Large enterprise client interested in full CRM implementation",
+      "source": "referral"
+    },
+    "deal2": {
+      "tenantId": "founder-tenant",
+      "title": "Marketing Automation Setup",
+      "value": 15000,
+      "stage": "proposal",
+      "probability": 50,
+      "contactId": "contact2",
+      "companyId": "company2",
+      "assignedTo": "founder",
+      "expectedCloseDate": {"__datatype__": "timestamp", "__value__": "2025-11-13T15:00:00.000Z"},
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "notes": "Mid-size company needs marketing automation",
+      "source": "website"
+    },
+    "deal3": {
+      "tenantId": "founder-tenant",
+      "title": "CRM Migration Project",
+      "value": 25000,
+      "stage": "qualified",
+      "probability": 25,
+      "contactId": "contact3",
+      "companyId": "company3",
+      "assignedTo": "founder",
+      "expectedCloseDate": {"__datatype__": "timestamp", "__value__": "2025-11-28T15:00:00.000Z"},
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "notes": "Looking to migrate from legacy CRM system",
+      "source": "cold_outreach"
+    }
+  },
+  "contacts": {
+    "contact1": {
+      "tenantId": "founder-tenant",
+      "firstName": "Sarah",
+      "lastName": "Johnson",
+      "email": "sarah.johnson@techcorp.com",
+      "phone": "+1-555-0123",
+      "company": "TechCorp Solutions",
+      "position": "CTO",
+      "status": "hot",
+      "source": "referral",
+      "tags": ["enterprise", "decision-maker"],
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "socialProfiles": {
+        "linkedin": "https://linkedin.com/in/sarahjohnson",
+        "twitter": "@sarahtech"
+      },
+      "notes": "Very interested in enterprise solutions"
+    },
+    "contact2": {
+      "tenantId": "founder-tenant",
+      "firstName": "Michael",
+      "lastName": "Chen",
+      "email": "mchen@growthstartup.io",
+      "phone": "+1-555-0124",
+      "company": "Growth Startup",
+      "position": "Marketing Director",
+      "status": "warm",
+      "source": "website",
+      "tags": ["startup", "marketing"],
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "socialProfiles": {
+        "linkedin": "https://linkedin.com/in/michaelchen",
+        "twitter": "@mchen_growth"
+      },
+      "notes": "Looking for marketing automation tools"
+    },
+    "contact3": {
+      "tenantId": "founder-tenant",
+      "firstName": "Emily",
+      "lastName": "Rodriguez",
+      "email": "emily@legacyinc.com",
+      "phone": "+1-555-0125",
+      "company": "Legacy Inc",
+      "position": "Operations Manager",
+      "status": "cold",
+      "source": "cold_outreach",
+      "tags": ["legacy-system", "operations"],
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "socialProfiles": {
+        "linkedin": "https://linkedin.com/in/emilyrodriguez"
+      },
+      "notes": "Needs to modernize current systems"
+    }
+  },
+  "companies": {
+    "company1": {
+      "tenantId": "founder-tenant",
+      "name": "TechCorp Solutions",
+      "industry": "Technology",
+      "size": "Enterprise",
+      "employees": 5000,
+      "revenue": 50000000,
+      "website": "https://techcorp.com",
+      "address": {
+        "street": "123 Tech Avenue",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "country": "USA"
+      },
+      "status": "active",
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"}
+    },
+    "company2": {
+      "tenantId": "founder-tenant",
+      "name": "Growth Startup",
+      "industry": "Marketing",
+      "size": "Small",
+      "employees": 25,
+      "revenue": 2000000,
+      "website": "https://growthstartup.io",
+      "address": {
+        "street": "456 Startup Street",
+        "city": "Austin",
+        "state": "TX",
+        "zip": "78701",
+        "country": "USA"
+      },
+      "status": "prospect",
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"}
+    }
+  },
+  "campaigns": {
+    "campaign1": {
+      "tenantId": "founder-tenant",
+      "name": "Enterprise Outreach Q4 2025",
+      "type": "email",
+      "status": "active",
+      "targetAudience": "enterprise",
+      "startDate": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "endDate": {"__datatype__": "timestamp", "__value__": "2026-01-13T15:00:00.000Z"},
+      "metrics": {
+        "sent": 1250,
+        "opened": 375,
+        "clicked": 89,
+        "converted": 12
+      },
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"}
+    }
+  },
+  "analytics": {
+    "founder-tenant_dashboard": {
+      "tenantId": "founder-tenant",
+      "period": "current_month",
+      "metrics": {
+        "totalDeals": 3,
+        "totalContacts": 3,
+        "totalRevenue": 90000,
+        "conversionRate": 8.5,
+        "averageDealSize": 30000
+      },
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"}
+    }
+  },
+  "settings": {
+    "founder-tenant": {
+      "tenantId": "founder-tenant",
+      "general": {
+        "companyName": "Market Genie",
+        "timezone": "America/New_York",
+        "currency": "USD",
+        "dateFormat": "MM/DD/YYYY"
+      },
+      "crm": {
+        "dealStages": ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"],
+        "contactStatuses": ["cold", "warm", "hot", "customer"],
+        "leadSources": ["website", "referral", "cold_outreach", "social_media", "advertising"]
+      },
+      "notifications": {
+        "emailNotifications": true,
+        "pushNotifications": true,
+        "smsNotifications": false
+      },
+      "integrations": {
+        "email": {
+          "enabled": false,
+          "provider": null
+        },
+        "calendar": {
+          "enabled": false,
+          "provider": null
+        }
+      },
+      "createdAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"},
+      "updatedAt": {"__datatype__": "timestamp", "__value__": "2025-10-13T15:00:00.000Z"}
+    }
+  }
+}

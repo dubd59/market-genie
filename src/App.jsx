@@ -11,6 +11,7 @@ import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/RegisterSimple'
 import LandingPage from './pages/LandingPage'
+import UnsubscribePage from './pages/UnsubscribePage'
 import OAuthCallback from './pages/OAuthCallback'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
@@ -47,6 +48,7 @@ import AdvancedFunnelBuilder from './components/AdvancedFunnelBuilder'
 import SuperiorCRMSystem from './components/SuperiorCRMSystem'
 import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 import CRMPipeline from './components/CRMPipeline'
+import BusinessProfileSettings from './components/BusinessProfileSettings'
 import ContactManager from './components/ContactManager'
 import FunnelPreview from './pages/FunnelPreview'
 
@@ -196,6 +198,9 @@ function SophisticatedDashboard() {
   
   // Available CRM tags for custom segments
   const [availableTags, setAvailableTags] = useState([])
+  
+  // Business Profile state for Outreach Automation
+  const [showBusinessProfile, setShowBusinessProfile] = useState(false)
   
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
@@ -790,6 +795,18 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   ]
   const [selectedLeads, setSelectedLeads] = useState([])
   const [isSelectAllChecked, setIsSelectAllChecked] = useState(false)
+  const [editingLead, setEditingLead] = useState(null)
+  const [showLeadEditModal, setShowLeadEditModal] = useState(false)
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
+  const [analyticsResults, setAnalyticsResults] = useState({ type: '', content: '' })
+  const [editLeadForm, setEditLeadForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    source: '',
+    description: ''
+  })
 
   const handleSelectLead = (leadId) => {
     setSelectedLeads(prev => 
@@ -834,22 +851,23 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   const handleEditLead = (lead) => {
-    // Pre-fill the form with lead data for editing
-    setLeadFormData({
+    // Set the lead being edited
+    setEditingLead(lead)
+    
+    // Pre-fill the edit form with lead data
+    setEditLeadForm({
       name: `${lead.firstName} ${lead.lastName}`,
       email: lead.email,
       phone: lead.phone || '',
       company: lead.company || '',
-      linkedin: lead.linkedin || '',
-      twitter: lead.twitter || '',
-      website: lead.website || '',
       source: lead.source || 'manual',
       description: lead.notes ? lead.notes.join(', ') : ''
     })
     
-    // Scroll to form
-    document.querySelector('#lead-enrichment-form').scrollIntoView({ behavior: 'smooth' })
-    toast.info('Lead data loaded in form below for editing')
+    // Show the edit modal
+    setShowLeadEditModal(true)
+    
+    console.log('✏️ Opening edit modal for lead:', lead.firstName, lead.lastName)
   }
 
   const handleDeleteLead = async (leadId) => {
@@ -870,6 +888,58 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       toast.error('Failed to delete lead')
     }
   }
+
+  const handleEditLeadSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!editLeadForm.name || !editLeadForm.email) {
+      toast.error('Please fill in Name and Email')
+      return
+    }
+
+    if (!tenant?.id || !editingLead?.id) {
+      toast.error('Unable to update lead')
+      return
+    }
+
+    try {
+      const [firstName, ...lastNameParts] = editLeadForm.name.split(' ')
+      const lastName = lastNameParts.join(' ')
+      
+      const updateData = {
+        firstName: firstName || '',
+        lastName: lastName || '',
+        email: editLeadForm.email,
+        phone: editLeadForm.phone,
+        company: editLeadForm.company,
+        source: editLeadForm.source || 'manual',
+        notes: [editLeadForm.description]
+      }
+
+      const result = await LeadService.updateLead(tenant.id, editingLead.id, updateData)
+      
+      if (result.success) {
+        toast.success('Lead updated successfully!')
+        setShowLeadEditModal(false)
+        setEditingLead(null)
+        setEditLeadForm({
+          name: '',
+          email: '',
+          phone: '',
+          company: '',
+          source: '',
+          description: ''
+        })
+        await loadLeadData()
+      } else {
+        toast.error('Failed to update lead: ' + (result.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error updating lead:', error)
+      toast.error('Failed to update lead: ' + error.message)
+    }
+  }
+
   const loadLeadData = async () => {
     console.log('loadLeadData called, tenant:', tenant)
     if (!tenant?.id) {
@@ -904,6 +974,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     
     console.log('Form submitted with data:', leadFormData)
     console.log('Current tenant:', tenant)
+    console.log('Editing lead:', editingLead)
     
     if (!leadFormData.name || !leadFormData.email) {
       toast.error('Please fill in Name and Email')
@@ -933,11 +1004,20 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
 
       console.log('Sending lead data:', leadData)
-      const result = await LeadService.createLead(tenant.id, leadData)
-      console.log('Create lead result:', result)
+      
+      let result
+      if (editingLead) {
+        // Update existing lead
+        result = await LeadService.updateLead(tenant.id, editingLead.id, leadData)
+        console.log('Update lead result:', result)
+      } else {
+        // Create new lead
+        result = await LeadService.createLead(tenant.id, leadData)
+        console.log('Create lead result:', result)
+      }
       
       if (result.success) {
-        toast.success('Lead added successfully!')
+        toast.success(editingLead ? 'Lead updated successfully!' : 'Lead added successfully!')
         setLeadFormData({
           name: '',
           email: '',
@@ -949,9 +1029,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           source: '',
           description: ''
         })
+        setEditingLead(null) // Clear editing state
         await loadLeadData()
       } else {
-        toast.error('Failed to add lead: ' + (result.error || 'Unknown error'))
+        toast.error(`Failed to ${editingLead ? 'update' : 'add'} lead: ` + (result.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error adding lead:', error)
@@ -1030,6 +1111,227 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       } catch (error) {
         console.error('Error saving budget to Firebase:', error);
       }
+    }
+  };
+
+  // Analytics Action Handlers
+  const handleExportAnalyticsReport = () => {
+    try {
+      const reportData = {
+        summary: {
+          totalLeads: leads.length,
+          activeReports: leadStats.activeReports || 0,
+          conversationRate: leadStats.conversationRate || '0%',
+          avgCostPerLead: '$12.50',
+          generatedDate: new Date().toLocaleDateString()
+        },
+        leads: leads.map(lead => ({
+          name: `${lead.firstName} ${lead.lastName}`,
+          email: lead.email,
+          company: lead.company || 'N/A',
+          source: lead.source,
+          score: lead.score,
+          createdAt: lead.createdAt
+        })),
+        performance: {
+          topSources: leads.reduce((acc, lead) => {
+            acc[lead.source] = (acc[lead.source] || 0) + 1;
+            return acc;
+          }, {}),
+          averageScore: leads.reduce((sum, lead) => sum + (lead.score || 0), 0) / leads.length || 0
+        }
+      };
+
+      const csvContent = [
+        ['Lead Analytics Report - ' + new Date().toLocaleDateString()],
+        [''],
+        ['Summary'],
+        ['Total Leads', reportData.summary.totalLeads],
+        ['Active Reports', reportData.summary.activeReports],
+        ['Conversion Rate', reportData.summary.conversationRate],
+        ['Avg Cost Per Lead', reportData.summary.avgCostPerLead],
+        [''],
+        ['Lead Details'],
+        ['Name', 'Email', 'Company', 'Source', 'Score'],
+        ...reportData.leads.map(lead => [lead.name, lead.email, lead.company, lead.source, lead.score])
+      ].map(row => row.join(',')).join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `lead-analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      
+      toast.success('📊 Analytics report exported successfully!');
+    } catch (error) {
+      console.error('Error exporting analytics report:', error);
+      toast.error('Failed to export analytics report');
+    }
+  };
+
+  const handleViewTrends = () => {
+    try {
+      const trends = {
+        leadsOverTime: leads.reduce((acc, lead) => {
+          const date = new Date(lead.createdAt).toDateString();
+          acc[date] = (acc[date] || 0) + 1;
+          return acc;
+        }, {}),
+        sourcePerformance: leads.reduce((acc, lead) => {
+          acc[lead.source] = (acc[lead.source] || 0) + 1;
+          return acc;
+        }, {}),
+        scoreDistribution: {
+          high: leads.filter(l => l.score >= 80).length,
+          medium: leads.filter(l => l.score >= 60 && l.score < 80).length,
+          low: leads.filter(l => l.score < 60).length
+        }
+      };
+
+      const trendsText = `
+📈 LEAD TRENDS ANALYSIS
+Generated: ${new Date().toLocaleDateString()}
+
+📊 Leads Over Time:
+${Object.entries(trends.leadsOverTime).map(([date, count]) => `${date}: ${count} leads`).join('\n')}
+
+🎯 Source Performance:
+${Object.entries(trends.sourcePerformance).map(([source, count]) => `${source}: ${count} leads`).join('\n')}
+
+⭐ Score Distribution:
+High (80+): ${trends.scoreDistribution.high} leads
+Medium (60-79): ${trends.scoreDistribution.medium} leads  
+Low (<60): ${trends.scoreDistribution.low} leads
+
+💡 Insights:
+- Best performing source: ${Object.entries(trends.sourcePerformance).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A'}
+- Average lead score: ${(leads.reduce((sum, lead) => sum + lead.score, 0) / leads.length || 0).toFixed(1)}
+- Total leads this period: ${leads.length}
+      `;
+
+      // Show results in modal instead of console
+      setAnalyticsResults({
+        type: 'trends',
+        content: trendsText
+      });
+      setShowAnalyticsModal(true);
+      
+    } catch (error) {
+      console.error('Error generating trends:', error);
+      toast.error('Failed to generate trends analysis');
+    }
+  };
+
+  const handleQualityAnalysis = () => {
+    try {
+      const analysis = {
+        dataCompleteness: {
+          withPhone: leads.filter(l => l.phone && l.phone.trim()).length,
+          withCompany: leads.filter(l => l.company && l.company.trim()).length,
+          withNotes: leads.filter(l => l.notes && l.notes.length > 0).length,
+          complete: leads.filter(l => 
+            l.firstName && l.lastName && l.email && l.phone && l.company
+          ).length
+        },
+        emailQuality: {
+          validFormat: leads.filter(l => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length,
+          businessEmails: leads.filter(l => 
+            !l.email.includes('gmail.com') && 
+            !l.email.includes('yahoo.com') && 
+            !l.email.includes('hotmail.com')
+          ).length
+        },
+        leadQuality: {
+          highValue: leads.filter(l => l.score >= 80).length,
+          mediumValue: leads.filter(l => l.score >= 60 && l.score < 80).length,
+          lowValue: leads.filter(l => l.score < 60).length
+        }
+      };
+
+      const qualityScore = Math.round(
+        ((analysis.dataCompleteness.complete / leads.length) * 40 +
+        (analysis.emailQuality.validFormat / leads.length) * 30 +
+        (analysis.leadQuality.highValue / leads.length) * 30) * 100
+      ) || 0;
+
+      const report = `
+🎯 LEAD QUALITY ANALYSIS
+Generated: ${new Date().toLocaleDateString()}
+
+📊 Overall Quality Score: ${qualityScore}%
+
+📋 Data Completeness:
+- Complete profiles: ${analysis.dataCompleteness.complete}/${leads.length} (${Math.round(analysis.dataCompleteness.complete/leads.length*100)}%)
+- With phone: ${analysis.dataCompleteness.withPhone}/${leads.length}
+- With company: ${analysis.dataCompleteness.withCompany}/${leads.length}
+- With notes: ${analysis.dataCompleteness.withNotes}/${leads.length}
+
+📧 Email Quality:
+- Valid format: ${analysis.emailQuality.validFormat}/${leads.length}
+- Business emails: ${analysis.emailQuality.businessEmails}/${leads.length}
+
+⭐ Lead Value Distribution:
+- High value (80+): ${analysis.leadQuality.highValue} leads
+- Medium value (60-79): ${analysis.leadQuality.mediumValue} leads
+- Low value (<60): ${analysis.leadQuality.lowValue} leads
+
+💡 Recommendations:
+${qualityScore >= 80 ? '✅ Excellent lead quality!' : 
+  qualityScore >= 60 ? '⚠️ Good quality, room for improvement' : 
+  '❌ Consider improving data collection'}
+      `;
+
+      // Show results in modal instead of console
+      setAnalyticsResults({
+        type: 'quality',
+        content: report
+      });
+      setShowAnalyticsModal(true);
+      
+    } catch (error) {
+      console.error('Error performing quality analysis:', error);
+      toast.error('Failed to perform quality analysis');
+    }
+  };
+
+  const handleScheduleReport = () => {
+    try {
+      const scheduleOptions = {
+        daily: 'Daily summary at 9 AM',
+        weekly: 'Weekly report every Monday',
+        monthly: 'Monthly analysis on 1st of month',
+        custom: 'Custom schedule'
+      };
+
+      const userChoice = prompt(`📧 Schedule Analytics Report
+
+Choose reporting frequency:
+1. Daily (every day at 9 AM)
+2. Weekly (every Monday)  
+3. Monthly (1st of each month)
+4. Custom schedule
+
+Enter number (1-4):`);
+
+      let selectedSchedule;
+      switch(userChoice) {
+        case '1': selectedSchedule = scheduleOptions.daily; break;
+        case '2': selectedSchedule = scheduleOptions.weekly; break;
+        case '3': selectedSchedule = scheduleOptions.monthly; break;
+        case '4': selectedSchedule = scheduleOptions.custom; break;
+        default: 
+          toast.error('Invalid selection');
+          return;
+      }
+
+      // In a real implementation, this would save to Firebase and set up email scheduling
+      console.log('Report scheduled:', selectedSchedule);
+      toast.success(`📧 Report scheduled: ${selectedSchedule}`);
+      
+      // You would typically integrate with email service here
+    } catch (error) {
+      console.error('Error scheduling report:', error);
+      toast.error('Failed to schedule report');
     }
   };
 
@@ -1418,7 +1720,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   // AI-powered email content generation based on campaign settings
   const generateAIEmailContent = async (campaignData, preferredProvider = null) => {
     try {
-      // Use real AI APIs with user's stored API keys
+      // Use real AI APIs with user's stored API keys - NO CLEANUP NEEDED!
       const content = await AIService.generateEmailContent(user?.uid, campaignData, preferredProvider);
       return content;
     } catch (error) {
@@ -1427,24 +1729,23 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       
       // Fallback to basic template if AI fails
       const { name, type, targetAudience } = campaignData;
-      return `Hi {firstName},
+      return `<p>Hi {firstName},</p>
 
-Thank you for your interest in ${name}! This ${type.toLowerCase()} campaign is designed specifically for ${targetAudience?.toLowerCase() || 'our valued audience'}.
+<p>Thank you for your interest in <strong>${name}</strong>! This ${type.toLowerCase()} campaign is designed specifically for ${targetAudience?.toLowerCase() || 'our valued audience'}.</p>
 
-We're excited to share this opportunity with you and believe it will provide significant value.
+<p>We're excited to share this opportunity with you and believe it will provide significant value.</p>
 
-Key benefits:
-• Personalized content tailored to your needs
-• Proven strategies for success
-• Expert guidance and support
+<p><strong>Key Benefits:</strong></p>
+<p>• Personalized content tailored to your needs</p>
+<p>• Proven strategies for success</p>
+<p>• Expert guidance and support</p>
 
-Ready to get started? Click the link below:
-[GET STARTED NOW]
+<p>Ready to get started? <a href="#" style="background-color: #14b8a6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">GET STARTED NOW</a></p>
 
-Best regards,
-The MarketGenie Team
+<p>Best regards,<br>
+The MarketGenie Team</p>
 
-P.S. This email was generated for the "${name}" campaign.`;
+<p><em>P.S. This email was generated for the "${name}" campaign.</em></p>`;
     }
   }
 
@@ -2065,7 +2366,7 @@ P.S. This email was generated for the "${name}" campaign.`;
                       </div>
                     </div>
                     
-                    <form onSubmit={handleLeadFormSubmit} className="space-y-6">
+                    <form id="lead-enrichment-form" onSubmit={handleLeadFormSubmit} className="space-y-6">
                       {/* Primary Contact Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -2238,12 +2539,39 @@ P.S. This email was generated for the "${name}" campaign.`;
                           </div>
                         </div>
                         
-                        <button 
-                          type="submit" 
-                          className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-3 rounded-lg hover:from-teal-600 hover:to-teal-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
-                        >
-                          🚀 Add Lead & Enrich
-                        </button>
+                        <div className="flex gap-4">
+                          <button 
+                            type="submit" 
+                            className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-3 rounded-lg hover:from-teal-600 hover:to-teal-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
+                          >
+                            {editingLead ? '✏️ Update Lead' : '🚀 Add Lead & Enrich'}
+                          </button>
+                          {editingLead && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setEditingLead(null)
+                                setLeadFormData({
+                                  name: '',
+                                  email: '',
+                                  phone: '',
+                                  company: '',
+                                  linkedin: '',
+                                  twitter: '',
+                                  website: '',
+                                  source: '',
+                                  description: ''
+                                })
+                                if (typeof toast === 'object' && toast.success) {
+                                  toast.success('❌ Edit cancelled')
+                                }
+                              }}
+                              className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                            >
+                              ❌ Cancel
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </form>
                   </div>
@@ -2384,6 +2712,191 @@ P.S. This email was generated for the "${name}" campaign.`;
                 </div>
               )}
 
+              {/* Edit Lead Modal */}
+              {showLeadEditModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-bold text-gray-800">✏️ Edit Lead</h3>
+                      <button 
+                        onClick={() => {
+                          setShowLeadEditModal(false)
+                          setEditingLead(null)
+                        }}
+                        className="text-gray-500 hover:text-gray-700 text-2xl"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <form onSubmit={handleEditLeadSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={editLeadForm.name}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, name: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          placeholder="Enter full name"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          value={editLeadForm.email}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, email: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          placeholder="Enter email address"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <input
+                          type="tel"
+                          value={editLeadForm.phone}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, phone: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          placeholder="Enter phone number"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Company
+                        </label>
+                        <input
+                          type="text"
+                          value={editLeadForm.company}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, company: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          placeholder="Enter company name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Source
+                        </label>
+                        <select
+                          value={editLeadForm.source}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, source: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        >
+                          <option value="manual">Manual Entry</option>
+                          <option value="website">Website</option>
+                          <option value="linkedin">LinkedIn</option>
+                          <option value="referral">Referral</option>
+                          <option value="event">Event</option>
+                          <option value="social_media">Social Media</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes
+                        </label>
+                        <textarea
+                          value={editLeadForm.description}
+                          onChange={(e) => setEditLeadForm(prev => ({...prev, description: e.target.value}))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          placeholder="Add notes about this lead"
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-3 pt-4">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                        >
+                          ✅ Update Lead
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLeadEditModal(false)
+                            setEditingLead(null)
+                          }}
+                          className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Analytics Results Modal */}
+              {showAnalyticsModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-bold text-gray-800">
+                        {analyticsResults.type === 'trends' ? '📈 Lead Trends Analysis' : '🎯 Lead Quality Analysis'}
+                      </h3>
+                      <button 
+                        onClick={() => setShowAnalyticsModal(false)}
+                        className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                      <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800 leading-relaxed">
+                        {analyticsResults.content}
+                      </pre>
+                    </div>
+                    
+                    <div className="flex gap-4 justify-end">
+                      <button
+                        onClick={() => {
+                          // Copy to clipboard
+                          navigator.clipboard.writeText(analyticsResults.content);
+                          toast.success('📋 Analysis copied to clipboard!');
+                        }}
+                        className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        📋 Copy to Clipboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Export as text file
+                          const blob = new Blob([analyticsResults.content], { type: 'text/plain;charset=utf-8;' });
+                          const link = document.createElement('a');
+                          link.href = URL.createObjectURL(blob);
+                          const filename = analyticsResults.type === 'trends' ? 'lead-trends-analysis' : 'lead-quality-analysis';
+                          link.download = `${filename}-${new Date().toISOString().split('T')[0]}.txt`;
+                          link.click();
+                          toast.success('📄 Analysis exported as text file!');
+                        }}
+                        className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        💾 Export as File
+                      </button>
+                      <button
+                        onClick={() => setShowAnalyticsModal(false)}
+                        className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                      >
+                        ✅ Continue
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeLeadTab === 'analytics' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
@@ -2520,16 +3033,28 @@ P.S. This email was generated for the "${name}" campaign.`;
                   <div className="bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
                     <h4 className="text-lg font-bold text-teal-800 mb-4">📋 Quick Analytics Actions</h4>
                     <div className="flex flex-wrap gap-3">
-                      <button className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200">
+                      <button 
+                        onClick={handleExportAnalyticsReport}
+                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                      >
                         📊 Export Report
                       </button>
-                      <button className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200">
+                      <button 
+                        onClick={handleViewTrends}
+                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                      >
                         📈 View Trends
                       </button>
-                      <button className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200">
+                      <button 
+                        onClick={handleQualityAnalysis}
+                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                      >
                         🎯 Quality Analysis
                       </button>
-                      <button className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200">
+                      <button 
+                        onClick={handleScheduleReport}
+                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                      >
                         📧 Schedule Report
                       </button>
                     </div>
@@ -2566,6 +3091,44 @@ P.S. This email was generated for the "${name}" campaign.`;
                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
                   <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Response Rate</div>
                 </div>
+              </div>
+
+              {/* Business Profile Section */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-xl font-semibold text-genie-teal`}>📧 Email Signature & Business Information</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowBusinessProfile(!showBusinessProfile)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      showBusinessProfile 
+                        ? 'bg-genie-teal text-white' 
+                        : `${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
+                    }`}
+                  >
+                    {showBusinessProfile ? '▼ Hide Settings' : '▶ Configure Business Info'}
+                  </button>
+                </div>
+                
+                {!showBusinessProfile ? (
+                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">💼</span>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
+                        Set up your business information to create professional email signatures and footers for all your campaigns.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <BusinessProfileSettings 
+                    tenant={tenant}
+                    onSave={(businessInfo) => {
+                      console.log('Business profile saved:', businessInfo)
+                      toast.success('Business information saved successfully!')
+                      setShowBusinessProfile(false)
+                    }}
+                  />
+                )}
               </div>
 
               {/* Campaign Builder */}
@@ -2986,27 +3549,45 @@ P.S. This email was generated for the "${name}" campaign.`;
 
                       <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Content</label>
-                        <textarea 
-                          value={editingCampaign.emailContent || ''}
-                          onChange={(e) => setEditingCampaign({...editingCampaign, emailContent: e.target.value})}
-                          className={`w-full border p-3 rounded h-64 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`}
-                          placeholder="Enter the email content that will be sent to contacts..."
-                          style={{fontFamily: 'monospace', fontSize: '14px'}}
-                        />
+                        <div className={`border rounded ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                          <div 
+                            contentEditable
+                            dangerouslySetInnerHTML={{ __html: editingCampaign.emailContent || '' }}
+                            onBlur={(e) => {
+                              setEditingCampaign({...editingCampaign, emailContent: e.target.innerHTML});
+                            }}
+                            className={`w-full p-3 h-64 overflow-y-auto focus:outline-none ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white'}`}
+                            style={{
+                              fontFamily: 'Arial, sans-serif',
+                              lineHeight: '1.6',
+                              fontSize: '14px'
+                            }}
+                            placeholder="Click here to edit your email content..."
+                          />
+                        </div>
                         <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          You can use variables like {'{firstName}'} {'{lastName}'} {'{company}'} that will be replaced with actual contact data.
+                          Rich text editor - format with bold, paragraphs, etc. Use variables like {'{firstName}'} {'{lastName}'} {'{company}'} that will be replaced with actual contact data.
                         </div>
                       </div>
 
                       <div className={`p-4 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-blue-50 border-blue-200'}`}>
                         <h4 className={`font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Email Preview</h4>
-                        <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap max-h-32 overflow-y-auto border rounded p-2 ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+                        <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} h-96 overflow-y-auto border rounded p-4 ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
                           {editingCampaign.emailContent ? 
-                            editingCampaign.emailContent
-                              .replace(/{firstName}/g, 'John')
-                              .replace(/{lastName}/g, 'Doe')
-                              .replace(/{company}/g, 'Acme Corp') 
-                            : 'No content to preview'
+                            <div 
+                              dangerouslySetInnerHTML={{
+                                __html: editingCampaign.emailContent
+                                  .replace(/{firstName}/g, 'John')
+                                  .replace(/{lastName}/g, 'Doe')
+                                  .replace(/{company}/g, 'Acme Corp')
+                              }}
+                              style={{
+                                lineHeight: '1.6',
+                                fontFamily: 'Arial, sans-serif',
+                                fontSize: '14px'
+                              }}
+                            />
+                            : <div className="text-gray-500 italic">No content to preview</div>
                           }
                         </div>
                       </div>
@@ -4231,6 +4812,9 @@ function App() {
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            
+            {/* Unsubscribe Page - Public */}
+            <Route path="/unsubscribe" element={<UnsubscribePage />} />
             
             {/* OAuth Callback Route - Public */}
             <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
+import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { getFunctions } from "firebase/functions";
@@ -15,7 +15,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log('🔥 STARTING COCKROACH-PROOF FIREBASE INITIALIZATION');
+console.log('🔥 STARTING CORS-SAFE FIREBASE INITIALIZATION');
 
 // Initialize Firebase with enhanced error handling
 const app = initializeApp(firebaseConfig);
@@ -23,12 +23,14 @@ const app = initializeApp(firebaseConfig);
 // Initialize services with bulletproof settings
 export const auth = getAuth(app);
 
-// Initialize Firestore with enhanced persistence and connection settings
+// Initialize Firestore with CORS-safe settings
 export const db = initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
   ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: false,
-  experimentalAutoDetectLongPolling: true,
+  experimentalForceLongPolling: true, // Force long polling to avoid WebSocket CORS issues
+  // Add CORS-friendly settings
+  localCache: {
+    kind: 'memory'
+  }
 });
 
 // 🚀 COCKROACH CRUSHER: Advanced connection management

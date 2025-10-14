@@ -413,6 +413,41 @@ export class FirebaseUserDataService {
     const id = tenantId || userId;
     return this.getUserData(id, 'crm_contacts');
   }
+
+  // ===== BUSINESS PROFILE MANAGEMENT =====
+  static async saveBusinessProfile(tenantId, profile) {
+    try {
+      const profileRef = this.getUserDataRef(tenantId, 'businessProfile');
+      await setDoc(profileRef, {
+        ...profile,
+        updatedAt: new Date()
+      });
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('Error saving business profile:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  static async getBusinessProfile(tenantId) {
+    try {
+      const profileRef = this.getUserDataRef(tenantId, 'businessProfile');
+      const doc = await getDoc(profileRef);
+      
+      if (doc.exists()) {
+        return doc.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting business profile:', error);
+      return null;
+    }
+  }
 }
 
 export default FirebaseUserDataService;

@@ -933,6 +933,114 @@ class IntegrationService {
     }
   }
 
+  // Generic connection handler for all integration types
+  async connectService(serviceId, options) {
+    try {
+      const { tenantId, userId, integration, config } = options;
+      
+      if (!config || Object.keys(config).length === 0) {
+        return { success: false, error: 'Configuration data is required' };
+      }
+
+      // Route to specific handlers based on service type
+      switch (serviceId) {
+        case 'openai':
+        case 'anthropic':
+        case 'gemini':
+        case 'perplexity':
+        case 'deepseek':
+          return await this.saveIntegrationCredentials(tenantId, serviceId, {
+            apiKey: config.apiKey,
+            provider: serviceId
+          });
+
+        case 'gmail':
+        case 'outlook':
+          return await this.saveIntegrationCredentials(tenantId, serviceId, {
+            email: config.email,
+            appPassword: config.appPassword || config.password
+          });
+
+        case 'zoho-mail':
+          return await this.saveIntegrationCredentials(tenantId, serviceId, {
+            email: config.email,
+            password: config.password
+          });
+
+        case 'hunter-io':
+          if (config.apiKey) {
+            return await this.connectHunterIO(tenantId, config.apiKey);
+          }
+          return { success: false, error: 'API key is required for Hunter.io' };
+
+        case 'apollo':
+          if (config.apiKey) {
+            return await this.connectApollo(tenantId, config.apiKey);
+          }
+          return { success: false, error: 'API key is required for Apollo.io' };
+
+        case 'clearbit':
+        case 'zoominfo':
+          return await this.saveIntegrationCredentials(tenantId, serviceId, config);
+
+        default:
+          // For services that don't have specific handlers yet, just save the credentials
+          return await this.saveIntegrationCredentials(tenantId, serviceId, config);
+      }
+    } catch (error) {
+      console.error(`Error connecting ${serviceId}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Generic disconnection handler
+  async disconnectService(serviceId, options) {
+    try {
+      const { tenantId } = options;
+      const credentialsDoc = doc(db, 'MarketGenie_tenants', tenantId, 'integrations', serviceId);
+      
+      await updateDoc(credentialsDoc, {
+        status: 'disconnected',
+        disconnectedAt: new Date().toISOString()
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error(`Error disconnecting ${serviceId}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get connection status for any service
+  async getConnectionStatus(serviceId, tenantId = null) {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
+      // Use provided tenantId or fallback to user.uid
+      const actualTenantId = tenantId || user.uid;
+      
+      const credentialsDoc = doc(db, 'MarketGenie_tenants', actualTenantId, 'integrations', serviceId);
+      const docSnap = await getDoc(credentialsDoc);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return { 
+          success: true, 
+          data: data,
+          isConnected: data.status === 'connected'
+        };
+      }
+      
+      return { success: false, data: null, isConnected: false };
+    } catch (error) {
+      console.error(`Error checking ${serviceId} status:`, error);
+      return { success: false, error: error.message, isConnected: false };
+    }
+  }
+
   // Generic OAuth flow starter
   getOAuthURL(provider, tenantId) {
     const redirectUri = `${window.location.origin}/integrations/callback`

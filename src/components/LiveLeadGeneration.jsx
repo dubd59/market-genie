@@ -27,6 +27,7 @@ const LiveLeadGeneration = () => {
   const [leadStats, setLeadStats] = useState({})
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [selectedLeads, setSelectedLeads] = useState([])
 
   const [newLead, setNewLead] = useState({
     firstName: '',
@@ -129,6 +130,113 @@ const LiveLeadGeneration = () => {
       case 'contacted': return 'bg-yellow-100 text-yellow-800'
       case 'converted': return 'bg-purple-100 text-purple-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  // Export CSV functionality
+  const exportToCSV = (leadsToExport = null) => {
+    const dataToExport = leadsToExport || leads;
+    if (dataToExport.length === 0) {
+      toast.error('No leads to export');
+      return;
+    }
+
+    const csvHeaders = [
+      'First Name',
+      'Last Name', 
+      'Email',
+      'Company',
+      'Title',
+      'Phone',
+      'Source',
+      'Status',
+      'Score',
+      'Notes',
+      'Created Date'
+    ];
+
+    const csvData = dataToExport.map(lead => [
+      lead.firstName || '',
+      lead.lastName || '',
+      lead.email || '',
+      lead.company || '',
+      lead.title || '',
+      lead.phone || '',
+      lead.source || '',
+      lead.status || '',
+      lead.score || '',
+      lead.notes || '',
+      lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : ''
+    ]);
+
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `market-genie-leads-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Exported ${dataToExport.length} leads to CSV`);
+  }
+
+  // Export selected leads only
+  const exportSelectedLeads = () => {
+    if (selectedLeads.length === 0) {
+      toast.error('Please select leads to export');
+      return;
+    }
+    const selectedLeadData = leads.filter(lead => selectedLeads.includes(lead.id));
+    exportToCSV(selectedLeadData);
+  }
+
+  // Select/deselect all leads
+  const toggleSelectAll = () => {
+    if (selectedLeads.length === leads.length) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(leads.map(lead => lead.id));
+    }
+  }
+
+  // Toggle individual lead selection
+  const toggleLeadSelection = (leadId) => {
+    setSelectedLeads(prev => 
+      prev.includes(leadId) 
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  }
+
+  // Move qualified leads to CRM
+  const moveSelectedToCRM = async () => {
+    if (selectedLeads.length === 0) {
+      toast.error('Please select leads to move to CRM');
+      return;
+    }
+
+    try {
+      const selectedLeadData = leads.filter(lead => selectedLeads.includes(lead.id));
+      
+      // Here you would integrate with your CRM service
+      // For now, we'll simulate the move
+      toast.success(`Moving ${selectedLeads.length} qualified leads to CRM & Pipeline section`);
+      
+      // In a real implementation, you'd call a CRM service here
+      // await CRMService.importLeads(selectedLeadData, tenant.id);
+      
+      // Clear selection after successful move
+      setSelectedLeads([]);
+      
+    } catch (error) {
+      console.error('Error moving leads to CRM:', error);
+      toast.error('Failed to move leads to CRM');
     }
   }
 

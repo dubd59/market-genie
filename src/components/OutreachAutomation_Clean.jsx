@@ -12,8 +12,8 @@ const OutreachAutomation = () => {
   const { user } = useAuth();
   const { createCampaign: genieCreateCampaign } = useGenie();
   
-  // Business Profile State - Start visible for debugging
-  const [showBusinessProfile, setShowBusinessProfile] = useState(true);
+  // Business Profile State
+  const [showBusinessProfile, setShowBusinessProfile] = useState(false);
   const [businessProfileComplete, setBusinessProfileComplete] = useState(false);
   
   // Campaign State
@@ -35,7 +35,6 @@ const OutreachAutomation = () => {
   });
 
   useEffect(() => {
-    console.log('OutreachAutomation mounted, tenant:', tenant?.id);
     if (tenant?.id) {
       loadCampaigns();
       checkBusinessProfile();
@@ -45,15 +44,12 @@ const OutreachAutomation = () => {
   const checkBusinessProfile = async () => {
     try {
       const profile = await FirebaseUserDataService.getBusinessProfile(tenant.id);
-      console.log('Business profile check:', profile);
       const isComplete = profile && 
         profile.businessInfo?.companyName && 
         profile.senderInfo?.senderName;
-      console.log('Business profile complete:', isComplete);
       setBusinessProfileComplete(isComplete);
     } catch (error) {
       console.error('Error checking business profile:', error);
-      setBusinessProfileComplete(false);
     }
   };
 
@@ -160,16 +156,6 @@ const OutreachAutomation = () => {
           <div className="text-3xl font-bold text-orange-600">{stats.activeCampaigns}</div>
           <div className="text-sm text-gray-500">Running now</div>
         </div>
-      </div>
-
-      {/* DEBUG MARKER - BUSINESS PROFILE SHOULD APPEAR BELOW */}
-      <div className="mb-4 p-4 bg-red-100 border border-red-300 rounded-lg">
-        <p className="text-red-800 font-bold">🔍 DEBUG: Business Profile section should appear below this marker</p>
-        <p className="text-red-600 text-sm">
-          businessProfileComplete: {businessProfileComplete.toString()}, 
-          showBusinessProfile: {showBusinessProfile.toString()},
-          tenant: {tenant?.id || 'none'}
-        </p>
       </div>
 
       {/* Business Profile Setup - Prominently placed for easy access */}

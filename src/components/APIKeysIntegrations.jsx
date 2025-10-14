@@ -72,6 +72,16 @@ const APIKeysIntegrations = () => {
       description: 'AI-powered research and fact-checking for lead intelligence',
       lastSync: 'Never',
       account: 'Not connected'
+    },
+    {
+      id: 'deepseek',
+      name: 'DeepSeek AI',
+      type: 'AI Service',
+      status: 'disconnected',
+      icon: '🌊',
+      description: 'Advanced AI reasoning and code generation for professional content',
+      lastSync: 'Never',
+      account: 'Not connected'
     }
   ]);
 
@@ -297,6 +307,9 @@ const APIKeysIntegrations = () => {
   // States for forms and modals
   const [showAddKey, setShowAddKey] = useState(false);
   const [loadingStatuses, setLoadingStatuses] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState(null);
+  const [integrationConfig, setIntegrationConfig] = useState({});
   const [newApiKey, setNewApiKey] = useState({
     name: '',
     service: '',
@@ -335,13 +348,13 @@ const APIKeysIntegrations = () => {
       
       for (const integration of allIntegrations) {
         try {
-          const result = await IntegrationService.getConnectionStatus(integration.id);
+          const result = await IntegrationService.getConnectionStatus(integration.id, tenant.id);
           let isActuallyConnected = false;
           
           if (integration.id === 'gmail') {
             isActuallyConnected = result.data && result.data.email && (result.data.appPassword || result.data.password);
           } else {
-            isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken);
+            isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken) && result.data.status === 'connected';
           }
           
           if (isActuallyConnected) {
@@ -405,22 +418,48 @@ const APIKeysIntegrations = () => {
   };
 
   const connectIntegration = async (integration) => {
+    // Open configuration modal instead of trying to connect directly
+    setSelectedIntegration(integration);
+    setIntegrationConfig({});
+    setShowConfigModal(true);
+  };
+
+  const handleConfigSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const result = await IntegrationService.connectService(integration.id, {
+      const result = await IntegrationService.connectService(selectedIntegration.id, {
         tenantId: tenant.id,
         userId: user.uid,
-        integration: integration
+        integration: selectedIntegration,
+        config: integrationConfig
       });
 
       if (result.success) {
-        toast.success(`${integration.name} connected successfully!`);
-        checkIntegrationStatuses();
+        toast.success(`${selectedIntegration.name} connected successfully!`);
+        
+        // Update the integration status immediately in the UI
+        updateIntegrationStatus(selectedIntegration.id, 'connected', {
+          account: 'Connected',
+          lastSync: new Date().toLocaleString()
+        });
+        
+        setShowConfigModal(false);
+        setSelectedIntegration(null);
+        setIntegrationConfig({});
+        
+        // Force a re-render to update the UI
+        setRenderKey(prev => prev + 1);
+        
+        // Check statuses again after a short delay to ensure Firebase data is updated
+        setTimeout(() => {
+          checkIntegrationStatuses();
+        }, 1000);
       } else {
-        toast.error(result.error || `Failed to connect ${integration.name}`);
+        toast.error(result.error || `Failed to connect ${selectedIntegration.name}`);
       }
     } catch (error) {
       console.error('Error connecting integration:', error);
-      toast.error(`Error connecting ${integration.name}`);
+      toast.error(`Error connecting ${selectedIntegration.name}`);
     }
   };
 
@@ -515,6 +554,130 @@ const APIKeysIntegrations = () => {
       </div>
     </div>
   );
+
+  const renderConfigModal = () => {
+    if (!showConfigModal || !selectedIntegration) return null;
+
+    const getConfigFields = () => {
+      switch (selectedIntegration.id) {
+        case 'openai':
+          return [
+            { key: 'apiKey', label: 'OpenAI API Key', type: 'password', placeholder: 'sk-...' }
+          ];
+        case 'anthropic':
+          return [
+            { key: 'apiKey', label: 'Anthropic API Key', type: 'password', placeholder: 'sk-ant-...' }
+          ];
+        case 'gemini':
+          return [
+            { key: 'apiKey', label: 'Google AI API Key', type: 'password', placeholder: 'AI...' }
+          ];
+        case 'perplexity':
+          return [
+            { key: 'apiKey', label: 'Perplexity API Key', type: 'password', placeholder: 'pplx-...' }
+          ];
+        case 'deepseek':
+          return [
+            { key: 'apiKey', label: 'DeepSeek API Key', type: 'password', placeholder: 'sk-...' }
+          ];
+        case 'gmail':
+          return [
+            { key: 'email', label: 'Gmail Address', type: 'email', placeholder: 'your.email@gmail.com' },
+            { key: 'appPassword', label: 'App Password', type: 'password', placeholder: 'Generated app password' }
+          ];
+        case 'zoho-mail':
+          return [
+            { key: 'email', label: 'Zoho Email', type: 'email', placeholder: 'your.email@zoho.com' },
+            { key: 'password', label: 'Password', type: 'password', placeholder: 'Your Zoho password' }
+          ];
+        case 'outlook':
+          return [
+            { key: 'email', label: 'Outlook Email', type: 'email', placeholder: 'your.email@outlook.com' },
+            { key: 'appPassword', label: 'App Password', type: 'password', placeholder: 'Generated app password' }
+          ];
+        case 'hunter-io':
+          return [
+            { key: 'apiKey', label: 'Hunter.io API Key', type: 'password', placeholder: 'Your Hunter.io API key' }
+          ];
+        case 'apollo':
+          return [
+            { key: 'apiKey', label: 'Apollo.io API Key', type: 'password', placeholder: 'Your Apollo.io API key' }
+          ];
+        case 'zoominfo':
+          return [
+            { key: 'username', label: 'ZoomInfo Username', type: 'text', placeholder: 'Your username' },
+            { key: 'password', label: 'ZoomInfo Password', type: 'password', placeholder: 'Your password' }
+          ];
+        case 'clearbit':
+          return [
+            { key: 'apiKey', label: 'Clearbit API Key', type: 'password', placeholder: 'sk_...' }
+          ];
+        default:
+          return [
+            { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter your API key' }
+          ];
+      }
+    };
+
+    const configFields = getConfigFields();
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full m-4">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-3xl">{selectedIntegration.icon}</span>
+            <div>
+              <h3 className="text-xl font-semibold">Configure {selectedIntegration.name}</h3>
+              <p className="text-sm text-gray-600">{selectedIntegration.description}</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleConfigSubmit}>
+            <div className="space-y-4 mb-6">
+              {configFields.map((field) => (
+                <div key={field.key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.label}
+                  </label>
+                  <input
+                    type={field.type}
+                    value={integrationConfig[field.key] || ''}
+                    onChange={(e) => setIntegrationConfig(prev => ({ 
+                      ...prev, 
+                      [field.key]: e.target.value 
+                    }))}
+                    placeholder={field.placeholder}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all"
+              >
+                Connect
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfigModal(false);
+                  setSelectedIntegration(null);
+                  setIntegrationConfig({});
+                }}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
 
   const renderApiKeysSection = () => (
     <div>
@@ -706,6 +869,9 @@ const APIKeysIntegrations = () => {
             </div>
           </details>
         </div>
+
+        {/* Configuration Modal */}
+        {renderConfigModal()}
       </div>
     </div>
   );

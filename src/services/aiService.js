@@ -1,6 +1,7 @@
 // AI API Service - Connects to real AI APIs using Firebase-stored user credentials
 import toast from 'react-hot-toast';
 import FirebaseUserDataService from './firebaseUserData';
+import UnsubscribeService from './unsubscribeService';
 
 export class AIService {
   // Get stored API keys from Firebase (requires userId)
@@ -191,26 +192,49 @@ export class AIService {
   }
 
   // Main function to generate email content with AI
-  static async generateEmailContent(userId, campaignData, preferredProvider = null) {
-    const { name, type, targetAudience, subject } = campaignData;
+  static async generateEmailContent(userId, campaignData, preferredProvider = null, tenantId = null, recipientEmail = null, businessInfo = {}, senderInfo = {}) {
+    const { name, type, targetAudience, subject, additionalPrompt } = campaignData;
     
     const prompt = `
-Create a compelling email for the following campaign:
+You are an email copywriter who ONLY writes in clean HTML format. Create a compelling email for this campaign:
 
 Campaign Name: ${name}
 Campaign Type: ${type}
 Target Audience: ${targetAudience}
 Subject Line: ${subject}
 
-Please create an engaging email that:
-1. Has a personalized greeting with {firstName} placeholder
-2. Introduces the campaign value proposition
-3. Includes relevant benefits and features
-4. Has a clear call-to-action
-5. Maintains a professional yet engaging tone
-6. Is optimized for ${targetAudience}
+${additionalPrompt ? `CRITICAL ADDITIONAL REQUIREMENTS (MUST FOLLOW):
+${additionalPrompt}
 
-The email should be ready to send and include placeholders for personalization like {firstName}, {company}, etc.
+` : ''}CRITICAL FORMATTING RULES (FOLLOW EXACTLY):
+1. NEVER use markdown (**, *, -, #, [], etc.)
+2. Use proper HTML paragraph tags: <p>content</p> with proper spacing
+3. For bold text: <strong>word</strong> (use sparingly)
+4. For bullet points: <p>• Point one</p><p>• Point two</p>
+5. Add proper paragraph breaks: Leave blank lines between paragraphs for readability
+6. For links: <a href="url" style="color: #14b8a6; font-weight: bold; text-decoration: none;">Link Text</a>
+
+BUTTON CREATION RULES (CRITICAL):
+- NEVER create buttons, button links, or call-to-action buttons unless specifically requested
+- NEVER include URLs unless the user provides the exact URL to use
+- NEVER invent product launches, campaigns, or dates unless explicitly provided
+- If user wants a button, they will specify: "Add a button that says [TEXT] linking to [URL]"
+- Do NOT create "Support Our Launch", "Learn More", "Get Started" or similar buttons automatically
+
+PARAGRAPH FORMATTING REQUIREMENTS:
+- Use proper paragraph spacing with <p> tags
+- Add line breaks between sections for better readability
+- Each major point should be its own paragraph
+- Use bullet points sparingly and format them properly
+
+SIGNATURE AND FOOTER REQUIREMENTS:
+- Do NOT include any signatures, contact information, or closing statements
+- Do NOT include unsubscribe links or footer content
+- End the email with the main content only
+- Do NOT add "Best regards", "Sincerely", names, or sign-offs
+- The system will automatically add professional signature and footer
+
+Write a professional email based on the campaign details above. Focus on clear, well-spaced content without adding any signatures, closings, buttons, links, or footer content unless specifically requested.
     `;
 
     const apiKeys = await this.getStoredAPIKeys(userId);
@@ -228,35 +252,60 @@ The email should be ready to send and include placeholders for personalization l
       { name: 'gemini', func: this.generateWithGemini }
     ];
 
+    let generatedContent = '';
+
     // If preferred provider is specified, try it first
     if (preferredProvider) {
       const provider = providers.find(p => p.name === preferredProvider.toLowerCase());
       if (provider && activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
         try {
-          const content = await provider.func.call(this, userId, prompt, campaignData);
+          generatedContent = await provider.func.call(this, userId, prompt, campaignData);
           toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
-          return content;
         } catch (error) {
           console.warn(`${preferredProvider} failed, trying fallback providers:`, error.message);
         }
       }
     }
 
-    // Try each available provider
-    for (const provider of providers) {
-      if (activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
-        try {
-          const content = await provider.func.call(this, userId, prompt, campaignData);
-          toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
-          return content;
-        } catch (error) {
-          console.warn(`${provider.name} failed:`, error.message);
-          continue;
+    // Try each available provider if no content generated yet
+    if (!generatedContent) {
+      for (const provider of providers) {
+        if (activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
+          try {
+            generatedContent = await provider.func.call(this, userId, prompt, campaignData);
+            toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
+            break;
+          } catch (error) {
+            console.warn(`${provider.name} failed:`, error.message);
+            continue;
+          }
         }
       }
     }
 
-    throw new Error('All AI providers failed. Please check your API keys and try again.');
+    if (!generatedContent) {
+      throw new Error('All AI providers failed. Please check your API keys and try again.');
+    }
+
+    // Add signature if sender info is provided
+    if (Object.keys(senderInfo).length > 0) {
+      const signature = UnsubscribeService.generateEmailSignature(senderInfo);
+      generatedContent += signature;
+    }
+
+    // Add unsubscribe footer if tenant and recipient email are provided
+    if (tenantId && recipientEmail) {
+      const campaignId = `campaign_${Date.now()}`;
+      const unsubscribeFooter = UnsubscribeService.generateUnsubscribeFooter(
+        tenantId, 
+        recipientEmail, 
+        campaignId,
+        businessInfo
+      );
+      generatedContent += unsubscribeFooter;
+    }
+
+    return generatedContent;
   }
 }
 

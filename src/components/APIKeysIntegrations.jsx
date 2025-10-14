@@ -62,6 +62,16 @@ const APIKeysIntegrations = () => {
       description: 'Google\'s AI for multimodal content processing',
       lastSync: 'Never',
       account: 'Not connected'
+    },
+    {
+      id: 'perplexity',
+      name: 'Perplexity AI',
+      type: 'AI Service',
+      status: 'disconnected',
+      icon: '🔮',
+      description: 'AI-powered research and fact-checking for lead intelligence',
+      lastSync: 'Never',
+      account: 'Not connected'
     }
   ]);
 
@@ -103,6 +113,26 @@ const APIKeysIntegrations = () => {
       status: 'disconnected',
       icon: '🐵',
       description: 'Email marketing automation and list management',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'sendgrid',
+      name: 'SendGrid',
+      type: 'Email Service',
+      status: 'disconnected',
+      icon: '📤',
+      description: 'Reliable email delivery service for campaigns',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'hubspot-email',
+      name: 'HubSpot Email',
+      type: 'Email Marketing',
+      status: 'disconnected',
+      icon: '🏢',
+      description: 'HubSpot email marketing and automation',
       lastSync: 'Never',
       account: 'Not connected'
     }
@@ -229,6 +259,36 @@ const APIKeysIntegrations = () => {
       status: 'disconnected',
       icon: '⚡',
       description: 'Automate workflows between different apps and services',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'phantombuster',
+      name: 'PhantomBuster',
+      type: 'Lead Generation',
+      status: 'disconnected',
+      icon: '👻',
+      description: 'Automated lead generation and social media scraping',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'linkedin-helper',
+      name: 'LinkedIn Helper',
+      type: 'Lead Generation',
+      status: 'disconnected',
+      icon: '🤝',
+      description: 'Automated LinkedIn outreach and connection management',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'salesforce',
+      name: 'Salesforce',
+      type: 'CRM Integration',
+      status: 'disconnected',
+      icon: '☁️',
+      description: 'Sync leads and contacts with Salesforce CRM',
       lastSync: 'Never',
       account: 'Not connected'
     }
@@ -457,12 +517,12 @@ const APIKeysIntegrations = () => {
   );
 
   const renderApiKeysSection = () => (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">API Keys Management</h2>
+        <h3 className="text-lg font-semibold text-gray-900">Custom API Keys</h3>
         <button
           onClick={() => setShowAddKey(!showAddKey)}
-          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all"
+          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all text-sm"
         >
           + Add Key
         </button>
@@ -591,9 +651,6 @@ const APIKeysIntegrations = () => {
           ))}
         </div>
 
-        {/* API Keys Section */}
-        {renderApiKeysSection()}
-
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-lg mb-6">
           <div className="border-b border-gray-200">
@@ -633,6 +690,21 @@ const APIKeysIntegrations = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Advanced API Keys Management (Optional) */}
+        <div className="mt-8">
+          <details className="bg-white rounded-xl shadow-lg border">
+            <summary className="p-6 cursor-pointer font-semibold text-gray-700 hover:text-blue-600 transition-colors">
+              🔧 Advanced API Keys Management (Optional)
+            </summary>
+            <div className="px-6 pb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Most integrations handle their API keys automatically. Use this section only if you need to manage additional custom keys.
+              </p>
+              {renderApiKeysSection()}
+            </div>
+          </details>
         </div>
       </div>
     </div>

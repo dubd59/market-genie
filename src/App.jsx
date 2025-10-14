@@ -28,6 +28,9 @@ import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
+
+// Initialize extension defense early
+import './security/ExtensionDefense'
 import EnhancedFirebaseStabilityManager from './components/EnhancedFirebaseStabilityManager'
 import DailyQuoteWidget from './components/DailyQuoteWidget'
 import WorldClockWidget from './components/WorldClockWidget'

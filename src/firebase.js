@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
@@ -23,13 +23,32 @@ const app = initializeApp(firebaseConfig);
 // Initialize services with bulletproof settings
 export const auth = getAuth(app);
 
-// Initialize Firestore with CORS-safe settings
+// 🔐 CRITICAL: Set authentication persistence to prevent daily login issues
+// This ensures Firebase auth tokens persist across browser sessions
+(async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    console.log('🔐 Firebase auth persistence set to LOCAL (cross-session)');
+  } catch (error) {
+    console.error('⚠️ Auth persistence setup failed:', error);
+    // Don't throw - Firebase will use default persistence
+  }
+})();
+
+// Initialize Firestore with CORS-safe settings and better offline support
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: true, // Force long polling to avoid WebSocket CORS issues
-  // Add CORS-friendly settings
+  experimentalForceLongPolling: false, // Use WebSockets by default for better performance
+  // Enhanced cache settings for better offline/online transitions
   localCache: {
-    kind: 'memory'
+    kind: 'persistent',  // Change to persistent for better caching
+    sizeBytes: 100 * 1024 * 1024 // 100MB cache
+  },
+  // Enhanced connection settings
+  settings: {
+    ssl: true,
+    host: 'firestore.googleapis.com',
+    cacheSizeBytes: 100 * 1024 * 1024 // 100MB cache
   }
 });
 

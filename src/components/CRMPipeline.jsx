@@ -6,6 +6,25 @@ import SuperiorFunnelBuilder from './SuperiorFunnelBuilder'
 import SuperiorCRMSystem from './SuperiorCRMSystem'
 import toast from 'react-hot-toast'
 
+// Import sorting icons
+const ChevronDown = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
+  </svg>
+)
+
+const ArrowUp = () => (
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m5 15 7-7 7 7" />
+  </svg>
+)
+
+const ArrowDown = () => (
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
+  </svg>
+)
+
 const CRMPipeline = () => {
   const { user } = useAuth()
   const { tenant } = useTenant()
@@ -72,6 +91,11 @@ const CRMPipeline = () => {
     conversionGoal: ''
   })
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState('name')
+  const [sortOrder, setSortOrder] = useState('asc')
+  const [openDropdown, setOpenDropdown] = useState(null)
+
   const pipelineStages = [
     { id: 'prospects', name: 'Prospects', color: 'blue' },
     { id: 'qualified', name: 'Qualified', color: 'yellow' },
@@ -80,6 +104,107 @@ const CRMPipeline = () => {
     { id: 'closed_won', name: 'Closed Won', color: 'green' },
     { id: 'closed_lost', name: 'Closed Lost', color: 'red' }
   ]
+
+  // Sorting functionality
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortOrder('asc')
+    }
+    setOpenDropdown(null)
+  }
+
+  // Sort contacts based on current sort settings
+  const sortedContacts = [...contacts].sort((a, b) => {
+    let aValue, bValue
+
+    switch (sortBy) {
+      case 'name':
+        aValue = (a.name || '').toLowerCase()
+        bValue = (b.name || '').toLowerCase()
+        break
+      case 'email':
+        aValue = (a.email || '').toLowerCase()
+        bValue = (b.email || '').toLowerCase()
+        break
+      case 'company':
+        aValue = (a.company || '').toLowerCase()
+        bValue = (b.company || '').toLowerCase()
+        break
+      case 'status':
+        aValue = a.status || 'new'
+        bValue = b.status || 'new'
+        break
+      case 'tags':
+        aValue = (a.tags && Array.isArray(a.tags)) ? a.tags.join(', ').toLowerCase() : (a.tags || '').toLowerCase()
+        bValue = (b.tags && Array.isArray(b.tags)) ? b.tags.join(', ').toLowerCase() : (b.tags || '').toLowerCase()
+        break
+      case 'source':
+        aValue = a.source || 'unknown'
+        bValue = b.source || 'unknown'
+        break
+      default:
+        aValue = a.name || ''
+        bValue = b.name || ''
+        break
+    }
+
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Dropdown sorting component
+  const SortDropdown = ({ column, options, currentSort, currentOrder }) => {
+    const isOpen = openDropdown === column
+    
+    return (
+      <div className="relative">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpenDropdown(isOpen ? null : column)
+          }}
+          className="flex items-center gap-1 w-full text-left hover:bg-gray-100 p-1 rounded"
+        >
+          <span className="flex-1">{column}</span>
+          <ChevronDown />
+          {currentSort.startsWith(column.toLowerCase()) && (
+            currentOrder === 'asc' ? <ArrowUp className="text-teal-600" /> : <ArrowDown className="text-teal-600" />
+          )}
+        </button>
+        
+        {isOpen && (
+          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-48">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSort(option.value)
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm flex items-center justify-between"
+              >
+                <span>{option.label}</span>
+                {sortBy === option.value && (
+                  sortOrder === 'asc' ? <ArrowUp className="text-teal-600" /> : <ArrowDown className="text-teal-600" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   // Helper function to safely parse deal values
   const parseDealValue = (value) => {
@@ -1041,16 +1166,62 @@ const CRMPipeline = () => {
                           className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Contact</th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Company</th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Status</th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Tags</th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Source</th>
+                      <th className="py-3 px-4 font-medium text-gray-700">
+                        <SortDropdown 
+                          column="Contact"
+                          currentSort={sortBy}
+                          currentOrder={sortOrder}
+                          options={[
+                            { value: 'name', label: 'Sort by Name (A-Z)' },
+                            { value: 'email', label: 'Sort by Email (A-Z)' }
+                          ]}
+                        />
+                      </th>
+                      <th className="py-3 px-4 font-medium text-gray-700">
+                        <SortDropdown 
+                          column="Company"
+                          currentSort={sortBy}
+                          currentOrder={sortOrder}
+                          options={[
+                            { value: 'company', label: 'Sort by Company (A-Z)' }
+                          ]}
+                        />
+                      </th>
+                      <th className="py-3 px-4 font-medium text-gray-700">
+                        <SortDropdown 
+                          column="Status"
+                          currentSort={sortBy}
+                          currentOrder={sortOrder}
+                          options={[
+                            { value: 'status', label: 'Sort by Status' }
+                          ]}
+                        />
+                      </th>
+                      <th className="py-3 px-4 font-medium text-gray-700">
+                        <SortDropdown 
+                          column="Tags"
+                          currentSort={sortBy}
+                          currentOrder={sortOrder}
+                          options={[
+                            { value: 'tags', label: 'Sort by Tags (A-Z)' }
+                          ]}
+                        />
+                      </th>
+                      <th className="py-3 px-4 font-medium text-gray-700">
+                        <SortDropdown 
+                          column="Source"
+                          currentSort={sortBy}
+                          currentOrder={sortOrder}
+                          options={[
+                            { value: 'source', label: 'Sort by Source' }
+                          ]}
+                        />
+                      </th>
                       <th className="py-3 px-4 font-medium text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {contacts.map(contact => (
+                    {sortedContacts.map(contact => (
                     <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 w-12">
                         <input

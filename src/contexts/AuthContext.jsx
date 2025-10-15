@@ -6,7 +6,8 @@ import {
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  updateProfile
+  updateProfile,
+  getIdToken
 } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase'
 
@@ -23,15 +24,72 @@ export const useAuth = () => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false)
 
+  // Enhanced authentication state management with token refresh
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('🔐 Auth state changed:', user ? user.email : 'No user')
+      
+      if (user) {
+        try {
+          // Force token refresh on auth state change to ensure valid tokens
+          const token = await getIdToken(user, true)
+          console.log('✅ ID token refreshed successfully')
+          setUser(user)
+        } catch (error) {
+          console.error('❌ Token refresh failed:', error)
+          // If token refresh fails, sign out to force re-authentication
+          if (error.code === 'auth/network-request-failed' || 
+              error.code === 'auth/internal-error') {
+            console.log('🔄 Network error - keeping user signed in for offline mode')
+            setUser(user) // Keep user signed in for offline capability
+          } else {
+            console.log('🚪 Signing out due to token error')
+            await signOut(auth)
+            setUser(null)
+          }
+        }
+      } else {
+        setUser(null)
+      }
+      
+      setLoading(false)
+    }, (error) => {
+      console.error('🚨 Auth state change error:', error)
       setLoading(false)
     })
 
     return unsubscribe
   }, [])
+
+  // Periodic token refresh to prevent CORS issues
+  useEffect(() => {
+    let tokenRefreshInterval
+    
+    if (user && !loading) {
+      console.log('🔄 Setting up token refresh interval')
+      tokenRefreshInterval = setInterval(async () => {
+        try {
+          if (auth.currentUser && !isRefreshingToken) {
+            setIsRefreshingToken(true)
+            await getIdToken(auth.currentUser, true)
+            console.log('🔄 Background token refresh successful')
+          }
+        } catch (error) {
+          console.error('⚠️ Background token refresh failed:', error)
+        } finally {
+          setIsRefreshingToken(false)
+        }
+      }, 50 * 60 * 1000) // Refresh every 50 minutes (tokens expire in 60 minutes)
+    }
+
+    return () => {
+      if (tokenRefreshInterval) {
+        clearInterval(tokenRefreshInterval)
+      }
+    }
+  }, [user, loading, isRefreshingToken])
 
   const signIn = async (email, password) => {
     try {
@@ -95,15 +153,49 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Manual token refresh function for critical operations
+  const refreshAuthToken = async () => {
+    try {
+      if (auth.currentUser) {
+        const token = await getIdToken(auth.currentUser, true)
+        console.log('🔄 Manual token refresh successful')
+        return { data: { token }, error: null }
+      } else {
+        throw new Error('No authenticated user')
+      }
+    } catch (error) {
+      console.error('❌ Manual token refresh failed:', error)
+      return { data: null, error }
+    }
+  }
+
+  // Check if user authentication is healthy
+  const checkAuthHealth = async () => {
+    try {
+      if (!auth.currentUser) {
+        return { healthy: false, reason: 'No authenticated user' }
+      }
+      
+      const token = await getIdToken(auth.currentUser, false) // Don't force refresh, just check
+      return { healthy: true, token }
+    } catch (error) {
+      console.error('🩺 Auth health check failed:', error)
+      return { healthy: false, reason: error.message, error }
+    }
+  }
+
   const value = {
     user,
     loading,
+    isRefreshingToken,
     signIn,
     signUp,
     signInWithGoogle,
     logout,
     resetPassword,
-    updateUserProfile
+    updateUserProfile,
+    refreshAuthToken,
+    checkAuthHealth
   }
 
   return (

@@ -1169,7 +1169,7 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     
     // Fetch Gmail SMTP credentials from database (stored in gmail integration)
     const credentialsDoc = await db
-      .collection('tenants')
+      .collection('MarketGenie_tenants')
       .doc(tenantId)
       .collection('integrations')
       .doc('gmail')
@@ -1235,6 +1235,133 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to send email via SMTP: ' + error.message
+    });
+  }
+});
+
+// Test Gmail SMTP Connection - Debug function
+exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send();
+  }
+  
+  console.log('=== testGmailConnection function called ===');
+  
+  try {
+    // Verify authentication
+    const authToken = req.get('Authorization');
+    if (!authToken || !authToken.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing or invalid authorization token'
+      });
+    }
+    
+    const idToken = authToken.split('Bearer ')[1];
+    
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+    
+    const { tenantId } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenantId'
+      });
+    }
+    
+    console.log('Testing Gmail connection for tenant:', tenantId);
+    
+    // Check if Gmail credentials exist
+    const credentialsDoc = await db
+      .collection('MarketGenie_tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('gmail')
+      .get();
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail credentials not found. Please configure Gmail in integrations first.',
+        debug: {
+          credentialsPath: `/tenants/${tenantId}/integrations/gmail`,
+          exists: false
+        }
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    console.log('Gmail credentials found:', {
+      email: credentials.email,
+      hasAppPassword: !!credentials.appPassword,
+      appPasswordLength: credentials.appPassword ? credentials.appPassword.length : 0
+    });
+    
+    // Test SMTP configuration
+    const smtpConfig = {
+      smtpHost: 'smtp.gmail.com',
+      smtpPort: '587',
+      smtpEmail: credentials.email,
+      smtpPassword: credentials.appPassword || credentials.password
+    };
+    
+    if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail credentials incomplete',
+        debug: {
+          hasEmail: !!smtpConfig.smtpEmail,
+          hasPassword: !!smtpConfig.smtpPassword,
+          email: smtpConfig.smtpEmail
+        }
+      });
+    }
+    
+    // Create test transporter
+    const transporter = createTransporter(smtpConfig);
+    
+    // Verify SMTP connection
+    console.log('Testing SMTP connection...');
+    await transporter.verify();
+    
+    console.log('Gmail SMTP connection test successful');
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Gmail SMTP connection test successful',
+      debug: {
+        email: credentials.email,
+        smtpHost: 'smtp.gmail.com',
+        smtpPort: 587,
+        connectionVerified: true
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error in testGmailConnection:', error);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Gmail connection test failed: ' + error.message,
+      debug: {
+        errorType: error.name,
+        errorCode: error.code
+      }
     });
   }
 });

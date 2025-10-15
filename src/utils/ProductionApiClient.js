@@ -358,7 +358,7 @@ export const createSecureApiClient = (baseURL, options = {}) => {
 
 // 🔒 Firebase Functions client
 export const firebaseFunctionsClient = createSecureApiClient(
-  'https://us-central1-genie-labs-81b9b.cloudfunctions.net',
+  'https://us-central1-market-genie-f2d41.cloudfunctions.net',
   {
     headers: {
       'X-MarketGenie-App': 'true'

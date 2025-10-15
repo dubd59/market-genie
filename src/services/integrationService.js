@@ -527,7 +527,7 @@ class IntegrationService {
       const idToken = await user.getIdToken();
       
       // Test Resend API via Firebase Function
-      const response = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/testResendConnection', {
+      const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/testResendConnection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -573,7 +573,7 @@ class IntegrationService {
       const idToken = await user.getIdToken();
       
       // Test Resend API via Firebase Function
-      const response = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/testResendConnection', {
+      const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/testResendConnection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

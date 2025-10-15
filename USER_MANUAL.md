@@ -402,19 +402,134 @@ The Lead Generation section has **6 powerful tabs** that work together to find, 
 ## 📊 Tab 1: Overview - Your Lead Generation Dashboard
 
 ### **🎯 What This Tab Does**
-Shows you a summary of your lead generation activities and gives you quick access to start generating leads.
+The Overview tab serves as your **Lead Generation Command Center** - providing a bird's-eye view of all your lead generation activities, quick access to key functions, and real-time performance metrics. This is where you start each day to understand your lead generation status.
 
-### **🔍 What You'll See**
-- **Total leads generated** (updates live)
-- **Recent activity** from all sources
-- **Quick action buttons** to jump to other tabs
-- **Performance highlights**
+### **📈 Live Performance Metrics (Top Section)**
 
-### **👆 What You Can Do**
-- Click **"Generate AI Leads"** → Goes to AI Scraping tab
-- Click **"Import Leads"** → Goes to Bulk Import tab
-- Click **"Add Lead"** → Goes to Lead Enrichment tab
-- View your lead generation statistics
+#### **📊 Total Leads Generated**
+- **Real-time counter**: Shows current total leads in your database
+- **Live updates**: Number increases as you add, import, or scrape leads
+- **Growth tracking**: Compare with yesterday's count to see progress
+- **Visual indicator**: Color-coded based on growth trends
+
+#### **🎯 Recent Activity Feed**
+- **All-source tracking**: Shows leads from AI scraping, imports, and manual entry
+- **Timestamp details**: When each lead was added and from which source
+- **Quality indicators**: Quick view of lead scores for recent additions
+- **Activity types**: Different icons for different lead generation methods
+
+#### **🚀 Performance Highlights**
+- **Best performing source**: Which method generates highest quality leads
+- **Daily/weekly goals**: Progress toward lead generation targets
+- **Quality trends**: Average lead scores and improvement over time
+- **Cost efficiency**: Average cost per lead from paid sources
+
+### **⚡ Quick Action Hub (Center Section)**
+
+#### **🤖 "Generate AI Leads" Button**
+- **Function**: Direct link to AI Scraping tab
+- **What happens**: Opens AI scraping tools for automatic lead generation
+- **Best for**: When you need to quickly generate bulk leads
+- **Expected result**: 5-50 leads per scraping session depending on source
+
+#### **📁 "Import Leads" Button**
+- **Function**: Direct link to Bulk Import tab
+- **What happens**: Opens file upload interface for CSV/Excel imports
+- **Best for**: When you have existing lead lists to upload
+- **Expected result**: Validates and imports leads from your files
+
+#### **➕ "Add Lead" Button**
+- **Function**: Direct link to Lead Enrichment tab
+- **What happens**: Opens manual lead entry form with AI assistance
+- **Best for**: When you have a specific high-value prospect to add
+- **Expected result**: Single, high-quality enriched lead with full data
+
+#### **📊 "View All Leads" Button**
+- **Function**: Direct link to Recent Leads tab
+- **What happens**: Opens your lead management database
+- **Best for**: When you need to review, edit, or export existing leads
+- **Expected result**: Full table view of all leads with management tools
+
+#### **📈 "Analytics Dashboard" Button**
+- **Function**: Direct link to Analytics tab
+- **What happens**: Opens performance tracking and reporting tools
+- **Best for**: When you need to analyze performance or generate reports
+- **Expected result**: Detailed metrics and actionable insights
+
+### **📊 Quick Statistics Overview (Bottom Section)**
+
+#### **📈 Growth Trends**
+- **This week vs last week**: Percentage growth in lead additions
+- **Monthly progress**: How you're tracking toward monthly goals
+- **Quality improvements**: Changes in average lead scores
+- **Source effectiveness**: Which methods are working best
+
+#### **🎯 Lead Quality Snapshot**
+- **High quality count**: Number of leads scoring 80+ points
+- **Medium quality count**: Number of leads scoring 60-79 points
+- **Needs review count**: Number of leads scoring below 60 points
+- **Average score**: Overall quality score across all leads
+
+#### **💰 Cost Efficiency Metrics**
+- **Average cost per lead**: Total spending divided by leads generated
+- **Budget utilization**: How much of daily/monthly budget has been used
+- **ROI indicators**: Cost efficiency trends and improvements
+- **Budget recommendations**: Suggested optimizations for better efficiency
+
+### **🔄 Workflow Integration**
+
+#### **📋 Daily Workflow Starting Point**
+1. **Check Overview tab**: Review overnight activity and current metrics
+2. **Identify needs**: Determine if you need more leads or better quality
+3. **Choose method**: Click appropriate button for AI scraping, import, or manual entry
+4. **Execute action**: Generate/import/add leads using selected method
+5. **Return to Overview**: Monitor progress and plan next actions
+
+#### **📊 Progress Tracking Hub**
+- **Goal monitoring**: Track progress toward daily, weekly, and monthly lead targets
+- **Quality assurance**: Monitor lead quality trends and identify improvement opportunities
+- **Source optimization**: See which lead generation methods work best for your business
+- **Budget management**: Track spending and optimize cost per lead
+
+### **� Strategic Usage Tips**
+
+#### **🌅 Morning Routine (5 minutes)**
+1. **Open Overview tab**: Start here every morning
+2. **Check overnight activity**: See any new leads or automated additions
+3. **Review quality metrics**: Ensure lead quality remains high
+4. **Plan daily activities**: Decide which lead generation activities to focus on
+
+#### **🎯 Goal-Oriented Usage**
+- **Need volume**: Click "Generate AI Leads" for bulk lead generation
+- **Have existing lists**: Click "Import Leads" to upload CSV files
+- **High-value prospects**: Click "Add Lead" for manual enrichment
+- **Need insights**: Click "Analytics Dashboard" for performance review
+
+#### **📊 Performance Monitoring**
+- **Daily check**: Monitor total leads and recent activity
+- **Weekly review**: Analyze growth trends and quality improvements
+- **Monthly planning**: Use metrics to set goals and optimize strategy
+- **Quarterly analysis**: Export data for comprehensive business review
+
+### **🚀 Success Indicators to Watch**
+
+#### **🟢 Positive Trends**
+- **Growing total leads**: Steady increase in database size
+- **Improving quality scores**: Higher average lead scores over time
+- **Diverse source activity**: Leads coming from multiple channels
+- **Cost efficiency**: Decreasing cost per lead with maintained quality
+
+#### **⚠️ Areas for Attention**
+- **Stagnant growth**: No new leads for several days
+- **Declining quality**: Lower average scores trending downward
+- **Single source dependency**: All leads from one method only
+- **Rising costs**: Increasing cost per lead without quality improvement
+
+### **🔗 Navigation & Integration**
+- **Central hub**: All other tabs accessible with one click
+- **Real-time updates**: Metrics refresh as you work in other tabs
+- **Progress tracking**: Shows cumulative results from all lead generation activities
+- **Strategic planning**: Provides data needed for optimizing lead generation strategy
 
 ---
 
@@ -568,255 +683,487 @@ After each import, you'll see:
 
 ---
 
-## 🎯 Tab 4: Lead Enrichment - Manual Lead Entry with AI
+## 🎯 Tab 4: Lead Enrichment - AI-Powered Manual Lead Entry
 
 ### **🎯 What This Tab Does**
-Add individual leads manually, but with AI assistance that automatically fills in missing information and validates data as you type.
+Add individual leads manually with **AI assistance** that automatically validates emails, enriches company data, and scores leads in real-time. This is perfect for adding high-value prospects that need personal attention.
 
-### **📝 The Lead Entry Form**
+### **🚀 AI Enhancement Features**
+- **✅ Email Validation** - Real-time verification with green checkmark
+- **🔍 Company Enrichment** - Auto-lookup of company data when you enter company name
+- **⭐ Lead Scoring** - Automatic scoring (60-100 points) based on data quality
+- **📊 Social Profile Integration** - Add LinkedIn, Twitter, and website links
+- **🏷️ Source Tracking** - Track where each lead originated
 
-#### **Required Fields**
-1. **Full Name** 👤
+### **📝 The Enhanced Lead Entry Form**
+
+#### **👤 Primary Contact Information (Required)**
+1. **Full Name** 
    - Type: John Doe
-   - AI auto-capitalizes properly
+   - **AI Enhancement**: Auto-capitalizes and formats properly
 
 2. **Email Address** 📧
-   - Type: john@company.com
-   - **Auto-validation**: Green checkmark appears if valid
-   - **AI enhancement**: System verifies email exists
+   - Type: john@company.com  
+   - **Real-time validation**: Green ✓ appears if email is valid
+   - **CORS-safe verification**: Uses secure email validation API
+   - **Prevents bounces**: Invalid emails are flagged immediately
 
-#### **Optional Fields (AI Auto-Filled)**
-3. **Phone Number** 📱
+#### **📱 Secondary Contact Information (Optional but Recommended)**
+3. **Phone Number**
    - Type: +1 (555) 123-4567
-   - **AI formatting**: Automatically formats phone numbers
+   - **Auto-formatting**: System formats phone numbers properly
+   - **International support**: Accepts global phone formats
 
 4. **Company** 🏢
    - Type: ABC Corporation
-   - **AI enrichment**: When you type company name, AI automatically finds:
-     - Company website
-     - Company size
-     - Industry information
-     - Company location
-   - **Look for the blue 🔍 icon** - means AI is working
+   - **🔍 AI Company Enrichment**: When you enter company name:
+     - Automatically finds company website
+     - Looks up company size and industry
+     - Validates business legitimacy
+     - **Watch for blue 🔍 icon** - means AI is actively enriching data
 
+#### **🌐 Social & Web Presence (For Multi-Channel Outreach)**
 5. **LinkedIn Profile** 🔗
-   - Type: linkedin.com/in/johndoe
-   - **AI verification**: Checks if profile exists
+   - Enter: linkedin.com/in/johndoe
+   - **Usage**: For LinkedIn outreach campaigns
+   - **Benefit**: Enables professional networking touch points
 
 6. **Twitter Handle** 🐦
-   - Type: @johndoe
-   - **Auto-formatting**: Adds @ if you forget
+   - Enter: @johndoe or johndoe
+   - **Usage**: For social media engagement
+   - **Benefit**: Another channel for relationship building
 
-7. **Website** �🌐
-   - Type: company.com
-   - **AI validation**: Checks if website is live
+7. **Website** 🌐
+   - Enter: company.com or personal-site.com
+   - **Usage**: Company research and personalization
+   - **Benefit**: Better understanding of prospect's business
 
-#### **Advanced Fields**
+#### **📊 Lead Intelligence & Organization**
 8. **Lead Source** 🏷️
-   - Select from dropdown:
-     - Manual Entry
+   - **Options**:
+     - Manual Entry (default)
      - Website Form
      - Social Media
      - Referral
      - Cold Outreach
      - Event/Conference
+   - **Benefit**: Track which sources generate best leads
 
 9. **Notes** 📝
-   - Add any additional information
-   - Great for lead context or next steps
+   - Type: "Met at conference, interested in AI solutions"
+   - **Usage**: Context for future outreach
+   - **Benefit**: Personalized follow-up conversations
 
-### **🤖 AI Auto-Enrichment Features**
-As you fill out the form, AI automatically:
-- **Validates email addresses** ✅
-- **Enriches company data** 🔍  
-- **Scores the lead quality** ⭐
-- **Suggests LinkedIn profiles**
-- **Finds company websites**
-- **Adds industry tags**
+### **⚡ Smart AI Features**
 
-### **🚀 Submit Process**
-1. **Fill required fields** (Name + Email)
-2. **Watch AI enrich data** (icons show AI working)
-3. **Click "Add Lead & Enrich"** 
-4. **Lead is saved** with AI enhancements
-5. **Quality score assigned** automatically
-6. **Appears in Recent Leads** tab instantly
+#### **✅ Email Validation Process**
+- **Real-time checking**: As you type, system validates format
+- **Domain verification**: Checks if email domain exists  
+- **Green checkmark**: Appears when email passes all validations
+- **Invalid warning**: Red indicator if email won't work
+
+#### **🔍 Company Enrichment Process**
+- **Type company name** → **Blue 🔍 icon appears** → **AI searches databases**
+- **Automatic data gathering**:
+  - Company website URL
+  - Industry classification
+  - Company size estimate
+  - Business verification status
+- **Data appears** in lead profile automatically
+
+#### **⭐ Lead Scoring Algorithm**
+- **Automatic scoring**: Every lead gets 60-100 points
+- **Scoring factors**:
+  - Email validity (+20 points)
+  - Company data available (+15 points)
+  - Phone number provided (+10 points)
+  - Social profiles linked (+10 points)
+  - Complete information (+5 points)
+
+### **🎯 Step-by-Step Usage Instructions**
+
+#### **Adding a New Lead:**
+1. **Navigate** to Lead Generation → Lead Enrichment tab
+2. **Enter required info**: Name and Email (email gets validated automatically)
+3. **Watch for AI indicators**:
+   - ✅ **Green checkmark** on email = valid
+   - 🔍 **Blue magnifying glass** on company = AI working
+4. **Add optional data**: Phone, social profiles, notes
+5. **Select lead source**: Choose from dropdown
+6. **Click "🚀 Add Lead & Enrich"**
+7. **Lead is saved** with AI enhancements and quality score
+8. **Instant availability**: Lead appears in Recent Leads tab immediately
+
+#### **Editing Existing Leads:**
+1. **Navigate** to Recent Leads tab
+2. **Find the lead** you want to edit
+3. **Click ✏️ Edit** button
+4. **Form pre-fills** with existing data
+5. **Make changes** (AI re-validates as you type)
+6. **Click "✏️ Update Lead"**
+7. **Changes saved** with updated AI analysis
+
+### **💡 Pro Tips for Lead Enrichment**
+
+#### **🎯 Best Practices:**
+- **Always provide email**: Required for validation and campaigns
+- **Include company name**: Triggers AI enrichment features
+- **Add social profiles**: Enables multi-channel outreach
+- **Write descriptive notes**: Helps with personalized follow-up
+- **Choose accurate source**: Important for tracking performance
+
+#### **🚀 Efficiency Tips:**
+- **Use tab key**: Quickly move between fields
+- **Watch AI indicators**: Green ✅ and blue 🔍 show system is working
+- **Batch similar leads**: Add leads from same source together
+- **Review scores**: High scores (80+) indicate premium leads
+
+### **🔄 Integration with Other Features**
+- **Recent Leads**: All enriched leads appear in management tab
+- **Analytics**: Lead sources and scores tracked in performance dashboard
+- **Campaigns**: Enriched data improves email personalization
+- **CRM**: Leads flow into pipeline with complete profiles
 
 ---
 
 ## 👥 Tab 5: Recent Leads - Lead Management Database
 
 ### **🎯 What This Tab Does**
-View, search, filter, edit, and manage all your leads in one powerful table. This is your lead command center.
+View, search, filter, edit, and manage all your leads in one powerful table. This is your lead command center where you can organize, analyze, and take action on every lead in your database.
 
-### **🔍 Search & Filter Tools**
+### **📊 Lead Overview & Statistics**
+At the top of the tab, you'll see:
+- **Total leads count**: Shows current database size (e.g., "Recent Leads (247)")
+- **Real-time updates**: Count updates instantly as you add/delete leads
+- **Performance indicators**: Quality distribution and source breakdown
 
-#### **Search Bar**
-- Type any name, email, or company
-- **Real-time search** - results appear as you type
-- **Searches all fields** simultaneously
+### **🔍 Advanced Search & Filter Tools**
 
-#### **Source Filter**
-Dropdown menu to filter by lead source:
-- **All Sources** (shows everything)
-- **AI Scraping** (from the scraping tools)
-- **CSV Import** (from bulk uploads)
-- **Manual Entry** (from enrichment form)
-- **Website** (from your website forms)
-- **Referral** (from referrals)
-- **Event** (from events/conferences)
+#### **🔎 Search Bar (Left Side)**
+- **Type anything**: Names, emails, companies, or notes
+- **Real-time search**: Results filter as you type
+- **Searches all fields**: Looks through every piece of lead data simultaneously
+- **Clear results**: Click X to clear search and show all leads
 
-#### **Filter Button**
-Click to apply your search and source filters
+#### **📂 Source Filter (Center)**
+Dropdown menu to filter leads by their origin:
+- **All Sources** - Shows every lead (default view)
+- **Manual Entry** - Leads added via Lead Enrichment tab
+- **Website Form** - Leads from your website contact forms
+- **Social Media** - Leads from social platforms
+- **Referral** - Leads from referral programs
+- **Cold Outreach** - Leads from cold outreach campaigns
+- **Event/Conference** - Leads from events or conferences
+- **AI Scraping** - Leads from automated scraping tools
+- **CSV Import** - Leads from bulk file uploads
 
-### **📊 The Leads Table**
+#### **🎯 Filter Button (Right Side)**
+- **Click to apply**: Combines search terms with source filter
+- **Active filters**: Shows when filters are applied
+- **Clear filters**: Reset to show all leads
 
-#### **Checkbox Column**
-- **Check individual leads** for bulk actions
-- **Check the header** to select all visible leads
-- **Selected count** appears when you select leads
+### **📊 The Master Leads Table**
 
-#### **Lead Information Columns**
-1. **Name** - First and last name
-2. **Email** - Click to copy email address
-3. **Phone** - Phone number (or "—" if none)
-4. **Company** - Company name (or "—" if none)
-5. **Source** - Gray badge showing where lead came from
-6. **Score** - Color-coded quality score:
-   - 🟢 **Green (80-100)**: High quality
-   - 🟡 **Yellow (60-79)**: Medium quality  
-   - 🔴 **Red (0-59)**: Needs review
+#### **☑️ Checkbox Selection Column**
+- **Individual selection**: Check boxes to select specific leads
+- **Select all visible**: Check the header checkbox to select all displayed leads
+- **Bulk operations**: Selected leads enable bulk actions
+- **Selection counter**: Shows "X selected" when leads are chosen
 
-#### **Actions Column**
-Each lead has two buttons:
-- **✏️ Edit** - Modify lead information
-- **🗑️ Delete** - Remove this lead
+#### **📋 Lead Information Columns**
 
-### **🔧 Bulk Actions**
-When you select multiple leads:
-- **"X selected"** counter appears
-- **🗑️ Delete Selected** button appears
-- **Bulk operations** become available
+**👤 Name Column**
+- Displays full name of lead
+- **Sortable**: Click header to sort alphabetically
+- **Clickable**: Some implementations allow clicking to view full profile
 
-### **📤 Export Functions**
-- **Export CSV** - Download all leads as CSV file
-- **Add Lead** - Quick link to Lead Enrichment tab
-- **Total count** shows at bottom
+**📧 Email Column**  
+- Shows email address
+- **Copy feature**: Click to copy email to clipboard
+- **Validation indicator**: Color coding shows email validation status
+- **Campaign ready**: Validated emails ready for outreach
 
-### **📈 Lead Statistics**
-Bottom of table shows:
-- **Total leads**: Current database size
-- Updates in real-time as you add/delete leads
+**📱 Phone Column**
+- Displays phone number or "—" if none provided
+- **Formatted display**: Shows in clean, readable format
+- **International format**: Supports global phone number formats
+- **Click to call**: Some browsers enable click-to-call functionality
+
+**🏢 Company Column**
+- Shows company name or "—" if none provided  
+- **Enriched data**: Enhanced through AI company lookup
+- **Sortable**: Click to sort by company name
+- **Research ready**: Links to company information
+
+**🏷️ Source Column**
+- **Gray badges**: Show where each lead originated
+- **Color coded**: Different sources have different badge colors
+- **Filterable**: Click source to filter to similar leads
+- **Campaign attribution**: Track which sources work best
+
+**⭐ Score Column (Lead Quality Indicator)**
+- **Color-coded quality scores**:
+  - 🟢 **Green (80-100)**: High quality - Ready for immediate outreach
+  - 🟡 **Yellow (60-79)**: Medium quality - Good for email campaigns  
+  - 🔴 **Red (0-59)**: Needs review - Requires data enrichment
+- **Sortable**: Click to sort by quality (highest first)
+- **Actionable**: Scores help prioritize outreach efforts
+
+#### **⚙️ Actions Column**
+Each lead has two action buttons:
+
+**✏️ Edit Button**
+- **What it does**: Opens Lead Enrichment form with pre-filled data
+- **When to use**: Update contact information, add notes, or enrich data
+- **Process**: 
+  1. Click ✏️ Edit
+  2. Form opens with existing data
+  3. Make changes
+  4. Click "Update Lead"
+  5. Changes saved instantly
+
+**🗑️ Delete Button**
+- **What it does**: Permanently removes lead from database
+- **When to use**: For duplicate, invalid, or unwanted leads
+- **Safety**: Requires confirmation before deleting
+- **Irreversible**: Deleted leads cannot be recovered
+
+### **🔧 Bulk Operations & Mass Actions**
+
+#### **Multi-Select Functionality**
+When you select multiple leads (using checkboxes):
+- **Selection counter**: Shows "X selected" at top of table
+- **Bulk delete button**: "🗑️ Delete Selected" button appears
+- **Mass operations**: Perform actions on multiple leads simultaneously
+
+#### **🗑️ Bulk Delete Process**
+1. **Select leads**: Check boxes for leads you want to remove
+2. **Click "Delete Selected"**: Red button appears when leads are selected
+3. **Confirm deletion**: System asks for confirmation
+4. **Mass removal**: All selected leads deleted simultaneously
+5. **Count updates**: Lead counter updates immediately
+
+### **📤 Export & Data Management**
+
+#### **📊 Export CSV Feature**
+- **Full database export**: Downloads all leads as CSV file
+- **Formatted data**: Includes all lead information in spreadsheet format
+- **Backup capability**: Use for data backup or migration
+- **Analysis ready**: Import into Excel or Google Sheets for analysis
+
+#### **➕ Quick Add Feature**
+- **"Add Lead" button**: Quick link to Lead Enrichment tab
+- **Streamlined workflow**: Jump between viewing and adding leads
+- **Efficient management**: No need to navigate through menus
+
+### **📊 Real-Time Statistics Dashboard**
+
+#### **🔢 Total Leads Counter**
+- **Live updates**: Shows current database size in real-time
+- **Format**: Displays as "Recent Leads (XXX)" 
+- **Changes instantly**: Updates when you add, delete, or import leads
+- **Growth tracking**: Watch your database grow over time
+
+#### **📈 Lead Distribution Insights**
+- **Source breakdown**: See which sources generate most leads
+- **Quality overview**: View distribution of lead scores
+- **Recent activity**: Monitor newest additions to database
+
+### **⚡ Workflow Integration**
+
+#### **🔄 Connection to Other Tabs**
+- **From Lead Enrichment**: New leads appear here instantly
+- **From AI Scraping**: Scraped leads populate this table
+- **From Bulk Import**: Imported leads show up immediately
+- **To Campaigns**: Use leads for email marketing campaigns
+
+#### **📊 Analytics Integration**
+- **Performance tracking**: Lead data feeds into Analytics tab
+- **Source analysis**: Track which sources perform best
+- **Quality metrics**: Monitor overall lead quality trends
+
+### **💡 Pro Tips for Lead Management**
+
+#### **🎯 Organization Best Practices**
+- **Regular cleanup**: Use bulk delete for invalid leads monthly
+- **Quality focus**: Prioritize high-scoring leads (80+) for outreach
+- **Source tracking**: Monitor which sources generate best leads
+- **Export backups**: Download CSV backups regularly
+
+#### **🚀 Efficiency Shortcuts**
+- **Use search**: Find specific leads quickly with search bar
+- **Filter by source**: Focus on leads from specific channels
+- **Sort by score**: Prioritize highest quality leads first
+- **Batch operations**: Use bulk actions for multiple leads
+
+#### **📊 Quality Management**
+- **Review low scores**: Check red-scored leads for missing data
+- **Enrich incomplete leads**: Use Edit function to add missing information
+- **Validate email addresses**: Ensure email addresses are correct
+- **Add contextual notes**: Include relevant information for follow-up
 
 ---
 
 ## 📈 Tab 6: Analytics - Performance Dashboard
 
 ### **🎯 What This Tab Does**
-Track your lead generation performance with real metrics, conversion rates, and actionable insights. All numbers are LIVE and update automatically.
+Track your lead generation performance with **real metrics**, conversion rates, and actionable insights. All numbers are **LIVE** and update automatically. This is your data command center for optimizing lead generation strategy.
 
-### **📊 Key Metrics Overview (Top Row)**
+### **📊 Key Performance Metrics (Top Dashboard)**
 
 #### **📊 Active Reports: 12**
-- Number of different analytics reports running
-- **Updates**: Real-time
-- **What it means**: More reports = more detailed insights
+- **What it shows**: Number of different analytics reports currently running
+- **Updates**: Real-time monitoring
+- **What it means**: More reports = more detailed insights into your performance
+- **Action needed**: None - system handles this automatically
 
 #### **💡 Key Insights: 5**
-- Number of actionable insights AI has identified
-- **Updates**: Daily
-- **What it means**: Opportunities to improve your lead generation
+- **What it shows**: Number of actionable insights AI has identified from your data
+- **Updates**: Daily analysis with fresh insights
+- **What it means**: Opportunities to improve your lead generation performance
+- **Action needed**: Review insights and implement suggestions for better results
 
 #### **📈 Growth Rate: 22%**
-- Month-over-month lead generation growth
-- **Updates**: Weekly
+- **What it shows**: Month-over-month lead generation growth percentage
+- **Updates**: Weekly calculation based on latest data
 - **What it means**: Your lead generation is improving by 22% each month
+- **Action needed**: Keep using successful strategies that drive this growth
 
-#### **🎯 Total Leads: [Your Count]**
-- Total leads in your database
-- **Updates**: Real-time
-- **What it means**: Your current lead database size
+#### **🎯 Total Leads: [Your Current Count]**
+- **What it shows**: Total number of leads in your database
+- **Updates**: Real-time as you add, import, or delete leads
+- **What it means**: Your current lead database size and growth
+- **Action needed**: Monitor growth trends and maintain data quality
 
-### **🚀 Lead Sources Performance**
+### **🚀 Lead Sources Performance Analysis**
 
 #### **🤖 AI Scraping: 85% Success Rate**
-- How often AI scraping finds valid leads
-- **Green indicator**: Performing well
-- **What to do**: Keep using AI scraping tools
+- **Performance indicator**: How often AI scraping finds valid, usable leads
+- **Status**: Green indicator means performing well
+- **What to do**: Continue using AI scraping tools - they're working effectively
+- **Optimization**: Focus on high-performing scraping sources
 
 #### **📁 Bulk Import: 92% Validation Rate**
-- Percentage of imported leads that pass validation
-- **Green indicator**: Your import files are high quality
-- **What to do**: Continue current import practices
+- **Performance indicator**: Percentage of imported leads that pass validation
+- **Status**: Green indicator means your import files are high quality
+- **What to do**: Continue current import practices - data quality is excellent
+- **Optimization**: Maintain clean data sources for imports
 
 #### **🎯 Manual Entry: 98% Quality Score**
-- Average quality of manually entered leads
-- **Green indicator**: Excellent data entry practices
-- **What to do**: Manual entry gives highest quality
+- **Performance indicator**: Average quality score of manually entered leads
+- **Status**: Green indicator means excellent data entry practices
+- **What to do**: Manual entry produces highest quality leads - prioritize when possible
+- **Optimization**: Use manual entry for high-value prospects
 
-### **⭐ Lead Quality Breakdown**
+### **⭐ Lead Quality Distribution & Prioritization**
 
-#### **🟢 High Quality (80-100): [Count]**
-- Leads most likely to convert
-- **Best for**: Immediate outreach and sales calls
-- **Action**: Prioritize these leads
+#### **🟢 High Quality Leads (80-100 Points): [Count]**
+- **Lead type**: Prospects most likely to convert into customers
+- **Best use case**: Immediate outreach, sales calls, and priority follow-up
+- **Recommended action**: Prioritize these leads for direct sales efforts
+- **Expected conversion**: Higher likelihood of becoming paying customers
 
-#### **🟡 Medium Quality (60-79): [Count]**
-- Good leads that need nurturing
-- **Best for**: Email campaigns and follow-up sequences
-- **Action**: Add to nurture campaigns
+#### **🟡 Medium Quality Leads (60-79 Points): [Count]**
+- **Lead type**: Good prospects that need nurturing and relationship building
+- **Best use case**: Email campaigns, nurture sequences, and educational content
+- **Recommended action**: Add to nurture campaigns and provide value-first content
+- **Expected conversion**: Good conversion with proper nurturing
 
-#### **🔴 Needs Review (0-59): [Count]**
-- Leads that need more information or validation
-- **Best for**: Data enrichment or qualification calls
-- **Action**: Enrich these leads or verify contact info
+#### **🔴 Needs Review Leads (0-59 Points): [Count]**
+- **Lead type**: Prospects that need more information or data validation
+- **Best use case**: Data enrichment, qualification calls, or research
+- **Recommended action**: Enrich data or verify contact information before outreach
+- **Expected conversion**: Lower conversion until data is improved
 
-### **📊 Recent Activity & Trends**
+### **📊 Activity & Growth Trends Analysis**
 
-#### **Leads This Week: +[Number]**
-- New leads added in the last 7 days
-- **Green arrow**: Growing week-over-week
-- **Percentage change**: Compared to previous week
+#### **📈 Leads This Week: +[Number]**
+- **Trend indicator**: New leads added in the last 7 days
+- **Growth direction**: Green arrow indicates growing week-over-week
+- **Comparison metric**: Percentage change compared to previous week
+- **Strategic insight**: Shows if lead generation is accelerating or slowing
 
-#### **Average Quality Score: [Percentage]%**
-- Average quality score of all your leads
-- **Green arrow**: Quality is improving
-- **Improvement rate**: How much quality has increased
+#### **⭐ Average Quality Score: [Percentage]%**
+- **Quality indicator**: Average quality score across all your leads
+- **Improvement trend**: Green arrow means quality is improving over time
+- **Measurement**: Tracked improvement rate and quality trajectory
+- **Strategic insight**: Higher scores indicate better targeting and data practices
 
-#### **Average Cost Per Lead: $0.75**
-- How much you spend per lead from AI scraping
-- **Green arrow**: Costs are decreasing
-- **Cost reduction**: Percentage of cost savings
+#### **💰 Average Cost Per Lead: $0.75**
+- **Efficiency metric**: How much you spend per lead from AI scraping
+- **Cost trend**: Green arrow indicates costs are decreasing
+- **Savings tracking**: Percentage of cost reduction over time
+- **ROI insight**: Lower costs with maintained quality = better ROI
 
-### **📋 Quick Analytics Actions**
+### **⚡ Analytics Action Center**
 
-#### **📊 Export Report**
-- Download comprehensive analytics report
-- **Format**: PDF with charts and insights
-- **Use for**: Sharing with team or tracking progress
+#### **📊 Export Comprehensive Report**
+- **What it provides**: Full analytics report with charts and insights
+- **Format options**: PDF with visual charts, CSV with raw data
+- **Use cases**: Sharing with team, tracking long-term progress, stakeholder updates
+- **Frequency**: Generate on-demand or schedule automatically
 
-#### **📈 View Trends**
-- See detailed trend analysis
-- **Shows**: 30-day, 90-day, and yearly trends
-- **Use for**: Understanding long-term performance
+#### **📈 View Detailed Trends**
+- **Analysis depth**: Comprehensive trend analysis with multiple timeframes
+- **Timeframes available**: 30-day, 90-day, and yearly trend analysis
+- **Use cases**: Understanding seasonal patterns, long-term performance tracking
+- **Strategic planning**: Identify trends for future planning
 
-#### **🎯 Quality Analysis**
-- Deep dive into lead quality metrics
-- **Shows**: Quality by source, industry, and time
-- **Use for**: Optimizing lead generation strategy
+#### **🎯 Quality Deep Dive Analysis**
+- **Analysis focus**: Detailed lead quality metrics and patterns
+- **Breakdown dimensions**: Quality by source, industry, time period, and campaign
+- **Use cases**: Optimizing lead generation strategy, identifying best sources
+- **Actionable insights**: Specific recommendations for quality improvement
 
-#### **📧 Schedule Report**
-- Set up automatic email reports
-- **Options**: Daily, weekly, or monthly
-- **Use for**: Regular performance monitoring
+#### **📧 Automated Report Scheduling**
+- **Automation options**: Set up automatic email reports to stakeholders
+- **Frequency choices**: Daily updates, weekly summaries, or monthly reports
+- **Use cases**: Regular performance monitoring, team updates, client reporting
+- **Customization**: Choose metrics and format for each scheduled report
 
-### **🎯 How to Use Analytics for Better Results**
+### **🎯 Strategic Analytics Usage Guide**
 
-1. **Check daily**: Look at total leads and recent activity
-2. **Monitor quality**: Focus on improving sources with lower quality scores
-3. **Track costs**: Make sure cost per lead stays reasonable
-4. **Export reports**: Share progress with team weekly
-5. **Use insights**: Act on the AI-generated insights for better performance
+#### **📅 Daily Analytics Review (5 minutes)**
+1. **Check total leads**: Monitor daily lead additions
+2. **Review recent activity**: Look at new leads and sources
+3. **Monitor quality trends**: Ensure quality scores remain high
+4. **Check cost efficiency**: Verify cost per lead stays reasonable
+
+#### **📊 Weekly Analytics Deep Dive (15 minutes)**
+1. **Analyze growth trends**: Review week-over-week growth
+2. **Source performance**: Identify best and worst performing sources
+3. **Quality breakdown**: Review distribution of lead quality scores
+4. **Cost analysis**: Track cost trends and budget efficiency
+
+#### **📈 Monthly Strategic Review (30 minutes)**
+1. **Export comprehensive reports**: Generate detailed analytics
+2. **Trend analysis**: Look at 30-day and 90-day trends
+3. **Strategy optimization**: Act on AI insights and recommendations
+4. **Goal setting**: Set targets based on performance data
+
+### **💡 Optimization Strategies Based on Analytics**
+
+#### **🚀 For Improving Lead Volume**
+- **Focus on high-performing sources**: Double down on sources with best success rates
+- **Increase AI scraping frequency**: Use successful scraping tools more often
+- **Optimize import processes**: Improve bulk import data quality for better validation rates
+
+#### **⭐ For Improving Lead Quality**
+- **Prioritize manual entry**: Use enrichment tab for high-value prospects
+- **Enhance data collection**: Add more fields during lead capture
+- **Validate and enrich**: Improve low-scoring leads with additional data
+
+#### **💰 For Improving Cost Efficiency**
+- **Monitor cost per lead**: Track trends and optimize expensive sources
+- **Focus on organic methods**: Balance paid scraping with free lead sources
+- **Improve conversion rates**: Better leads mean better ROI on lead costs
+
+### **🔗 Integration with Other Tabs**
+- **Recent Leads**: Analytics data comes from lead management activity
+- **Lead Enrichment**: Quality scores improve through manual enrichment
+- **AI Scraping**: Performance metrics track scraping effectiveness
+- **Bulk Import**: Validation rates inform import strategy
+- **Overview**: Key metrics feed into overview dashboard
 
 ---
 

@@ -327,7 +327,7 @@ const APIKeysIntegrations = () => {
   const loadApiKeys = async () => {
     try {
       setLoadingApiKeys(true);
-      const keys = await FirebaseUserDataService.getApiKeys(user.uid, tenant.id);
+      const keys = await FirebaseUserDataService.getAPIKeys(user.uid);
       setApiKeys(keys || []);
     } catch (error) {
       console.error('Error loading API keys:', error);

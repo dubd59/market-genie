@@ -18,7 +18,6 @@ import { logger } from '../utils/ProductionLogger.js';
 // 🎯 Lazy load heavy components for better performance
 export const LazyDashboard = lazy(() => import('../pages/Dashboard'));
 export const LazyCampaignBuilder = lazy(() => import('../pages/CampaignBuilder'));
-export const LazyContactManagement = lazy(() => import('../pages/ContactManagement'));
 export const LazySettings = lazy(() => import('../pages/Settings'));
 export const LazyAnalyticsPage = lazy(() => import('../pages/AnalyticsPage'));
 
@@ -188,7 +187,6 @@ export const performanceUtils = {
 export default {
   LazyDashboard,
   LazyCampaignBuilder,
-  LazyContactManagement,
   LazySettings,
   LazyAnalyticsPage,
   ComponentLoader,

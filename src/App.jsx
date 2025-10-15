@@ -6,7 +6,6 @@ import { GenieProvider } from './contexts/GenieContext'
 import FounderSetup from './components/FounderSetup'
 import Dashboard from './pages/Dashboard'
 import CampaignBuilder from './pages/CampaignBuilder'
-import ContactManagement from './pages/ContactManagement'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/RegisterSimple'
@@ -97,8 +96,12 @@ function SophisticatedDashboard() {
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, logout, checkAuthHealth, refreshAuthToken } = useAuth()
   const { tenant, loading: tenantLoading } = useTenant()
+
+  // Connection Health State
+  const [connectionHealthy, setConnectionHealthy] = useState(true)
+  const [lastHealthCheck, setLastHealthCheck] = useState(Date.now())
 
   // Lead Generation State
   const [leads, setLeads] = useState([])
@@ -230,6 +233,61 @@ function SophisticatedDashboard() {
     const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [tenant?.id]);
+
+  // 🩺 CONNECTION HEALTH MONITOR - Prevents next-day authentication failures
+  useEffect(() => {
+    if (!user) return;
+
+    const monitorConnectionHealth = async () => {
+      try {
+        console.log('🩺 Running connection health check...');
+        const healthResult = await checkAuthHealth();
+        
+        if (!healthResult.healthy) {
+          console.warn('⚠️ Auth health check failed:', healthResult.reason);
+          setConnectionHealthy(false);
+          
+          // Attempt to recover by refreshing token
+          const refreshResult = await refreshAuthToken();
+          if (refreshResult.error) {
+            console.error('💀 Token refresh failed - authentication recovery needed');
+            // Could show a toast notification here to inform user
+          } else {
+            console.log('✅ Authentication recovered successfully');
+            setConnectionHealthy(true);
+          }
+        } else {
+          setConnectionHealthy(true);
+        }
+        
+        setLastHealthCheck(Date.now());
+      } catch (error) {
+        console.error('🚨 Connection health monitor error:', error);
+        setConnectionHealthy(false);
+      }
+    };
+
+    // Run health check immediately
+    monitorConnectionHealth();
+    
+    // Run health check every 10 minutes
+    const healthInterval = setInterval(monitorConnectionHealth, 10 * 60 * 1000);
+    
+    // Run health check when page becomes visible (handles next-day scenario)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && Date.now() - lastHealthCheck > 30 * 60 * 1000) { // 30 minutes
+        console.log('👁️ Page visible after extended absence - running health check...');
+        monitorConnectionHealth();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(healthInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, checkAuthHealth, refreshAuthToken, lastHealthCheck]);
   const [contacts, setContacts] = useState([])
   
   const [emailTemplates] = useState([
@@ -734,9 +792,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       
       console.log('📧 Payload being sent:', payload)
 
-      // Use simple SMTP email sending (works with existing Zoho email account)
+      // Use simple SMTP email sending (works with existing Gmail account)
       console.log('📧 Sending via SMTP function...')
-      const smtpResponse = await fetch('https://us-central1-genie-labs-81b9b.cloudfunctions.net/sendCampaignEmailSMTP', {
+      const smtpResponse = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailSMTP', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1814,7 +1872,7 @@ The MarketGenie Team</p>
   }
 
   return (
-    <GenieProvider>
+    <GenieProvider contacts={contacts}>
       <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
         <Sidebar activeSection={activeSection} onSelect={setSecureActiveSection} />
         

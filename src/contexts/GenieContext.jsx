@@ -75,9 +75,16 @@ function genieReducer(state, action) {
   }
 }
 
-export function GenieProvider({ children }) {
+export function GenieProvider({ children, contacts: externalContacts }) {
   const [state, dispatch] = useReducer(genieReducer, initialState)
   const { user } = useAuth()
+
+  // Update contacts when external contacts change
+  useEffect(() => {
+    if (externalContacts) {
+      dispatch({ type: 'SET_CONTACTS', payload: externalContacts })
+    }
+  }, [externalContacts])
 
   // Load user data when authenticated
   useEffect(() => {

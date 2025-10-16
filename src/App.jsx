@@ -186,7 +186,10 @@ function SophisticatedDashboard() {
     totalCampaigns: 12,
     totalEmailsSent: 2430,
     averageOpenRate: 68,
-    averageResponseRate: 24
+    averageResponseRate: 24,
+    totalEmailsOpened: 1654,
+    totalEmailsBounced: 73,
+    totalUnsubscribed: 18
   })
   const [campaignFormData, setCampaignFormData] = useState({
     name: '',
@@ -647,8 +650,24 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       let emailsSent = 0
       const errors = []
 
-      // Send emails to each contact
-      for (const contact of targetContacts) {
+      // Smart Resume: Skip contacts that have already been sent to
+      const sentEmails = campaign.sentEmails || []
+      const remainingContacts = targetContacts.filter(contact => 
+        !sentEmails.includes(contact.email.toLowerCase())
+      )
+      
+      console.log(`📧 Smart Resume: ${sentEmails.length} already sent, ${remainingContacts.length} remaining`)
+
+      if (remainingContacts.length === 0) {
+        toast.success('✅ All contacts have already received this campaign!')
+        return
+      }
+
+      // Track newly sent emails
+      const newlySentEmails = []
+
+      // Send emails to remaining contacts only
+      for (const contact of remainingContacts) {
         try {
           // Personalize email content with CLEAN AI-generated footer
           let personalizedContent = campaign.emailContent
@@ -682,13 +701,14 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           
           if (sendResult.success) {
             emailsSent++
-            console.log(`Email sent to ${contact.email}`)
+            newlySentEmails.push(contact.email.toLowerCase())
+            console.log(`✅ Email sent to ${contact.email} (${emailsSent}/${remainingContacts.length})`)
           } else {
             errors.push(`Failed to send to ${contact.email}: ${sendResult.error}`)
           }
           
-          // Small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100))
+          // Proper delay to avoid Gmail rate limiting
+          await new Promise(resolve => setTimeout(resolve, 2500))
           
         } catch (error) {
           console.error(`Error sending to ${contact.email}:`, error)
@@ -696,15 +716,18 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         }
       }
 
-      // Update campaign stats
+      // Update campaign stats with smart resume tracking
+      const allSentEmails = [...sentEmails, ...newlySentEmails]
       const updatedCampaigns = campaigns.map(c => {
         if (c.id === campaign.id) {
           return {
             ...c,
-            status: 'Sent',
-            emailsSent: emailsSent,
+            status: allSentEmails.length >= targetContacts.length ? 'Sent' : 'Paused',
+            emailsSent: allSentEmails.length,
             totalContacts: targetContacts.length,
-            lastSent: new Date().toISOString()
+            sentEmails: allSentEmails,
+            lastSent: new Date().toISOString(),
+            progress: `${allSentEmails.length} of ${targetContacts.length} contacts`
           }
         }
         return c
@@ -714,8 +737,13 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       await saveCampaignsToFirebase(updatedCampaigns)
 
       if (emailsSent > 0) {
-        console.log(`Campaign sent! ${emailsSent} emails delivered successfully.`)
-        // toast.success(`Campaign sent! ${emailsSent} emails delivered successfully.`)
+        const isComplete = allSentEmails.length >= targetContacts.length
+        const message = isComplete 
+          ? `🎉 Campaign completed! ${allSentEmails.length} emails delivered successfully.`
+          : `📧 Progress saved! ${emailsSent} new emails sent (${allSentEmails.length}/${targetContacts.length} total). Click Send again to continue.`
+        
+        console.log(message)
+        toast.success(message)
       }
       
       if (errors.length > 0) {
@@ -1512,11 +1540,19 @@ Enter number (1-4):`);
       ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.responseRate || 0), 0) / campaigns.length)
       : 0
 
+    // Calculate new metrics
+    const totalEmailsOpened = Math.round(totalEmailsSent * (avgOpenRate / 100))
+    const totalEmailsBounced = campaigns.reduce((sum, campaign) => sum + (campaign.emailsBounced || 0), 0)
+    const totalUnsubscribed = campaigns.reduce((sum, campaign) => sum + (campaign.unsubscribed || 0), 0)
+
     setCampaignStats({
       totalCampaigns: activeCampaigns.length,
       totalEmailsSent: totalEmailsSent,
       averageOpenRate: avgOpenRate,
-      averageResponseRate: avgResponseRate
+      averageResponseRate: avgResponseRate,
+      totalEmailsOpened: totalEmailsOpened,
+      totalEmailsBounced: totalEmailsBounced,
+      totalUnsubscribed: totalUnsubscribed
     })
   }
 
@@ -1624,6 +1660,8 @@ Enter number (1-4):`);
         emailsSent: 0, // Start with 0 emails sent
         openRate: 0, // No opens until emails are sent
         responseRate: 0, // No responses until emails are sent
+        emailsBounced: 0, // No bounces until emails are sent
+        unsubscribed: 0, // No unsubscribes until emails are sent
         createdDate: new Date().toISOString().split('T')[0],
         subject: campaignFormData.subject,
         template: campaignFormData.template,
@@ -3115,26 +3153,41 @@ ${companyName}</p>
               <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
               {/* Campaign Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
-                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Campaigns</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl mb-1">📧</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Active Campaigns</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
-                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Emails Sent</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="sent" className="text-genie-teal text-2xl mb-1">📤</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="opened" className="text-genie-teal text-3xl mb-2">�</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
-                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Open Rate</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="opened" className="text-genie-teal text-2xl mb-1">📬</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsOpened.toLocaleString()}</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Opened</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="responses" className="text-genie-teal text-3xl mb-2">�</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
-                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Response Rate</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="open-rate" className="text-genie-teal text-2xl mb-1">📊</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Open Rate</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="responses" className="text-genie-teal text-2xl mb-1">💬</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Response Rate</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="bounced" className="text-red-500 text-2xl mb-1">⚠️</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsBounced.toLocaleString()}</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Bounced</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="unsubscribed" className="text-orange-500 text-2xl mb-1">🚫</span>
+                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalUnsubscribed.toLocaleString()}</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Unsubscribed</div>
                 </div>
               </div>
 
@@ -3465,8 +3518,17 @@ ${companyName}</p>
                                   ? 'bg-green-100 text-green-800' 
                                   : campaign.status === 'Draft'
                                   ? 'bg-blue-100 text-blue-800'
+                                  : campaign.status === 'Paused'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : campaign.status === 'Sent'
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}>{campaign.status}</span>
+                              {campaign.progress && (
+                                <span className={`ml-2 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800`}>
+                                  📧 {campaign.progress}
+                                </span>
+                              )}
                               {campaign.subject && (
                                 <span className={`ml-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                   Subject: "{campaign.subject}"
@@ -3486,7 +3548,13 @@ ${companyName}</p>
                               className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition-colors"
                               disabled={campaign.status === 'Sending'}
                             >
-                              {campaign.status === 'Sending' ? 'Sending...' : '📧 Send Now'}
+                              {campaign.status === 'Sending' 
+                                ? 'Sending...' 
+                                : campaign.status === 'Paused'
+                                ? '▶️ Continue'
+                                : campaign.status === 'Sent'
+                                ? '✅ Sent'
+                                : '📧 Send Now'}
                             </button>
                             <button 
                               onClick={() => handleCampaignAction(campaign.id, 'pause')}

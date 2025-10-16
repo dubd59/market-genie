@@ -1444,16 +1444,35 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
     }
 
     console.log('Processing unsubscribe for:', email, 'in tenant:', tenantId);
+    
+    // First, get the tenant owner (user ID) from the tenant ID
+    let userId = tenantId; // Default fallback
+    try {
+      const tenantDoc = await db.collection('MarketGenie_tenants').doc(tenantId).get();
+      if (tenantDoc.exists) {
+        const tenantData = tenantDoc.data();
+        userId = tenantData.ownerId || tenantId;
+        console.log('📍 Found tenant owner ID:', userId);
+      } else {
+        console.log('⚠️ Tenant document not found, using tenantId as userId');
+      }
+    } catch (error) {
+      console.error('Error getting tenant owner:', error);
+      console.log('⚠️ Using tenantId as fallback userId');
+    }
+    
     console.log('📍 Firebase paths being used:');
-    console.log('📍 Contacts path: userData/' + tenantId + '_crm_contacts');
+    console.log('📍 Contacts path: userData/' + userId + '_crm_contacts');
     console.log('📍 Unsubscribes path: userData/' + tenantId + '_unsubscribes');
 
-    // Remove from contacts (CRM)
+    // Remove from contacts (CRM) - Use the actual userId (tenant owner)
     try {
       const contactsQuery = await db
         .collection('userData')
-        .doc(`${tenantId}_crm_contacts`)
+        .doc(`${userId}_crm_contacts`)
         .get();
+      
+      console.log('📊 Document exists:', contactsQuery.exists);
       
       if (contactsQuery.exists) {
         const contactsData = contactsQuery.data();
@@ -1461,6 +1480,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         
         console.log('📊 BEFORE REMOVAL - Total contacts:', contacts.length);
         console.log('📧 Looking for email to remove:', email);
+        console.log('📧 Sample contacts:', contacts.slice(0, 2).map(c => ({ email: c.email, name: c.name })));
         
         // Filter out the unsubscribing email
         const updatedContacts = contacts.filter(contact => 
@@ -1470,14 +1490,23 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         console.log('📊 AFTER REMOVAL - Total contacts:', updatedContacts.length);
         console.log('📉 Contacts removed:', contacts.length - updatedContacts.length);
         
-        // Update the contacts collection
+        if (contacts.length !== updatedContacts.length) {
+          console.log('✅ Contact found and will be removed!');
+        } else {
+          console.log('❌ Contact NOT found in list! Email not in contacts.');
+          console.log('📧 All contact emails:', contacts.map(c => c.email));
+        }
+        
+        // Update the contacts collection using the correct userId
         await db
           .collection('userData')
-          .doc(`${tenantId}_crm_contacts`)
+          .doc(`${userId}_crm_contacts`)
           .set({ contacts: updatedContacts });
         
         console.log('✅ Successfully updated contacts collection');
         console.log('Removed contact from CRM:', email);
+      } else {
+        console.log('❌ Contacts document does not exist at path: userData/' + userId + '_crm_contacts');
       }
     } catch (error) {
       console.error('Error removing from contacts:', error);
@@ -1491,7 +1520,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         .set({
           unsubscribes: admin.firestore.FieldValue.arrayUnion({
             email: email,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            timestamp: new Date().toISOString(),
             tokenData: tokenData
           })
         }, { merge: true });

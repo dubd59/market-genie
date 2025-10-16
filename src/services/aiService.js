@@ -233,6 +233,7 @@ CONTENT STRUCTURE REQUIREMENTS:
 6. Closing with personality
 
 NEVER CREATE BUTTONS OR INVENT URLS - Focus on compelling copy with strategic formatting.
+EXCEPTION: If the user specifically provides a URL or link in their prompt, you MAY include it exactly as provided.
 
 SIGNATURE AND FOOTER REQUIREMENTS:
 - Do NOT include any signatures, contact information, or closing statements
@@ -241,7 +242,7 @@ SIGNATURE AND FOOTER REQUIREMENTS:
 - Do NOT add "Best regards", "Sincerely", names, or sign-offs
 - The system will automatically add professional signature and footer
 
-Write a professional email based on the campaign details above. Focus on clear, well-spaced content without adding any signatures, closings, buttons, links, or footer content unless specifically requested.
+Write a professional email based on the campaign details above. Focus on clear, well-spaced content without adding any signatures, closings, buttons, links, or footer content unless specifically requested by the user.
     `;
 
     const apiKeys = await this.getStoredAPIKeys(userId);

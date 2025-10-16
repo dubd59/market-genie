@@ -196,7 +196,7 @@ export class AIService {
     const { name, type, targetAudience, subject, additionalPrompt } = campaignData;
     
     const prompt = `
-You are an email copywriter who ONLY writes in clean HTML format. Create a compelling email for this campaign:
+You are a PREMIUM email marketing copywriter who creates VISUALLY STUNNING, professionally formatted emails. 
 
 Campaign Name: ${name}
 Campaign Type: ${type}
@@ -206,26 +206,33 @@ Subject Line: ${subject}
 ${additionalPrompt ? `CRITICAL ADDITIONAL REQUIREMENTS (MUST FOLLOW):
 ${additionalPrompt}
 
-` : ''}CRITICAL FORMATTING RULES (FOLLOW EXACTLY):
-1. NEVER use markdown (**, *, -, #, [], etc.)
-2. Use proper HTML paragraph tags: <p>content</p> with proper spacing
-3. For bold text: <strong>word</strong> (use sparingly)
-4. For bullet points: <p>• Point one</p><p>• Point two</p>
-5. Add proper paragraph breaks: Leave blank lines between paragraphs for readability
-6. For links: <a href="url" style="color: #14b8a6; font-weight: bold; text-decoration: none;">Link Text</a>
+` : ''}VISUAL EXCELLENCE REQUIREMENTS (MANDATORY):
+1. Create a compelling story flow with proper narrative structure
+2. Use strategic <strong>bold highlights</strong> on key benefits, results, and important phrases
+3. Include well-formatted bullet points for lists and benefits
+4. Add emotional hooks and engagement elements
+5. Create clear sections with proper paragraph separation
+6. Use persuasive copywriting techniques
 
-BUTTON CREATION RULES (CRITICAL):
-- NEVER create buttons, button links, or call-to-action buttons unless specifically requested
-- NEVER include URLs unless the user provides the exact URL to use
-- NEVER invent product launches, campaigns, or dates unless explicitly provided
-- If user wants a button, they will specify: "Add a button that says [TEXT] linking to [URL]"
-- Do NOT create "Support Our Launch", "Learn More", "Get Started" or similar buttons automatically
+HTML FORMATTING RULES (FOLLOW EXACTLY):
+- NEVER use markdown (**, *, -, #, [], etc.)
+- Use <p style="margin-bottom: 16px;">content</p> for proper paragraph spacing
+- For bold emphasis: <strong>key phrase</strong> (use generously for impact)
+- For bullet points: 
+  <p style="margin-bottom: 8px;">• <strong>Benefit:</strong> Description</p>
+  <p style="margin-bottom: 8px;">• <strong>Feature:</strong> Description</p>
+- For section breaks: <p style="margin-bottom: 24px;"></p>
+- For links: <a href="url" style="color: #14b8a6; font-weight: bold; text-decoration: none;">Link Text</a>
 
-PARAGRAPH FORMATTING REQUIREMENTS:
-- Use proper paragraph spacing with <p> tags
-- Add line breaks between sections for better readability
-- Each major point should be its own paragraph
-- Use bullet points sparingly and format them properly
+CONTENT STRUCTURE REQUIREMENTS:
+1. Opening hook paragraph (engaging, emotional)
+2. Story/context paragraph with <strong>highlighted key points</strong>
+3. Benefits section with bullet points and bold highlights
+4. Social proof or urgency element with emphasis
+5. Clear call-to-action paragraph
+6. Closing with personality
+
+NEVER CREATE BUTTONS OR INVENT URLS - Focus on compelling copy with strategic formatting.
 
 SIGNATURE AND FOOTER REQUIREMENTS:
 - Do NOT include any signatures, contact information, or closing statements
@@ -287,13 +294,14 @@ Write a professional email based on the campaign details above. Focus on clear, 
       throw new Error('All AI providers failed. Please check your API keys and try again.');
     }
 
-    // Add signature if sender info is provided
-    if (Object.keys(senderInfo).length > 0) {
-      const signature = UnsubscribeService.generateEmailSignature(senderInfo);
-      generatedContent += signature;
-    }
+    // Clean up excessive line spacing and formatting issues
+    generatedContent = generatedContent
+      .replace(/\n\s*\n\s*\n/g, '\n\n')  // Replace triple+ line breaks with double
+      .replace(/(<\/p>)\s*\n+\s*(<p>)/g, '$1\n$2')  // Clean spacing between paragraphs
+      .replace(/\n\s+/g, '\n')  // Remove leading whitespace on lines
+      .trim();
 
-    // Add unsubscribe footer if tenant and recipient email are provided
+    // Add unsubscribe footer with business info (includes signature)
     if (tenantId && recipientEmail) {
       const campaignId = `campaign_${Date.now()}`;
       const unsubscribeFooter = UnsubscribeService.generateUnsubscribeFooter(
@@ -303,6 +311,10 @@ Write a professional email based on the campaign details above. Focus on clear, 
         businessInfo
       );
       generatedContent += unsubscribeFooter;
+    } else if (Object.keys(senderInfo).length > 0) {
+      // Only add simple signature if no business footer
+      const signature = UnsubscribeService.generateEmailSignature(senderInfo);
+      generatedContent += signature;
     }
 
     return generatedContent;

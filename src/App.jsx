@@ -50,6 +50,7 @@ import CRMPipeline from './components/CRMPipeline'
 import BusinessProfileSettings from './components/BusinessProfileSettings'
 import ContactManager from './components/ContactManager'
 import FunnelPreview from './pages/FunnelPreview'
+import UnsubscribeService from './services/unsubscribeService'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -234,60 +235,6 @@ function SophisticatedDashboard() {
     return () => clearInterval(interval);
   }, [tenant?.id]);
 
-  // 🩺 CONNECTION HEALTH MONITOR - Prevents next-day authentication failures
-  useEffect(() => {
-    if (!user) return;
-
-    const monitorConnectionHealth = async () => {
-      try {
-        console.log('🩺 Running connection health check...');
-        const healthResult = await checkAuthHealth();
-        
-        if (!healthResult.healthy) {
-          console.warn('⚠️ Auth health check failed:', healthResult.reason);
-          setConnectionHealthy(false);
-          
-          // Attempt to recover by refreshing token
-          const refreshResult = await refreshAuthToken();
-          if (refreshResult.error) {
-            console.error('💀 Token refresh failed - authentication recovery needed');
-            // Could show a toast notification here to inform user
-          } else {
-            console.log('✅ Authentication recovered successfully');
-            setConnectionHealthy(true);
-          }
-        } else {
-          setConnectionHealthy(true);
-        }
-        
-        setLastHealthCheck(Date.now());
-      } catch (error) {
-        console.error('🚨 Connection health monitor error:', error);
-        setConnectionHealthy(false);
-      }
-    };
-
-    // Run health check immediately
-    monitorConnectionHealth();
-    
-    // Run health check every 10 minutes
-    const healthInterval = setInterval(monitorConnectionHealth, 10 * 60 * 1000);
-    
-    // Run health check when page becomes visible (handles next-day scenario)
-    const handleVisibilityChange = () => {
-      if (!document.hidden && Date.now() - lastHealthCheck > 30 * 60 * 1000) { // 30 minutes
-        console.log('👁️ Page visible after extended absence - running health check...');
-        monitorConnectionHealth();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      clearInterval(healthInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user, checkAuthHealth, refreshAuthToken, lastHealthCheck]);
   const [contacts, setContacts] = useState([])
   
   const [emailTemplates] = useState([
@@ -625,6 +572,14 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       console.log('Sending campaign emails...')
       // toast.info('Sending campaign emails...')
       
+      // Fetch business profile for unsubscribe footers
+      let businessProfile = null
+      try {
+        businessProfile = await FirebaseUserDataService.getBusinessProfile(tenant?.id)
+      } catch (profileError) {
+        console.warn('Could not fetch business profile:', profileError)
+      }
+      
       // Check if Gmail SMTP credentials are configured
       const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'gmail')
       if (!smtpCredentials.success) {
@@ -695,11 +650,25 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Send emails to each contact
       for (const contact of targetContacts) {
         try {
-          // Personalize email content
+          // Personalize email content with CLEAN AI-generated footer
           let personalizedContent = campaign.emailContent
           personalizedContent = personalizedContent.replace(/{firstName}/g, contact.name?.split(' ')[0] || 'there')
           personalizedContent = personalizedContent.replace(/{company}/g, contact.company || 'your company')
           personalizedContent = personalizedContent.replace(/{name}/g, contact.name || 'there')
+          
+          // Fix unsubscribe links to use correct recipient email
+          // Generate correct unsubscribe link for this specific recipient
+          const correctUnsubscribeLink = UnsubscribeService.createUnsubscribeLink(
+            tenant.id, 
+            contact.email, 
+            `campaign_${Date.now()}`
+          )
+          
+          // Replace any unsubscribe links in the content with the correct one
+          personalizedContent = personalizedContent.replace(
+            /https:\/\/us-central1-market-genie-f2d41\.cloudfunctions\.net\/processUnsubscribe\?token=[^"'\s]+/g,
+            correctUnsubscribeLink
+          )
 
           // Send email via Firebase Function
           const emailData = {
@@ -1777,9 +1746,26 @@ Enter number (1-4):`);
 
   // AI-powered email content generation based on campaign settings
   const generateAIEmailContent = async (campaignData, preferredProvider = null) => {
+    // Fetch business profile for email signature
+    let businessProfile = null;
+    try {
+      businessProfile = await FirebaseUserDataService.getBusinessProfile(tenant?.id);
+    } catch (profileError) {
+      console.warn('Could not fetch business profile:', profileError);
+    }
+    
     try {
       // Use real AI APIs with user's stored API keys - NO CLEANUP NEEDED!
-      const content = await AIService.generateEmailContent(user?.uid, campaignData, preferredProvider);
+      // Generate base content with clean integrated footer (we'll fix recipient email per person)
+      const content = await AIService.generateEmailContent(
+        user?.uid, 
+        campaignData, 
+        preferredProvider,
+        tenant?.id,
+        'TEMP_EMAIL_FOR_REPLACEMENT', // Temporary email we'll replace per recipient
+        businessProfile?.businessInfo,
+        businessProfile?.senderInfo
+      );
       return content;
     } catch (error) {
       console.error('AI Email Generation Error:', error);
@@ -1787,6 +1773,7 @@ Enter number (1-4):`);
       
       // Fallback to basic template if AI fails
       const { name, type, targetAudience } = campaignData;
+      const companyName = businessProfile?.businessInfo?.companyName || 'The MarketGenie Team';
       return `<p>Hi {firstName},</p>
 
 <p>Thank you for your interest in <strong>${name}</strong>! This ${type.toLowerCase()} campaign is designed specifically for ${targetAudience?.toLowerCase() || 'our valued audience'}.</p>
@@ -1801,7 +1788,7 @@ Enter number (1-4):`);
 <p>Ready to get started? <a href="#" style="background-color: #14b8a6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">GET STARTED NOW</a></p>
 
 <p>Best regards,<br>
-The MarketGenie Team</p>
+${companyName}</p>
 
 <p><em>P.S. This email was generated for the "${name}" campaign.</em></p>`;
     }
@@ -3603,6 +3590,76 @@ The MarketGenie Team</p>
                           <option value="Warm Prospects">Warm Prospects</option>
                           <option value="Custom Segment">Custom Segment</option>
                         </select>
+                        
+                        {/* Custom Segment Selection for Edit Modal */}
+                        {editingCampaign.targetAudience === 'Custom Segment' && (
+                          <div className="mt-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    console.log('Refreshing tags for edit modal...')
+                                    const leadsResult = await LeadService.getLeads(tenant.id)
+                                    if (leadsResult.success && leadsResult.data) {
+                                      let allTags = []
+                                      leadsResult.data.forEach(lead => {
+                                        if (lead.tags) {
+                                          if (Array.isArray(lead.tags)) {
+                                            allTags.push(...lead.tags)
+                                          } else if (typeof lead.tags === 'string') {
+                                            allTags.push(...lead.tags.split(',').map(t => t.trim()))
+                                          }
+                                        }
+                                        if (lead.category) allTags.push(lead.category)
+                                        if (lead.status) allTags.push(lead.status)
+                                        if (lead.leadMagnet) allTags.push(lead.leadMagnet)
+                                        if (lead.source && lead.source !== 'CSV Import') allTags.push(lead.source)
+                                        if (lead.type) allTags.push(lead.type)
+                                      })
+                                      
+                                      // Add manual segments
+                                      const manualSegments = ['Gumroad seller', 'New prospects', 'VIP customers', 'Email subscribers']
+                                      allTags.push(...manualSegments)
+                                      const uniqueTags = [...new Set(allTags)].filter(tag => tag && tag.trim())
+                                      setAvailableTags(uniqueTags)
+                                      toast.success(`Refreshed! Found ${uniqueTags.length} tags`)
+                                    }
+                                  } catch (error) {
+                                    toast.error('Error refreshing tags: ' + error.message)
+                                  }
+                                }}
+                                className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                              >
+                                🔄 Refresh Tags
+                              </button>
+                            </div>
+                            <select 
+                              value={editingCampaign.customSegment || ''}
+                              onChange={(e) => setEditingCampaign({...editingCampaign, customSegment: e.target.value})}
+                              className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                            >
+                              <option value="">Choose a tagged segment...</option>
+                              {availableTags.map(tag => (
+                                <option key={tag} value={tag}>
+                                  🏷️ {tag}
+                                </option>
+                              ))}
+                            </select>
+                            {availableTags.length === 0 && (
+                              <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <p>No tagged segments found. Create tags in your CRM first.</p>
+                                <p className="text-blue-600 mt-1">Click "🔄 Refresh Tags" button to reload from CRM.</p>
+                              </div>
+                            )}
+                            {availableTags.length > 0 && (
+                              <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                Found {availableTags.length} tag(s): {availableTags.join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div>

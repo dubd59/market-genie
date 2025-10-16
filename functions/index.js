@@ -1204,16 +1204,39 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     
     console.log('Creating SMTP transporter for:', smtpConfig.smtpEmail);
     
+    // Fetch business profile for sender name
+    let senderName = 'Market Genie';
+    try {
+      const businessProfileDoc = await db
+        .collection('userData')
+        .doc(`${tenantId}_businessProfile`)
+        .get();
+      
+      if (businessProfileDoc.exists) {
+        const businessInfo = businessProfileDoc.data().businessInfo;
+        if (businessInfo && businessInfo.companyName) {
+          senderName = businessInfo.companyName;
+          console.log('Using business profile sender name:', senderName);
+        } else {
+          console.log('No company name found in business profile');
+        }
+      } else {
+        console.log('No business profile document found');
+      }
+    } catch (error) {
+      console.warn('Could not fetch business profile for sender name:', error);
+    }
+    
     // Create SMTP transporter
     const transporter = createTransporter(smtpConfig);
     
     // Prepare email
     const mailOptions = {
-      from: `"Market Genie" <${smtpConfig.smtpEmail}>`,
+      from: `"${senderName}" <${smtpConfig.smtpEmail}>`,
       to: to,
       subject: subject,
-      text: content,
-      html: content.replace(/\n/g, '<br>')
+      text: content.replace(/<[^>]*>/g, ''), // Strip HTML for plain text version
+      html: content // Use content as-is since it's already HTML formatted
     };
     
     console.log('Sending email via SMTP...');
@@ -1363,5 +1386,153 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         errorCode: error.code
       }
     });
+  }
+});
+
+// Process unsubscribe requests
+exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
+  console.log('=== processUnsubscribe function called ===');
+  
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f9fafb;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; text-align: center;">
+              <h2 style="color: #ef4444;">Invalid Unsubscribe Link</h2>
+              <p>The unsubscribe link appears to be invalid or expired.</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+    // Decode the token
+    let tokenData;
+    try {
+      const decodedToken = atob(token);
+      tokenData = JSON.parse(decodedToken);
+    } catch (error) {
+      console.error('Invalid token format:', error);
+      return res.status(400).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f9fafb;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; text-align: center;">
+              <h2 style="color: #ef4444;">Invalid Token</h2>
+              <p>The unsubscribe token is malformed.</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+    const { tenantId, email } = tokenData;
+    
+    if (!tenantId || !email) {
+      return res.status(400).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f9fafb;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; text-align: center;">
+              <h2 style="color: #ef4444;">Invalid Token Data</h2>
+              <p>Required information is missing from the unsubscribe token.</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+    console.log('Processing unsubscribe for:', email, 'in tenant:', tenantId);
+    console.log('📍 Firebase paths being used:');
+    console.log('📍 Contacts path: userData/' + tenantId + '_crm_contacts');
+    console.log('📍 Unsubscribes path: userData/' + tenantId + '_unsubscribes');
+
+    // Remove from contacts (CRM)
+    try {
+      const contactsQuery = await db
+        .collection('userData')
+        .doc(`${tenantId}_crm_contacts`)
+        .get();
+      
+      if (contactsQuery.exists) {
+        const contactsData = contactsQuery.data();
+        const contacts = contactsData.contacts || [];
+        
+        console.log('📊 BEFORE REMOVAL - Total contacts:', contacts.length);
+        console.log('📧 Looking for email to remove:', email);
+        
+        // Filter out the unsubscribing email
+        const updatedContacts = contacts.filter(contact => 
+          contact.email && contact.email.toLowerCase() !== email.toLowerCase()
+        );
+        
+        console.log('📊 AFTER REMOVAL - Total contacts:', updatedContacts.length);
+        console.log('📉 Contacts removed:', contacts.length - updatedContacts.length);
+        
+        // Update the contacts collection
+        await db
+          .collection('userData')
+          .doc(`${tenantId}_crm_contacts`)
+          .set({ contacts: updatedContacts });
+        
+        console.log('✅ Successfully updated contacts collection');
+        console.log('Removed contact from CRM:', email);
+      }
+    } catch (error) {
+      console.error('Error removing from contacts:', error);
+    }
+
+    // Add to unsubscribe log for tracking
+    try {
+      await db
+        .collection('userData')
+        .doc(`${tenantId}_unsubscribes`)
+        .set({
+          unsubscribes: admin.firestore.FieldValue.arrayUnion({
+            email: email,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            tokenData: tokenData
+          })
+        }, { merge: true });
+        
+      console.log('Added to unsubscribe log:', email);
+    } catch (error) {
+      console.error('Error logging unsubscribe:', error);
+    }
+
+    // Return success page
+    return res.send(`
+      <html>
+        <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f9fafb;">
+          <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; text-align: center;">
+            <div style="color: #10b981; font-size: 48px; margin-bottom: 20px;">✓</div>
+            <h2 style="color: #10b981; margin-bottom: 20px;">Successfully Unsubscribed</h2>
+            <p style="color: #6b7280; margin-bottom: 30px;">
+              The email address <strong>${email}</strong> has been successfully removed from all marketing communications.
+            </p>
+            <p style="color: #6b7280; font-size: 14px;">
+              You will no longer receive emails from this sender. If you continue to receive emails, please contact support.
+            </p>
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px;">
+              Powered by MarketGenie
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+
+  } catch (error) {
+    console.error('Error in processUnsubscribe:', error);
+    return res.status(500).send(`
+      <html>
+        <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f9fafb;">
+          <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; text-align: center;">
+            <h2 style="color: #ef4444;">Error Processing Request</h2>
+            <p>An error occurred while processing your unsubscribe request. Please try again or contact support.</p>
+          </div>
+        </body>
+      </html>
+    `);
   }
 });

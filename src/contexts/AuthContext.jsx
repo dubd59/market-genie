@@ -7,7 +7,9 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   updateProfile,
-  getIdToken
+  getIdToken,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase'
 
@@ -25,6 +27,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshingToken, setIsRefreshingToken] = useState(false)
+
+  // 🔐 DAILY LOGIN FIX - Simple persistence setup
+  useEffect(() => {
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => console.log('🔐 Authentication persistence enabled - no more daily logins!'))
+      .catch(error => console.error('Auth persistence failed:', error));
+  }, [])
 
   // Enhanced authentication state management with token refresh
   useEffect(() => {

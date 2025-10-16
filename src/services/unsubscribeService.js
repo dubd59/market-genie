@@ -10,7 +10,7 @@ export class UnsubscribeService {
   static generateUnsubscribeToken(tenantId, email, campaignId = null) {
     const data = {
       tenantId,
-      email: email.toLowerCase(),
+      email: typeof email === 'string' ? email.toLowerCase() : String(email || '').toLowerCase(),
       campaignId,
       timestamp: Date.now()
     };
@@ -23,8 +23,8 @@ export class UnsubscribeService {
   // Create unsubscribe link for emails
   static createUnsubscribeLink(tenantId, email, campaignId = null) {
     const token = this.generateUnsubscribeToken(tenantId, email, campaignId);
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/unsubscribe?token=${token}`;
+    const baseUrl = 'https://us-central1-market-genie-f2d41.cloudfunctions.net';
+    return `${baseUrl}/processUnsubscribe?token=${token}`;
   }
 
   // Process unsubscribe request

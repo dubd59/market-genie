@@ -59,6 +59,7 @@ const CRMPipeline = () => {
   const [selectedContactIds, setSelectedContactIds] = useState([])
   const [selectedContact, setSelectedContact] = useState(null)
   const [selectedDeal, setSelectedDeal] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [csvFile, setCsvFile] = useState(null)
   const [csvPreview, setCsvPreview] = useState([])
   const [fieldMapping, setFieldMapping] = useState({})
@@ -68,6 +69,7 @@ const CRMPipeline = () => {
     phone: '',
     company: '',
     position: '',
+    country: '',
     tags: [],
     notes: '',
     funnelId: '',
@@ -116,8 +118,23 @@ const CRMPipeline = () => {
     setOpenDropdown(null)
   }
 
-  // Sort contacts based on current sort settings
-  const sortedContacts = [...contacts].sort((a, b) => {
+  // Filter and sort contacts based on search term and sort settings
+  const filteredAndSortedContacts = [...contacts]
+    .filter(contact => {
+      if (!searchTerm) return true;
+      
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        contact.name?.toLowerCase().includes(searchLower) ||
+        contact.email?.toLowerCase().includes(searchLower) ||
+        contact.company?.toLowerCase().includes(searchLower) ||
+        contact.status?.toLowerCase().includes(searchLower) ||
+        contact.position?.toLowerCase().includes(searchLower) ||
+        contact.country?.toLowerCase().includes(searchLower) ||
+        (contact.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    })
+    .sort((a, b) => {
     let aValue, bValue
 
     switch (sortBy) {
@@ -141,9 +158,9 @@ const CRMPipeline = () => {
         aValue = (a.tags && Array.isArray(a.tags)) ? a.tags.join(', ').toLowerCase() : (a.tags || '').toLowerCase()
         bValue = (b.tags && Array.isArray(b.tags)) ? b.tags.join(', ').toLowerCase() : (b.tags || '').toLowerCase()
         break
-      case 'source':
-        aValue = a.source || 'unknown'
-        bValue = b.source || 'unknown'
+      case 'country':
+        aValue = a.country || 'unknown'
+        bValue = b.country || 'unknown'
         break
       default:
         aValue = a.name || ''
@@ -543,7 +560,7 @@ const CRMPipeline = () => {
   // Export data
   const exportContacts = () => {
     const csvContent = [
-      ['Name', 'Email', 'Phone', 'Company', 'Position', 'Tags', 'Notes'],
+      ['Name', 'Email', 'Phone', 'Company', 'Position', 'Country', 'Tags', 'Notes'],
       ...contacts.map(contact => [
         contact.name,
         contact.email,
@@ -1010,7 +1027,7 @@ const CRMPipeline = () => {
               </div>
             </div>
           </div>
-          <SuperiorCRMSystem />
+          <SuperiorCRMSystem contacts={contacts} deals={deals} />
         </div>
       )}
       
@@ -1078,6 +1095,45 @@ const CRMPipeline = () => {
           </div>
         </div>
         
+        {/* Search Bar */}
+        {contacts.length > 0 && (
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="🔍 Search contacts by name, email, company, status, tags, or country..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 p-3 pl-4 pr-12 rounded-lg focus:outline-none focus:ring-2 focus:ring-genie-teal focus:border-transparent"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {searchTerm && (
+              <div className="text-sm text-gray-500 mt-2">
+                {filteredAndSortedContacts.length === 0 
+                  ? `No contacts match "${searchTerm}"`
+                  : `Showing ${filteredAndSortedContacts.length} contact${filteredAndSortedContacts.length !== 1 ? 's' : ''} matching "${searchTerm}"`
+                }
+              </div>
+            )}
+            
+            {/* Quick Tip for Bounced Emails */}
+            {!searchTerm && (
+              <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+                💡 <strong>Tip:</strong> To find bounced emails, search for domain names or partial email addresses that bounced from your campaigns.
+              </div>
+            )}
+          </div>
+        )}
+        
         {contacts.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">👥</div>
@@ -1103,8 +1159,15 @@ const CRMPipeline = () => {
             {/* Contact Statistics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{contacts.length}</div>
-                <div className="text-sm text-blue-600">Total Contacts</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {searchTerm ? filteredAndSortedContacts.length : contacts.length}
+                  {searchTerm && contacts.length !== filteredAndSortedContacts.length && (
+                    <span className="text-sm text-gray-500"> of {contacts.length}</span>
+                  )}
+                </div>
+                <div className="text-sm text-blue-600">
+                  {searchTerm ? 'Filtered Contacts' : 'Total Contacts'}
+                </div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
@@ -1209,11 +1272,11 @@ const CRMPipeline = () => {
                       </th>
                       <th className="py-3 px-4 font-medium text-gray-700">
                         <SortDropdown 
-                          column="Source"
+                          column="Country"
                           currentSort={sortBy}
                           currentOrder={sortOrder}
                           options={[
-                            { value: 'source', label: 'Sort by Source' }
+                            { value: 'country', label: 'Sort by Country (A-Z)' }
                           ]}
                         />
                       </th>
@@ -1221,7 +1284,7 @@ const CRMPipeline = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedContacts.map(contact => (
+                    {filteredAndSortedContacts.map(contact => (
                     <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4 w-12">
                         <input
@@ -1278,8 +1341,8 @@ const CRMPipeline = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-xs text-gray-500 capitalize">
-                          {contact.source?.replace('_', ' ') || 'manual'}
+                        <span className="text-sm text-gray-700">
+                          {contact.country || '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -1528,6 +1591,13 @@ const CRMPipeline = () => {
                 placeholder="Position"
                 value={newContact.position}
                 onChange={(e) => setNewContact({ ...newContact, position: e.target.value })}
+                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-genie-teal focus:border-transparent"
+              />
+              <input
+                type="text"
+                placeholder="Country"
+                value={newContact.country}
+                onChange={(e) => setNewContact({ ...newContact, country: e.target.value })}
                 className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-genie-teal focus:border-transparent"
               />
               
@@ -1833,7 +1903,7 @@ const CRMPipeline = () => {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <div className="text-4xl mb-4">📁</div>
                 <h4 className="text-lg font-medium mb-2">Upload your CSV file</h4>
-                <p className="text-gray-600 mb-4">Supports name, email, phone, company, position, tags, and notes</p>
+                <p className="text-gray-600 mb-4">Supports name, email, phone, company, position, country, tags, and notes</p>
                 <input
                   type="file"
                   accept=".csv"

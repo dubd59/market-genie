@@ -200,7 +200,9 @@ function SophisticatedDashboard() {
     sendDate: '',
     aiSmartPrompt: '',
     additionalPrompt: '',
-    customSegment: ''
+    customSegment: '',
+    callToActionText: '',
+    callToActionUrl: ''
   })
   
   // Available CRM tags for custom segments
@@ -415,7 +417,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       if (!user || !tenant?.id) return
       
       try {
-        // Load contacts from ContactManager to extract tags, companies, and statuses
+        // Load contacts from ContactManager to extract tags
         console.log('Loading contacts for tenant:', tenant.id)
         const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
         console.log('Contacts result:', contactsResult)
@@ -431,75 +433,42 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             contactsArray = contactsResult.data.contacts
           }
           
-          console.log('Processed contacts array:', contactsArray.length, contactsArray.slice(0, 2))
+          console.log('Processed contacts array:', contactsArray.length, 'contacts')
           
           // Store contacts for campaign targeting
-          console.log('SETTING CONTACTS STATE:', contactsArray.length, 'contacts')
           setContacts(contactsArray)
-          console.log('CONTACTS STATE SET - First few contacts:', contactsArray.slice(0, 3))
           
-          // Extract all unique tags, companies, and statuses for segmentation
-          let allSegments = []
+          // Extract all unique tags from contacts for custom segments
+          let allTags = []
           
           contactsArray.forEach(contact => {
-            console.log('Processing contact:', contact.email)
+            console.log('Processing contact for tags:', contact.email, 'tags:', contact.tags)
             
-            // Add tags
-            if (contact.tags && Array.isArray(contact.tags)) {
-              allSegments.push(...contact.tags)
-            }
-            
-            // Add companies as segments
-            if (contact.company && contact.company.trim()) {
-              allSegments.push(`Company: ${contact.company}`)
-            }
-            
-            // Add statuses as segments
-            if (contact.status && contact.status.trim()) {
-              allSegments.push(`Status: ${contact.status}`)
+            // ONLY add tags from the Tags column - no company names, status, etc.
+            if (contact.tags) {
+              if (Array.isArray(contact.tags)) {
+                allTags.push(...contact.tags)
+              } else if (typeof contact.tags === 'string' && contact.tags.trim()) {
+                // Handle comma-separated tags (like "Business Services")
+                const tagArray = contact.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+                allTags.push(...tagArray)
+              }
             }
           })
           
-          // Add default manual segments for immediate use
-          const defaultSegments = [
-            'Gumroad seller', 
-            'New prospects', 
-            'VIP customers', 
-            'Email subscribers',
-            'Webinar attendees',
-            'Course buyers'
-          ]
-          allSegments.push(...defaultSegments)
+          // Get unique segments and filter out empty values
+          const uniqueSegments = [...new Set(allTags)].filter(segment => segment && segment.trim())
+          console.log('Available CRM segments from contacts:', uniqueSegments)
+          console.log('Total contacts loaded:', contactsArray.length)
           
-          // Get unique segments
-          const uniqueSegments = [...new Set(allSegments)].filter(segment => segment && segment.trim())
-          console.log('Available CRM segments:', uniqueSegments)
-          console.log('Total contacts:', contactsArray.length)
-          console.log('Sample contact structure:', contactsArray[0])
-          console.log('Contacts with tags:', contactsArray.filter(c => c.tags && c.tags.length > 0).map(c => ({ email: c.email, tags: c.tags })))
           setAvailableTags(uniqueSegments)
         } else {
-          // If no contacts yet, provide default segments
-          const defaultSegments = [
-            'Gumroad seller', 
-            'New prospects', 
-            'VIP customers', 
-            'Email subscribers',
-            'Webinar attendees',
-            'Course buyers'
-          ]
-          setAvailableTags(defaultSegments)
+          console.log('No contacts found, setting empty tags array')
+          setAvailableTags([])
         }
       } catch (error) {
         console.error('Error loading CRM segments:', error)
-        // Fallback to default segments on error
-        const defaultSegments = [
-          'Gumroad seller', 
-          'New prospects', 
-          'VIP customers', 
-          'Email subscribers'
-        ]
-        setAvailableTags(defaultSegments)
+        setAvailableTags([])
       }
     }
 
@@ -1651,6 +1620,21 @@ Enter number (1-4):`);
         finalEmailContent = aiGeneratedContent
       }
       
+      // Add call-to-action if provided (insert before footer/signature)
+      if (campaignFormData.callToActionText && campaignFormData.callToActionUrl) {
+        const callToActionHtml = `\n\n<p style="margin-top: 20px; text-align: center;"><a href="${campaignFormData.callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${campaignFormData.callToActionText}</a></p>\n`
+        
+        // Insert CTA before "Best regards," or any footer signature
+        if (finalEmailContent.includes('Best regards,')) {
+          finalEmailContent = finalEmailContent.replace('Best regards,', callToActionHtml + 'Best regards,')
+        } else if (finalEmailContent.includes('<p>Best regards')) {
+          finalEmailContent = finalEmailContent.replace('<p>Best regards', callToActionHtml + '<p>Best regards')
+        } else {
+          // If no signature found, add CTA at the end
+          finalEmailContent += callToActionHtml
+        }
+      }
+      
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
         id: Date.now(), // Use timestamp for unique ID
@@ -1669,6 +1653,8 @@ Enter number (1-4):`);
         targetAudience: campaignFormData.targetAudience,
         customSegment: campaignFormData.customSegment,
         sendDate: campaignFormData.sendDate,
+        callToActionText: campaignFormData.callToActionText,
+        callToActionUrl: campaignFormData.callToActionUrl,
         totalContacts: (Array.isArray(contacts) ? contacts : []).filter(contact => {
           // Calculate how many contacts match the target audience
           if (!campaignFormData.targetAudience || campaignFormData.targetAudience === 'All Leads' || campaignFormData.targetAudience === 'All Contacts') {
@@ -1730,7 +1716,9 @@ Enter number (1-4):`);
         sendDate: '',
         aiSmartPrompt: '',
         additionalPrompt: '',
-        customSegment: ''
+        customSegment: '',
+        callToActionText: '',
+        callToActionUrl: ''
       })
 
       toast.success('🤖 Campaign created with AI-generated content! Click "View Email" or "Edit" to see the personalized content.')
@@ -3317,42 +3305,50 @@ ${companyName}</p>
                             type="button"
                             onClick={async () => {
                               try {
-                                console.log('Manually refreshing tags...')
-                                const leadsResult = await LeadService.getLeads(tenant.id)
-                                if (leadsResult.success && leadsResult.data) {
-                                  console.log('=== MANUAL REFRESH: All fields in first lead ===')
-                                  if (leadsResult.data[0]) {
-                                    Object.keys(leadsResult.data[0]).forEach(key => {
-                                      console.log(`Field "${key}":`, leadsResult.data[0][key])
-                                    })
+                                console.log('Manually refreshing tags from CRM contacts...')
+                                
+                                // Load contacts from the same source as CRM Pipeline
+                                const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+                                console.log('Contacts result:', contactsResult)
+                                
+                                let contactsArray = []
+                                if (contactsResult.success && contactsResult.data) {
+                                  // Handle the nested contacts structure
+                                  if (Array.isArray(contactsResult.data)) {
+                                    contactsArray = contactsResult.data
+                                  } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
+                                    contactsArray = contactsResult.data.contacts
                                   }
-                                  console.log('=== END MANUAL REFRESH DEBUG ===')
-                                  
-                                  let allTags = []
-                                  leadsResult.data.forEach(lead => {
-                                    if (lead.tags) {
-                                      if (Array.isArray(lead.tags)) {
-                                        allTags.push(...lead.tags)
-                                      } else if (typeof lead.tags === 'string') {
-                                        allTags.push(lead.tags)
-                                      }
-                                    }
-                                    if (lead.tag) allTags.push(lead.tag)
-                                    if (lead.category) allTags.push(lead.category)
-                                    if (lead.segment) allTags.push(lead.segment)
-                                    // TEMP: Don't include CSV Import as a tag
-                                    if (lead.source && lead.source !== 'CSV Import') allTags.push(lead.source)
-                                    if (lead.type) allTags.push(lead.type)
-                                  })
-                                  
-                                  // TEMPORARY: Add manual segments for now
-                                  const manualSegments = ['Gumroad seller', 'New prospects', 'VIP customers', 'Email subscribers']
-                                  allTags.push(...manualSegments)
-                                  const uniqueTags = [...new Set(allTags)].filter(tag => tag && tag.trim())
-                                  setAvailableTags(uniqueTags)
-                                  toast.success(`Refreshed! Found ${uniqueTags.length} tags: ${uniqueTags.join(', ')}`)
                                 }
+                                
+                                console.log('Found contacts:', contactsArray.length)
+                                
+                                // Extract all unique tags from contacts
+                                let allTags = []
+                                
+                                contactsArray.forEach(contact => {
+                                  console.log('Processing contact:', contact.email, 'tags:', contact.tags)
+                                  
+                                  // ONLY add tags from the Tags column - nothing else
+                                  if (contact.tags) {
+                                    if (Array.isArray(contact.tags)) {
+                                      allTags.push(...contact.tags)
+                                    } else if (typeof contact.tags === 'string' && contact.tags.trim()) {
+                                      // Handle comma-separated tags (like "Business Services")
+                                      const tagArray = contact.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+                                      allTags.push(...tagArray)
+                                    }
+                                  }
+                                })
+                                
+                                // Remove empty values and get unique tags
+                                const uniqueTags = [...new Set(allTags)].filter(tag => tag && tag.trim())
+                                console.log('Extracted unique tags:', uniqueTags)
+                                
+                                setAvailableTags(uniqueTags)
+                                toast.success(`Refreshed! Found ${uniqueTags.length} tags from ${contactsArray.length} contacts: ${uniqueTags.slice(0, 5).join(', ')}${uniqueTags.length > 5 ? '...' : ''}`)
                               } catch (error) {
+                                console.error('Error refreshing tags:', error)
                                 toast.error('Error refreshing tags: ' + error.message)
                               }
                             }}
@@ -3459,6 +3455,49 @@ ${companyName}</p>
                       rows={3}
                       className={`w-full border border-indigo-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-indigo-50' : 'bg-indigo-50'}`}
                     />
+                  </div>
+
+                  {/* Call to Action Section */}
+                  <div className={`border-t pt-4 ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <h4 className={`text-md font-semibold mb-3 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>🔗 Call to Action (Optional)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>📝 Call to Action Text</label>
+                        <input
+                          type="text"
+                          value={campaignFormData.callToActionText}
+                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, callToActionText: e.target.value }))}
+                          placeholder="e.g., 'Schedule a Free Consultation', 'Download Our Guide'"
+                          className={`w-full border border-blue-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-blue-50' : 'bg-blue-50'}`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>🌐 Call to Action URL</label>
+                        <input
+                          type="url"
+                          value={campaignFormData.callToActionUrl}
+                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, callToActionUrl: e.target.value }))}
+                          placeholder="https://your-website.com/landing-page"
+                          className={`w-full border border-blue-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-blue-50' : 'bg-blue-50'}`}
+                        />
+                      </div>
+                    </div>
+                    {campaignFormData.callToActionText && campaignFormData.callToActionUrl && (
+                      <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-blue-50 text-blue-700'}`}>
+                        <div className="flex items-center text-sm">
+                          <span className="mr-2">👀</span>
+                          <span>Preview: </span>
+                          <a 
+                            href={campaignFormData.callToActionUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="ml-1 text-blue-600 underline hover:text-blue-800"
+                          >
+                            {campaignFormData.callToActionText}
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

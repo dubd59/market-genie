@@ -29,6 +29,9 @@ const ContactManager = () => {
   const [availableTags, setAvailableTags] = useState(['Gumroad seller', 'Email subscriber', 'VIP customer', 'New prospect']);
   const [availableCompanies, setAvailableCompanies] = useState([]);
   const [newTag, setNewTag] = useState('');
+  
+  // Search functionality
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Load contacts on component mount
   useEffect(() => {
@@ -134,6 +137,21 @@ const ContactManager = () => {
       setNewTag('');
     }
   };
+
+  // Filter contacts based on search term
+  const filteredContacts = contacts.filter(contact => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      contact.name?.toLowerCase().includes(searchLower) ||
+      contact.email?.toLowerCase().includes(searchLower) ||
+      contact.company?.toLowerCase().includes(searchLower) ||
+      contact.status?.toLowerCase().includes(searchLower) ||
+      contact.source?.toLowerCase().includes(searchLower) ||
+      (contact.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
+    );
+  });
 
   const toggleTag = (tag) => {
     const updatedTags = contactForm.tags.includes(tag) 
@@ -309,11 +327,50 @@ const ContactManager = () => {
 
       {/* Contacts List */}
       <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="text-xl font-semibold text-genie-teal mb-4">
-          Contacts ({contacts.length})
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-genie-teal">
+            Contacts ({filteredContacts.length}{contacts.length !== filteredContacts.length ? ` of ${contacts.length}` : ''})
+          </h3>
+        </div>
         
-        {contacts.length === 0 ? (
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="🔍 Search contacts by name, email, company, status, tags, or source..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border border-gray-300 p-3 pl-4 pr-12 rounded-lg focus:outline-none focus:ring-2 focus:ring-genie-teal focus:border-transparent"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <div className="text-sm text-gray-500 mt-2">
+              {filteredContacts.length === 0 
+                ? `No contacts match "${searchTerm}"`
+                : `Showing ${filteredContacts.length} contact${filteredContacts.length !== 1 ? 's' : ''} matching "${searchTerm}"`
+              }
+            </div>
+          )}
+          
+          {/* Quick Tip for Bounced Emails */}
+          {!searchTerm && (
+            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+              💡 <strong>Tip:</strong> To find bounced emails, search for domain names or partial email addresses that bounced from your campaigns.
+            </div>
+          )}
+        </div>
+        
+        {filteredContacts.length === 0 && !searchTerm ? (
           <div className="text-center py-8 text-gray-500">
             No contacts yet. Add your first contact to get started!
           </div>
@@ -331,7 +388,7 @@ const ContactManager = () => {
                 </tr>
               </thead>
               <tbody>
-                {contacts.map(contact => (
+                {filteredContacts.map(contact => (
                   <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <div>

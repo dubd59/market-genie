@@ -211,6 +211,12 @@ function SophisticatedDashboard() {
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
   
+  // Bounce Management
+  const [showBounceManager, setShowBounceManager] = useState(false)
+  const [bounceEmails, setBounceEmails] = useState('')
+  const [processingBounces, setProcessingBounces] = useState(false)
+  const [bounceMethod, setBounceMethod] = useState('paste') // 'paste' or 'upload' or 'manual'
+  
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
   
@@ -673,7 +679,20 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             newlySentEmails.push(contact.email.toLowerCase())
             console.log(`✅ Email sent to ${contact.email} (${emailsSent}/${remainingContacts.length})`)
           } else {
-            errors.push(`Failed to send to ${contact.email}: ${sendResult.error}`)
+            // Check if this is a "daily limit exceeded" after some emails were sent
+            const isLimitExceeded = sendResult.error && sendResult.error.includes('Daily user sending limit exceeded')
+            
+            if (isLimitExceeded && emailsSent > 0) {
+              // Gmail likely sent this email before hitting the limit
+              console.log(`⚠️ Gmail limit hit - but email to ${contact.email} may have been sent`)
+              emailsSent++
+              newlySentEmails.push(contact.email.toLowerCase())
+              errors.push(`Gmail daily limit exceeded after sending to ${contact.email}`)
+              // Stop sending more emails
+              break
+            } else {
+              errors.push(`Failed to send to ${contact.email}: ${sendResult.error}`)
+            }
           }
           
           // Proper delay to avoid Gmail rate limiting
@@ -874,6 +893,55 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
+  const handleRemoveDuplicates = async () => {
+    if (!confirm('This will remove duplicate leads (keeping the newest copy of each email). Continue?')) {
+      return
+    }
+
+    toast.loading('Removing duplicate leads...', { duration: 5000 })
+
+    try {
+      const result = await LeadService.removeDuplicateLeads(tenant.id)
+      
+      if (result.success) {
+        toast.success(result.message || 'Duplicates removed successfully')
+        await loadLeadData() // Refresh the lead list
+      } else {
+        toast.error(result.error || 'Failed to remove duplicates')
+      }
+    } catch (error) {
+      console.error('Error removing duplicates:', error)
+      toast.error('Failed to remove duplicates')
+    }
+  }
+
+  const handleRemoveEnterpriseLeads = async () => {
+    if (!confirm('This will remove all leads from big enterprise companies (Microsoft, Salesforce, Oracle, IBM, etc.) to focus on SMB prospects for Support Genie. Continue?')) {
+      return
+    }
+
+    toast.loading('Removing enterprise company leads...', { duration: 8000 })
+
+    try {
+      const result = await LeadService.removeEnterpriseLeads(tenant.id)
+      
+      if (result.success) {
+        toast.success(`${result.message} (${result.removedCount} leads removed)`)
+        await loadLeadData() // Refresh the lead list
+        
+        // Show details of removed companies if any were found
+        if (result.removedCount > 0) {
+          console.log('Removed enterprise leads:', result.removedLeads)
+        }
+      } else {
+        toast.error(result.error || 'Failed to remove enterprise leads')
+      }
+    } catch (error) {
+      console.error('Error removing enterprise leads:', error)
+      toast.error('Failed to remove enterprise leads')
+    }
+  }
+
   const handleEditLead = (lead) => {
     // Set the lead being edited
     setEditingLead(lead)
@@ -974,7 +1042,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     try {
       console.log('Fetching leads for tenant:', tenant.id)
       const [leadsResult, statsResult] = await Promise.all([
-        LeadService.getLeads(tenant.id),
+        LeadService.getLeads(tenant.id, 500),
         LeadService.getLeadStats(tenant.id)
       ])
 
@@ -1073,11 +1141,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       if (result.success && result.data && result.data.length > 0) {
         toast.success(`Generated ${result.data.length} leads from ${source}!`)
         
-        // Update budget usage and save to Firebase
-        const newUsage = currentBudgetUsage + (result.data.length * 0.5)
-        setCurrentBudgetUsage(newUsage)
-        await saveBudgetToFirebase(scrapingBudget, newUsage);
-        
+        // No more budget tracking - you're using free APIs!
         await loadLeadData()
       } else {
         toast.error('Failed to generate leads')
@@ -1367,15 +1431,15 @@ Enter number (1-4):`);
       }
 
       // Create CSV headers
-      const headers = ['Name', 'Email', 'Phone', 'Company', 'Source', 'Score', 'Created Date']
+      const headers = ['Name', 'Email', 'Company', 'Source', 'Tags', 'Score', 'Created Date']
       
       // Create CSV rows
       const rows = leads.map(lead => [
         `${lead.firstName} ${lead.lastName}`,
         lead.email,
-        lead.phone || '',
         lead.company || '',
         lead.source,
+        (lead.tags && Array.isArray(lead.tags)) ? lead.tags.join(', ') : 'Genie',
         lead.score,
         lead.createdAt ? (lead.createdAt.toDate ? lead.createdAt.toDate().toLocaleDateString() : new Date(lead.createdAt).toLocaleDateString()) : ''
       ])
@@ -1835,6 +1899,78 @@ ${companyName}</p>
     })
   }
 
+  // Bulk Bounce Management
+  const processBounceEmails = async () => {
+    if (!bounceEmails.trim()) {
+      toast.error('Please enter bounced email addresses')
+      return
+    }
+
+    setProcessingBounces(true)
+    
+    try {
+      // Extract email addresses from the bounce text
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+      const extractedEmails = bounceEmails.match(emailRegex) || []
+      
+      if (extractedEmails.length === 0) {
+        toast.error('No valid email addresses found in the text')
+        setProcessingBounces(false)
+        return
+      }
+
+      console.log('Extracted bounced emails:', extractedEmails)
+
+      // Load current contacts
+      const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+      let contactsArray = []
+      
+      if (contactsResult.success && contactsResult.data) {
+        if (Array.isArray(contactsResult.data)) {
+          contactsArray = contactsResult.data
+        } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
+          contactsArray = contactsResult.data.contacts
+        }
+      }
+
+      // Remove bounced emails from contacts
+      const originalCount = contactsArray.length
+      const cleanedContacts = contactsArray.filter(contact => 
+        !extractedEmails.includes(contact.email.toLowerCase())
+      )
+      const removedCount = originalCount - cleanedContacts.length
+
+      // Save cleaned contacts back to database
+      await FirebaseUserDataService.saveContacts(user.uid, user.uid, cleanedContacts)
+      
+      // Update local state
+      setContacts(cleanedContacts)
+
+      toast.success(`🧹 Bounce cleanup complete! Removed ${removedCount} bounced emails from ${originalCount} contacts`)
+      setBounceEmails('')
+      setShowBounceManager(false)
+      
+    } catch (error) {
+      console.error('Error processing bounces:', error)
+      toast.error('Error processing bounced emails: ' + error.message)
+    }
+    
+    setProcessingBounces(false)
+  }
+
+  // Handle file upload for bounces
+  const handleBounceFileUpload = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setBounceEmails(e.target.result)
+      toast.success('File uploaded! Email addresses will be extracted automatically.')
+    }
+    reader.readAsText(file)
+  }
+
   // Security function to validate section access
   const isAuthorizedForSection = (section) => {
     if (section === 'Admin Panel') {
@@ -2206,35 +2342,17 @@ ${companyName}</p>
                   </div>
                 </div>
               </div>
-              {/* Budget-Aware Scraping Controls */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-2">Budget-Aware Scraping Controls</h3>
-                <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
-                  <label className="font-medium text-gray-700">Monthly Scraping/API Budget ($):</label>
-                  <input 
-                    type="number" 
-                    min="10" 
-                    max="1000" 
-                    value={scrapingBudget}
-                    onChange={(e) => {
-                      const newBudget = parseFloat(e.target.value) || 50;
-                      setScrapingBudget(newBudget);
-                      // Auto-save to Firebase after a short delay
-                      setTimeout(() => saveBudgetToFirebase(newBudget, currentBudgetUsage), 1000);
-                    }}
-                    className="border p-2 rounded w-32" 
-                  />
-                  <button 
-                    onClick={updateBudget}
-                    className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80"
-                  >
-                    Update Budget
-                  </button>
+              {/* Budget-Aware Scraping Controls - DISABLED (Using Free APIs) */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
+                <h3 className="text-xl font-semibold text-green-700 mb-2">✅ Free API Mode Active</h3>
+                <div className="text-green-600">
+                  <p className="mb-2"><strong>Budget tracking disabled</strong> - You're using free APIs!</p>
+                  <p className="text-sm">Monitor your actual usage at:</p>
+                  <ul className="text-sm mt-2 list-disc list-inside">
+                    <li><strong>Hunter.io:</strong> https://hunter.io/dashboard (17/50 credits used)</li>
+                    <li><strong>No hidden costs</strong> - completely free until you upgrade</li>
+                  </ul>
                 </div>
-                <div className="text-gray-600 mb-2">Estimated leads per budget: <span className="font-bold">{Math.floor(scrapingBudget/0.5)} leads</span></div>
-                <div className="bg-blue-50 rounded p-4 mb-2">Current usage: <span className="font-bold">${currentBudgetUsage.toFixed(2)}</span> / ${scrapingBudget}</div>
-                <div className="text-xs text-gray-500 mb-2">You can update your budget as your capital grows. Low-cost mode helps startups stay within limits.</div>
-                <div className="text-xs text-red-500">{currentBudgetUsage > scrapingBudget ? 'Warning: Budget exceeded! Scraping limited.' : ''}</div>
               </div>
               
               </div>
@@ -2666,6 +2784,18 @@ ${companyName}</p>
                       <option>Event</option>
                     </select>
                     <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Filter</button>
+                    <button 
+                      onClick={handleRemoveDuplicates}
+                      className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+                    >
+                      🧹 Remove Duplicates
+                    </button>
+                    <button 
+                      onClick={handleRemoveEnterpriseLeads}
+                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                    >
+                      🏢 Remove Enterprise
+                    </button>
                   </div>
 
                   {/* Enhanced Recent Leads Table */}
@@ -2699,9 +2829,9 @@ ${companyName}</p>
                             </th>
                             <th className="py-3">Name</th>
                             <th className="py-3">Email</th>
-                            <th className="py-3">Phone</th>
                             <th className="py-3">Company</th>
                             <th className="py-3">Source</th>
+                            <th className="py-3">Tags</th>
                             <th className="py-3">Score</th>
                             <th className="py-3">Actions</th>
                           </tr>
@@ -2719,12 +2849,20 @@ ${companyName}</p>
                               </td>
                               <td className="py-3 font-medium">{lead.firstName} {lead.lastName}</td>
                               <td className="py-3 text-blue-600">{lead.email}</td>
-                              <td className="py-3">{lead.phone || '—'}</td>
                               <td className="py-3">{lead.company || '—'}</td>
                               <td className="py-3">
                                 <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
                                   {lead.source}
                                 </span>
+                              </td>
+                              <td className="py-3">
+                                <div className="flex flex-wrap gap-1">
+                                  {(lead.tags && Array.isArray(lead.tags) ? lead.tags : ['Genie']).map((tag, i) => (
+                                    <span key={i} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
                               </td>
                               <td className="py-3">
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -3519,7 +3657,15 @@ ${companyName}</p>
 
               {/* Active Campaigns */}
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>Active Campaigns</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className={`text-xl font-semibold text-genie-teal`}>Active Campaigns</h3>
+                  <button
+                    onClick={() => setShowBounceManager(true)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                  >
+                    🧹 Manage Bounces
+                  </button>
+                </div>
                 <div className="space-y-4">
                   {campaigns.length === 0 ? (
                     <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -3708,7 +3854,7 @@ ${companyName}</p>
                                 onClick={async () => {
                                   try {
                                     console.log('Refreshing tags for edit modal...')
-                                    const leadsResult = await LeadService.getLeads(tenant.id)
+                                    const leadsResult = await LeadService.getLeads(tenant.id, 500)
                                     if (leadsResult.success && leadsResult.data) {
                                       let allTags = []
                                       leadsResult.data.forEach(lead => {
@@ -3836,6 +3982,172 @@ ${companyName}</p>
                       <button 
                         onClick={() => setShowEditModal(false)}
                         className={`px-6 py-2 rounded border transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Bounce Management Modal */}
+              {showBounceManager && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className={`text-xl font-semibold text-genie-teal`}>🧹 Bulk Bounce Management</h3>
+                      <button
+                        onClick={() => setShowBounceManager(false)}
+                        className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'} text-2xl`}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className={`mb-4 p-4 rounded-lg ${isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-800'}`}>
+                      <h4 className="font-semibold mb-2">📋 Three Easy Ways to Remove Bounced Emails:</h4>
+                      <ol className="text-sm space-y-1">
+                        <li><strong>1. Manual List:</strong> Type/paste email addresses separated by commas or new lines</li>
+                        <li><strong>2. Upload File:</strong> Create a text file with bounced emails and upload it</li>
+                        <li><strong>3. Paste Text:</strong> Copy Gmail bounce notifications and paste them</li>
+                      </ol>
+                    </div>
+
+                    {/* Method Selection */}
+                    <div className="mb-4">
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        📝 Choose Input Method:
+                      </label>
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => setBounceMethod('manual')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            bounceMethod === 'manual'
+                              ? 'bg-blue-500 text-white'
+                              : isDarkMode 
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          📝 Manual List
+                        </button>
+                        <button
+                          onClick={() => setBounceMethod('upload')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            bounceMethod === 'upload'
+                              ? 'bg-blue-500 text-white'
+                              : isDarkMode 
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          📁 Upload File
+                        </button>
+                        <button
+                          onClick={() => setBounceMethod('paste')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            bounceMethod === 'paste'
+                              ? 'bg-blue-500 text-white'
+                              : isDarkMode 
+                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          📋 Paste Text
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Manual Email List */}
+                    {bounceMethod === 'manual' && (
+                      <div className="mb-4">
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          📧 Enter Bounced Email Addresses
+                        </label>
+                        <textarea
+                          value={bounceEmails}
+                          onChange={(e) => setBounceEmails(e.target.value)}
+                          placeholder={`Enter email addresses (one per line or comma-separated):
+
+tcharles@prairiefarms.com
+invalid@company.com
+badaddress@domain.com
+
+Or comma-separated:
+email1@domain.com, email2@domain.com, email3@domain.com`}
+                          rows={8}
+                          className={`w-full border border-red-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white'}`}
+                        />
+                      </div>
+                    )}
+
+                    {/* File Upload */}
+                    {bounceMethod === 'upload' && (
+                      <div className="mb-4">
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          📁 Upload Bounce File (.txt, .csv, or any text file)
+                        </label>
+                        <div className={`border-2 border-dashed border-red-300 rounded-lg p-6 text-center ${isDarkMode ? 'bg-gray-700' : 'bg-red-50'}`}>
+                          <input
+                            type="file"
+                            accept=".txt,.csv,.log,*"
+                            onChange={handleBounceFileUpload}
+                            className="hidden"
+                            id="bounceFileInput"
+                          />
+                          <label htmlFor="bounceFileInput" className="cursor-pointer">
+                            <div className="text-4xl mb-2">📁</div>
+                            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              Click to upload a file with bounced emails
+                            </div>
+                            <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              Supports .txt, .csv, or any text file
+                            </div>
+                          </label>
+                        </div>
+                        {bounceEmails && (
+                          <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-green-900 text-green-200' : 'bg-green-50 text-green-800'}`}>
+                            ✅ File uploaded! Ready to process {(bounceEmails.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || []).length} email addresses.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Paste Text */}
+                    {bounceMethod === 'paste' && (
+                      <div className="mb-4">
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          � Paste Gmail Bounce Notifications
+                        </label>
+                        <textarea
+                          value={bounceEmails}
+                          onChange={(e) => setBounceEmails(e.target.value)}
+                          placeholder="Paste Gmail bounce notifications here... The system will automatically extract email addresses like: tcharles@prairiefarms.com, invalid@company.com, etc."
+                          rows={8}
+                          className={`w-full border border-red-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white'}`}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={processBounceEmails}
+                        disabled={processingBounces || !bounceEmails.trim()}
+                        className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                          processingBounces || !bounceEmails.trim()
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-red-500 text-white hover:bg-red-600'
+                        }`}
+                      >
+                        {processingBounces ? '🔄 Processing...' : '🧹 Remove Bounced Emails'}
+                      </button>
+                      <button
+                        onClick={() => setShowBounceManager(false)}
+                        className={`px-6 py-3 rounded-lg border transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50'

@@ -2215,6 +2215,205 @@ Each funnel shows live metrics that ClickFunnels can't provide:
 
 ---
 
+## 🔗 API Integration Setup - Complete Lead Generation Configuration
+
+### **🎯 Overview: Real vs Sample Data**
+Market Genie connects to **real lead generation APIs** to provide genuine business contacts. This section explains how to set up each integration, understand billing, and monitor usage.
+
+**Important**: Without proper API setup, the system will show error messages instead of generating sample data. This ensures you only work with real, verified leads.
+
+---
+
+## 🕵️ Hunter.io Setup - Email Finding Service
+
+### **What Hunter.io Does**
+- **Finds real email addresses** for people at specific companies
+- **Verifies email deliverability** before providing results
+- **Provides confidence scores** for each email found
+- **Used by**: Custom Sources button in Lead Generation
+
+### **Step 1: Create Your Hunter.io Account**
+1. **Go to**: https://hunter.io/
+2. **Click "Sign Up"** (top right)
+3. **Choose your plan**:
+   - **Free**: 25 searches/month (perfect for testing)
+   - **Starter**: $49/month for 1,000 searches
+   - **Growth**: $99/month for 5,000 searches
+   - **Business**: $199/month for 15,000 searches
+
+### **Step 2: Get Your API Key**
+1. **After signup**, go to https://hunter.io/api_keys
+2. **Copy your API key** (looks like: `42ecf1fb069d478dacf5d65cea5205a56084711f`)
+3. **Keep this safe** - you'll need it for Market Genie
+
+### **Step 3: Connect to Market Genie**
+1. **In Market Genie**, go to **Settings** → **API Keys & Integrations**
+2. **Find "Hunter.io"** section
+3. **Paste your API key** in the "API Key" field
+4. **Click "Connect Hunter.io"**
+5. **Wait for green "Connected" status**
+
+### **Step 4: Test the Connection**
+1. **Go to Lead Generation** → **AI Scraping**
+2. **Click "Custom Sources"** button
+3. **Watch console** (F12) for API calls to `api.hunter.io`
+4. **Should see real leads** from companies like Zoom, Stripe, HubSpot
+
+### **Your Hunter.io Account Billing**
+- **You signed up directly with Hunter.io** (not through Market Genie)
+- **Billing goes to YOUR Hunter.io account** - whatever payment method you provided
+- **Market Genie is FREE** - Hunter.io is the paid service
+- **Think of it like**: Your free app using a paid Uber API - Uber bills you directly
+
+### **Where You Get Billed**
+1. **Hunter.io Dashboard**: https://hunter.io/users/sign_in
+2. **Your Hunter.io account** (whatever email/payment method you used during signup)
+3. **NOT through Market Genie** - we just connect to their service
+
+### **Check Your Hunter.io Usage**
+1. **Go to**: https://hunter.io/dashboard
+2. **Look for**: "API Usage" or "Requests Used" 
+3. **See**: How many searches you've used this month
+4. **Monitor**: Remaining searches in your plan
+
+### **Cost Analysis**
+- **Free Tier**: 25 searches/month (no charges until exceeded)
+- **Each successful lead**: ~1 API call
+- **Failed searches**: Still count as 1 API call
+- **Example**: 3 successful leads = 3 API calls used
+
+---
+
+## 🚀 Apollo.io Setup - Business Directory Service
+
+### **What Apollo.io Does**
+- **Searches business directories** for company information
+- **Provides employee contact details** at specific companies
+- **Filters by company size, industry, location**
+- **Used by**: Business Directories button in Lead Generation
+
+### **Step 1: Create Your Apollo.io Account**
+1. **Go to**: https://www.apollo.io/
+2. **Click "Sign Up"** (top right)
+3. **Choose your plan**:
+   - **Free**: 60 credits/month (about 60 contacts)
+   - **Basic**: $49/month for 1,200 credits
+   - **Professional**: $79/month for 3,600 credits
+   - **Organization**: $119/month for 6,000 credits
+
+### **Step 2: Get Your API Key**
+1. **After signup**, go to https://app.apollo.io/#/settings/integrations
+2. **Click "API"** tab
+3. **Generate API Key** (looks like: `YOUR_APOLLO_API_KEY_HERE`)
+4. **Copy and save** this key
+
+### **Step 3: Connect to Market Genie**
+1. **In Market Genie**, go to **Settings** → **API Keys & Integrations**
+2. **Find "Apollo.io"** section
+3. **Paste your API key** in the "API Key" field
+4. **Click "Connect Apollo.io"**
+5. **Wait for green "Connected" status**
+
+### **Step 4: Test the Connection**
+1. **Go to Lead Generation** → **AI Scraping**
+2. **Click "Business Directories"** button
+3. **Should see real business contacts** from Apollo's database
+
+### **Your Apollo.io Account Billing**
+- **Direct billing** to your Apollo.io account
+- **Same concept** as Hunter.io - you pay Apollo directly
+- **Market Genie connects** but doesn't handle billing
+
+### **Check Your Apollo.io Usage**
+1. **Go to**: https://app.apollo.io/#/settings/plan-billing
+2. **View**: Credits used vs. credits remaining
+3. **Monitor**: Usage across all integrations
+
+---
+
+## 📱 LinkedIn Sales Navigator Setup (Optional)
+
+### **What LinkedIn Sales Navigator Does**
+- **Advanced LinkedIn searching** beyond basic LinkedIn
+- **Export contact details** from LinkedIn profiles
+- **Filter by job title, company, industry**
+- **Used by**: Social Media button in Lead Generation
+
+### **Setup Steps**
+1. **Subscribe to**: LinkedIn Sales Navigator ($79.99/month)
+2. **Get API access**: Contact LinkedIn for API approval
+3. **Connect to Market Genie**: Follow same process as other APIs
+
+**Note**: LinkedIn API access requires approval and is mainly for enterprise customers.
+
+---
+
+## 🎯 Testing Your Complete Setup
+
+### **Test All Three Sources**
+1. **Custom Sources** → Should use Hunter.io for real emails
+2. **Business Directories** → Should use Apollo.io for business contacts  
+3. **Social Media** → Should use LinkedIn API (if connected)
+
+### **What Success Looks Like**
+- ✅ **Real company names** (Zoom, Stripe, HubSpot, etc.)
+- ✅ **Valid email formats** (@company.com domains)
+- ✅ **Confidence scores** 70-100
+- ✅ **No fake data** (no 555- phone numbers, no .co/.io fake domains)
+
+### **What Failure Looks Like**
+- ❌ **Error messages** instead of leads
+- ❌ **"API not connected"** warnings
+- ❌ **Empty results** or timeout errors
+
+---
+
+## 💰 Complete Cost Breakdown
+
+### **Market Genie App**
+- **Cost**: FREE
+- **Includes**: Full CRM, email campaigns, workflow automation
+- **No limits**: Unlimited contacts, campaigns, workflows
+
+### **Hunter.io Service**
+- **Free**: 25 email searches/month
+- **Paid**: $49-$199/month for more searches
+- **Billing**: Direct to your Hunter.io account
+
+### **Apollo.io Service**  
+- **Free**: 60 credits/month
+- **Paid**: $49-$119/month for more credits
+- **Billing**: Direct to your Apollo.io account
+
+### **Total Monthly Cost Examples**
+- **Testing/Small Business**: $0 (use free tiers)
+- **Growing Business**: $49-$98/month (Hunter + Apollo basic plans)
+- **Enterprise**: $200-$400/month (higher tier plans)
+
+---
+
+## 🔍 Monitoring & Usage Tracking
+
+### **Daily Monitoring Routine**
+1. **Check Hunter.io usage**: https://hunter.io/dashboard
+2. **Check Apollo.io usage**: https://app.apollo.io/#/settings/plan-billing  
+3. **Monitor Market Genie**: Lead Generation → Analytics tab
+4. **Review lead quality**: Check confidence scores and verify emails
+
+### **Weekly Review**
+1. **Calculate cost per lead**: Total API costs ÷ Number of leads generated
+2. **Assess lead quality**: How many leads converted to opportunities?
+3. **Optimize sources**: Which API provides best ROI?
+4. **Budget planning**: Estimate next month's API costs
+
+### **Red Flags to Watch**
+- **Sudden spike in API usage** (check for errors or loops)
+- **Low confidence scores** (below 70) indicate poor data quality
+- **High API costs** with low lead conversion rates
+- **Repeated failed API calls** (check API key validity)
+
+---
+
 ## 🎯 Conclusion
 
 Market Genie represents the future of marketing automation with its AI-first approach, 3D visualization capabilities, and self-healing campaign technology. This comprehensive platform provides everything needed to revolutionize marketing operations while maintaining ease of use and professional functionality.

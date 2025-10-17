@@ -526,10 +526,24 @@ const CRMPipeline = () => {
   }
 
   const toggleSelectAll = () => {
-    if (selectedContactIds.length === contacts.length) {
-      setSelectedContactIds([])
+    // Use filtered contacts instead of all contacts
+    const filteredContactIds = filteredAndSortedContacts.map(contact => contact.id)
+    const allFilteredSelected = filteredContactIds.every(id => selectedContactIds.includes(id))
+    
+    if (allFilteredSelected) {
+      // Deselect all filtered contacts
+      setSelectedContactIds(prev => prev.filter(id => !filteredContactIds.includes(id)))
     } else {
-      setSelectedContactIds(contacts.map(contact => contact.id))
+      // Select all filtered contacts (add to existing selection)
+      setSelectedContactIds(prev => {
+        const newSelection = [...prev]
+        filteredContactIds.forEach(id => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id)
+          }
+        })
+        return newSelection
+      })
     }
   }
 
@@ -1224,7 +1238,7 @@ const CRMPipeline = () => {
                       <th className="py-3 px-4 font-medium text-gray-700 w-12">
                         <input
                           type="checkbox"
-                          checked={contacts.length > 0 && selectedContactIds.length === contacts.length}
+                          checked={filteredAndSortedContacts.length > 0 && filteredAndSortedContacts.every(contact => selectedContactIds.includes(contact.id))}
                           onChange={toggleSelectAll}
                           className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
                         />

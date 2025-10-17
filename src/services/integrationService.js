@@ -170,21 +170,60 @@ class IntegrationService {
       )
       
       const result = await response.json()
+      console.log('Hunter.io response:', result)
       
       if (result.data && result.data.email) {
         return { 
           success: true, 
           data: {
             email: result.data.email,
+            first_name: result.data.first_name,
+            last_name: result.data.last_name,
             confidence: result.data.confidence,
             sources: result.data.sources
           }
         }
       }
       
-      return { success: false, error: 'Email not found' }
+      return { success: false, error: 'Email not found', details: result }
     } catch (error) {
       console.error('Email finding error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Domain search to find multiple people at a company
+  async searchDomain(tenantId, domain, limit = 5) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'hunter-io')
+      if (!credentials.success) {
+        return { success: false, error: 'Hunter.io not connected' }
+      }
+
+      const response = await fetch(
+        `https://api.hunter.io/v2/domain-search?domain=${domain}&limit=${limit}&api_key=${credentials.data.apiKey}`
+      )
+      
+      const result = await response.json()
+      console.log('Hunter.io domain search response:', result)
+      
+      if (result.data && result.data.emails && result.data.emails.length > 0) {
+        return { 
+          success: true, 
+          data: result.data.emails.map(email => ({
+            email: email.value,
+            first_name: email.first_name,
+            last_name: email.last_name,
+            position: email.position,
+            confidence: email.confidence,
+            department: email.department
+          }))
+        }
+      }
+      
+      return { success: false, error: 'No emails found for domain', details: result }
+    } catch (error) {
+      console.error('Domain search error:', error)
       return { success: false, error: error.message }
     }
   }

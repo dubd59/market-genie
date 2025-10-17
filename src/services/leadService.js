@@ -13,9 +13,33 @@ class LeadService {
     return collection(db, 'MarketGenie_tenants', tenantId, 'leads')
   }
 
-  // Create a new lead
+  // Find lead by email to prevent duplicates
+  async findLeadByEmail(tenantId, email) {
+    try {
+      const leadsCollection = this.getLeadsCollection(tenantId)
+      const q = query(leadsCollection, where('email', '==', email))
+      const querySnapshot = await getDocs(q)
+      
+      if (!querySnapshot.empty) {
+        return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() }
+      }
+      return null
+    } catch (error) {
+      console.error('Error finding lead by email:', error)
+      return null
+    }
+  }
+
+  // Create a new lead (with duplicate checking)
   async createLead(tenantId, leadData) {
     try {
+      // Check if lead with this email already exists
+      const existingLead = await this.findLeadByEmail(tenantId, leadData.email)
+      if (existingLead) {
+        console.log(`Skipping duplicate lead: ${leadData.email}`)
+        return { success: false, error: 'Lead already exists', duplicate: true }
+      }
+
       const enrichedLead = {
         ...leadData,
         tenantId,
@@ -43,7 +67,7 @@ class LeadService {
   }
 
   // Get leads for a tenant
-  async getLeads(tenantId, limitCount = 50) {
+  async getLeads(tenantId, limitCount = 200) {
     try {
       const leadsCollection = this.getLeadsCollection(tenantId)
       const q = query(
@@ -56,7 +80,15 @@ class LeadService {
       const documents = []
       
       querySnapshot.forEach((doc) => {
-        documents.push({ id: doc.id, ...doc.data() })
+        const data = doc.data()
+        // Auto-fix old leads to have clean "Genie" tag only
+        if (!data.tags || !data.tags.includes('Genie')) {
+          data.tags = ['Genie']
+        } else if (data.tags.length > 1) {
+          // Clean up existing leads that have extra tags
+          data.tags = ['Genie']
+        }
+        documents.push({ id: doc.id, ...data })
       })
 
       return { success: true, data: documents }
@@ -232,7 +264,7 @@ class LeadService {
     }
   }
 
-  // Generate AI-powered leads using real APIs
+  // Generate AI-powered leads using ONLY real APIs (Hunter.io, Apollo.io)
   async generateAILeads(tenantId, source, count = 5) {
     try {
       // Import the integration service
@@ -241,118 +273,333 @@ class LeadService {
 
       switch(source.toLowerCase()) {
         case 'business directories':
-          // Use Apollo.io for business directory data
-          const apolloResult = await IntegrationService.searchApolloLeads(tenantId, {
-            q_organization_num_employees_ranges: ["1,10", "11,50", "51,200"],
-            per_page: count
-          });
+          // E-commerce and online service SMBs
+          const businessLeads = [];
+          const businessDomains = [
+            // E-commerce Platforms & Tools
+            'bigcommerce.com', 'woocommerce.com', 'squarespace.com', 'wix.com', 'webflow.com',
+            'shopify.com', 'magento.com', 'prestashop.com', 'opencart.com', 'ecwid.com',
+            'volusion.com', 'bigcartel.com', '3dcart.com', 'cs-cart.com', 'zen-cart.com',
+            
+            // Online Course & Education Platforms
+            'teachable.com', 'thinkific.com', 'kajabi.com', 'learnworlds.com', 'zippy-courses.com',
+            'coursecraft.net', 'academy-of-mine.com', 'fedora.io', 'mighty-networks.com',
+            
+            // Digital Product & Content Platforms
+            'etsy.com', 'gumroad.com', 'selz.com', 'payhip.com', 'fastspring.com',
+            'paddle.com', 'lemonsqueezy.com', 'selly.gg', 'gumlet.com', 'sellfy.com',
+            
+            // Email Marketing SMBs
+            'convertkit.com', 'mailerlite.com', 'constant-contact.com', 'aweber.com', 'getresponse.com',
+            'campaignmonitor.com', 'sendinblue.com', 'benchmark.email', 'mailjet.com', 'moosend.com',
+            
+            // Website Builders & Hosting SMBs
+            'hostgator.com', 'bluehost.com', 'siteground.com', 'godaddy.com', 'namecheap.com',
+            'dreamhost.com', 'a2hosting.com', 'inmotionhosting.com', 'hostinger.com'
+          ];
           
-          if (apolloResult.success) {
-            leads = apolloResult.data;
+          // Shuffle domains to get variety each time
+          const shuffledBusinessDomains = businessDomains.sort(() => 0.5 - Math.random());
+          
+          for (let i = 0; i < Math.min(count, shuffledBusinessDomains.length); i++) {
+            const domain = shuffledBusinessDomains[i];
+            try {
+              const domainResult = await IntegrationService.searchDomain(tenantId, domain, 2);
+              if (domainResult.success && domainResult.data && domainResult.data.length > 0) {
+                domainResult.data.forEach(person => {
+                  businessLeads.push({
+                    firstName: person.first_name || 'Business',
+                    lastName: person.last_name || 'Contact',
+                    email: person.email,
+                    company: domain.split('.')[0],
+                    phone: '',
+                    title: person.position || 'Business Professional',
+                    source: 'hunter-business-directory',
+                    score: person.confidence || 80
+                  });
+                });
+              }
+            } catch (error) {
+              console.log('Hunter.io business search error for', domain, error.message);
+            }
+          }
+          
+          if (businessLeads.length > 0) {
+            leads = businessLeads.slice(0, count);
           } else {
-            // Fallback to demo data if API not connected
-            leads = this.generateDemoLeads(source, count);
-            console.log('Apollo.io not connected, using demo data');
+            return { success: false, error: 'Hunter.io business directory search failed. Please check your API key and quota.' };
           }
           break;
 
         case 'social media':
-          // Use LinkedIn Sales Navigator or fallback to demo
-          const linkedinResult = await IntegrationService.scrapeLinkedInLeads(tenantId, {
-            keywords: 'B2B SaaS marketing manager',
-            regions: ['United States'],
-            current_company_size: ['11-50', '51-200'],
-            count: count
-          });
+          // Small business SaaS and service providers
+          const socialLeads = [];
+          const socialDomains = [
+            // Social Media Management SMBs
+            'bufferapp.com', 'later.com', 'socialbee.io', 'agorapulse.com', 'sendible.com',
+            'sproutsocial.com', 'hootsuite.com', 'socialpilot.co', 'crowdfire.com', 'postcron.com',
+            'recurpost.com', 'socialoomph.com', 'creatorco.com', 'loomly.com', 'publer.io',
+            
+            // Webinar & Video Conferencing SMBs
+            'livestorm.co', 'demio.com', 'webinarjam.com', 'gotowebinar.com', 'zoom.us',
+            'bigmarker.com', 'webex.com', 'webinarninja.com', 'crowdcast.io', 'streamyard.com',
+            
+            // Scheduling & Appointment SMBs
+            'calendly.com', 'acuityscheduling.com', 'bookingkoala.com', 'setmore.com', 'appointy.com',
+            'square.com/appointments', 'timely.com', 'bookafy.com', 'picktime.com', 'when2meet.com',
+            
+            // Design & Creative Tools SMBs
+            'canva.com', 'figma.com', 'sketch.com', 'invisionapp.com', 'miro.com',
+            'lucidchart.com', 'creately.com', 'visme.co', 'animoto.com', 'loom.com',
+            
+            // Analytics & SEO SMBs
+            'hotjar.com', 'crazyegg.com', 'optimizely.com', 'unbounce.com', 'leadpages.com',
+            'semrush.com', 'ahrefs.com', 'moz.com', 'screaming-frog.co.uk', 'brightlocal.com'
+          ];
           
-          if (linkedinResult.success) {
-            leads = linkedinResult.data;
+          // Shuffle domains to get variety each time
+          const shuffledSocialDomains = socialDomains.sort(() => 0.5 - Math.random());
+          
+          for (let i = 0; i < Math.min(count, shuffledSocialDomains.length); i++) {
+            const domain = shuffledSocialDomains[i];
+            try {
+              const domainResult = await IntegrationService.searchDomain(tenantId, domain, 2);
+              if (domainResult.success && domainResult.data && domainResult.data.length > 0) {
+                domainResult.data.forEach(person => {
+                  socialLeads.push({
+                    firstName: person.first_name || 'Social',
+                    lastName: person.last_name || 'Professional',
+                    email: person.email,
+                    company: domain.split('.')[0],
+                    phone: '',
+                    title: person.position || 'Social Media Professional',
+                    source: 'hunter-social-media',
+                    score: person.confidence || 85
+                  });
+                });
+              }
+            } catch (error) {
+              console.log('Hunter.io social media search error for', domain, error.message);
+            }
+          }
+          
+          if (socialLeads.length > 0) {
+            leads = socialLeads.slice(0, count);
           } else {
-            // Fallback to demo data
-            leads = this.generateDemoLeads(source, count);
-            console.log('LinkedIn Sales Navigator not connected, using demo data');
+            return { success: false, error: 'Hunter.io social media search failed. Please check your API key and quota.' };
           }
           break;
 
         case 'custom sources':
-          // Try Hunter.io + Apollo combination
-          const customLeads = [];
-          const domains = ['techstartup.com', 'innovatecompany.io', 'growthagency.co'];
+          // SMB SaaS companies perfect for Support Genie
+          const hunterLeads = [];
+          const realDomains = [
+            // Customer Support & Help Desk SMBs
+            'freshworks.com', 'intercom.com', 'helpscout.com', 'crisp.chat', 'tidio.com',
+            'livechat.com', 'uservoice.com', 'groove.com', 'kayako.com', 'helpshift.com',
+            'drift.com', 'olark.com', 'chatra.io', 'tawk.to', 'smartsupp.com',
+            'zendesk.com', 'freshdesk.com', 'helpcrunch.com', 'chaport.com', 'userlike.com',
+            
+            // Form & Survey Tools (need customer support)
+            'typeform.com', 'jotform.com', 'formstack.com', 'paperform.co', 'tally.so',
+            'surveymonkey.com', 'wufoo.com', 'cognito.com', 'formsite.com', 'ninja-forms.com',
+            
+            // Project Management & Business Tools SMBs
+            'asana.com', 'trello.com', 'monday.com', 'notion.so', 'airtable.com',
+            'clickup.com', 'basecamp.com', 'teamwork.com', 'wrike.com', 'smartsheet.com',
+            'podio.com', 'workzone.com', 'clarizen.com', 'freedcamp.com', 'hitask.com',
+            
+            // CRM & Sales Tools (SMB focused)
+            'pipedrive.com', 'close.com', 'copper.com', 'insightly.com', 'nutshell.com',
+            'keap.com', 'capsule-crm.com', 'streak.com', 'folk.app', 'nimble.com',
+            'amoCRM.com', 'apptivo.com', 'batchbook.com', 'flowlu.com', 'ontraport.com',
+            
+            // Marketing Automation SMBs
+            'activecampaign.com', 'drip.com', 'klaviyo.com', 'omnisend.com', 'sendlane.com',
+            'getresponse.com', 'campaignmonitor.com', 'sendinblue.com', 'benchmark.email'
+          ];
           
-          for (const domain of domains.slice(0, count)) {
+          // Shuffle domains to get variety each time
+          const shuffledDomains = realDomains.sort(() => 0.5 - Math.random());
+          
+          for (let i = 0; i < Math.min(count, shuffledDomains.length); i++) {
+            const domain = shuffledDomains[i];
             try {
-              const emailResult = await IntegrationService.findEmails(tenantId, domain, 'CEO', '');
-              if (emailResult.success) {
-                customLeads.push({
-                  firstName: 'Executive',
-                  lastName: 'Contact',
-                  email: emailResult.data.email,
-                  company: domain.split('.')[0],
-                  source: 'custom-hunter',
-                  score: emailResult.data.confidence || 80
+              // Use domain search instead of individual email finder
+              const domainResult = await IntegrationService.searchDomain(tenantId, domain, 2);
+              if (domainResult.success && domainResult.data && domainResult.data.length > 0) {
+                // Add all found people from this domain
+                domainResult.data.forEach(person => {
+                  hunterLeads.push({
+                    firstName: person.first_name || 'Unknown',
+                    lastName: person.last_name || 'Person',
+                    email: person.email,
+                    company: domain.split('.')[0],
+                    phone: '',
+                    title: person.position || 'Employee',
+                    source: 'hunter-domain-search',
+                    score: person.confidence || 85
+                  });
                 });
+              } else {
+                console.log('No people found at', domain);
               }
             } catch (error) {
-              console.log('Hunter.io error for', domain, error.message);
+              console.log('Hunter.io domain search error for', domain, error.message);
             }
           }
           
-          leads = customLeads.length > 0 ? customLeads : this.generateDemoLeads(source, count);
+          if (hunterLeads.length > 0) {
+            leads = hunterLeads.slice(0, count); // Limit to requested count
+          } else {
+            return { success: false, error: 'Hunter.io domain search failed to find any real people. Please check your API key and quota in Settings.' };
+          }
           break;
 
         default:
-          leads = this.generateDemoLeads(source, count);
+          return { success: false, error: 'Invalid lead source specified.' };
       }
 
-      // Process and save the leads
+      // Process and save the leads (ONLY if we have real data)
+      if (leads.length === 0) {
+        return { success: false, error: 'No real leads found from API. Please try again or check API settings.' };
+      }
+
       const results = [];
+      let duplicateCount = 0;
+      
       for (const leadData of leads) {
         const enrichedLead = {
           ...leadData,
           source: source.toLowerCase(),
           title: leadData.title || this.generateRandomTitle(),
           score: leadData.score || Math.floor(Math.random() * 40) + 60,
-          tags: [source.toLowerCase(), 'ai-generated'],
-          notes: [`Generated from ${source} via API integration`]
+          tags: ['Genie'],
+          notes: [`Generated from ${source} via Market Genie API integration`]
         };
 
         const result = await this.createLead(tenantId, enrichedLead);
         if (result.success) {
           results.push(result.data);
+        } else if (result.duplicate) {
+          duplicateCount++;
         }
       }
 
-      return { success: true, data: results };
+      const message = duplicateCount > 0 
+        ? `Generated ${results.length} new leads, skipped ${duplicateCount} duplicates`
+        : `Generated ${results.length} new leads`;
+
+      return { success: true, data: results, message };
     } catch (error) {
       console.error('Error generating AI leads:', error);
       return { success: false, error: error.message };
     }
   }
 
-  // Fallback demo lead generation
-  generateDemoLeads(source, count) {
-    const sampleLeads = [
-      { firstName: 'John', lastName: 'Smith', email: 'john.smith@techcorp.com', company: 'TechCorp', phone: '555-0101' },
-      { firstName: 'Sarah', lastName: 'Johnson', email: 'sarah.j@innovate.co', company: 'Innovate Co', phone: '555-0102' },
-      { firstName: 'Mike', lastName: 'Chen', email: 'mike.chen@startup.io', company: 'Startup.io', phone: '555-0103' },
-      { firstName: 'Emily', lastName: 'Davis', email: 'emily@digitalagency.com', company: 'Digital Agency', phone: '555-0104' },
-      { firstName: 'David', lastName: 'Wilson', email: 'david.w@consulting.biz', company: 'Wilson Consulting', phone: '555-0105' },
-      { firstName: 'Lisa', lastName: 'Brown', email: 'lisa.brown@solutions.net', company: 'Brown Solutions', phone: '555-0106' },
-      { firstName: 'James', lastName: 'Miller', email: 'james@marketing.pro', company: 'Miller Marketing', phone: '555-0107' },
-      { firstName: 'Anna', lastName: 'Garcia', email: 'anna.garcia@web.dev', company: 'Garcia Web Dev', phone: '555-0108' }
-    ];
+  // Remove enterprise company leads - focus on SMBs only
+  async removeEnterpriseLeads(tenantId) {
+    try {
+      const leadsCollection = this.getLeadsCollection(tenantId)
+      const querySnapshot = await getDocs(leadsCollection)
+      
+      // Enterprise domains to remove (big companies not good for Support Genie)
+      const enterpriseDomains = [
+        'microsoft.com', 'salesforce.com', 'oracle.com', 'ibm.com', 'adobe.com',
+        'servicenow.com', 'workday.com', 'tableau.com', 'snowflake.com', 'databricks.com',
+        'palantir.com', 'mongodb.com', 'elastic.co', 'splunk.com', 'okta.com',
+        'crowdstrike.com', 'meta.com', 'google.com', 'amazon.com', 'apple.com',
+        'netflix.com', 'uber.com', 'airbnb.com', 'stripe.com', 'square.com'
+      ]
+      
+      let removedCount = 0
+      const removedLeads = []
+      
+      for (const docSnapshot of querySnapshot.docs) {
+        const lead = docSnapshot.data()
+        if (lead.email) {
+          const emailDomain = lead.email.split('@')[1]?.toLowerCase()
+          
+          // Check if this lead is from an enterprise domain
+          if (enterpriseDomains.some(domain => emailDomain === domain)) {
+            await deleteDoc(doc(leadsCollection, docSnapshot.id))
+            removedLeads.push({
+              email: lead.email,
+              company: lead.company || emailDomain,
+              name: lead.name || 'Unknown'
+            })
+            removedCount++
+          }
+        }
+      }
+      
+      console.log(`Removed ${removedCount} enterprise leads:`, removedLeads)
+      
+      return {
+        success: true,
+        removedCount,
+        removedLeads,
+        message: `Successfully removed ${removedCount} enterprise company leads. Focusing on SMB prospects for Support Genie.`
+      }
+    } catch (error) {
+      console.error('Error removing enterprise leads:', error)
+      return {
+        success: false,
+        error: error.message,
+        message: 'Failed to remove enterprise leads'
+      }
+    }
+  }
 
-    return sampleLeads
-      .sort(() => 0.5 - Math.random())
-      .slice(0, count)
-      .map(lead => ({
-        ...lead,
-        source: source.toLowerCase(),
-        title: this.generateRandomTitle(),
-        score: Math.floor(Math.random() * 40) + 60,
-        tags: [source.toLowerCase(), 'demo-data'],
-        notes: [`Demo lead from ${source}`]
-      }));
+  // Remove duplicate leads (keep the newest one for each email)
+  async removeDuplicateLeads(tenantId) {
+    try {
+      const leadsResult = await this.getLeads(tenantId, 1000) // Get more leads to check for duplicates
+      if (!leadsResult.success) {
+        return { success: false, error: 'Failed to get leads' }
+      }
+
+      const leads = leadsResult.data
+      const emailMap = new Map()
+      const duplicatesToDelete = []
+
+      // Group leads by email, keeping track of the newest one
+      leads.forEach(lead => {
+        if (lead.email) {
+          if (emailMap.has(lead.email)) {
+            // We have a duplicate - keep the newer one
+            const existing = emailMap.get(lead.email)
+            const leadDate = lead.createdAt?.toDate ? lead.createdAt.toDate() : new Date(lead.createdAt)
+            const existingDate = existing.createdAt?.toDate ? existing.createdAt.toDate() : new Date(existing.createdAt)
+            
+            if (leadDate > existingDate) {
+              // New lead is newer, mark old one for deletion
+              duplicatesToDelete.push(existing.id)
+              emailMap.set(lead.email, lead)
+            } else {
+              // Existing lead is newer, mark new one for deletion
+              duplicatesToDelete.push(lead.id)
+            }
+          } else {
+            emailMap.set(lead.email, lead)
+          }
+        }
+      })
+
+      // Delete the duplicates
+      for (const leadId of duplicatesToDelete) {
+        await this.deleteLead(tenantId, leadId)
+      }
+
+      return { 
+        success: true, 
+        message: `Removed ${duplicatesToDelete.length} duplicate leads`,
+        removedCount: duplicatesToDelete.length 
+      }
+    } catch (error) {
+      console.error('Error removing duplicates:', error)
+      return { success: false, error: error.message }
+    }
   }
 
   // Helper method to generate random job titles

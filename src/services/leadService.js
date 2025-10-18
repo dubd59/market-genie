@@ -2,6 +2,7 @@ import { FirebaseAPI } from '../FirebaseAPI.js'
 import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc } from '../security/SecureFirebase.js'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
+import IntegrationService from './integrationService.js'
 
 class LeadService {
   constructor() {
@@ -304,7 +305,8 @@ class LeadService {
           for (let i = 0; i < Math.min(count, shuffledBusinessDomains.length); i++) {
             const domain = shuffledBusinessDomains[i];
             try {
-              const domainResult = await IntegrationService.searchDomain(tenantId, domain, 2);
+              // Try multiple providers for better lead coverage
+              const domainResult = await this.searchDomainMultiProvider(tenantId, domain, 2);
               if (domainResult.success && domainResult.data && domainResult.data.length > 0) {
                 domainResult.data.forEach(person => {
                   businessLeads.push({
@@ -312,15 +314,15 @@ class LeadService {
                     lastName: person.last_name || 'Contact',
                     email: person.email,
                     company: domain.split('.')[0],
-                    phone: '',
+                    phone: person.phone || '',
                     title: person.position || 'Business Professional',
-                    source: 'hunter-business-directory',
+                    source: person.source || 'multi-provider-business-directory',
                     score: person.confidence || 80
                   });
                 });
               }
             } catch (error) {
-              console.log('Hunter.io business search error for', domain, error.message);
+              console.log('Multi-provider business search error for', domain, error.message);
             }
           }
           
@@ -653,6 +655,153 @@ class LeadService {
     } catch (error) {
       console.error('Error searching leads:', error)
       return { success: false, error: error.message }
+    }
+  }
+
+  // ===================================
+  // MULTI-PROVIDER LEAD GENERATION
+  // ===================================
+  
+  // Search domain using multiple providers for better coverage
+  async searchDomainMultiProvider(tenantId, domain, limit = 5) {
+    console.log(`🔍 Multi-provider search for domain: ${domain}`)
+    
+    // Try providers in order of preference
+    const providers = [
+      { name: 'hunter-io', method: 'searchDomain' },
+      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' },
+      { name: 'rocketreach', method: 'searchRocketReach' }
+    ]
+    
+    let allResults = []
+    let successfulProviders = []
+    
+    for (const provider of providers) {
+      try {
+        console.log(`🎯 Trying ${provider.name} for ${domain}`)
+        
+        let result
+        if (provider.name === 'hunter-io') {
+          // Check for rate limiting first
+          result = await IntegrationService.searchDomain(tenantId, domain, limit)
+          if (!result.success && result.error?.includes('Too Many Requests')) {
+            console.log(`⚠️ ${provider.name} rate limited - skipping`)
+            continue // Skip to next provider
+          }
+        } else if (provider.name === 'voila-norbert') {
+          // Voila Norbert works differently - find individuals
+          result = await IntegrationService.findEmailVoilaNorbert(tenantId, domain, 'Contact', 'Person')
+          if (result.success) {
+            // Convert single result to array format
+            result.data = [result.data]
+          }
+        } else if (provider.name === 'rocketreach') {
+          // RocketReach works differently - search by company name
+          const companyName = domain.split('.')[0]
+          result = await IntegrationService.searchRocketReach(tenantId, {
+            current_employer: companyName,
+            limit: limit
+          })
+          
+          // Handle CORS limitations gracefully
+          if (!result.success && result.corsLimited) {
+            console.log(`⚠️ ${provider.name} skipped due to CORS limitations`)
+            continue // Skip to next provider
+          }
+        }
+        
+        if (result && result.success && result.data && result.data.length > 0) {
+          console.log(`✅ ${provider.name} found ${result.data.length} contacts for ${domain}`)
+          successfulProviders.push(provider.name)
+          
+          // Add provider info to each result
+          const enrichedResults = result.data.map(contact => ({
+            ...contact,
+            source: contact.source || provider.name,
+            provider: provider.name
+          }))
+          
+          allResults = allResults.concat(enrichedResults)
+        } else {
+          console.log(`❌ ${provider.name} found no contacts for ${domain}`)
+        }
+      } catch (error) {
+        console.log(`⚠️ ${provider.name} error for ${domain}:`, error.message)
+      }
+    }
+    
+    // Remove duplicates based on email
+    const uniqueResults = []
+    const seenEmails = new Set()
+    
+    for (const contact of allResults) {
+      if (contact.email && !seenEmails.has(contact.email.toLowerCase())) {
+        seenEmails.add(contact.email.toLowerCase())
+        uniqueResults.push(contact)
+      }
+    }
+    
+    console.log(`🎯 Multi-provider results for ${domain}: ${uniqueResults.length} unique contacts from ${successfulProviders.length} providers`)
+    
+    if (uniqueResults.length > 0) {
+      return {
+        success: true,
+        data: uniqueResults.slice(0, limit), // Respect the limit
+        providers: successfulProviders
+      }
+    }
+    
+    return {
+      success: false,
+      error: `No contacts found for ${domain} across all providers`,
+      providers: successfulProviders
+    }
+  }
+
+  // Find specific person using multiple providers
+  async findPersonMultiProvider(tenantId, domain, firstName, lastName) {
+    console.log(`🔍 Multi-provider person search: ${firstName} ${lastName} at ${domain}`)
+    
+    const providers = [
+      { name: 'hunter-io', method: 'findEmails' },
+      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' },
+      { name: 'rocketreach', method: 'findPersonRocketReach' }
+    ]
+    
+    for (const provider of providers) {
+      try {
+        console.log(`🎯 Trying ${provider.name} for ${firstName} ${lastName}`)
+        
+        let result
+        if (provider.name === 'hunter-io') {
+          result = await IntegrationService.findEmails(tenantId, domain, firstName, lastName)
+        } else if (provider.name === 'voila-norbert') {
+          result = await IntegrationService.findEmailVoilaNorbert(tenantId, domain, firstName, lastName)
+        } else if (provider.name === 'rocketreach') {
+          result = await IntegrationService.findPersonRocketReach(tenantId, domain, firstName, lastName)
+        }
+        
+        if (result && result.success && result.data && result.data.email) {
+          console.log(`✅ ${provider.name} found ${firstName} ${lastName}: ${result.data.email}`)
+          return {
+            ...result,
+            data: {
+              ...result.data,
+              source: result.data.source || provider.name,
+              provider: provider.name
+            }
+          }
+        } else {
+          console.log(`❌ ${provider.name} could not find ${firstName} ${lastName}`)
+        }
+      } catch (error) {
+        console.log(`⚠️ ${provider.name} error for ${firstName} ${lastName}:`, error.message)
+      }
+    }
+    
+    return {
+      success: false,
+      error: `Could not find ${firstName} ${lastName} at ${domain} using any provider`
     }
   }
 }

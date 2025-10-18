@@ -51,25 +51,57 @@ import BusinessProfileSettings from './components/BusinessProfileSettings'
 import ContactManager from './components/ContactManager'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
+import AuthNavigator from './components/AuthNavigator'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  const { tenant, loading: tenantLoading } = useTenant()
+  const { tenant, loading: tenantLoading, error: tenantError } = useTenant()
   
+  // Show loading while auth or tenant is loading
   if (loading || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
         <div className="genie-enter">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-genie-teal"></div>
           <p className="mt-4 text-genie-teal font-medium">Market Genie is awakening...</p>
+          {loading && <p className="text-sm text-gray-500">Checking authentication...</p>}
           {tenantLoading && <p className="text-sm text-gray-500">Setting up your workspace...</p>}
         </div>
       </div>
     )
   }
   
+  // Handle tenant loading errors (like CORS issues)
+  if (tenantError && tenantError.message?.includes('CORS')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
+        <div className="text-center p-8">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Connection Issue</h2>
+          <p className="text-gray-600 mb-6">
+            There's a temporary connection issue. Please refresh the page to try again.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal-dark transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  }
+  
+  // If no user, the AuthContext will handle navigation to login
   if (!user) {
-    return <Navigate to="/login" replace />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
+        <div className="genie-enter">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-genie-teal"></div>
+          <p className="mt-4 text-genie-teal font-medium">Redirecting to login...</p>
+        </div>
+      </div>
+    )
   }
   
   return children
@@ -5335,6 +5367,7 @@ function App() {
       <TenantProvider>
         <GenieProvider>
           <EnhancedFirebaseStabilityManager>
+            <AuthNavigator />
             <Toaster position="top-right" />
             <Routes>
               {/* Landing Page - Public sales page */}

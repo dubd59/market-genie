@@ -38,17 +38,11 @@ export const auth = getAuth(app);
 // Initialize Firestore with CORS-safe settings and better offline support
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: false, // Use WebSockets by default for better performance
+  experimentalForceLongPolling: true, // Use long polling to avoid WebSocket CORS issues
   // Enhanced cache settings for better offline/online transitions
   localCache: {
     kind: 'persistent',  // Change to persistent for better caching
     sizeBytes: 100 * 1024 * 1024 // 100MB cache
-  },
-  // Enhanced connection settings
-  settings: {
-    ssl: true,
-    host: 'firestore.googleapis.com',
-    cacheSizeBytes: 100 * 1024 * 1024 // 100MB cache
   }
 });
 

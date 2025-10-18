@@ -20,11 +20,20 @@ export default function Login() {
     setError('')
 
     try {
-      await signIn(email, password)
-      navigate('/dashboard')
+      const result = await signIn(email, password)
+      if (result.error) {
+        setError(result.error.message || 'Failed to sign in. Please check your credentials.')
+        setIsLoading(false)
+        return
+      }
+      
+      // Wait for auth state to properly update before navigating
+      // The auth context will handle the navigation through ProtectedRoute
+      console.log('✅ Sign in successful, auth state will update automatically')
+      
     } catch (error) {
+      console.error('❌ Sign in error:', error)
       setError(error.message || 'Failed to sign in. Please check your credentials.')
-    } finally {
       setIsLoading(false)
     }
   }

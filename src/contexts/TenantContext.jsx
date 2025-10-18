@@ -32,15 +32,24 @@ export function TenantProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...')
+      return
+    }
     
     if (!user) {
+      console.log('👤 No user found, clearing tenant')
       setTenant(null)
       setLoading(false)
       return
     }
 
-    loadUserTenant()
+    // Add a small delay to ensure auth state is fully settled
+    const timeoutId = setTimeout(() => {
+      loadUserTenant()
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
   }, [user, authLoading])
 
   const loadUserTenant = async () => {
@@ -52,11 +61,19 @@ export function TenantProvider({ children }) {
         setLoading(true)
         setError(null)
 
-        console.log('Loading tenant for user:', user?.email)
+        console.log('🏢 Loading tenant for user:', user?.email)
+        
+        // Double-check we still have a valid user before proceeding
+        if (!user) {
+          console.log('❌ User no longer available, aborting tenant load')
+          setLoading(false)
+          return
+        }
+        
         const result = await TenantService.getCurrentUserTenant()
         
         if (result.error) {
-          console.error('Tenant loading error:', result.error)
+          console.error('❌ Tenant loading error:', result.error)
           
           // Check if it's a connection-related error
           if (result.error.message?.includes('offline') || 
@@ -71,7 +88,7 @@ export function TenantProvider({ children }) {
               return await attemptLoad();
             } else {
               console.error('❌ Max retries reached for tenant loading');
-              toast.error('Connection issues detected. Please check your internet connection and try again.', {
+              toast.error('Connection issues detected. Please refresh the page to try again.', {
                 duration: 8000
               });
             }
@@ -85,16 +102,17 @@ export function TenantProvider({ children }) {
           } else if (!result.error.message?.includes('offline')) {
             toast.error('Failed to load workspace: ' + result.error.message)
           }
+          setLoading(false)
           return
         }
 
         if (result.data) {
-          console.log('✅ Tenant loaded successfully:', result.data)
+          console.log('✅ Tenant loaded successfully:', result.data.name || result.data.id)
           setTenant(result.data)
           
           // Initialize tenant collections if this is a new tenant
           if (!result.data.initialized) {
-            console.log('Initializing tenant collections...')
+            console.log('🚀 Initializing tenant collections...')
             await TenantService.initializeTenantCollections(result.data.id)
             await TenantService.updateTenantSettings(result.data.id, { initialized: true })
             

@@ -102,9 +102,25 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     try {
+      console.log('🔐 Attempting sign in...')
       const result = await signInWithEmailAndPassword(auth, email, password)
+      console.log('✅ Sign in successful')
       return { data: result, error: null }
     } catch (error) {
+      console.error('❌ Sign in error:', error)
+      
+      // Handle specific CORS-related errors
+      if (error.message?.includes('CORS') || error.message?.includes('blocked')) {
+        console.error('🚫 CORS error detected - this is a Firebase configuration issue')
+        return { 
+          data: null, 
+          error: { 
+            ...error, 
+            message: 'Connection issue detected. Please try again in a moment.' 
+          }
+        }
+      }
+      
       return { data: null, error }
     }
   }

@@ -233,11 +233,31 @@ const APIKeysIntegrations = () => {
       account: 'Not connected'
     },
     {
+      id: 'voila-norbert',
+      name: 'Voila Norbert',
+      type: 'Lead Generation',
+      status: 'disconnected',
+      icon: '🎭',
+      description: 'Simple email finder with 50 free credits (no credit card)',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
+      id: 'rocketreach',
+      name: 'RocketReach',
+      type: 'Lead Generation',
+      status: 'disconnected',
+      icon: '🚀',
+      description: 'High-quality contact data with phone numbers',
+      lastSync: 'Never',
+      account: 'Not connected'
+    },
+    {
       id: 'apollo',
       name: 'Apollo.io',
       type: 'Lead Generation',
       status: 'disconnected',
-      icon: '🚀',
+      icon: '🌟',
       description: 'Sales intelligence and prospecting platform',
       lastSync: 'Never',
       account: 'Not connected'
@@ -598,6 +618,14 @@ const APIKeysIntegrations = () => {
         case 'hunter-io':
           return [
             { key: 'apiKey', label: 'Hunter.io API Key', type: 'password', placeholder: 'Your Hunter.io API key' }
+          ];
+        case 'voila-norbert':
+          return [
+            { key: 'apiKey', label: 'Voila Norbert API Key', type: 'password', placeholder: 'Your Voila Norbert API key' }
+          ];
+        case 'rocketreach':
+          return [
+            { key: 'apiKey', label: 'RocketReach API Key', type: 'password', placeholder: 'Your RocketReach API key' }
           ];
         case 'apollo':
           return [

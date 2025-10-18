@@ -228,6 +228,455 @@ class IntegrationService {
     }
   }
 
+  // ===================================
+  // VOILA NORBERT INTEGRATION (replaces Snov.io)
+  // ===================================
+  
+  // Connect to Voila Norbert API (more accessible than Snov.io)
+  async connectVoilaNorbert(tenantId, apiKey) {
+    try {
+      console.log('🔌 Testing Voila Norbert API connection...')
+      
+      // Test Voila Norbert API key by checking account status
+      const response = await fetch('https://api.voilanorbert.com/2016-01-01/account', {
+        method: 'GET',
+        headers: {
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const result = await response.json()
+      console.log('Voila Norbert connection test result:', result)
+      
+      if (response.ok && result.account) {
+        await this.saveIntegrationCredentials(tenantId, 'voila-norbert', {
+          apiKey: apiKey,
+          credits: result.account.search_left || 0,
+          plan: result.account.subscription_type
+        })
+        console.log('✅ Voila Norbert connected successfully')
+        return { 
+          success: true, 
+          data: { 
+            credits: result.account.search_left,
+            plan: result.account.subscription_type 
+          } 
+        }
+      }
+      
+      return { success: false, error: 'Invalid Voila Norbert API key' }
+    } catch (error) {
+      console.error('❌ Voila Norbert connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Find email using Voila Norbert
+  async findEmailVoilaNorbert(tenantId, domain, firstName, lastName) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'voila-norbert')
+      if (!credentials.success) {
+        return { success: false, error: 'Voila Norbert not connected' }
+      }
+
+      const response = await fetch('https://api.voilanorbert.com/2016-01-01/search', {
+        method: 'POST',
+        headers: {
+          'X-API-Key': credentials.data.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: `${firstName} ${lastName}`,
+          domain: domain
+        })
+      })
+      
+      const result = await response.json()
+      console.log('Voila Norbert email finder response:', result)
+      
+      if (response.ok && result.email) {
+        return { 
+          success: true, 
+          data: {
+            email: result.email.email,
+            first_name: firstName,
+            last_name: lastName,
+            confidence: result.email.score || 'medium',
+            source: 'voila-norbert'
+          }
+        }
+      }
+      
+      return { success: false, error: 'Email not found via Voila Norbert', details: result }
+    } catch (error) {
+      console.error('Voila Norbert email finding error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Verify email using Voila Norbert
+  async verifyEmailVoilaNorbert(tenantId, email) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'voila-norbert')
+      if (!credentials.success) {
+        return { success: false, error: 'Voila Norbert not connected' }
+      }
+
+      const response = await fetch('https://api.voilanorbert.com/2016-01-01/verify', {
+        method: 'POST',
+        headers: {
+          'X-API-Key': credentials.data.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email
+        })
+      })
+      
+      const result = await response.json()
+      console.log('Voila Norbert email verification response:', result)
+      
+      if (response.ok && result.verification) {
+        return { 
+          success: true, 
+          data: {
+            email: email,
+            status: result.verification.result,
+            deliverable: result.verification.result === 'accept',
+            confidence: result.verification.score || 'medium'
+          }
+        }
+      }
+      
+      return { success: false, error: 'Email verification failed', details: result }
+    } catch (error) {
+      console.error('Voila Norbert email verification error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // ===================================
+  // SNOV.IO INTEGRATION
+  // ===================================
+  
+  // Connect to Snov.io API
+  async connectSnovIo(tenantId, accessToken) {
+    try {
+      console.log('🔌 Testing Snov.io API connection...')
+      
+      // Test Snov.io API key by checking account status
+      const response = await fetch('https://app.snov.io/restapi/get-balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+
+      const result = await response.json()
+      console.log('Snov.io connection test result:', result)
+      
+      if (response.ok && result.credits !== undefined) {
+        await this.saveIntegrationCredentials(tenantId, 'snov-io', {
+          accessToken: accessToken,
+          credits: result.credits
+        })
+        console.log('✅ Snov.io connected successfully')
+        return { success: true, data: { credits: result.credits } }
+      }
+      
+      return { success: false, error: 'Invalid Snov.io API token' }
+    } catch (error) {
+      console.error('❌ Snov.io connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Find email using Snov.io
+  async findEmailSnov(tenantId, domain, firstName, lastName) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'snov-io')
+      if (!credentials.success) {
+        return { success: false, error: 'Snov.io not connected' }
+      }
+
+      const response = await fetch('https://app.snov.io/restapi/get-emails-from-names', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.data.accessToken}`
+        },
+        body: JSON.stringify({
+          domain: domain,
+          firstName: firstName,
+          lastName: lastName
+        })
+      })
+      
+      const result = await response.json()
+      console.log('Snov.io email finder response:', result)
+      
+      if (result && result.emails && result.emails.length > 0) {
+        const bestEmail = result.emails[0] // Snov returns best match first
+        return { 
+          success: true, 
+          data: {
+            email: bestEmail.email,
+            first_name: firstName,
+            last_name: lastName,
+            confidence: bestEmail.confidence || 'medium',
+            source: 'snov-io'
+          }
+        }
+      }
+      
+      return { success: false, error: 'Email not found via Snov.io', details: result }
+    } catch (error) {
+      console.error('Snov.io email finding error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Search domain using Snov.io
+  async searchDomainSnov(tenantId, domain, limit = 5) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'snov-io')
+      if (!credentials.success) {
+        return { success: false, error: 'Snov.io not connected' }
+      }
+
+      const response = await fetch('https://app.snov.io/restapi/get-domain-emails-with-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.data.accessToken}`
+        },
+        body: JSON.stringify({
+          domain: domain,
+          type: 'all',
+          limit: limit
+        })
+      })
+      
+      const result = await response.json()
+      console.log('Snov.io domain search response:', result)
+      
+      if (result && result.emails && result.emails.length > 0) {
+        return { 
+          success: true, 
+          data: result.emails.map(contact => ({
+            email: contact.email,
+            first_name: contact.firstName,
+            last_name: contact.lastName,
+            position: contact.position,
+            confidence: contact.confidence || 'medium',
+            department: contact.department,
+            source: 'snov-io'
+          }))
+        }
+      }
+      
+      return { success: false, error: 'No emails found for domain via Snov.io', details: result }
+    } catch (error) {
+      console.error('Snov.io domain search error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Email verification using Snov.io
+  async verifyEmailSnov(tenantId, emails) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'snov-io')
+      if (!credentials.success) {
+        return { success: false, error: 'Snov.io not connected' }
+      }
+
+      const emailList = Array.isArray(emails) ? emails : [emails]
+
+      const response = await fetch('https://app.snov.io/restapi/verify-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.data.accessToken}`
+        },
+        body: JSON.stringify({
+          emails: emailList
+        })
+      })
+      
+      const result = await response.json()
+      console.log('Snov.io email verification response:', result)
+      
+      if (result && result.success) {
+        return { 
+          success: true, 
+          data: result.emails || result.data
+        }
+      }
+      
+      return { success: false, error: 'Email verification failed', details: result }
+    } catch (error) {
+      console.error('Snov.io email verification error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // ===================================
+  // ROCKETREACH INTEGRATION  
+  // ===================================
+  
+  // Connect to RocketReach API (CORS-safe approach)
+  async connectRocketReach(tenantId, apiKey) {
+    try {
+      console.log('🚀 Testing RocketReach API connection...')
+      
+      // RocketReach has CORS restrictions for browser-based requests
+      // Instead of testing the API directly, we'll store the credentials
+      // and validate during actual usage
+      
+      if (!apiKey || apiKey.length < 10) {
+        return { success: false, error: 'Invalid RocketReach API key format' }
+      }
+      
+      // Store credentials for later use
+      await this.saveIntegrationCredentials(tenantId, 'rocketreach', {
+        apiKey: apiKey,
+        status: 'stored',
+        note: 'API key stored - will validate on first use due to CORS restrictions'
+      })
+      
+      console.log('✅ RocketReach API key stored successfully')
+      return { 
+        success: true, 
+        data: { 
+          status: 'stored',
+          message: 'API key saved. Will validate on first search.',
+          note: 'RocketReach requires server-side requests'
+        } 
+      }
+      
+    } catch (error) {
+      console.error('❌ RocketReach connection error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Search contacts using RocketReach (CORS-aware)
+  async searchRocketReach(tenantId, searchCriteria) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'rocketreach')
+      if (!credentials.success) {
+        return { success: false, error: 'RocketReach not connected' }
+      }
+
+      console.log('🚀 Attempting RocketReach search (may have CORS limitations)...')
+      
+      // Note: RocketReach API calls from browser may fail due to CORS
+      // This is a limitation of their API design
+      try {
+        const queryParams = new URLSearchParams({
+          start: 1,
+          size: searchCriteria.limit || 5,
+          ...searchCriteria
+        })
+
+        const response = await fetch(`https://api.rocketreach.co/api/v2/person/search?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Api-Key': credentials.data.apiKey,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        const result = await response.json()
+        console.log('RocketReach search response:', result)
+        
+        if (response.ok && result.profiles && result.profiles.length > 0) {
+          return { 
+            success: true, 
+            data: result.profiles.map(profile => ({
+              email: profile.email,
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              position: profile.current_title,
+              company: profile.current_employer,
+              phone: profile.phone_numbers?.[0],
+              linkedin: profile.linkedin_url,
+              confidence: 'high', // RocketReach is generally high quality
+              source: 'rocketreach'
+            }))
+          }
+        }
+        
+        return { success: false, error: 'No contacts found via RocketReach', details: result }
+      } catch (corsError) {
+        console.log('⚠️ RocketReach CORS limitation detected:', corsError.message)
+        return { 
+          success: false, 
+          error: 'RocketReach API requires server-side access due to CORS policy',
+          corsLimited: true,
+          suggestion: 'Use Hunter.io or Voila Norbert for browser-based searches'
+        }
+      }
+      
+    } catch (error) {
+      console.error('RocketReach search error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Find person by domain using RocketReach
+  async findPersonRocketReach(tenantId, domain, firstName, lastName) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'rocketreach')
+      if (!credentials.success) {
+        return { success: false, error: 'RocketReach not connected' }
+      }
+
+      const queryParams = new URLSearchParams({
+        name: `${firstName} ${lastName}`,
+        current_employer: domain.replace(/\..*/, ''), // Extract company name from domain
+        start: 1,
+        size: 1
+      })
+
+      const response = await fetch(`https://api.rocketreach.co/api/v2/person/search?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Api-Key': credentials.data.apiKey,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      const result = await response.json()
+      console.log('RocketReach person search response:', result)
+      
+      if (response.ok && result.profiles && result.profiles.length > 0) {
+        const profile = result.profiles[0]
+        return { 
+          success: true, 
+          data: {
+            email: profile.email,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            position: profile.current_title,
+            company: profile.current_employer,
+            phone: profile.phone_numbers?.[0],
+            linkedin: profile.linkedin_url,
+            confidence: 'high',
+            source: 'rocketreach'
+          }
+        }
+      }
+      
+      return { success: false, error: 'Person not found via RocketReach', details: result }
+    } catch (error) {
+      console.error('RocketReach person search error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Apollo.io Integration
   async connectApollo(tenantId, apiKey) {
     try {
@@ -1011,6 +1460,18 @@ class IntegrationService {
             return await this.connectHunterIO(tenantId, config.apiKey);
           }
           return { success: false, error: 'API key is required for Hunter.io' };
+
+        case 'voila-norbert':
+          if (config.apiKey) {
+            return await this.connectVoilaNorbert(tenantId, config.apiKey);
+          }
+          return { success: false, error: 'API key is required for Voila Norbert' };
+
+        case 'rocketreach':
+          if (config.apiKey) {
+            return await this.connectRocketReach(tenantId, config.apiKey);
+          }
+          return { success: false, error: 'API key is required for RocketReach' };
 
         case 'apollo':
           if (config.apiKey) {

@@ -247,76 +247,9 @@ const CRMPipeline = () => {
           setContacts([])
         }
         
-        // If no deals from Firebase, show sample deals to demonstrate sophisticated pipeline
+        // Simply load deals from Firebase - no complex logic
         const firebaseDeals = dealsData.deals || []
-        if (firebaseDeals.length === 0) {
-          // Sample deals to show sophisticated pipeline functionality
-          const sampleDeals = [
-            {
-              id: 'deal_1',
-              title: 'TechStart Inc - Enterprise Solution',
-              contactId: 'contact_1',
-              value: 45000,
-              stage: 'prospects',
-              notes: 'Initial contact made, very interested in AI automation features',
-              closeDate: '2024-12-15',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'deal_2',
-              title: 'Growth Corp - Marketing Package',
-              contactId: 'contact_2',
-              value: 32000,
-              stage: 'qualified',
-              notes: 'Budget approved, moving to proposal stage',
-              closeDate: '2024-11-30',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'deal_3',
-              title: 'Scale Solutions - Premium CRM',
-              contactId: 'contact_3',
-              value: 67500,
-              stage: 'proposal',
-              notes: 'Proposal sent, awaiting decision',
-              closeDate: '2024-11-15',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'deal_4',
-              title: 'Innovation Labs - Custom Integration',
-              contactId: 'contact_4',
-              value: 23000,
-              stage: 'negotiation',
-              notes: 'Contract terms being finalized',
-              closeDate: '2024-11-10',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'deal_5',
-              title: 'Digital Dynamics - Full Suite',
-              contactId: 'contact_5',
-              value: 89000,
-              stage: 'closed_won',
-              notes: 'Contract signed, implementation starting',
-              closeDate: '2024-10-25',
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 'deal_6',
-              title: 'StartupHub - Basic Package',
-              contactId: 'contact_6',
-              value: 15000,
-              stage: 'prospects',
-              notes: 'Demo scheduled for next week',
-              closeDate: '2024-12-01',
-              createdAt: new Date().toISOString()
-            }
-          ]
-          setDeals(sampleDeals)
-        } else {
-          setDeals(firebaseDeals)
-        }
+        setDeals(firebaseDeals)
         
         setFunnels(funnelsData.funnels || [])
       } catch (error) {
@@ -984,8 +917,7 @@ const CRMPipeline = () => {
           {[
             { id: 'crm-insights', name: 'Sales Pipeline & CRM Intelligence', icon: '🧠' },
             { id: 'ai-funnels', name: 'AI Funnels', icon: '🧞‍♂️' },
-            { id: 'contacts', name: 'Contacts', icon: '👥' },
-            { id: 'deals', name: 'Deals', icon: '💼' }
+            { id: 'contacts', name: 'Contacts', icon: '👥' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -1041,7 +973,14 @@ const CRMPipeline = () => {
               </div>
             </div>
           </div>
-          <SuperiorCRMSystem contacts={contacts} deals={deals} />
+          <SuperiorCRMSystem 
+            contacts={contacts} 
+            deals={deals} 
+            onSaveDeals={saveDeals}
+            onAddDeal={addDeal}
+            onUpdateDeal={updateDealStage}
+            onDeleteDeal={deleteDeal}
+          />
         </div>
       )}
       
@@ -1397,167 +1336,7 @@ const CRMPipeline = () => {
         </>
       )}
 
-      {activeTab === 'deals' && (
-        <div className="space-y-6">
-          {/* Deal Management Header */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-genie-teal mb-2">Deal Management</h3>
-                <p className="text-gray-600">Track and manage your sales opportunities with advanced deal insights</p>
-              </div>
-              <button
-                onClick={() => setShowDealModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                💼 Create New Deal
-              </button>
-            </div>
 
-            {/* Deal Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                <div className="text-sm text-green-600 font-medium">TOTAL PIPELINE VALUE</div>
-                <div className="text-2xl font-bold text-green-800">
-                  ${deals.reduce((sum, deal) => sum + parseDealValue(deal.value), 0).toLocaleString()}
-                </div>
-                <div className="text-xs text-green-600">{deals.length} active deals</div>
-              </div>
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
-                <div className="text-sm text-blue-600 font-medium">AVG DEAL SIZE</div>
-                <div className="text-2xl font-bold text-blue-800">
-                  ${deals.length > 0 ? Math.round(deals.reduce((sum, deal) => sum + parseDealValue(deal.value), 0) / deals.length).toLocaleString() : '0'}
-                </div>
-                <div className="text-xs text-blue-600">per opportunity</div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 border border-purple-200">
-                <div className="text-sm text-purple-600 font-medium">CLOSE RATE</div>
-                <div className="text-2xl font-bold text-purple-800">
-                  {deals.length > 0 ? Math.round((deals.filter(d => d.stage === 'closed_won').length / deals.length) * 100) : 0}%
-                </div>
-                <div className="text-xs text-purple-600">conversion rate</div>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
-                <div className="text-sm text-orange-600 font-medium">THIS MONTH</div>
-                <div className="text-2xl font-bold text-orange-800">
-                  ${deals.filter(d => d.stage === 'closed_won').reduce((sum, deal) => sum + parseDealValue(deal.value), 0).toLocaleString()}
-                </div>
-                <div className="text-xs text-orange-600">closed revenue</div>
-              </div>
-            </div>
-
-            {/* Deals List */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-lg font-semibold text-gray-900">Active Deals</h4>
-                <div className="flex gap-2 text-sm">
-                  <select className="border border-gray-300 rounded px-2 py-1">
-                    <option value="">All Stages</option>
-                    <option value="prospects">Prospects</option>
-                    <option value="qualified">Qualified</option>
-                    <option value="proposal">Proposal</option>
-                    <option value="negotiation">Negotiation</option>
-                    <option value="closed_won">Closed Won</option>
-                    <option value="closed_lost">Closed Lost</option>
-                  </select>
-                </div>
-              </div>
-
-              {deals.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <div className="text-6xl mb-4">💼</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Deals Yet</h3>
-                  <p className="text-gray-600 mb-6">Start tracking your sales opportunities</p>
-                  <button
-                    onClick={() => setShowDealModal(true)}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Create Your First Deal
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {deals.map(deal => {
-                    const stageColors = {
-                      prospects: 'bg-gray-100 text-gray-800 border-gray-200',
-                      qualified: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                      proposal: 'bg-orange-100 text-orange-800 border-orange-200',
-                      negotiation: 'bg-blue-100 text-blue-800 border-blue-200',
-                      closed_won: 'bg-green-100 text-green-800 border-green-200',
-                      closed_lost: 'bg-red-100 text-red-800 border-red-200'
-                    };
-                    
-                    const contact = contacts.find(c => c.id === deal.contactId);
-                    
-                    return (
-                      <div key={deal.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <h5 className="text-lg font-semibold text-gray-900 mb-1">{deal.title}</h5>
-                            <div className="text-sm text-gray-600 mb-2">
-                              {contact ? `${contact.name} • ${contact.company || 'No Company'}` : 'No Contact Assigned'}
-                            </div>
-                            <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${stageColors[deal.stage] || stageColors.prospects}`}>
-                              {deal.stage?.replace('_', ' ').toUpperCase() || 'PROSPECTS'}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-green-600 mb-1">
-                              {deal.value || '$0'}
-                            </div>
-                            {deal.closeDate && (
-                              <div className="text-xs text-gray-500">
-                                Target: {new Date(deal.closeDate).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {deal.notes && (
-                          <div className="bg-gray-50 rounded p-2 mb-3">
-                            <div className="text-sm text-gray-700">{deal.notes}</div>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => {
-                              setSelectedDeal(deal);
-                              setNewDeal(deal);
-                              setShowDealModal(true);
-                            }}
-                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200 transition-colors"
-                          >
-                            Edit Deal
-                          </button>
-                          <button 
-                            onClick={() => {
-                              if (confirm(`Delete deal "${deal.title}"?`)) {
-                                setDeals(deals.filter(d => d.id !== deal.id));
-                              }
-                            }}
-                            className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm hover:bg-red-200 transition-colors"
-                          >
-                            Delete
-                          </button>
-                          {contact && (
-                            <button 
-                              onClick={() => window.open(`mailto:${contact.email}?subject=Deal Update: ${deal.title}&body=Hi ${contact.name},%0D%0A%0D%0ARegarding the ${deal.title} opportunity...`)}
-                              className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm hover:bg-green-200 transition-colors"
-                            >
-                              Contact
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* All Modals - These appear regardless of active tab */}
       {/* Contact Modal */}

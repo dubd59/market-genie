@@ -1,10 +1,68 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useTenant } from '../contexts/TenantContext'
+import FirebaseUserDataService from '../services/firebaseUserData'
 import Sidebar from '../components/Sidebar'
 
 function MainDashboard() {
+  const { user } = useAuth()
+  const { tenant } = useTenant()
   const [activeSection, setActiveSection] = useState('Market Genie Dashboard')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
+  
+  // CRM Data State
+  const [crmData, setCrmData] = useState({
+    contacts: [],
+    deals: [],
+    leads: 0,
+    qualified: 0,
+    proposals: 0,
+    closed: 0
+  })
+  const [loading, setLoading] = useState(true)
+
+  // Load CRM data from Firebase
+  useEffect(() => {
+    const loadCRMData = async () => {
+      if (!user?.uid) return
+      
+      try {
+        const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+        const dealsData = await FirebaseUserDataService.getCRMDeals(user.uid)
+        
+        let contacts = []
+        let deals = []
+        
+        if (contactsResult.success && contactsResult.data?.contacts) {
+          contacts = contactsResult.data.contacts
+        }
+        
+        deals = dealsData.deals || []
+        
+        // Calculate live stats
+        const totalContacts = contacts.length
+        const qualified = contacts.filter(c => c.status === 'qualified' || c.status === 'hot').length
+        const proposals = deals.filter(d => d.stage === 'proposal' || d.stage === 'negotiation').length
+        const closed = deals.filter(d => d.stage === 'closed_won').length
+        
+        setCrmData({
+          contacts,
+          deals,
+          leads: totalContacts,
+          qualified,
+          proposals,
+          closed
+        })
+      } catch (error) {
+        console.error('Error loading CRM data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCRMData()
+  }, [user?.uid])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -525,24 +583,59 @@ function MainDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 text-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Leads</h3>
-                <p className="text-3xl font-bold text-blue-600">2,847</p>
+                <p className="text-3xl font-bold text-blue-600">{loading ? '...' : crmData.leads.toLocaleString()}</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Contacts</p>
               </div>
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 text-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Qualified</h3>
-                <p className="text-3xl font-bold text-yellow-600">524</p>
+                <p className="text-3xl font-bold text-yellow-600">{loading ? '...' : crmData.qualified}</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hot & Qualified</p>
               </div>
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 text-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Proposals</h3>
-                <p className="text-3xl font-bold text-orange-600">89</p>
+                <p className="text-3xl font-bold text-orange-600">{loading ? '...' : crmData.proposals}</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Proposals</p>
               </div>
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 text-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Closed</h3>
-                <p className="text-3xl font-bold text-green-600">42</p>
+                <p className="text-3xl font-bold text-green-600">{loading ? '...' : crmData.closed}</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Won Deals</p>
               </div>
             </div>
             <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Pipeline Management</h3>
-              <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Visual pipeline with drag-and-drop functionality.</p>
+              <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>Live data from your CRM - {crmData.deals.length} deals in pipeline.</p>
+              {!loading && crmData.deals.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-800">Pipeline Value</h4>
+                    <p className="text-2xl font-bold text-blue-600">
+                      ${crmData.deals.reduce((sum, deal) => {
+                        const value = typeof deal.value === 'string' ? 
+                          parseFloat(deal.value.replace(/[$,]/g, '')) : parseFloat(deal.value) || 0
+                        return sum + value
+                      }, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-green-800">Won Value</h4>
+                    <p className="text-2xl font-bold text-green-600">
+                      ${crmData.deals.filter(d => d.stage === 'closed_won').reduce((sum, deal) => {
+                        const value = typeof deal.value === 'string' ? 
+                          parseFloat(deal.value.replace(/[$,]/g, '')) : parseFloat(deal.value) || 0
+                        return sum + value
+                      }, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-purple-800">Conversion Rate</h4>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {crmData.deals.length > 0 ? 
+                        Math.round((crmData.closed / crmData.deals.length) * 100) : 0}%
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

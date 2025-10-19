@@ -157,9 +157,9 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-emerald-700 to-slate-600">
+    <div className="min-h-screen bg-gradient-to-br from-slate-500 via-emerald-600 to-slate-500">
       {/* Navigation */}
-      <nav className="relative z-50 bg-black/40 backdrop-blur-lg border-b border-white/20">
+      <nav className="relative z-50 bg-black/35 backdrop-blur-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
@@ -240,7 +240,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mb-8 flex justify-center"
             >
-              <div className="bg-black/30 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
+              <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
                 <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -292,7 +292,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10 max-w-2xl mx-auto mb-8"
+              className="bg-white/8 backdrop-blur-lg rounded-xl p-6 border border-white/12 max-w-2xl mx-auto mb-8"
             >
               <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ See The Magic In Action</h3>
               <blockquote className="text-lg text-gray-300 italic mb-3">
@@ -343,7 +343,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-black/10 backdrop-blur-sm">
+      <section id="features" className="py-20 bg-black/8 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
@@ -391,10 +391,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className={`relative bg-white/5 backdrop-blur-lg rounded-xl p-8 border ${
+                className={`relative bg-white/8 backdrop-blur-lg rounded-xl p-8 border ${
                   plan.popular 
                     ? 'border-cyan-500 ring-2 ring-cyan-500/20' 
-                    : 'border-white/10'
+                    : 'border-white/12'
                 } hover:border-cyan-500/50 transition-all duration-300`}
               >
                 {plan.popular && (
@@ -440,7 +440,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-black/10 backdrop-blur-sm">
+      <section id="testimonials" className="py-20 bg-black/8 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
@@ -458,7 +458,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
-                className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10"
+                className="bg-white/8 backdrop-blur-lg rounded-xl p-6 border border-white/12"
               >
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -508,7 +508,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-16 bg-black/10 backdrop-blur-sm">
+      <footer className="border-t border-white/10 py-16 bg-black/8 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             

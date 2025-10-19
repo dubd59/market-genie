@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import FirebaseUserDataService from '../services/firebaseUserData';
 
-const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
+const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal, onDeleteDeal, onSaveDeals }) => {
   const { user } = useAuth();
   const { tenant } = useTenant();
   // AI Assistant State
@@ -12,142 +12,92 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   
-  // Modal States for editing
-  const [editingLead, setEditingLead] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  // Modal States for editing deals
+  const [editingDeal, setEditingDeal] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [showAddDealModal, setShowAddDealModal] = useState(false);
+  
+  // Deal form state
+  const [newDeal, setNewDeal] = useState({
+    title: '',
+    value: '',
+    stage: 'prospects',
+    contactId: '',
+    closeDate: '',
+    notes: ''
+  });
 
-  // Generate high-value leads from real contacts data
-  const generateHighValueLeads = () => {
-    const highValueContacts = contacts.filter(contact => 
-      contact.status === 'qualified' || contact.status === 'hot' || contact.status === 'warm'
-    ).slice(0, 8); // Take up to 8 high-value contacts
-    
-    // If we don't have enough qualified contacts, add some sample ones
-    const sampleLeads = [
-      {
-        id: 'sample_1',
-        name: 'Sarah Johnson',
-        company: 'TechStart Inc',
-        email: 'sarah@techstart.com',
-        phone: '+1-555-0123',
-        source: 'LinkedIn',
-        score: 95,
-        stage: 'Hot Lead',
-        value: '$45,000',
-        lastContact: '2 hours ago',
-        nextAction: 'Demo scheduled',
-        aiInsights: 'High buying intent - mentioned budget approval',
-        socialActivity: 'Active on LinkedIn, recently posted about scaling challenges'
-      },
-      {
-        id: 'sample_2',
-        name: 'Michael Chen',
-        company: 'Growth Corp',
-        email: 'michael@growthcorp.com',
-        phone: '+1-555-0124',
-        source: 'Facebook',
-        score: 87,
-        stage: 'Qualified',
-        value: '$32,000',
-        lastContact: '45 minutes ago',
-        nextAction: 'Send proposal',
-        aiInsights: 'Decision maker, comparing 3 solutions',
-        socialActivity: 'Shared competitor content, engaged with our posts'
-      },
-      {
-        id: 'sample_3',
-        name: 'Emily Rodriguez',
-        company: 'Scale Solutions',
-        email: 'emily@scalesolutions.com',
-        phone: '+1-555-0125',
-        source: 'Instagram',
-        score: 92,
-        stage: 'Negotiation',
-        value: '$67,500',
-        lastContact: '1 hour ago',
-        nextAction: 'Contract review',
-        aiInsights: 'Ready to close, waiting on legal approval',
-        socialActivity: 'Following our content, high engagement rates'
-      }
-    ];
-    
-    // Convert real contacts to lead format
-    const realLeads = highValueContacts.map((contact, index) => ({
-      id: contact.id || `real_${index}`,
-      name: contact.name,
-      company: contact.company || 'Unknown Company',
-      email: contact.email,
-      phone: contact.phone || 'N/A',
-      source: 'CRM Database',
-      score: contact.status === 'qualified' ? 90 : contact.status === 'hot' ? 95 : 85,
-      stage: contact.status === 'qualified' ? 'Qualified' : contact.status === 'hot' ? 'Hot Lead' : 'Warm Lead',
-      value: `$${Math.floor(Math.random() * 50000 + 20000).toLocaleString()}`,
-      lastContact: 'Recently imported',
-      nextAction: 'Follow up required',
-      aiInsights: `Contact from ${contact.country || 'database'} - ${contact.tags?.join(', ') || 'No tags'}`,
-      socialActivity: 'Data from CRM import'
+  // Convert deals to high-value leads display format
+  const convertDealsToLeads = () => {
+    return deals.map(deal => ({
+      id: deal.id,
+      name: deal.title || 'Unnamed Deal',
+      company: deal.company || 'No Company',
+      email: deal.email || 'No Email',
+      phone: deal.phone || 'N/A',
+      source: 'Deal Pipeline',
+      score: deal.stage === 'closed_won' ? 100 : deal.stage === 'negotiation' ? 95 : deal.stage === 'proposal' ? 90 : 85,
+      stage: deal.stage === 'closed_won' ? 'Won' : deal.stage === 'negotiation' ? 'Negotiation' : deal.stage === 'proposal' ? 'Proposal' : 'Prospect',
+      value: typeof deal.value === 'number' ? `$${deal.value.toLocaleString()}` : `$${deal.value}`,
+      lastContact: deal.lastContact || 'Recently updated',
+      nextAction: deal.nextAction || 'Follow up required',
+      aiInsights: deal.notes || 'Deal from pipeline',
+      socialActivity: `Deal stage: ${deal.stage}`
     }));
-    
-    // Combine real leads with sample leads to ensure we always have some data
-    return [...realLeads, ...sampleLeads.slice(0, Math.max(0, 4 - realLeads.length))];
   };
 
-  const [leads, setLeads] = useState([]);
-  
-  // Load leads from database on component mount
-  useEffect(() => {
-    loadLeadsFromDatabase();
-  }, [user?.uid]);
-  
-  // Load leads from Firebase
-  const loadLeadsFromDatabase = async () => {
-    if (!user?.uid) return;
-    
-    try {
-      const result = await FirebaseUserDataService.getUserData(user.uid, 'crm_leads');
-      if (result.success && result.data?.leads) {
-        setLeads(result.data.leads);
-      } else {
-        // First time - initialize with sample leads and real contact leads
-        const initialLeads = generateHighValueLeads();
-        setLeads(initialLeads);
-        await saveLeadsToDatabase(initialLeads);
-      }
-    } catch (error) {
-      console.error('Error loading leads:', error);
-      // Fallback to generating leads
-      setLeads(generateHighValueLeads());
-    }
-  };
-  
-  // Save leads to Firebase
-  const saveLeadsToDatabase = async (leadsData) => {
-    if (!user?.uid) return;
-    
-    try {
-      await FirebaseUserDataService.saveUserData(user.uid, 'crm_leads', { leads: leadsData });
-    } catch (error) {
-      console.error('Error saving leads:', error);
-    }
-  };
+  // Use deals as leads - no separate leads system
+  const leads = convertDealsToLeads();
 
   // Calculate live pipeline stats from real data
   const calculatePipelineStats = () => {
     const totalDeals = deals.length;
-    const closedDeals = deals.filter(deal => deal.stage === 'won' || deal.stage === 'closed').length;
-    const activeDeals = deals.filter(deal => deal.stage !== 'won' && deal.stage !== 'closed' && deal.stage !== 'lost').length;
+    const closedDeals = deals.filter(deal => deal.stage === 'closed_won').length;
+    const lostDeals = deals.filter(deal => deal.stage === 'closed_lost').length;
+    const activeDeals = deals.filter(deal => 
+      deal.stage !== 'closed_won' && deal.stage !== 'closed_lost'
+    ).length;
     
-    const totalValue = deals.reduce((sum, deal) => sum + (parseFloat(deal.value) || 0), 0);
-    const closedValue = deals.filter(deal => deal.stage === 'won' || deal.stage === 'closed')
-                           .reduce((sum, deal) => sum + (parseFloat(deal.value) || 0), 0);
+    // Parse deal values more robustly
+    const parseDealValue = (value) => {
+      if (!value) return 0;
+      const numericValue = typeof value === 'string' ? 
+        parseFloat(value.replace(/[$,]/g, '')) : parseFloat(value);
+      return isNaN(numericValue) ? 0 : numericValue;
+    };
+    
+    const totalValue = deals.reduce((sum, deal) => sum + parseDealValue(deal.value), 0);
+    const closedValue = deals.filter(deal => deal.stage === 'closed_won')
+                           .reduce((sum, deal) => sum + parseDealValue(deal.value), 0);
     
     const conversionRate = totalDeals > 0 ? Math.round((closedDeals / totalDeals) * 100) : 0;
     const avgDealSize = totalDeals > 0 ? Math.round(totalValue / totalDeals) : 0;
     
-    // Calculate average sales cycle (simplified)
-    const avgSalesCycle = deals.length > 0 ? Math.round(Math.random() * 10 + 15) : 18; // Will improve this later
+    // Calculate real average sales cycle from deal dates
+    const calculateSalesCycle = () => {
+      const closedWonDeals = deals.filter(deal => deal.stage === 'closed_won');
+      if (closedWonDeals.length === 0) return 24; // Default if no data
+      
+      let totalDays = 0;
+      let validDeals = 0;
+      
+      closedWonDeals.forEach(deal => {
+        if (deal.createdAt && deal.closeDate) {
+          const created = new Date(deal.createdAt);
+          const closed = new Date(deal.closeDate);
+          const daysDiff = Math.round((closed - created) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff > 0 && daysDiff < 365) { // Reasonable bounds
+            totalDays += daysDiff;
+            validDeals++;
+          }
+        }
+      });
+      
+      return validDeals > 0 ? Math.round(totalDays / validDeals) : 24;
+    };
+    
+    const avgSalesCycle = calculateSalesCycle();
     
     return {
       totalValue: `$${totalValue.toLocaleString()}`,
@@ -155,7 +105,9 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
       activeDeals: activeDeals,
       conversionRate: conversionRate,
       avgDealSize: `$${avgDealSize.toLocaleString()}`,
-      salesCycle: `${avgSalesCycle} days`
+      salesCycle: `${avgSalesCycle} days`,
+      lostDeals: lostDeals,
+      totalContactsAndDeals: contacts.length + deals.length + leads.length
     };
   };
 
@@ -222,30 +174,81 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
     }, 1500);
   };
 
-  // Lead Management Functions
-  const handleEditLead = (lead) => {
-    setEditingLead({...lead});
-    setShowEditModal(true);
+  // Deal Management Functions
+  const handleAddDeal = () => {
+    setNewDeal({
+      title: '',
+      value: '',
+      stage: 'prospects',
+      contactId: '',
+      closeDate: '',
+      notes: ''
+    });
+    setEditingDeal(null);
+    setShowAddDealModal(true);
   };
 
-  const handleDeleteLead = async (leadId) => {
-    const updatedLeads = leads.filter(lead => lead.id !== leadId);
-    setLeads(updatedLeads);
-    await saveLeadsToDatabase(updatedLeads);
-    setShowDeleteConfirm(null);
+  const handleEditDeal = (deal) => {
+    setNewDeal({
+      title: deal.title || '',
+      value: deal.value || '',
+      stage: deal.stage || 'prospects',
+      contactId: deal.contactId || '',
+      closeDate: deal.closeDate || '',
+      notes: deal.notes || ''
+    });
+    setEditingDeal(deal);
+    setShowAddDealModal(true);
   };
 
-  const handleSaveLead = async () => {
-    let updatedLeads;
-    if (editingLead.id) {
-      updatedLeads = leads.map(lead => lead.id === editingLead.id ? editingLead : lead);
+  const handleSaveDeal = async (e) => {
+    e.preventDefault();
+    
+    if (!newDeal.title.trim()) return;
+    
+    const dealData = {
+      ...newDeal,
+      id: editingDeal ? editingDeal.id : Date.now().toString(),
+      createdAt: editingDeal ? editingDeal.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (editingDeal) {
+      // Update existing deal
+      const updatedDeals = deals.map(deal => 
+        deal.id === editingDeal.id ? dealData : deal
+      );
+      if (onSaveDeals) await onSaveDeals(updatedDeals);
     } else {
-      updatedLeads = [...leads, { ...editingLead, id: Date.now() }];
+      // Add new deal
+      const updatedDeals = [...deals, dealData];
+      if (onSaveDeals) await onSaveDeals(updatedDeals);
     }
-    setLeads(updatedLeads);
-    await saveLeadsToDatabase(updatedLeads);
-    setShowEditModal(false);
-    setEditingLead(null);
+
+    setShowAddDealModal(false);
+    setEditingDeal(null);
+    setNewDeal({
+      title: '',
+      value: '',
+      stage: 'prospects',
+      contactId: '',
+      closeDate: '',
+      notes: ''
+    });
+  };
+
+  const handleDeleteDeal = async (dealId) => {
+    if (confirm('Are you sure you want to delete this deal?')) {
+      const updatedDeals = deals.filter(deal => deal.id !== dealId);
+      if (onSaveDeals) await onSaveDeals(updatedDeals);
+    }
+  };
+
+  const handleUpdateDealStage = async (dealId, newStage) => {
+    const updatedDeals = deals.map(deal =>
+      deal.id === dealId ? { ...deal, stage: newStage, updatedAt: new Date().toISOString() } : deal
+    );
+    if (onSaveDeals) await onSaveDeals(updatedDeals);
   };
 
   const exportData = () => {
@@ -291,10 +294,19 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
           </h3>
           <p className="text-gray-600 mt-1">HighLevel CRM on steroids with AI insights and social media intelligence</p>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-gray-500">Pipeline Value</div>
-          <div className="text-2xl font-bold text-indigo-600">{pipelineStats.totalValue}</div>
-          <div className="text-xs text-gray-500">{pipelineStats.conversionRate}% conversion rate</div>
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={handleAddDeal}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg flex items-center gap-2 font-medium"
+          >
+            <span className="text-lg">💼</span>
+            Create Deal
+          </button>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">Pipeline Value</div>
+            <div className="text-2xl font-bold text-indigo-600">{pipelineStats.totalValue}</div>
+            <div className="text-xs text-gray-500">{pipelineStats.conversionRate}% conversion rate</div>
+          </div>
         </div>
       </div>
 
@@ -373,7 +385,7 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
         </div>
         <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-3 border border-indigo-200">
           <div className="text-xs text-indigo-600 font-medium">AI INSIGHTS</div>
-          <div className="text-lg font-bold text-indigo-800">{contacts.length + deals.length + leads.length}</div>
+          <div className="text-lg font-bold text-indigo-800">{pipelineStats.totalContactsAndDeals}</div>
         </div>
       </div>
 
@@ -419,16 +431,20 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
                       Contact
                     </button>
                     <button 
-                      onClick={() => handleEditLead(lead)}
+                      onClick={() => {
+                        // Since leads are converted from deals, find the original deal
+                        const originalDeal = deals.find(deal => deal.id === lead.id);
+                        if (originalDeal) handleEditDeal(originalDeal);
+                      }}
                       className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs hover:bg-green-200 transition-colors"
                     >
-                      Edit
+                      Edit Deal
                     </button>
                     <button 
-                      onClick={() => setShowDeleteConfirm(lead.id)}
+                      onClick={() => handleDeleteDeal(lead.id)}
                       className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs hover:bg-red-200 transition-colors"
                     >
-                      Delete
+                      Delete Deal
                     </button>
                   </div>
                 </div>
@@ -558,26 +574,10 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
         </div>
         <div className="flex gap-3">
           <button 
-            onClick={() => {
-              setEditingLead({
-                name: '',
-                company: '',
-                email: '',
-                phone: '',
-                source: '',
-                score: 50,
-                stage: 'Nurturing',
-                value: '$0',
-                lastContact: 'Just now',
-                nextAction: 'Initial contact',
-                aiInsights: 'New lead - needs qualification',
-                socialActivity: 'No social activity yet'
-              });
-              setShowAddLeadModal(true);
-            }}
+            onClick={handleAddDeal}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            Add Lead
+            💼 Add New Deal
           </button>
           <button 
             onClick={() => {
@@ -598,116 +598,7 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
         </div>
       </div>
 
-      {/* Edit Lead Modal */}
-      {(showEditModal || showAddLeadModal) && editingLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingLead.id ? 'Edit Lead' : 'Add New Lead'}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={editingLead.name || ''}
-                  onChange={(e) => setEditingLead({...editingLead, name: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                <input
-                  type="text"
-                  value={editingLead.company || ''}
-                  onChange={(e) => setEditingLead({...editingLead, company: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editingLead.email || ''}
-                  onChange={(e) => setEditingLead({...editingLead, email: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  value={editingLead.phone || ''}
-                  onChange={(e) => setEditingLead({...editingLead, phone: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Score</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editingLead.score || ''}
-                    onChange={(e) => setEditingLead({...editingLead, score: parseInt(e.target.value) || 0})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
-                  <select
-                    value={editingLead.stage || ''}
-                    onChange={(e) => setEditingLead({...editingLead, stage: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="Nurturing">Nurturing</option>
-                    <option value="Qualified">Qualified</option>
-                    <option value="Hot Lead">Hot Lead</option>
-                    <option value="Negotiation">Negotiation</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deal Value</label>
-                <input
-                  type="text"
-                  value={editingLead.value || ''}
-                  onChange={(e) => setEditingLead({...editingLead, value: e.target.value})}
-                  placeholder="$50,000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleSaveLead}
-                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                {editingLead.id ? 'Update Lead' : 'Add Lead'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setShowAddLeadModal(false);
-                  setEditingLead(null);
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -732,6 +623,123 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [] }) => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Modal */}
+      {showAddDealModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 rounded-t-xl">
+              <h3 className="text-xl font-semibold text-genie-teal">
+                {editingDeal ? 'Edit Deal' : 'Add New Deal'}
+              </h3>
+            </div>
+            <form onSubmit={handleSaveDeal} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deal Title</label>
+                <input
+                  type="text"
+                  value={newDeal.title}
+                  onChange={(e) => setNewDeal({ ...newDeal, title: e.target.value })}
+                  placeholder="New Business Opportunity"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Deal Value</label>
+                <input
+                  type="text"
+                  value={newDeal.value}
+                  onChange={(e) => setNewDeal({ ...newDeal, value: e.target.value })}
+                  placeholder="$50,000"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+                <select
+                  value={newDeal.stage}
+                  onChange={(e) => setNewDeal({ ...newDeal, stage: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                >
+                  <option value="prospects">Prospects</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="negotiation">Negotiation</option>
+                  <option value="closed_won">Closed Won</option>
+                  <option value="closed_lost">Closed Lost</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+                <select
+                  value={newDeal.contactId}
+                  onChange={(e) => setNewDeal({ ...newDeal, contactId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                >
+                  <option value="">Select Contact (Optional)</option>
+                  {contacts.map(contact => (
+                    <option key={contact.id} value={contact.id}>
+                      {contact.name} - {contact.company || 'No Company'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Close Date</label>
+                <input
+                  type="date"
+                  value={newDeal.closeDate}
+                  onChange={(e) => setNewDeal({ ...newDeal, closeDate: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={newDeal.notes}
+                  onChange={(e) => setNewDeal({ ...newDeal, notes: e.target.value })}
+                  placeholder="Deal notes, requirements, next steps..."
+                  rows="3"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-genie-teal text-white py-2 rounded-lg hover:bg-genie-teal-dark transition-colors"
+                >
+                  {editingDeal ? 'Update Deal' : 'Create Deal'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddDealModal(false);
+                    setEditingDeal(null);
+                    setNewDeal({
+                      title: '',
+                      value: '',
+                      stage: 'prospects',
+                      contactId: '',
+                      closeDate: '',
+                      notes: ''
+                    });
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

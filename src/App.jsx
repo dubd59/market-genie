@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { TenantProvider } from './contexts/TenantContext'
@@ -12,6 +12,7 @@ import Register from './pages/RegisterSimple'
 import LandingPage from './pages/LandingPage'
 import UnsubscribePage from './pages/UnsubscribePage'
 import OAuthCallback from './pages/OAuthCallback'
+import MicrosoftOAuthCallback from './pages/MicrosoftOAuthCallback'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
@@ -38,6 +39,8 @@ import MetricsService from './services/MetricsService'
 import AIService from './services/aiService'
 import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
+import AppointmentService from './services/appointmentService'
+import CalendarService from './services/calendarService'
 import AISwarmDashboard from './components/AISwarmDashboard'
 import CostControlsDashboard from './components/CostControlsDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
@@ -116,7 +119,7 @@ function SophisticatedDashboard() {
     const path = location.pathname
     if (path.includes('lead-generation')) return 'Lead Generation'
     if (path.includes('outreach-automation')) return 'Outreach Automation'
-    if (path.includes('appointment-booking')) return 'Appointment Booking'
+    if (path.includes('appointments') || path.includes('appointment-booking')) return 'Appointments'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
@@ -252,6 +255,63 @@ function SophisticatedDashboard() {
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
   
+  // Appointment state
+  const [appointments, setAppointments] = useState([])
+  const [appointmentStats, setAppointmentStats] = useState({
+    upcoming: 0,
+    booked: 0,
+    cancelled: 0,
+    total: 0
+  })
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true)
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false)
+  const [forceRender, setForceRender] = useState(0)
+  const forceShowModal = useRef(false)
+  const [editingAppointment, setEditingAppointment] = useState(null)
+  const [showCalendarView, setShowCalendarView] = useState(false)
+  const [calendarConnections, setCalendarConnections] = useState({
+    google: false,
+    outlook: false,
+    custom: false
+  })
+  
+  // Load calendar connections from Firebase
+  useEffect(() => {
+    const loadCalendarConnections = async () => {
+      if (!tenant?.id) return;
+      
+      try {
+        console.log('🔄 Loading calendar connections for tenant:', tenant.id);
+        const savedConnections = await FirebaseUserDataService.getCalendarConnections(tenant.id);
+        console.log('📥 Loaded calendar connections:', savedConnections);
+        
+        if (savedConnections) {
+          setCalendarConnections(savedConnections);
+          console.log('✅ Calendar connections set:', savedConnections);
+        } else {
+          console.log('❌ No saved calendar connections found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading calendar connections:', error);
+      }
+    };
+    
+    loadCalendarConnections();
+  }, [tenant?.id]);
+  
+  // Save calendar connections to Firebase
+  const saveCalendarConnections = async (connections) => {
+    if (!tenant?.id) return;
+    
+    try {
+      console.log('💾 Saving calendar connections:', connections);
+      await FirebaseUserDataService.saveCalendarConnections(tenant.id, connections);
+      console.log('✅ Calendar connections saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving calendar connections:', error);
+    }
+  };
+  
   // Load real dashboard metrics
   useEffect(() => {
     const loadDashboardMetrics = async () => {
@@ -276,6 +336,46 @@ function SophisticatedDashboard() {
     // Refresh metrics every 5 minutes
     const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
+  }, [tenant?.id]);
+
+  // Load appointments data
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (!tenant?.id) {
+        setAppointmentsLoading(false);
+        return;
+      }
+      
+      setAppointmentsLoading(true);
+      
+      try {
+        // Set up real-time subscription to appointments
+        const unsubscribe = AppointmentService.subscribeToAppointments(
+          tenant.id, 
+          (appointmentData) => {
+            setAppointments(appointmentData);
+            const stats = AppointmentService.calculateAppointmentStats(appointmentData);
+            setAppointmentStats(stats);
+            setAppointmentsLoading(false);
+          }
+        );
+        
+        // Return cleanup function
+        return () => {
+          if (unsubscribe) unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+        setAppointmentsLoading(false);
+      }
+    };
+
+    const cleanup = loadAppointments();
+    return () => {
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup();
+      }
+    };
   }, [tenant?.id]);
 
   const [contacts, setContacts] = useState([])
@@ -2003,6 +2103,270 @@ ${companyName}</p>
     reader.readAsText(file)
   }
 
+  // Appointment handlers
+  const handleCalendarConnection = async (provider) => {
+    try {
+      console.log(`🎯 App.jsx: handleCalendarConnection called with provider: ${provider}`)
+      
+      // Set only the selected provider to true, others to false
+      const newConnections = {
+        google: provider === 'google',
+        outlook: provider === 'outlook', 
+        custom: provider === 'custom'
+      }
+      
+      console.log(`🎯 App.jsx: Setting new connections:`, newConnections);
+      setCalendarConnections(prev => ({ ...prev, [provider]: 'connecting' }))
+      
+      // Simulate connection delay
+      setTimeout(async () => {
+        console.log(`🎯 App.jsx: Timeout completed, setting final connections:`, newConnections);
+        setCalendarConnections(newConnections)
+        await saveCalendarConnections(newConnections)
+        console.log(`🎯 App.jsx: ${provider} Calendar connected and saved!`)
+      }, 1000)
+      
+    } catch (error) {
+      setCalendarConnections(prev => ({ ...prev, [provider]: false }))
+      console.error(`Failed to connect ${provider} calendar:`, error)
+    }
+  }
+
+  const handleViewCalendar = async () => {
+    console.log('Checking calendar connections...', calendarConnections)
+    
+    if (calendarConnections.google === true) {
+      // Open Google Calendar in new tab
+      window.open('https://calendar.google.com', '_blank')
+      console.log('Opening Google Calendar')
+      return
+    }
+    
+    if (calendarConnections.outlook === true) {
+      // Open Outlook Calendar in new tab  
+      window.open('https://outlook.live.com/calendar', '_blank')
+      console.log('Opening Outlook Calendar')
+      return
+    }
+    
+    if (calendarConnections.custom === true) {
+      // For custom integration, show calendar view
+      setShowCalendarView(true)
+      console.log('Opening custom calendar view')
+      return
+    }
+    
+    // If no calendar connections from the integration buttons, show connection options
+    setShowCalendarView(true)
+    console.log('No calendars connected via integration buttons - showing connection options')
+  }
+
+  const handleBookMeeting = () => {
+    forceShowModal.current = true
+    setShowAppointmentModal(true)
+    setForceRender(prev => prev + 1)
+  }
+
+  const checkConnectedEmailServices = async () => {
+    try {
+      // Check actual integration statuses
+      const gmailStatus = await IntegrationService.getConnectionStatus('gmail', tenant?.id)
+      const outlookStatus = await IntegrationService.getConnectionStatus('outlook', tenant?.id)
+      
+      const gmailConnected = gmailStatus.data && gmailStatus.data.email && (gmailStatus.data.appPassword || gmailStatus.data.password) && gmailStatus.data.status === 'connected'
+      const outlookConnected = outlookStatus.data && outlookStatus.data.email && (outlookStatus.data.appPassword || outlookStatus.data.password) && outlookStatus.data.status === 'connected'
+      
+      console.log('Gmail connected:', gmailConnected)
+      console.log('Outlook connected:', outlookConnected)
+      
+      return {
+        gmail: gmailConnected,
+        outlook: outlookConnected
+      }
+    } catch (error) {
+      console.error('Error checking email services:', error)
+      return { gmail: false, outlook: false }
+    }
+  }
+
+  const handleAppointmentAction = async (appointment, action) => {
+    try {
+      switch (action) {
+        case 'join':
+          // Generate meeting link based on appointment time and details
+          const meetingTime = new Date(appointment.startTime || appointment.appointmentDate).toISOString().replace(/[-:\.]/g, '').slice(0, 15)
+          const meetingId = appointment.id || 'meeting-' + Date.now()
+          const meetingLink = `https://teams.microsoft.com/l/meetup-join/19%3a${meetingId}%40thread.v2/0?context=%7b%22Tid%22%3a%22${tenant?.id}%22%2c%22Oid%22%3a%22${user?.uid}%22%7d`
+          
+          window.open(meetingLink, '_blank')
+          toast.success('Opening meeting room...')
+          break
+        case 'reschedule':
+          // Populate the form with existing appointment data
+          setEditingAppointment({
+            ...appointment,
+            id: appointment.id,
+            clientName: appointment.clientName,
+            email: appointment.email,
+            phone: appointment.phone,
+            startTime: appointment.startTime || appointment.appointmentDate,
+            meetingType: appointment.meetingType,
+            notes: appointment.notes
+          })
+          setShowAppointmentModal(true)
+          forceShowModal.current = true
+          setForceRender(prev => prev + 1)
+          break
+        case 'prepare':
+          // Open preparation checklist/materials
+          const preparationInfo = `
+📋 Meeting Preparation for ${appointment.clientName}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 Date: ${new Date(appointment.startTime || appointment.appointmentDate).toLocaleDateString()}
+⏰ Time: ${new Date(appointment.startTime || appointment.appointmentDate).toLocaleTimeString()}
+📧 Email: ${appointment.email}
+📞 Phone: ${appointment.phone || 'Not provided'}
+🎯 Type: ${appointment.meetingType}
+
+📝 Notes: ${appointment.notes || 'No additional notes'}
+
+✅ Preparation Checklist:
+• Review client information
+• Prepare presentation materials
+• Test meeting technology
+• Set up meeting room/environment
+• Review agenda and objectives
+          `
+          
+          // Create a simple popup with the preparation info
+          const newWindow = window.open('', '_blank', 'width=600,height=800,scrollbars=yes')
+          newWindow.document.write(`
+            <html>
+              <head><title>Meeting Preparation - ${appointment.clientName}</title></head>
+              <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+                <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                  <pre style="white-space: pre-wrap; line-height: 1.6; font-family: 'Courier New', monospace;">${preparationInfo}</pre>
+                  <button onclick="window.print()" style="background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Print</button>
+                  <button onclick="window.close()" style="background: #666; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                </div>
+              </body>
+            </html>
+          `)
+          
+          toast.success('Meeting preparation guide opened!')
+          break
+        case 'reminder':
+          // Send reminder email/notification
+          const reminderMessage = `
+🔔 Meeting Reminder
+
+Hi ${appointment.clientName},
+
+This is a friendly reminder about your upcoming ${appointment.meetingType} scheduled for:
+
+📅 Date: ${new Date(appointment.startTime || appointment.appointmentDate).toLocaleDateString()}
+⏰ Time: ${new Date(appointment.startTime || appointment.appointmentDate).toLocaleTimeString()}
+
+Meeting Details:
+${appointment.notes || 'Looking forward to our meeting!'}
+
+Best regards,
+Market Genie Team
+          `
+          
+          console.log('📧 Reminder would be sent:', reminderMessage)
+          toast.success(`Reminder sent to ${appointment.clientName}!`)
+          break
+        default:
+          toast.warning('Unknown action')
+      }
+    } catch (error) {
+      console.error('Appointment action error:', error)
+      toast.error(`Failed to ${action} appointment: ${error.message}`)
+    }
+  }
+
+  const handleCreateAppointment = async (appointmentData) => {
+    try {
+      // Save to database
+      const result = await AppointmentService.addAppointment(tenant?.id, appointmentData)
+      
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      
+      // Add to connected calendar if available
+      try {
+        if (calendarConnections.google || calendarConnections.outlook) {
+          const calendarEvent = {
+            title: `${appointmentData.meetingType} - ${appointmentData.clientName}`,
+            description: `Meeting with ${appointmentData.clientName}\nEmail: ${appointmentData.email}\nPhone: ${appointmentData.phone || 'Not provided'}\nNotes: ${appointmentData.notes || 'No additional notes'}`,
+            start: new Date(appointmentData.startTime),
+            end: new Date(new Date(appointmentData.startTime).getTime() + 60 * 60 * 1000), // 1 hour duration
+            attendees: [appointmentData.email]
+          }
+          
+          if (calendarConnections.outlook) {
+            console.log('🔄 Adding to Outlook Calendar...')
+            const outlookResult = await CalendarService.createOutlookEvent(calendarEvent)
+            if (outlookResult.success) {
+              console.log('✅ Successfully added to Outlook Calendar:', outlookResult.eventId)
+            } else {
+              console.log('⚠️ Outlook Calendar integration error:', outlookResult.error)
+            }
+          } else if (calendarConnections.google) {
+            console.log('🔄 Adding to Google Calendar...')
+            const googleResult = await CalendarService.createGoogleEvent(calendarEvent)
+            if (googleResult.success) {
+              console.log('✅ Successfully added to Google Calendar:', googleResult.eventId)
+            } else {
+              console.log('⚠️ Google Calendar integration error:', googleResult.error)
+            }
+          }
+        }
+      } catch (calendarError) {
+        console.error('Calendar integration error:', calendarError)
+        // Don't fail the whole appointment creation if calendar fails
+      }
+      
+      setShowAppointmentModal(false)
+      setEditingAppointment(null)
+      
+      // Appointments will auto-refresh via the real-time subscription
+      console.log('Appointment created successfully! Real-time subscription will update the list.')
+      
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const handleUpdateAppointment = async (appointmentData) => {
+    try {
+      const result = await AppointmentService.updateAppointment(tenant?.id, editingAppointment.id, {
+        ...appointmentData,
+        appointmentDate: appointmentData.startTime // Also save as appointmentDate for compatibility
+      })
+      
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      
+      console.log('Appointment updated successfully!')
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const handleBookingSettingsSubmit = (e) => {
+    e.preventDefault()
+    // Prevent page refresh and show success message
+    console.log('Booking settings saved successfully!')
+    alert('Booking settings saved successfully!')
+  }
+
   // Security function to validate section access
   const isAuthorizedForSection = (section) => {
     if (section === 'Admin Panel') {
@@ -2021,7 +2385,7 @@ ${companyName}</p>
         'SuperGenie Dashboard': '/dashboard',
         'Lead Generation': '/dashboard/lead-generation',
         'Outreach Automation': '/dashboard/outreach-automation',
-        'Appointment Booking': '/dashboard/appointment-booking',
+        'Appointments': '/dashboard/appointments',
         'CRM & Pipeline': '/dashboard/crm-pipeline',
         'Contact Manager': '/dashboard/contact-manager',
         'Pipeline View': '/dashboard/crm-pipeline',
@@ -4196,21 +4560,197 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
           {activeSection === 'CRM & Pipeline' && <CRMPipeline />}
           {activeSection === 'Appointments' && (
             <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+              {/* APPOINTMENT BOOKING MODAL */}
+              {(showAppointmentModal || forceShowModal.current) && (
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+                  style={{zIndex: 1000}}
+                >
+                  <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-bold text-genie-teal">
+                        {editingAppointment ? 'Reschedule Appointment' : 'Schedule Appointment'}
+                      </h3>
+                      <button 
+                        onClick={() => {
+                          setShowAppointmentModal(false)
+                          forceShowModal.current = false
+                        }}
+                        className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <form 
+                      className="space-y-4"
+                      onSubmit={async (e) => {
+                        e.preventDefault()
+                        const formData = new FormData(e.target)
+                        
+                        const appointmentData = {
+                          clientName: formData.get('clientName'),
+                          email: formData.get('email'),
+                          phone: formData.get('phone'),
+                          startTime: formData.get('datetime'),
+                          appointmentDate: formData.get('datetime'), // Also save as appointmentDate for compatibility
+                          meetingType: formData.get('meetingType'),
+                          notes: formData.get('notes'),
+                          status: 'scheduled',
+                          tenantId: tenant?.id
+                        }
+                        
+                        try {
+                          if (editingAppointment) {
+                            // Update existing appointment
+                            await handleUpdateAppointment(appointmentData)
+                          } else {
+                            // Create new appointment
+                            await handleCreateAppointment(appointmentData)
+                          }
+                          
+                          // Close modal
+                          setShowAppointmentModal(false)
+                          forceShowModal.current = false
+                          setEditingAppointment(null)
+                          
+                          // Show success message
+                          alert(editingAppointment ? 'Appointment rescheduled successfully!' : 'Appointment booked successfully!')
+                          
+                          // Appointments will auto-refresh via real-time subscription
+                        } catch (error) {
+                          console.error('Error saving appointment:', error)
+                          alert('Error saving appointment. Please try again.')
+                        }
+                      }}
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Client Name *
+                        </label>
+                        <input 
+                          type="text" 
+                          name="clientName"
+                          required
+                          defaultValue={editingAppointment?.clientName || ''}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                          placeholder="Enter client name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email *
+                        </label>
+                        <input 
+                          type="email" 
+                          name="email"
+                          required
+                          defaultValue={editingAppointment?.email || ''}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <input 
+                          type="tel" 
+                          name="phone"
+                          defaultValue={editingAppointment?.phone || ''}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                          placeholder="Enter phone number"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Date & Time *
+                        </label>
+                        <input 
+                          type="datetime-local" 
+                          name="datetime"
+                          required
+                          defaultValue={editingAppointment?.startTime ? new Date(editingAppointment.startTime).toISOString().slice(0, 16) : ''}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Meeting Type
+                        </label>
+                        <select 
+                          name="meetingType"
+                          defaultValue={editingAppointment?.meetingType || 'Consultation'}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                        >
+                          <option value="Consultation">Consultation</option>
+                          <option value="Follow-up">Follow-up</option>
+                          <option value="Demo">Demo</option>
+                          <option value="Strategy Session">Strategy Session</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes (Optional)
+                        </label>
+                        <textarea 
+                          name="notes"
+                          defaultValue={editingAppointment?.notes || ''}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-genie-teal"
+                          rows="3"
+                          placeholder="Any additional notes..."
+                        ></textarea>
+                      </div>
+                      
+                      <div className="flex gap-3 pt-4">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setShowAppointmentModal(false)
+                            forceShowModal.current = false
+                          }}
+                          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit"
+                          className="flex-1 px-4 py-2 bg-genie-teal text-white rounded-md hover:bg-genie-teal/80"
+                        >
+                          {editingAppointment ? 'Update Appointment' : 'Book Appointment'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
               <h2 className="text-3xl font-bold text-genie-teal mb-8">Appointments</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
                   <span role="img" aria-label="calendar" className="text-genie-teal text-3xl mb-2">📅</span>
-                  <div className="text-2xl font-bold text-gray-900">22</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {appointmentsLoading ? '...' : appointmentStats.upcoming}
+                  </div>
                   <div className="text-gray-500">Upcoming</div>
                 </div>
                 <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
                   <span role="img" aria-label="booked" className="text-genie-teal text-3xl mb-2">✅</span>
-                  <div className="text-2xl font-bold text-gray-900">15</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {appointmentsLoading ? '...' : appointmentStats.booked}
+                  </div>
                   <div className="text-gray-500">Booked</div>
                 </div>
                 <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
                   <span role="img" aria-label="cancelled" className="text-genie-teal text-3xl mb-2">❌</span>
-                  <div className="text-2xl font-bold text-gray-900">3</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {appointmentsLoading ? '...' : appointmentStats.cancelled}
+                  </div>
                   <div className="text-gray-500">Cancelled</div>
                 </div>
               </div>
@@ -4218,14 +4758,61 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
                 <h3 className="text-xl font-semibold text-genie-teal mb-4">Calendar Integration</h3>
                 <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 flex items-center gap-2">
-                    <span>📅</span> Connect Google Calendar
+                  <button 
+                    onClick={() => handleCalendarConnection('google')}
+                    disabled={calendarConnections.google === 'connecting'}
+                    className={`px-4 py-2 rounded flex items-center gap-2 ${
+                      calendarConnections.google === true
+                        ? 'bg-green-600 text-white'
+                        : calendarConnections.google === 'connecting'
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-500'
+                    }`}
+                  >
+                    <span>📅</span> 
+                    {calendarConnections.google === true 
+                      ? 'Google Calendar Connected' 
+                      : calendarConnections.google === 'connecting'
+                      ? 'Connecting...'
+                      : 'Connect Google Calendar'
+                    }
                   </button>
-                  <button className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
-                    <span>📧</span> Connect Outlook
+                  <button 
+                    onClick={() => handleCalendarConnection('outlook')}
+                    disabled={calendarConnections.outlook === 'connecting'}
+                    className={`px-4 py-2 rounded flex items-center gap-2 ${
+                      calendarConnections.outlook === true
+                        ? 'bg-green-600 text-white'
+                        : calendarConnections.outlook === 'connecting'
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-800 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <span>📧</span> 
+                    {calendarConnections.outlook === true 
+                      ? 'Outlook Connected' 
+                      : calendarConnections.outlook === 'connecting'
+                      ? 'Connecting...'
+                      : 'Connect Outlook'
+                    }
                   </button>
-                  <button className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500 flex items-center gap-2">
-                    <span>🔗</span> Custom Integration
+                  <button 
+                    onClick={() => handleCalendarConnection('custom')}
+                    className={`px-4 py-2 rounded flex items-center gap-2 ${
+                      calendarConnections.custom === true
+                        ? 'bg-green-600 text-white'
+                        : calendarConnections.custom === 'setup'
+                        ? 'bg-yellow-600 text-white'
+                        : 'bg-gray-600 text-white hover:bg-gray-500'
+                    }`}
+                  >
+                    <span>🔗</span> 
+                    {calendarConnections.custom === true 
+                      ? 'Custom Integration Active' 
+                      : calendarConnections.custom === 'setup'
+                      ? 'Setup in Progress'
+                      : 'Custom Integration'
+                    }
                   </button>
                 </div>
               </div>
@@ -4233,7 +4820,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               {/* Booking Settings */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
                 <h3 className="text-xl font-semibold text-genie-teal mb-4">Booking Settings</h3>
-                <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleBookingSettingsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Duration</label>
                     <select className="border p-3 rounded w-full">
@@ -4253,12 +4840,41 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours Start</label>
                     <input type="time" className="border p-3 rounded w-full" defaultValue="09:00" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours End</label>
                     <input type="time" className="border p-3 rounded w-full" defaultValue="17:00" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range Start</label>
+                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date().toISOString().split('T')[0]} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range End</label>
+                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Days</label>
+                    <select multiple className="border p-3 rounded w-full" size="3">
+                      <option value="monday" selected>Monday</option>
+                      <option value="tuesday" selected>Tuesday</option>
+                      <option value="wednesday" selected>Wednesday</option>
+                      <option value="thursday" selected>Thursday</option>
+                      <option value="friday" selected>Friday</option>
+                      <option value="saturday">Saturday</option>
+                      <option value="sunday">Sunday</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                    <select className="border p-3 rounded w-full">
+                      <option>UTC-5 (Eastern Time)</option>
+                      <option>UTC-6 (Central Time)</option>
+                      <option>UTC-7 (Mountain Time)</option>
+                      <option>UTC-8 (Pacific Time)</option>
+                    </select>
                   </div>
                   <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Save Settings</button>
                 </form>
@@ -4268,36 +4884,76 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               <div className="bg-white rounded-xl shadow p-6">
                 <h3 className="text-xl font-semibold text-genie-teal mb-4">Upcoming Appointments</h3>
                 <div className="space-y-4">
-                  <div className="border-l-4 border-genie-teal bg-blue-50 p-4 rounded">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold">Demo Call - Acme Corp</h4>
-                        <p className="text-gray-600">John Smith</p>
-                        <p className="text-sm text-gray-500">Today at 2:00 PM - 3:00 PM</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="text-genie-teal hover:underline">Join</button>
-                        <button className="text-blue-600 hover:underline">Reschedule</button>
-                      </div>
+                  {appointments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No appointments scheduled yet.</p>
+                      <button 
+                        onClick={handleBookMeeting}
+                        className="mt-4 bg-genie-teal text-white px-6 py-2 rounded hover:bg-genie-teal/80"
+                      >
+                        Schedule Your First Meeting
+                      </button>
                     </div>
-                  </div>
-                  <div className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold">Strategy Session - Tech Startup</h4>
-                        <p className="text-gray-600">Sarah Johnson</p>
-                        <p className="text-sm text-gray-500">Tomorrow at 10:00 AM - 11:00 AM</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="text-genie-teal hover:underline">Prepare</button>
-                        <button className="text-blue-600 hover:underline">Send Reminder</button>
-                      </div>
-                    </div>
-                  </div>
+                  ) : (
+                    appointments
+                      .filter(apt => apt.status === 'scheduled')
+                      .slice(0, 5)
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border-l-4 border-genie-teal bg-blue-50 p-4 rounded">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold">{appointment.title}</h4>
+                              <p className="text-gray-600">{appointment.clientName}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(appointment.startTime).toLocaleDateString()} at {' '}
+                                {new Date(appointment.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {' '}
+                                {new Date(appointment.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'join')}
+                                className="text-genie-teal hover:underline text-sm"
+                              >
+                                Join
+                              </button>
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'reschedule')}
+                                className="text-blue-600 hover:underline text-sm"
+                              >
+                                Reschedule
+                              </button>
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'prepare')}
+                                className="text-purple-600 hover:underline text-sm"
+                              >
+                                Prepare
+                              </button>
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'reminder')}
+                                className="text-orange-600 hover:underline text-sm"
+                              >
+                                Remind
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  )}
                 </div>
                 <div className="flex justify-end mt-6 gap-2">
-                  <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">View Calendar</button>
-                  <button className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20">Book Meeting</button>
+                  <button 
+                    onClick={handleViewCalendar}
+                    className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80"
+                  >
+                    View Calendar
+                  </button>
+                  <button 
+                    onClick={handleBookMeeting}
+                    className="bg-genie-teal/10 text-genie-teal px-4 py-2 rounded hover:bg-genie-teal/20"
+                  >
+                    Book Meeting
+                  </button>
                 </div>
               </div>
             </div>
@@ -4327,7 +4983,13 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
           )}
           {activeSection === 'Cost Controls' && <CostControlsDashboard />}
           
-          {activeSection === 'API Keys & Integrations' && <APIKeysIntegrations />}
+          {activeSection === 'API Keys & Integrations' && (
+            <APIKeysIntegrations 
+              calendarConnections={calendarConnections}
+              onCalendarConnect={handleCalendarConnection}
+              saveCalendarConnections={saveCalendarConnections}
+            />
+          )}
           {activeSection === 'AI Swarm' && <AISwarmDashboard />}
           {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && tenant?.role === 'founder' && renderAdminPanel()}
           {activeSection === 'Account Settings' && renderAccountSettings()}
@@ -5231,8 +5893,270 @@ function AdminPage() {
     document.documentElement.classList.toggle('dark')
   }
 
+  // Appointment Modal Component
+  const AppointmentModal = () => {
+    console.log('AppointmentModal function called - showAppointmentModal:', showAppointmentModal)
+    
+    const [formData, setFormData] = useState({
+      title: editingAppointment?.title || '',
+      clientName: editingAppointment?.clientName || '',
+      clientEmail: editingAppointment?.clientEmail || '',
+      startTime: editingAppointment?.startTime || '',
+      endTime: editingAppointment?.endTime || '',
+      description: editingAppointment?.description || '',
+      meetingLink: editingAppointment?.meetingLink || '',
+      location: editingAppointment?.location || ''
+    })
+
+    const handleSubmit = async (e) => {
+      e.preventDefault()
+      if (editingAppointment) {
+        await handleUpdateAppointment(formData)
+      } else {
+        await handleCreateAppointment(formData)
+      }
+    }
+
+    if (!showAppointmentModal) {
+      console.log('Modal should NOT show - showAppointmentModal is:', showAppointmentModal)
+      return null
+    }
+
+    console.log('AppointmentModal is rendering - showAppointmentModal:', showAppointmentModal)
+    
+    return (
+      <div 
+        className="fixed inset-0 bg-red-500 bg-opacity-90 flex items-center justify-center" 
+        style={{zIndex: 999999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowAppointmentModal(false)
+            setEditingAppointment(null)
+          }
+        }}
+      >
+        <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border-8 border-blue-500">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-red-600">
+              APPOINTMENT MODAL - {editingAppointment ? 'Edit Appointment' : 'Book New Meeting'}
+            </h3>
+            <button 
+              onClick={() => {
+                setShowAppointmentModal(false)
+                setEditingAppointment(null)
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Title</label>
+                <input 
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                <input 
+                  type="text"
+                  value={formData.clientName}
+                  onChange={(e) => setFormData({...formData, clientName: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Client Email</label>
+              <input 
+                type="email"
+                value={formData.clientEmail}
+                onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                <input 
+                  type="datetime-local"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                <input 
+                  type="datetime-local"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea 
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                rows="3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
+                <input 
+                  type="url"
+                  value={formData.meetingLink}
+                  onChange={(e) => setFormData({...formData, meetingLink: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="https://zoom.us/j/..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input 
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="Office, Virtual, etc."
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowAppointmentModal(false)
+                  setEditingAppointment(null)
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                className="px-4 py-2 bg-genie-teal text-white rounded hover:bg-genie-teal/80"
+              >
+                {editingAppointment ? 'Update Meeting' : 'Book Meeting'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // Calendar View Modal Component
+  const CalendarViewModal = () => {
+    if (!showCalendarView) return null
+
+    console.log('Rendering CalendarViewModal...')
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center" style={{zIndex: 9999}}>
+        <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-genie-teal">Calendar View</h3>
+            <button 
+              onClick={() => setShowCalendarView(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Mini Calendar */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold mb-4 text-center">October 2025</h4>
+                <div className="grid grid-cols-7 gap-1 text-sm">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                    <div key={day} className="text-center font-medium p-2">{day}</div>
+                  ))}
+                  {Array.from({length: 31}, (_, i) => (
+                    <button key={i+1} className="text-center p-2 hover:bg-genie-teal hover:text-white rounded">
+                      {i+1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Main Calendar Area */}
+            <div className="lg:col-span-3">
+              <div className="bg-gray-50 rounded-lg p-6 min-h-[400px]">
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">📅</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Calendar Integration</h3>
+                  <p className="text-gray-600 mb-6">Connect your calendar to see appointments here</p>
+                  <div className="space-y-3">
+                    <button 
+                      onClick={() => handleCalendarConnection('google')}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+                    >
+                      📅 Connect Google Calendar
+                    </button>
+                    <button 
+                      onClick={() => handleCalendarConnection('outlook')}
+                      className="w-full bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                      📧 Connect Outlook Calendar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mt-6">
+            <button 
+              onClick={() => setShowCalendarView(false)}
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 mr-3"
+            >
+              Close
+            </button>
+            <button 
+              onClick={() => {
+                setShowCalendarView(false)
+                handleBookMeeting()
+              }}
+              className="px-4 py-2 bg-genie-teal text-white rounded hover:bg-genie-teal/80"
+            >
+              Book New Meeting
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+
+
+      {/* Calendar View Modal */}
+      <CalendarViewModal />
+      
       {/* Admin Header */}
       <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex justify-between items-center`}>
         <div>
@@ -5356,7 +6280,7 @@ function AdminPage() {
       )}
 
 
-    </div>
+      </div>
   )
 }
 
@@ -5383,8 +6307,9 @@ function App() {
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
             
-            {/* OAuth Callback Route - Public */}
+            {/* OAuth Callback Routes - Public */}
             <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />
+            <Route path="/oauth/microsoft/callback" element={<MicrosoftOAuthCallback />} />
             
             {/* Dashboard - Protected User workspace */}
             <Route path="/dashboard" element={

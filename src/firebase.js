@@ -35,15 +35,11 @@ export const auth = getAuth(app);
   }
 })();
 
-// Initialize Firestore with CORS-safe settings and better offline support
+// Initialize Firestore with simple HTTP mode (no WebSockets = no CORS issues)
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: true, // Use long polling to avoid WebSocket CORS issues
-  // Enhanced cache settings for better offline/online transitions
-  localCache: {
-    kind: 'persistent',  // Change to persistent for better caching
-    sizeBytes: 100 * 1024 * 1024 // 100MB cache
-  }
+  experimentalForceLongPolling: true, // Forces HTTP instead of WebSockets
+  experimentalAutoDetectLongPolling: false // Don't auto-detect, just use HTTP
 });
 
 // 🚀 COCKROACH CRUSHER: Advanced connection management

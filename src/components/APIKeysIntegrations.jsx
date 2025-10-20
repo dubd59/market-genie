@@ -3,9 +3,10 @@ import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import IntegrationService from '../services/integrationService';
 import FirebaseUserDataService from '../services/firebaseUserData';
+import CalendarService from '../services/calendarService';
 import toast from 'react-hot-toast';
 
-const APIKeysIntegrations = () => {
+const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalendarConnections }) => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
@@ -324,6 +325,71 @@ const APIKeysIntegrations = () => {
     }
   ]);
 
+  // Calendar Integrations
+  const [calendarIntegrations, setCalendarIntegrations] = useState([
+    {
+      id: 'outlook-calendar',
+      name: 'Outlook Calendar',
+      type: 'Calendar',
+      status: 'disconnected',
+      icon: '📅',
+      description: 'Microsoft Outlook calendar integration for appointment scheduling',
+      lastSync: 'Never',
+      account: 'Not connected',
+      requiresOAuth: true,
+      authUrl: '/auth/microsoft'
+    },
+    {
+      id: 'google-calendar',
+      name: 'Google Calendar',
+      type: 'Calendar',
+      status: 'disconnected',
+      icon: '📆',
+      description: 'Google Calendar integration for appointment scheduling',
+      lastSync: 'Never',
+      account: 'Not connected',
+      requiresOAuth: true,
+      authUrl: '/auth/google'
+    },
+    {
+      id: 'calendly',
+      name: 'Calendly',
+      type: 'Scheduling',
+      status: 'disconnected',
+      icon: '🗓️',
+      description: 'Calendly integration for automated scheduling links',
+      lastSync: 'Never',
+      account: 'Not connected',
+      requiresOAuth: true,
+      authUrl: '/auth/calendly'
+    }
+  ]);
+
+  // Sync calendar integrations with parent state
+  useEffect(() => {
+    if (calendarConnections) {
+      setCalendarIntegrations(prev => prev.map(integration => {
+        if (integration.id === 'outlook-calendar') {
+          return {
+            ...integration,
+            status: calendarConnections.outlook ? 'connected' : 'disconnected',
+            account: calendarConnections.outlook ? 'outlook.user@example.com' : 'Not connected',
+            lastSync: calendarConnections.outlook ? new Date().toLocaleString() : 'Never'
+          };
+        }
+        if (integration.id === 'google-calendar') {
+          return {
+            ...integration,
+            status: calendarConnections.google ? 'connected' : 'disconnected',
+            account: calendarConnections.google ? 'google.user@example.com' : 'Not connected',
+            lastSync: calendarConnections.google ? new Date().toLocaleString() : 'Never'
+          };
+        }
+        return integration;
+      }));
+    }
+  }, [calendarConnections]);
+
   // States for forms and modals
   const [showAddKey, setShowAddKey] = useState(false);
   const [loadingStatuses, setLoadingStatuses] = useState(false);
@@ -364,15 +430,15 @@ const APIKeysIntegrations = () => {
       setLoadingStatuses(true);
       
       // Check all integration types
-      const allIntegrations = [...aiServices, ...emailIntegrations, ...socialMediaIntegrations, ...leadGenerationIntegrations];
+      const allIntegrations = [...aiServices, ...emailIntegrations, ...socialMediaIntegrations, ...leadGenerationIntegrations, ...calendarIntegrations];
       
       for (const integration of allIntegrations) {
         try {
           const result = await IntegrationService.getConnectionStatus(integration.id, tenant.id);
           let isActuallyConnected = false;
           
-          if (integration.id === 'gmail') {
-            isActuallyConnected = result.data && result.data.email && (result.data.appPassword || result.data.password);
+          if (integration.id === 'gmail' || integration.id === 'outlook') {
+            isActuallyConnected = result.data && result.data.email && (result.data.appPassword || result.data.password) && result.data.status === 'connected';
           } else {
             isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken) && result.data.status === 'connected';
           }
@@ -410,6 +476,7 @@ const APIKeysIntegrations = () => {
     setEmailIntegrations(updateFunction);
     setSocialMediaIntegrations(updateFunction);
     setLeadGenerationIntegrations(updateFunction);
+    setCalendarIntegrations(updateFunction);
   };
 
   const addApiKey = async (e) => {
@@ -437,8 +504,74 @@ const APIKeysIntegrations = () => {
     }
   };
 
+  const handleCalendarConnection = async (integration) => {
+    try {
+      console.log('🔗 APIKeysIntegrations: Starting calendar connection for:', integration.name);
+      console.log('🔗 onCalendarConnect available?', !!onCalendarConnect);
+      
+      if (integration.id === 'outlook-calendar') {
+        const loadingToast = toast.loading('Connecting to Microsoft Outlook...');
+        
+        let result = await CalendarService.initiateMicrosoftAuth();
+        console.log('🔗 Calendar service result:', result);
+        
+        // If popup was blocked or OAuth not set up, show manual dialog
+        if (result && result.showFallback) {
+          toast.dismiss(loadingToast);
+          const fallbackToast = toast.loading('Opening connection dialog...');
+          result = await CalendarService.showManualConnectionDialog();
+          toast.dismiss(fallbackToast);
+        } else {
+          toast.dismiss(loadingToast);
+        }
+        
+        if (result && result.success) {
+          if (result.cancelled) {
+            toast('Connection cancelled');
+            return;
+          }
+          
+          toast.success(result.message || 'Outlook Calendar connected successfully!');
+          
+          // Use parent component's connection handler if available
+          if (onCalendarConnect) {
+            console.log('🔗 Calling parent onCalendarConnect with "outlook"');
+            await onCalendarConnect('outlook');
+          } else {
+            console.log('🔗 No parent handler, using local update');
+            // Fallback to local update
+            updateIntegrationStatus('outlook-calendar', 'connected', {
+              email: result.email || 'outlook.user@example.com',
+              lastSync: new Date().toLocaleString()
+            });
+          }
+        } else {
+          console.log('🔗 Calendar connection failed:', result);
+          toast.error(result?.error || 'Failed to connect Outlook Calendar');
+        }
+      } else if (integration.id === 'google-calendar') {
+        if (onCalendarConnect) {
+          await onCalendarConnect('google');
+          toast.success('Google Calendar connected successfully!');
+        } else {
+          toast.info('Google Calendar integration coming soon!');
+        }
+      } else if (integration.id === 'calendly') {
+        toast.info('Calendly integration coming soon!');
+      }
+    } catch (error) {
+      toast.error(`Failed to connect ${integration.name}: ${error.message}`);
+      console.error('Calendar connection error:', error);
+    }
+  };
+
   const connectIntegration = async (integration) => {
-    // Open configuration modal instead of trying to connect directly
+    // Handle calendar integrations separately
+    if (integration.type === 'Calendar' || integration.type === 'Scheduling') {
+      return handleCalendarConnection(integration);
+    }
+    
+    // Open configuration modal for other integrations
     setSelectedIntegration(integration);
     setIntegrationConfig({});
     setShowConfigModal(true);
@@ -485,6 +618,38 @@ const APIKeysIntegrations = () => {
 
   const disconnectIntegration = async (integration) => {
     try {
+      // Handle calendar integrations specially
+      if (integration.type === 'Calendar' || integration.type === 'Scheduling') {
+        if (integration.id === 'outlook-calendar' && onCalendarConnect) {
+          // Disconnect outlook by setting it to false
+          const newConnections = {
+            google: false,
+            outlook: false,
+            custom: false
+          };
+          
+          // Update parent state
+          await saveCalendarConnections(newConnections);
+          toast.success(`${integration.name} disconnected`);
+          return;
+        }
+        
+        if (integration.id === 'google-calendar' && onCalendarConnect) {
+          // Disconnect google by setting it to false
+          const newConnections = {
+            google: false,
+            outlook: false,
+            custom: false
+          };
+          
+          // Update parent state
+          await saveCalendarConnections(newConnections);
+          toast.success(`${integration.name} disconnected`);
+          return;
+        }
+      }
+
+      // Handle other integrations normally
       const result = await IntegrationService.disconnectService(integration.id, {
         tenantId: tenant.id,
         userId: user.uid
@@ -506,7 +671,8 @@ const APIKeysIntegrations = () => {
     { id: 'ai-services', label: 'AI Services', icon: '🤖', count: aiServices.filter(s => s.status === 'connected').length },
     { id: 'email-integrations', label: 'Email Integrations', icon: '📧', count: emailIntegrations.filter(s => s.status === 'connected').length },
     { id: 'social-media', label: 'Social Media', icon: '📱', count: socialMediaIntegrations.filter(s => s.status === 'connected').length },
-    { id: 'lead-generation', label: 'Lead Generation', icon: '🎯', count: leadGenerationIntegrations.filter(s => s.status === 'connected').length }
+    { id: 'lead-generation', label: 'Lead Generation', icon: '🎯', count: leadGenerationIntegrations.filter(s => s.status === 'connected').length },
+    { id: 'calendar-integrations', label: 'Calendar & Scheduling', icon: '📅', count: calendarIntegrations.filter(s => s.status === 'connected').length }
   ];
 
   const getCurrentIntegrations = () => {
@@ -519,6 +685,8 @@ const APIKeysIntegrations = () => {
         return socialMediaIntegrations;
       case 'lead-generation':
         return leadGenerationIntegrations;
+      case 'calendar-integrations':
+        return calendarIntegrations;
       default:
         return [];
     }

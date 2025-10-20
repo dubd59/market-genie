@@ -55,6 +55,7 @@ export function TenantProvider({ children }) {
   const loadUserTenant = async () => {
     let retryCount = 0;
     const maxRetries = 3;
+    const loadTimeout = 30000; // 30 second timeout
     
     const attemptLoad = async () => {
       try {
@@ -70,7 +71,14 @@ export function TenantProvider({ children }) {
           return
         }
         
-        const result = await TenantService.getCurrentUserTenant()
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Tenant loading timeout')), loadTimeout)
+        );
+        
+        const loadPromise = TenantService.getCurrentUserTenant();
+        
+        const result = await Promise.race([loadPromise, timeoutPromise]);
         
         if (result.error) {
           console.error('❌ Tenant loading error:', result.error)
@@ -79,7 +87,8 @@ export function TenantProvider({ children }) {
           if (result.error.message?.includes('offline') || 
               result.error.message?.includes('CORS') ||
               result.error.message?.includes('ERR_FAILED') ||
-              result.error.message?.includes('Failed to fetch')) {
+              result.error.message?.includes('Failed to fetch') ||
+              result.error.message?.includes('timeout')) {
             
             if (retryCount < maxRetries) {
               retryCount++;
@@ -91,6 +100,9 @@ export function TenantProvider({ children }) {
               toast.error('Connection issues detected. Please refresh the page to try again.', {
                 duration: 8000
               });
+              // Force loading to false to prevent infinite loading
+              setLoading(false);
+              return;
             }
           }
           
@@ -134,19 +146,28 @@ export function TenantProvider({ children }) {
         if (err.message?.includes('offline') || 
             err.message?.includes('CORS') ||
             err.message?.includes('ERR_FAILED') ||
-            err.message?.includes('Failed to fetch')) {
+            err.message?.includes('Failed to fetch') ||
+            err.message?.includes('timeout')) {
           
           if (retryCount < maxRetries) {
             retryCount++;
             console.log(`🔄 Exception caught, retrying... (${retryCount}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
             return await attemptLoad();
+          } else {
+            console.error('❌ Max retries exceeded, forcing loading to false');
+            setLoading(false);
+            toast.error('Unable to connect to workspace. Please refresh the page.', {
+              duration: 10000
+            });
+            return;
           }
         }
         
         setError(err)
         toast.error('Failed to load workspace: ' + err.message)
       } finally {
+        // Ensure loading is always set to false
         setLoading(false)
       }
     };

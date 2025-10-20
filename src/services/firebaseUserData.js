@@ -448,6 +448,50 @@ export class FirebaseUserDataService {
       return null;
     }
   }
+
+  // ===== CALENDAR CONNECTIONS MANAGEMENT =====
+  static async saveCalendarConnections(tenantId, connections) {
+    try {
+      console.log('🔥 FirebaseUserDataService: Saving calendar connections for tenant:', tenantId);
+      console.log('🔥 Data being saved:', connections);
+      
+      const connectionsRef = this.getUserDataRef(tenantId, 'calendarConnections');
+      const dataToSave = {
+        connections: connections,
+        updatedAt: new Date()
+      };
+      
+      console.log('🔥 Full document being saved:', dataToSave);
+      await setDoc(connectionsRef, dataToSave);
+      console.log('✅ Calendar connections saved to cloud successfully!');
+    } catch (error) {
+      console.error('❌ Error saving calendar connections:', error);
+      throw error;
+    }
+  }
+
+  static async getCalendarConnections(tenantId) {
+    try {
+      console.log('🔥 FirebaseUserDataService: Loading calendar connections for tenant:', tenantId);
+      
+      const connectionsRef = this.getUserDataRef(tenantId, 'calendarConnections');
+      const doc = await getDoc(connectionsRef);
+      
+      console.log('🔥 Document exists:', doc.exists());
+      
+      if (doc.exists()) {
+        const docData = doc.data();
+        console.log('🔥 Raw document data:', docData);
+        console.log('🔥 Connections data:', docData.connections);
+        return docData.connections;
+      }
+      console.log('❌ No calendar connections document found');
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting calendar connections:', error);
+      return null;
+    }
+  }
 }
 
 export default FirebaseUserDataService;

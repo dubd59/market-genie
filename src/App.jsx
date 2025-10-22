@@ -44,6 +44,7 @@ import AppointmentService from './services/appointmentService'
 import CalendarService from './services/calendarService'
 import AISwarmDashboard from './components/AISwarmDashboard'
 import CostControlsDashboard from './components/CostControlsDashboard'
+import WhiteLabelDashboard from './components/WhiteLabelDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
 import LeadGenerationWorkflows from './components/LeadGenerationWorkflows'
 import IntegrationConnectionStatus from './components/IntegrationConnectionStatus'
@@ -5095,29 +5096,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
             </div>
           )}
-          {activeSection === 'White-Label SaaS' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">White-Label SaaS</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="branding" className="text-genie-teal text-3xl mb-2">🏷️</span>
-                  <div className="text-2xl font-bold text-gray-900">4</div>
-                  <div className="text-gray-500">Brands</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="clients" className="text-genie-teal text-3xl mb-2">👔</span>
-                  <div className="text-2xl font-bold text-gray-900">18</div>
-                  <div className="text-gray-500">Clients</div>
-                </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                  <span role="img" aria-label="whitelabel" className="text-genie-teal text-3xl mb-2">🛠️</span>
-                  <div className="text-2xl font-bold text-gray-900">6</div>
-                  <div className="text-gray-500">Active SaaS</div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow p-6">White-label SaaS management coming soon...</div>
-            </div>
-          )}
+          {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard />}
           {activeSection === 'Cost Controls' && <CostControlsDashboard />}
           
           {activeSection === 'API Keys & Integrations' && (

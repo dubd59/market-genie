@@ -37,11 +37,12 @@ class ErrorBoundary extends React.Component {
             </p>
             <button
               onClick={() => {
+                console.log('🔄 Restarting Market Genie...');
                 this.setState({ hasError: false, error: null, errorInfo: null });
                 // Force a page reload to reset the app state
                 window.location.reload();
               }}
-              className="bg-genie-teal text-white px-6 py-3 rounded-lg hover:bg-genie-teal/90 transition-colors"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all transform hover:scale-105"
             >
               🔄 Restart Market Genie
             </button>

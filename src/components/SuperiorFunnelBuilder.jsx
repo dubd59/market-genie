@@ -9,13 +9,24 @@ import {
 } from 'lucide-react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import FunnelMetricsService from '../services/FunnelMetricsService';
 
 const SuperiorFunnelBuilder = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
   const [selectedFunnel, setSelectedFunnel] = useState(null);
-  const [builderMode, setBuilderMode] = useState('dashboard'); // dashboard, builder, analytics, ai-optimizer, ai-wizard
+  const [builderMode, setBuilderMode] = useState('dashboard'); // dashboard, ai-wizard, ai-results, launch-success
+  
+  // Real-time funnel metrics state
+  const [funnelMetrics, setFunnelMetrics] = useState({
+    totalRevenue: 0,
+    aiConfidence: 0,
+    liveVisitors: 0,
+    wishesGranted: 0,
+    isLoading: true,
+    lastUpdated: null
+  });
   const [aiWizardStep, setAiWizardStep] = useState(1);
   const [aiWizardData, setAiWizardData] = useState({
     industry: '',
@@ -34,6 +45,33 @@ const SuperiorFunnelBuilder = () => {
   });
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchStep, setLaunchStep] = useState(0);
+
+  // Load real-time funnel metrics
+  useEffect(() => {
+    const loadFunnelMetrics = async () => {
+      if (!tenant?.id) return;
+      
+      setFunnelMetrics(prev => ({ ...prev, isLoading: true }));
+      
+      try {
+        const metrics = await FunnelMetricsService.getAllFunnelMetrics(tenant.id);
+        setFunnelMetrics({
+          ...metrics,
+          isLoading: false
+        });
+        console.log('✅ Funnel metrics loaded:', metrics);
+      } catch (error) {
+        console.error('❌ Error loading funnel metrics:', error);
+        setFunnelMetrics(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    loadFunnelMetrics();
+    
+    // Refresh metrics every 30 seconds for real-time updates
+    const interval = setInterval(loadFunnelMetrics, 30000);
+    return () => clearInterval(interval);
+  }, [tenant?.id]);
 
   // Launch funnel function - the big reveal!
   const launchFunnel = async () => {
@@ -1317,18 +1355,18 @@ Visit: marketgenie.com for more tools and templates`;
   const [aiFunnels] = useState([
     {
       id: 1,
-      name: 'AI Genie Sales Funnel',
+      name: 'AI Genie Sales Funnel (Example)',
       type: 'High-Converting Sales',
-      status: 'live',
-      aiOptimization: 'active',
+      status: 'template',
+      aiOptimization: 'demo',
       
-      // Real-time AI metrics
+      // Real-time AI metrics (example data - create your own funnel to see real metrics)
       realTimeMetrics: {
-        currentVisitors: 47,
-        conversionRate: 32.4,
-        predictedRevenue: '$15,420',
-        aiConfidence: 94,
-        optimizationStatus: 'Learning from 2,341 interactions'
+        currentVisitors: 0,
+        conversionRate: 0,
+        predictedRevenue: '$0',
+        aiConfidence: 0,
+        optimizationStatus: 'Ready to create your first funnel'
       },
       
       // AI-powered features ClickFunnels lacks
@@ -1341,29 +1379,29 @@ Visit: marketgenie.com for more tools and templates`;
         autoHeadlineOptimization: true
       },
       
-      // Advanced analytics with AI insights
+      // Advanced analytics with AI insights (example template)
       analytics: {
-        totalVisitors: 18429,
-        conversions: 5967,
-        revenue: '$489,230',
-        avgOrderValue: '$82.00',
-        timeOnPage: '4:23',
-        bounceRate: '12%',
+        totalVisitors: 0,
+        conversions: 0,
+        revenue: '$0',
+        avgOrderValue: '$0',
+        timeOnPage: '0:00',
+        bounceRate: '0%',
         
-        // AI insights
+        // AI insights (available when you create real funnels)
         aiInsights: [
-          'Visitors from social media convert 67% better with video headlines',
-          'Mobile users prefer shorter forms (3 fields max)',
-          'Evening traffic shows 23% higher intent to purchase',
-          'Users mentioning "urgent" in chat have 89% conversion rate'
+          'Create your first funnel to see AI-powered insights',
+          'AI will analyze visitor behavior and provide optimization tips',
+          'Get personalized recommendations based on your industry',
+          'Real-time suggestions to improve conversion rates'
         ],
         
-        // Predictive analytics
+        // Predictive analytics (available with real funnel data)
         predictions: {
-          nextWeekRevenue: '$67,890',
-          monthlyGrowth: '+34%',
-          seasonalTrends: 'Q4 surge expected +120%',
-          churnRisk: 'Low (8.3%)'
+          nextWeekRevenue: 'Available after first funnel launch',
+          monthlyGrowth: 'Generate with real traffic data',
+          seasonalTrends: 'AI predictions based on your data',
+          churnRisk: 'Calculated from actual visitors'
         }
       },
       
@@ -1388,17 +1426,17 @@ Visit: marketgenie.com for more tools and templates`;
     },
     {
       id: 2,
-      name: 'Magical Lead Magnet',
+      name: 'Magical Lead Magnet (Template)',
       type: 'Lead Generation',
-      status: 'optimizing',
-      aiOptimization: 'learning',
+      status: 'template',
+      aiOptimization: 'demo',
       
       realTimeMetrics: {
-        currentVisitors: 23,
-        conversionRate: 67.8,
-        predictedRevenue: '$8,940',
-        aiConfidence: 87,
-        optimizationStatus: 'Testing 12 AI-generated variations'
+        currentVisitors: 0,
+        conversionRate: 0,
+        predictedRevenue: '$0',
+        aiConfidence: 0,
+        optimizationStatus: 'Ready to create your lead magnet'
       },
       
       // Unique MarketGenie features
@@ -1420,12 +1458,7 @@ Visit: marketgenie.com for more tools and templates`;
             <Brain className="w-6 h-6 text-yellow-600 mr-2" />
             AI-Powered Funnel Intelligence
           </h3>
-          <div className="flex space-x-2">
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center text-sm">
-              <Wand2 className="w-4 h-4 mr-1" />
-              Auto-Optimize All
-            </button>
-          </div>
+
         </div>
         
         {/* Real-time metrics grid */}
@@ -1433,7 +1466,9 @@ Visit: marketgenie.com for more tools and templates`;
           <div className="bg-white rounded-lg p-4 border border-green-200">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-green-600">$503,170</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {funnelMetrics.isLoading ? '...' : FunnelMetricsService.formatCurrency(funnelMetrics.totalRevenue)}
+                </div>
                 <div className="text-sm text-gray-600">Total Revenue</div>
               </div>
               <TrendingUp className="w-8 h-8 text-green-500" />
@@ -1444,7 +1479,9 @@ Visit: marketgenie.com for more tools and templates`;
           <div className="bg-white rounded-lg p-4 border border-blue-200">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-blue-600">94.2%</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {funnelMetrics.isLoading ? '...' : FunnelMetricsService.formatPercentage(funnelMetrics.aiConfidence)}
+                </div>
                 <div className="text-sm text-gray-600">AI Confidence</div>
               </div>
               <Brain className="w-8 h-8 text-blue-500" />
@@ -1455,7 +1492,9 @@ Visit: marketgenie.com for more tools and templates`;
           <div className="bg-white rounded-lg p-4 border border-purple-200">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-purple-600">70</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {funnelMetrics.isLoading ? '...' : funnelMetrics.liveVisitors}
+                </div>
                 <div className="text-sm text-gray-600">Live Visitors</div>
               </div>
               <Eye className="w-8 h-8 text-purple-500" />
@@ -1466,12 +1505,14 @@ Visit: marketgenie.com for more tools and templates`;
           <div className="bg-white rounded-lg p-4 border border-yellow-200">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-yellow-600">1,247</div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {funnelMetrics.isLoading ? '...' : funnelMetrics.wishesGranted?.toLocaleString()}
+                </div>
                 <div className="text-sm text-gray-600">Wishes Granted</div>
               </div>
               <Sparkles className="w-8 h-8 text-yellow-500" />
             </div>
-            <div className="text-xs text-yellow-600 mt-1">Unique to MarketGenie</div>
+            <div className="text-xs text-yellow-600 mt-1">Customer goals achieved via Dashboard</div>
           </div>
         </div>
       </div>
@@ -2015,11 +2056,11 @@ Visit: marketgenie.com for more tools and templates`;
     const generatedFunnel = {
       name: `${aiWizardData.industry} ${aiWizardData.goalType} Funnel`,
       type: 'AI-Generated',
-      conversionRate: '24.7%',
-      visitors: '8,453',
-      leads: '2,088',
-      sales: '312',
-      revenue: '$47,820',
+      conversionRate: 'Will calculate after launch',
+      visitors: 'Tracking starts after deployment',
+      leads: 'Generated from real traffic',
+      sales: 'Recorded from actual conversions',
+      revenue: 'Calculated from real sales',
       aiFeatures: {
         personalizedContent: true,
         dynamicPricing: true,
@@ -2411,29 +2452,11 @@ Visit: marketgenie.com for more tools and templates`;
           <div className="flex space-x-2">
             {builderMode !== 'ai-wizard' && builderMode !== 'ai-results' && (
               <>
-                {['dashboard', 'builder', 'analytics', 'ai-optimizer'].map(mode => (
+                {['dashboard'].map(mode => (
                   <button
                     key={mode}
                     onClick={() => {
                       setBuilderMode(mode);
-                      if (mode === 'builder') {
-                        // Reset wizard when entering builder mode
-                        setAiWizardStep(1);
-                        setAiWizardData({
-                          industry: '',
-                          goalType: '',
-                          targetAudience: '',
-                          budget: '',
-                          timeline: '',
-                          companyName: '',
-                          contactName: '',
-                          email: '',
-                          phone: '',
-                          website: '',
-                          address: '',
-                          logoUrl: ''
-                        });
-                      }
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       builderMode === mode
@@ -2441,7 +2464,7 @@ Visit: marketgenie.com for more tools and templates`;
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {mode === 'builder' ? 'Create Funnel' : mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
+                    {mode.charAt(0).toUpperCase() + mode.slice(1).replace('-', ' ')}
                   </button>
                 ))}
               </>
@@ -2516,21 +2539,7 @@ Visit: marketgenie.com for more tools and templates`;
               </motion.div>
             </div>
           )}
-          {builderMode === 'builder' && renderAIWizard()}
-          {builderMode === 'analytics' && (
-            <div className="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
-              <BarChart3 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Advanced Analytics Dashboard</h3>
-              <p className="text-gray-600">Deep analytics with AI insights coming soon</p>
-            </div>
-          )}
-          {builderMode === 'ai-optimizer' && (
-            <div className="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
-              <Brain className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">AI Optimization Engine</h3>
-              <p className="text-gray-600">Automatic funnel optimization with machine learning</p>
-            </div>
-          )}
+
         </motion.div>
       </AnimatePresence>
     </div>

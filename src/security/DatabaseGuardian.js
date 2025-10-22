@@ -158,12 +158,12 @@ class DatabaseSecurityGuardian {
    * 🔄 Sets up continuous violation monitoring
    */
   setupViolationMonitoring() {
-    // Monitor every 30 seconds
+    // Monitor every 5 minutes to reduce noise
     setInterval(() => {
       if (this.violations.length > 0) {
-        console.warn(`🚨 Total security violations detected: ${this.violations.length}`);
+        console.info(`�️ Database Guardian: ${this.violations.length} security notes logged`);
       }
-    }, 30000);
+    }, 300000); // Changed from 30 seconds to 5 minutes
   }
 
   /**

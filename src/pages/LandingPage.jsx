@@ -80,24 +80,28 @@ export default function LandingPage() {
 
   const plans = [
     {
-      id: 'starter',
+      id: 'free',
       name: 'Starter',
-      price: 47,
+      price: 0,
       description: 'Perfect for small businesses getting started',
       features: [
-        '1,000 contacts',
-        '5,000 emails/month',
-        '500 SMS/month',
+        '75 contacts',
+        '300 emails/month',
+        '3 active campaigns',
         'Basic automation',
         'Email support',
-        'Lead capture forms'
+        'Lead capture forms',
+        'Basic AI features'
       ],
-      popular: false
+      popular: false,
+      buttonText: 'Free with Limitations',
+      priceText: 'FREE',
+      subtitle: 'No credit card required'
     },
     {
       id: 'pro',
       name: 'Professional',
-      price: 97,
+      price: 20,
       description: 'For growing businesses that need more power',
       features: [
         '10,000 contacts',
@@ -111,13 +115,16 @@ export default function LandingPage() {
         'Priority support',
         'Custom integrations'
       ],
-      popular: true
+      popular: true,
+      buttonText: 'Monthly Subscription',
+      priceText: '$20',
+      subtitle: '/month'
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 297,
-      description: 'For agencies and large businesses',
+      id: 'lifetime',
+      name: 'Lifetime',
+      price: 300,
+      description: 'One-time payment, yours forever',
       features: [
         'Unlimited contacts',
         'Unlimited emails',
@@ -129,9 +136,13 @@ export default function LandingPage() {
         'Dedicated account manager',
         'Custom integrations',
         'SLA guarantee',
-        'Advanced reporting'
+        'Advanced reporting',
+        'Lifetime updates'
       ],
-      popular: false
+      popular: false,
+      buttonText: 'Get Lifetime Access',
+      priceText: '$300',
+      subtitle: 'One-time payment'
     }
   ]
 
@@ -163,7 +174,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 border border-white/40 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold text-white">Market Genie</span>
@@ -176,7 +187,7 @@ export default function LandingPage() {
               <Link to="/login" className="text-gray-200 hover:text-white transition-colors">Sign In</Link>
               <button 
                 onClick={scrollToPricing}
-                className="bg-gradient-to-r from-emerald-500 to-yellow-500 text-white px-6 py-2 rounded-lg hover:from-emerald-600 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105"
+                className="border border-white/40 text-white px-6 py-2 rounded-lg hover:bg-white/10 transition-all duration-200 transform hover:scale-105"
               >
                 Start Free Trial
               </button>
@@ -196,7 +207,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-5xl md:text-7xl font-bold mb-6"
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-500" style={{textShadow: '2px 2px 2px rgba(0,0,0,0.4), -1px -1px 1px rgba(0,0,0,0.2)'}}>
+              <span className="text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
                 Your Marketing Just Grew an AI Brain
               </span>
             </motion.h1>
@@ -214,7 +225,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto"
+              className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
               <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
             </motion.p>
@@ -243,7 +254,7 @@ export default function LandingPage() {
               <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
                 <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                       </svg>
@@ -309,7 +320,7 @@ export default function LandingPage() {
             >
               <button 
                 onClick={scrollToPricing}
-                className="bg-gradient-to-r from-emerald-500 to-yellow-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-emerald-600 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 flex items-center justify-center"
+                className="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200 transform hover:scale-105 flex items-center justify-center"
               >
                 🧞‍♂️ Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
@@ -323,11 +334,11 @@ export default function LandingPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
-              className="mt-12 flex items-center justify-center space-x-8 text-gray-400"
+              className="mt-12 flex items-center justify-center space-x-8 text-gray-200"
             >
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>14-day free trial</span>
+                <span>Free version available</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
@@ -346,7 +357,7 @@ export default function LandingPage() {
       <section id="features" className="py-20 bg-black/8 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
+            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
               Why Market Genie Dominates The Competition
             </h2>
             <p className="text-xl text-gray-200 max-w-3xl mx-auto">
@@ -376,7 +387,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 bg-black/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
+            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
@@ -407,16 +418,16 @@ export default function LandingPage() {
                 
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-gray-400 mb-4">{plan.description}</p>
+                  <p className="text-gray-300 mb-4">{plan.description}</p>
                   <div className="mb-4">
-                    <span className="text-5xl font-bold text-white">${plan.price}</span>
-                    <span className="text-gray-400">/month</span>
+                    <span className="text-5xl font-bold text-white">{plan.priceText}</span>
+                    <span className="text-gray-300">{plan.subtitle}</span>
                   </div>
                 </div>
 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-gray-300">
+                    <li key={index} className="flex items-center text-gray-200">
                       <CheckCircle className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
                       {feature}
                     </li>
@@ -424,14 +435,10 @@ export default function LandingPage() {
                 </ul>
 
                 <Link
-                  to="/register"
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-emerald-500 to-yellow-500 text-white hover:from-emerald-600 hover:to-yellow-600'
-                      : 'border border-white/30 text-white hover:bg-white/10'
-                  }`}
+                  to={plan.id === 'starter' ? '/free-signup' : '/register'}
+                  className="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center border border-white/30 text-white hover:bg-white/10"
                 >
-                  Start Free Trial
+                  {plan.buttonText}
                 </Link>
               </motion.div>
             ))}
@@ -443,7 +450,7 @@ export default function LandingPage() {
       <section id="testimonials" className="py-20 bg-black/8 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
+            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
               Loved by Marketers Worldwide
             </h2>
             <p className="text-xl text-gray-300">
@@ -490,7 +497,7 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
             className="bg-gradient-to-r from-emerald-500/20 to-yellow-500/20 rounded-2xl p-12 border border-white/10"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-600 mb-4" style={{textShadow: '1px 1px 1px rgba(0,0,0,0.3), -1px -1px 1px rgba(0,0,0,0.1)'}}>
+            <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
               Ready to Transform Your Marketing?
             </h2>
             <p className="text-xl text-gray-300 mb-8">
@@ -498,7 +505,7 @@ export default function LandingPage() {
             </p>
             <Link
               to="/dashboard"
-              className="bg-gradient-to-r from-emerald-500 to-yellow-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-emerald-600 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 inline-flex items-center"
+              className="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200 transform hover:scale-105 inline-flex items-center"
             >
               Start Your Free Trial Now
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -515,7 +522,7 @@ export default function LandingPage() {
             {/* Company Info */}
             <div className="lg:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-yellow-400 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 border border-white/40 rounded-lg flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-white">Market Genie</span>

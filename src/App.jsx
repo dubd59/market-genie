@@ -5,10 +5,11 @@ import { TenantProvider } from './contexts/TenantContext'
 import { GenieProvider } from './contexts/GenieContext'
 import FounderSetup from './components/FounderSetup'
 import Dashboard from './pages/Dashboard'
-import CampaignBuilder from './pages/CampaignBuilder'
+// import CampaignBuilder from './pages/CampaignBuilder'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/RegisterSimple'
+import FreeSignup from './pages/FreeSignup'
 import LandingPage from './pages/LandingPage'
 import UnsubscribePage from './pages/UnsubscribePage'
 import OAuthCallback from './pages/OAuthCallback'
@@ -122,6 +123,9 @@ function SophisticatedDashboard() {
     if (path.includes('appointments') || path.includes('appointment-booking')) return 'Appointments'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
+    if (path.includes('ai-swarm')) return 'AI Swarm'
+    if (path.includes('cost-controls')) return 'Cost Controls'
+    if (path.includes('white-label-saas')) return 'White-Label SaaS'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
     if (path.includes('admin-panel')) return 'Admin Panel'
     return 'SuperGenie Dashboard'
@@ -245,6 +249,9 @@ function SophisticatedDashboard() {
   
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
+  
+  // Booking Settings toggle state for Appointments
+  const [showBookingSettings, setShowBookingSettings] = useState(false)
   
   // Bounce Management
   const [showBounceManager, setShowBounceManager] = useState(false)
@@ -1044,33 +1051,6 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     } catch (error) {
       console.error('Error removing duplicates:', error)
       toast.error('Failed to remove duplicates')
-    }
-  }
-
-  const handleRemoveEnterpriseLeads = async () => {
-    if (!confirm('This will remove all leads from big enterprise companies (Microsoft, Salesforce, Oracle, IBM, etc.) to focus on SMB prospects for Support Genie. Continue?')) {
-      return
-    }
-
-    toast.loading('Removing enterprise company leads...', { duration: 8000 })
-
-    try {
-      const result = await LeadService.removeEnterpriseLeads(tenant.id)
-      
-      if (result.success) {
-        toast.success(`${result.message} (${result.removedCount} leads removed)`)
-        await loadLeadData() // Refresh the lead list
-        
-        // Show details of removed companies if any were found
-        if (result.removedCount > 0) {
-          console.log('Removed enterprise leads:', result.removedLeads)
-        }
-      } else {
-        toast.error(result.error || 'Failed to remove enterprise leads')
-      }
-    } catch (error) {
-      console.error('Error removing enterprise leads:', error)
-      toast.error('Failed to remove enterprise leads')
     }
   }
 
@@ -2278,6 +2258,147 @@ Market Genie Team
           console.log('📧 Reminder would be sent:', reminderMessage)
           toast.success(`Reminder sent to ${appointment.clientName}!`)
           break
+        case 'export':
+          // Create .ics calendar file for import
+          const startDate = new Date(appointment.startTime || appointment.appointmentDate);
+          const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+          
+          const formatDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+          };
+          
+          const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MarketGenie//Appointment//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:${appointment.id}@marketgenie.app
+DTSTAMP:${formatDate(new Date())}
+DTSTART:${formatDate(startDate)}
+DTEND:${formatDate(endDate)}
+SUMMARY:${appointment.meetingType || 'Meeting'} - ${appointment.clientName}
+DESCRIPTION:Meeting with ${appointment.clientName}\\nEmail: ${appointment.email}\\nPhone: ${appointment.phone || 'Not provided'}\\nNotes: ${appointment.notes || 'No additional notes'}
+LOCATION:Online Meeting
+ORGANIZER;CN=MarketGenie:MAILTO:noreply@marketgenie.app
+ATTENDEE;CN=${appointment.clientName};RSVP=TRUE:MAILTO:${appointment.email}
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+
+          // Create multiple export options
+          const showExportOptions = () => {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+              position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+              background: rgba(0,0,0,0.5); z-index: 9999; 
+              display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+              <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+                <h3 style="margin: 0 0 20px 0; color: #333;">📅 Export Calendar Event</h3>
+                <p style="margin: 0 0 20px 0; color: #666;">Choose how to add this appointment to your calendar:</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <button id="downloadIcs" style="padding: 12px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    📥 Download .ics File (Works with all calendars)
+                  </button>
+                  
+                  <button id="googleCalendar" style="padding: 12px; background: #4285f4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    📅 Add to Google Calendar (Opens in browser)
+                  </button>
+                  
+                  <button id="outlookWeb" style="padding: 12px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    📅 Add to Outlook Web (Opens in browser)
+                  </button>
+                  
+                  <button id="copyDetails" style="padding: 12px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    📋 Copy Event Details (Manual entry)
+                  </button>
+                </div>
+                
+                <button id="closeModal" style="margin-top: 20px; padding: 8px 16px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; float: right;">
+                  Close
+                </button>
+              </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Download .ics file
+            document.getElementById('downloadIcs').onclick = () => {
+              const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `appointment-${appointment.clientName.replace(/\s+/g, '-').toLowerCase()}-${startDate.toISOString().split('T')[0]}.ics`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(link.href);
+              document.body.removeChild(modal);
+              toast.success('Calendar file downloaded! If double-clicking opens email, right-click → "Open with" → choose your calendar app.');
+            };
+            
+            // Google Calendar link
+            document.getElementById('googleCalendar').onclick = () => {
+              const googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(appointment.meetingType + ' - ' + appointment.clientName) + '&dates=' + formatDate(startDate).replace('Z', '') + '/' + formatDate(endDate).replace('Z', '') + '&details=' + encodeURIComponent('Meeting with ' + appointment.clientName + '\\nEmail: ' + appointment.email + '\\nPhone: ' + (appointment.phone || 'Not provided') + '\\nNotes: ' + (appointment.notes || 'No additional notes')) + '&location=' + encodeURIComponent('Online Meeting');
+              window.open(googleUrl, '_blank');
+              document.body.removeChild(modal);
+              toast.success('Google Calendar opened in new tab!');
+            };
+            
+            // Outlook Web link
+            document.getElementById('outlookWeb').onclick = () => {
+              const outlookUrl = 'https://outlook.live.com/calendar/0/deeplink/compose?subject=' + encodeURIComponent(appointment.meetingType + ' - ' + appointment.clientName) + '&startdt=' + startDate.toISOString() + '&enddt=' + endDate.toISOString() + '&body=' + encodeURIComponent('Meeting with ' + appointment.clientName + '\\nEmail: ' + appointment.email + '\\nPhone: ' + (appointment.phone || 'Not provided') + '\\nNotes: ' + (appointment.notes || 'No additional notes')) + '&location=' + encodeURIComponent('Online Meeting');
+              window.open(outlookUrl, '_blank');
+              document.body.removeChild(modal);
+              toast.success('Outlook Web opened in new tab!');
+            };
+            
+            // Copy details
+            document.getElementById('copyDetails').onclick = () => {
+              const details = 'Event: ' + (appointment.meetingType || 'Meeting') + ' - ' + appointment.clientName + '\\nDate: ' + startDate.toLocaleDateString() + '\\nTime: ' + startDate.toLocaleTimeString() + ' - ' + endDate.toLocaleTimeString() + '\\nClient: ' + appointment.clientName + '\\nEmail: ' + appointment.email + '\\nPhone: ' + (appointment.phone || 'Not provided') + '\\nNotes: ' + (appointment.notes || 'No additional notes');
+              
+              navigator.clipboard.writeText(details).then(() => {
+                toast.success('Event details copied to clipboard!');
+              });
+              document.body.removeChild(modal);
+            };
+            
+            // Close modal
+            document.getElementById('closeModal').onclick = () => {
+              document.body.removeChild(modal);
+            };
+            
+            // Close on background click
+            modal.onclick = (e) => {
+              if (e.target === modal) {
+                document.body.removeChild(modal);
+              }
+            };
+          };
+          
+          showExportOptions();
+          break
+        case 'delete':
+          // Confirm deletion
+          if (confirm(`Are you sure you want to delete the appointment with ${appointment.clientName}? This action cannot be undone.`)) {
+            const deleteResult = await AppointmentService.deleteAppointment(tenant?.id, appointment.id);
+            if (deleteResult.success) {
+              let successMessage = `Appointment with ${appointment.clientName} deleted successfully from MarketGenie!`;
+              
+              // Remind about manual calendar cleanup
+              successMessage += ` Remember to remove this event from your personal calendar if you added it there.`;
+              
+              toast.success(successMessage, { duration: 6000 });
+              // The real-time subscription will automatically update the UI
+            } else {
+              toast.error(`Failed to delete appointment: ${deleteResult.error}`);
+            }
+          }
+          break
         default:
           toast.warning('Unknown action')
       }
@@ -2332,6 +2453,16 @@ Market Genie Team
       
       setShowAppointmentModal(false)
       setEditingAppointment(null)
+      
+      // Provide user feedback about what happened
+      let successMessage = `Appointment with ${appointmentData.clientName} created successfully in MarketGenie!`;
+      if (calendarConnections.google || calendarConnections.outlook) {
+        successMessage += ` Note: Manual calendar sync required - please add this event to your calendar manually.`;
+      } else {
+        successMessage += ` Add this event to your personal calendar manually for full scheduling integration.`;
+      }
+      
+      toast.success(successMessage, { duration: 8000 });
       
       // Appointments will auto-refresh via the real-time subscription
       console.log('Appointment created successfully! Real-time subscription will update the list.')
@@ -2389,6 +2520,9 @@ Market Genie Team
         'CRM & Pipeline': '/dashboard/crm-pipeline',
         'Contact Manager': '/dashboard/contact-manager',
         'Pipeline View': '/dashboard/crm-pipeline',
+        'AI Swarm': '/dashboard/ai-swarm',
+        'Cost Controls': '/dashboard/cost-controls',
+        'White-Label SaaS': '/dashboard/white-label-saas',
         'API Keys & Integrations': '/dashboard/api-keys',
         'Admin Panel': '/dashboard/admin-panel'
       }
@@ -2421,8 +2555,8 @@ Market Genie Team
       <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
         <Sidebar activeSection={activeSection} onSelect={setSecureActiveSection} />
         
-        {/* Main Content Area - Fixed left margin for sidebar */}
-        <div className="ml-60 min-h-screen">
+        {/* Main Content Area - Dynamic margin responds to sidebar collapse */}
+        <div className="min-h-screen transition-all duration-300 ease-in-out" style={{marginLeft: 'var(--sidebar-width, 240px)'}}>
           {/* Top Bar - Scrolls naturally */}
           <header className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex justify-between items-center shadow-sm`}>
             <div>
@@ -2612,7 +2746,7 @@ Market Genie Team
                 </button>
                 
                 <button 
-                  onClick={() => setActiveSection('AI Swarm')} 
+                  onClick={() => setSecureActiveSection('AI Swarm')} 
                   className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl p-6 flex flex-col items-center hover:from-purple-200 hover:to-blue-200 transition group"
                 >
                   <span role="img" aria-label="ai-swarm" className="text-purple-600 text-3xl mb-2 group-hover:scale-110 transition-transform">🧠</span>
@@ -2673,7 +2807,7 @@ Market Genie Team
                   <div className="space-y-8">
 
               {/* Enhanced Stats with Animations */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-xl rounded-xl p-6 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
                   <div className="flex items-center justify-between">
                     <div>
@@ -2720,34 +2854,6 @@ Market Genie Team
                   <div className="mt-4 bg-white/20 rounded-full h-2">
                     <div className="bg-white rounded-full h-2 transition-all duration-1000" style={{width: `${leadStats.conversionRate || 0}%`}}></div>
                   </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-xl rounded-xl p-6 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span role="img" aria-label="budget" className="text-4xl mb-2 block">�</span>
-                      <div className="text-3xl font-bold">${currentBudgetUsage.toFixed(0)}</div>
-                      <div className="text-orange-100">Budget Used</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs bg-white/20 px-2 py-1 rounded">${scrapingBudget} limit</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 bg-white/20 rounded-full h-2">
-                    <div className="bg-white rounded-full h-2 transition-all duration-1000" style={{width: `${Math.min((currentBudgetUsage / scrapingBudget) * 100, 100)}%`}}></div>
-                  </div>
-                </div>
-              </div>
-              {/* Budget-Aware Scraping Controls - DISABLED (Using Free APIs) */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
-                <h3 className="text-xl font-semibold text-green-700 mb-2">✅ Free API Mode Active</h3>
-                <div className="text-green-600">
-                  <p className="mb-2"><strong>Budget tracking disabled</strong> - You're using free APIs!</p>
-                  <p className="text-sm">Monitor your actual usage at:</p>
-                  <ul className="text-sm mt-2 list-disc list-inside">
-                    <li><strong>Hunter.io:</strong> https://hunter.io/dashboard (17/50 credits used)</li>
-                    <li><strong>No hidden costs</strong> - completely free until you upgrade</li>
-                  </ul>
                 </div>
               </div>
               
@@ -3185,12 +3291,6 @@ Market Genie Team
                       className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
                     >
                       🧹 Remove Duplicates
-                    </button>
-                    <button 
-                      onClick={handleRemoveEnterpriseLeads}
-                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-                    >
-                      🏢 Remove Enterprise
                     </button>
                   </div>
 
@@ -4819,8 +4919,32 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
 
               {/* Booking Settings */}
               <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Booking Settings</h3>
-                <form onSubmit={handleBookingSettingsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-genie-teal">⚙️ Booking Settings</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingSettings(!showBookingSettings)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      showBookingSettings 
+                        ? 'bg-genie-teal text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {showBookingSettings ? '▼ Hide Settings' : '▶ Configure Booking'}
+                  </button>
+                </div>
+                
+                {!showBookingSettings ? (
+                  <div className="p-4 rounded-lg bg-blue-50">
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">📅</span>
+                      <span className="text-blue-700">
+                        Configure your booking preferences, available hours, and calendar settings for appointment scheduling.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleBookingSettingsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Duration</label>
                     <select className="border p-3 rounded w-full">
@@ -4878,6 +5002,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                   </div>
                   <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 col-span-1 md:col-span-2">Save Settings</button>
                 </form>
+                )}
               </div>
 
               {/* Upcoming Appointments */}
@@ -4934,6 +5059,18 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                                 className="text-orange-600 hover:underline text-sm"
                               >
                                 Remind
+                              </button>
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'export')}
+                                className="text-green-600 hover:underline text-sm"
+                              >
+                                Export
+                              </button>
+                              <button 
+                                onClick={() => handleAppointmentAction(appointment, 'delete')}
+                                className="text-red-600 hover:underline text-sm"
+                              >
+                                Delete
                               </button>
                             </div>
                           </div>
@@ -6303,6 +6440,7 @@ function App() {
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/free-signup" element={<FreeSignup />} />
             
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />

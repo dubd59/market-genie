@@ -3,10 +3,13 @@ import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import FirebaseUserDataService from '../services/firebaseUserData';
 import toast from 'react-hot-toast';
+import { useActionWithLimits } from './LimitEnforcement';
+import UsageDashboard from './UsageDashboard';
 
 const ContactManager = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
+  const { executeWithLimits, UpgradeModalComponent } = useActionWithLimits();
   
   // Contact State
   const [contacts, setContacts] = useState([]);
@@ -66,6 +69,28 @@ const ContactManager = () => {
       return;
     }
 
+    // If adding a new contact, check limits
+    if (!editingContact) {
+      const result = await executeWithLimits('addContact', async () => {
+        return await performSaveContact();
+      }, 1);
+
+      if (result.success === false) {
+        if (result.reason === 'limit_reached') {
+          // Upgrade modal will be shown automatically
+          return;
+        } else {
+          toast.error('Failed to add contact');
+          return;
+        }
+      }
+    } else {
+      // Editing existing contact - no limit check needed
+      await performSaveContact();
+    }
+  };
+
+  const performSaveContact = async () => {
     try {
       const newContact = {
         id: editingContact?.id || `contact_${Date.now()}`,
@@ -90,9 +115,12 @@ const ContactManager = () => {
       
       // Reload to update available companies and tags
       loadContacts();
+      
+      return { success: true };
     } catch (error) {
       console.error('Error saving contact:', error);
       toast.error('Failed to save contact');
+      return { success: false, error };
     }
   };
 
@@ -162,6 +190,9 @@ const ContactManager = () => {
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-white to-blue-50">
+      {/* Usage Dashboard */}
+      <UsageDashboard currentPlan={tenant?.plan || 'free'} />
+      
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold text-genie-teal">Contact Manager</h2>
         <button
@@ -442,6 +473,9 @@ const ContactManager = () => {
           </div>
         )}
       </div>
+      
+      {/* Upgrade Modal Component */}
+      <UpgradeModalComponent />
     </div>
   );
 };

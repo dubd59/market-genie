@@ -131,7 +131,7 @@ export class TenantService {
   }
 
   // Create a new tenant for a user
-  static async createTenantForUser(user) {
+  static async createTenantForUser(user, planType = 'free') {
     // Special handling for founder account
     const isFounder = user.email === 'dubdproducts@gmail.com'
     
@@ -140,7 +140,7 @@ export class TenantService {
       ownerEmail: user.email,
       ownerName: user.displayName || user.email,
       name: isFounder ? 'Market Genie Founder Workspace' : `${user.displayName || user.email}'s Workspace`,
-      plan: isFounder ? 'founder' : 'starter',
+      plan: isFounder ? 'founder' : planType,
       status: 'active',
       role: isFounder ? 'founder' : 'user',
       settings: {
@@ -175,14 +175,28 @@ export class TenantService {
         multiChannelCampaigns: true,
         aiContentGeneration: true,
         advancedReporting: true
-      } : {
-        maxLeads: 1000,
-        maxCampaigns: 10,
+      } : planType === 'free' ? {
+        // Free plan limits (matching our freemium system)
+        maxLeads: 75,
+        maxCampaigns: 3,
         maxUsers: 1,
-        apiCalls: 5000,
-        storage: '1GB'
+        apiCalls: 1000,
+        storage: '100MB'
+      } : {
+        // Pro plan limits  
+        maxLeads: 10000,
+        maxCampaigns: 999999,
+        maxUsers: 5,
+        apiCalls: 50000,
+        storage: '10GB'
       },
       usage: {
+        contactCount: 0,
+        emailsSentThisMonth: 0,
+        activeCampaigns: 0,
+        currentMonth: new Date().toISOString().slice(0, 7), // YYYY-MM format
+        lastUpdated: new Date().toISOString(),
+        // Legacy fields for backward compatibility
         leads: 0,
         campaigns: 0,
         users: 1,
@@ -190,11 +204,11 @@ export class TenantService {
         storageUsed: 0
       },
       billing: {
-        plan: isFounder ? 'founder' : 'starter',
+        plan: isFounder ? 'founder' : planType,
         status: 'active',
         nextBillingDate: isFounder ? new Date('2099-12-31') : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        amount: 0,
-        lifetime: isFounder ? true : false
+        amount: planType === 'free' ? 0 : planType === 'pro' ? 20 : planType === 'lifetime' ? 300 : 0,
+        lifetime: isFounder || planType === 'lifetime'
       }
     }
 

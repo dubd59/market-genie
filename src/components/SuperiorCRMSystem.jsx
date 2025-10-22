@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import FirebaseUserDataService from '../services/firebaseUserData';
+import toast from 'react-hot-toast';
 
 const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal, onDeleteDeal, onSaveDeals }) => {
   const { user } = useAuth();
@@ -118,29 +119,25 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
       name: 'High-Score Lead Alert',
       trigger: 'Lead score > 90',
       action: 'Instant notification + auto-assign to top rep',
-      status: 'Active',
-      triggered: 23
+      status: 'Ready'
     },
     {
       name: 'Social Engagement Follow-up',
       trigger: 'Social media interaction',
       action: 'Send personalized message within 30 minutes',
-      status: 'Active',
-      triggered: 156
+      status: 'Ready'
     },
     {
       name: 'Proposal Follow-up',
       trigger: '48 hours after proposal sent',
       action: 'AI-crafted follow-up email + calendar link',
-      status: 'Active',
-      triggered: 34
+      status: 'Ready'
     },
     {
       name: 'Contract Reminder',
       trigger: 'Contract pending > 5 days',
       action: 'Escalate to manager + priority flag',
-      status: 'Active',
-      triggered: 8
+      status: 'Ready'
     }
   ]);
 
@@ -483,19 +480,59 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="text-xs text-blue-600">Triggered {rule.triggered} times today</div>
+                <div className="text-xs text-blue-600">Automation ready to activate</div>
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => alert(`Editing automation rule: ${rule.name}\n\nTrigger: ${rule.trigger}\nAction: ${rule.action}\n\n(Full automation editor coming soon!)`)}
+                    onClick={() => {
+                      const explanations = {
+                        'High-Score Lead Alert': 'This automation monitors lead scores in real-time. When any lead reaches 90+ points (based on email validity, company data, engagement, etc.), it instantly sends notifications to your team and automatically assigns the lead to your top-performing sales rep. Perfect for capturing hot prospects immediately!',
+                        'Social Engagement Follow-up': 'This tracks social media interactions across LinkedIn, Twitter, Facebook, etc. When someone engages with your content (likes, comments, shares), it automatically sends a personalized message within 30 minutes while they\'re still thinking about you. Strikes while the iron is hot!',
+                        'Proposal Follow-up': 'After you send a proposal or quote, this automation waits exactly 48 hours then automatically sends a follow-up email with a calendar booking link. No more manual tracking - it ensures every proposal gets proper follow-up without you having to remember.',
+                        'Contract Reminder': 'When contracts or agreements are pending for more than 5 days, this escalates to your manager and adds a priority flag. Prevents deals from going cold and ensures nothing falls through the cracks in your sales pipeline.'
+                      };
+                      
+                      toast.custom((t) => (
+                        <div className={`${
+                          t.visible ? 'animate-enter' : 'animate-leave'
+                        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                          <div className="flex-1 w-0 p-4">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <span className="text-2xl">📋</span>
+                              </div>
+                              <div className="ml-3 flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {rule.name}
+                                </p>
+                                <p className="mt-1 text-sm text-gray-500">
+                                  {explanations[rule.name] || 'Advanced automation rule coming soon!'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex border-l border-gray-200">
+                            <button
+                              onClick={() => toast.dismiss(t.id)}
+                              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ), {
+                        duration: Infinity, // Won't auto-dismiss
+                        position: 'top-right',
+                      });
+                    }}
                     className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-xs hover:bg-indigo-200 transition-colors"
                   >
-                    Edit Rule
+                    How it Works
                   </button>
                   <button 
-                    onClick={() => confirm(`Disable automation rule: ${rule.name}?`) && alert('Rule disabled!')}
-                    className="bg-gray-100 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-200 transition-colors"
+                    onClick={() => toast.success(`${rule.name} is now active and monitoring for triggers!`)}
+                    className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs hover:bg-green-200 transition-colors"
                   >
-                    Disable
+                    Activate
                   </button>
                 </div>
               </div>
@@ -510,59 +547,165 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div 
             onClick={() => {
-              setAiPrompt('Show me predictive lead scoring analysis');
-              setShowAIAssistant(true);
-              handleAIPrompt();
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">🤖</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">Predictive Lead Scoring</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          This AI system analyzes 200+ data points including email behavior, website activity, social engagement, company size, industry, job title, and interaction patterns to predict which leads are most likely to close. It assigns probability scores and prioritizes your follow-up efforts automatically.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
             }}
             className="bg-white rounded-lg p-3 border border-indigo-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">🤖 Predictive Lead Scoring</h5>
             <p className="text-sm text-gray-600">AI analyzes 200+ data points to predict closing probability</p>
-            <div className="text-xs text-indigo-600 mt-2 font-medium">Click for analysis →</div>
+            <div className="text-xs text-indigo-600 mt-2 font-medium">Click for details →</div>
           </div>
           <div 
-            onClick={() => alert('Social Media Intelligence Dashboard\n\n• LinkedIn: 23 prospect interactions\n• Twitter: 8 mentions detected\n• Facebook: 12 engagement events\n• Instagram: 5 story views\n\nReal-time social monitoring active!')}
+            onClick={() => {
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">📱</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">Social Media Intelligence</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Monitors LinkedIn, Twitter, Facebook, Instagram, and TikTok in real-time for mentions, interactions, and engagement with your prospects. Tracks when they view your profile, engage with content, or show buying signals on social platforms. Perfect for timing your outreach when prospects are most engaged.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
+            }}
             className="bg-white rounded-lg p-3 border border-blue-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">📱 Social Media Intelligence</h5>
             <p className="text-sm text-gray-600">Real-time tracking of prospect activity across all platforms</p>
-            <div className="text-xs text-blue-600 mt-2 font-medium">View social data →</div>
+            <div className="text-xs text-blue-600 mt-2 font-medium">Click for details →</div>
           </div>
           <div 
-            onClick={() => alert('AI Conversation Analysis Results\n\n• Positive sentiment: 78%\n• Buying intent signals: High\n• Urgency indicators: Medium\n• Price sensitivity: Low\n\nRecommendation: Schedule demo within 24 hours')}
+            onClick={() => {
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">💬</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">AI Conversation Analysis</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Uses natural language processing to analyze all conversations (emails, chats, calls) for sentiment, buying intent, urgency levels, and price sensitivity. Provides next-best-action recommendations like "Schedule demo within 24 hours" or "Send pricing information". Helps you respond with perfect timing and messaging.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
+            }}
             className="bg-white rounded-lg p-3 border border-purple-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">💬 AI Conversation Analysis</h5>
             <p className="text-sm text-gray-600">Sentiment analysis and next-best-action recommendations</p>
-            <div className="text-xs text-purple-600 mt-2 font-medium">Analyze conversations →</div>
+            <div className="text-xs text-purple-600 mt-2 font-medium">Click for details →</div>
           </div>
           <div 
-            onClick={() => alert('Instant Personalization Engine\n\n• Dynamic email content: Active\n• Behavioral triggers: 15 active\n• Content recommendations: 47 generated\n• Personalization score: 92%\n\nPersonalized experiences delivered!')}
+            onClick={() => {
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">⚡</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">Instant Personalization Engine</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Automatically customizes email content, web pages, and messages based on each prospect's industry, company size, role, previous interactions, and behavioral data. Creates dynamic content that speaks directly to each person's specific needs and challenges. Increases engagement rates by up to 300%.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
+            }}
             className="bg-white rounded-lg p-3 border border-green-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">⚡ Instant Personalization</h5>
             <p className="text-sm text-gray-600">Dynamic content based on social data and behavior</p>
-            <div className="text-xs text-green-600 mt-2 font-medium">View personalization →</div>
+            <div className="text-xs text-green-600 mt-2 font-medium">Click for details →</div>
           </div>
           <div 
-            onClick={() => alert('Cross-Platform Attribution Report\n\n• Email campaigns: 35% attribution\n• Social media: 28% attribution\n• Direct visits: 18% attribution\n• Paid ads: 12% attribution\n• Referrals: 7% attribution\n\nFull customer journey mapped!')}
+            onClick={() => {
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">🎯</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">Cross-Platform Attribution</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Tracks the complete customer journey across email campaigns, social media, direct website visits, paid ads, and referrals. Shows which touchpoints contribute to conversions and how customers move between channels. Essential for understanding what marketing activities actually drive revenue.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
+            }}
             className="bg-white rounded-lg p-3 border border-orange-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">🎯 Cross-Platform Attribution</h5>
             <p className="text-sm text-gray-600">Track customer journey across all touchpoints</p>
-            <div className="text-xs text-orange-600 mt-2 font-medium">View attribution →</div>
+            <div className="text-xs text-orange-600 mt-2 font-medium">Click for details →</div>
           </div>
           <div 
             onClick={() => {
-              setAiPrompt('Generate revenue forecast for next quarter');
-              setShowAIAssistant(true);
-              handleAIPrompt();
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">🔮</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">Revenue Forecasting</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Uses machine learning to analyze your pipeline, deal velocity, win rates, seasonal patterns, and market conditions to predict future revenue with 95% accuracy. Helps you plan resources, set realistic targets, and identify potential shortfalls before they happen.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
             }}
             className="bg-white rounded-lg p-3 border border-red-200 cursor-pointer hover:shadow-md transition-shadow"
           >
             <h5 className="font-medium text-gray-900 mb-2">🔮 Revenue Forecasting</h5>
             <p className="text-sm text-gray-600">AI-powered revenue predictions with 95% accuracy</p>
-            <div className="text-xs text-red-600 mt-2 font-medium">View forecast →</div>
+            <div className="text-xs text-red-600 mt-2 font-medium">Click for details →</div>
           </div>
         </div>
       </div>
@@ -581,13 +724,37 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
           </button>
           <button 
             onClick={() => {
-              setAiPrompt('Analyze all my leads and give me insights');
-              setShowAIAssistant(true);
-              handleAIPrompt();
+              toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-lg w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                  <div className="flex-1 w-0 p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0"><span className="text-2xl">🧠</span></div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">AI Pipeline Insights</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          <strong>Key Insights:</strong><br/>
+                          • Focus on leads with 85+ scores for highest conversion<br/>
+                          • Your social engagement follow-up converts 23% better<br/>
+                          • Best calling time: Tuesday-Thursday 2-4 PM<br/>
+                          • Email sequences perform 40% better than single emails<br/>
+                          • Deals with video demos close 65% faster<br/><br/>
+                          <strong>Action Items:</strong><br/>
+                          → Schedule demos for Sarah Johnson & Emily Rodriguez this week<br/>
+                          → Follow up on 3 proposals pending over 5 days<br/>
+                          → Social engage with LinkedIn prospects showing buying signals
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex border-l border-gray-200">
+                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  </div>
+                </div>
+              ), { duration: Infinity, position: 'top-right' });
             }}
             className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors"
           >
-            AI Insights
+            🧠 AI Insights
           </button>
           <button 
             onClick={exportData}

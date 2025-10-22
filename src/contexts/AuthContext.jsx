@@ -136,6 +136,12 @@ export function AuthProvider({ children }) {
         })
       }
       
+      // Store plan type in user's custom claims or in a temporary way
+      if (metadata.plan) {
+        // We'll handle this in the tenant creation
+        result.planType = metadata.plan
+      }
+      
       return { data: result, error: null }
     } catch (error) {
       return { data: null, error }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import AIUsageTracker from '../services/AIUsageTracker';
+import { db } from '../firebase';
+import { doc, setDoc, getDoc } from '../security/SecureFirebase.js';
 
 const CostControlsDashboard = () => {
   const { tenant } = useTenant();
@@ -20,35 +23,134 @@ const CostControlsDashboard = () => {
     const isDark = document.documentElement.classList.contains('dark');
     setIsDarkMode(isDark);
   }, []);
-  
+
+  // Load real AI usage data
+  useEffect(() => {
+    const loadUsageData = async () => {
+      if (!tenant?.id) return;
+      
+      setIsLoading(true);
+      
+      try {
+        const usageReport = await AIUsageTracker.getUsageReport(tenant.id);
+        if (usageReport && usageReport.ai && usageReport.automation) {
+          setRealUsageData(usageReport);
+          
+          // Update cost breakdown with real data
+          setCostBreakdown(prev => ({
+            ...prev,
+            aiServices: {
+              openai: { 
+                ...(prev?.aiServices?.openai || {}), 
+                used: usageReport?.ai?.openai || 0,
+                currentTokens: usageReport?.ai?.tokens?.openai || 0
+              },
+              claude: { 
+                ...(prev?.aiServices?.claude || {}), 
+                used: usageReport?.ai?.claude || 0,
+                currentTokens: usageReport?.ai?.tokens?.claude || 0
+              },
+              deepseek: { 
+                ...(prev?.aiServices?.deepseek || {}), 
+                used: usageReport?.ai?.deepseek || 0,
+                currentTokens: usageReport?.ai?.tokens?.deepseek || 0
+              }
+            },
+            automationTools: {
+              workflows: { 
+                ...(prev?.automationTools?.workflows || {}), 
+                currentRuns: usageReport?.automation?.workflows || 0
+              },
+              enrichment: { 
+                ...(prev?.automationTools?.enrichment || {}), 
+                currentEnrichments: usageReport?.automation?.enrichments || 0
+              }
+            }
+          }));
+          
+          console.log('✅ Real AI usage data loaded:', usageReport);
+        }
+      } catch (error) {
+        console.error('❌ Error loading usage data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUsageData();
+    
+    // Refresh every 5 minutes for real-time monitoring
+    const interval = setInterval(loadUsageData, 300000);
+    return () => clearInterval(interval);
+  }, [tenant?.id]);
+
   const [budgetSettings, setBudgetSettings] = useState({
-    monthlyBudget: 500,
-    autoScale: true,
-    alertThreshold: 80,
-    emergencyStop: 95,
-    budgetGrowth: 'moderate' // conservative, moderate, aggressive
+    monthlyBudget: 200, // AI services monthly limit
+    autoScale: false, // Don't auto-scale AI limits
+    alertThreshold: 75, // Alert at 75% usage 
+    emergencyStop: 90, // Hard stop at 90% to prevent overages
+    aiSafetyMode: true, // Enable AI safety controls
+    rateLimitBuffer: 20 // Keep 20% buffer below rate limits
   });
+
+  // Load saved budget settings
+  useEffect(() => {
+    const loadBudgetSettings = async () => {
+      if (!tenant?.id) return;
+      
+      try {
+        const settingsDoc = await getDoc(doc(db, 'MarketGenie_budget_settings', tenant.id));
+        if (settingsDoc.exists()) {
+          const savedSettings = settingsDoc.data();
+          setBudgetSettings(prev => ({...prev, ...savedSettings}));
+          console.log('✅ Budget settings loaded:', savedSettings);
+        }
+      } catch (error) {
+        console.error('❌ Error loading budget settings:', error);
+      }
+    };
+
+    loadBudgetSettings();
+  }, [tenant?.id]);
+
+  // Save budget settings to Firebase
+  const saveBudgetSettings = async () => {
+    if (!tenant?.id) return;
+
+    try {
+      await setDoc(doc(db, 'MarketGenie_budget_settings', tenant.id), {
+        ...budgetSettings,
+        updatedAt: new Date(),
+        updatedBy: user?.email || 'anonymous'
+      });
+      
+      console.log('✅ Budget settings saved successfully');
+      
+      // Show success feedback
+      alert('Budget settings saved successfully! 🎉');
+      
+    } catch (error) {
+      console.error('❌ Error saving budget settings:', error);
+      alert('Error saving settings. Please try again.');
+    }
+  };
+
+
 
   const [costBreakdown, setCostBreakdown] = useState({
     aiServices: {
-      openai: { used: 89.50, limit: 150, name: 'OpenAI GPT-4' },
-      claude: { used: 45.20, limit: 100, name: 'Anthropic Claude-3' },
-      deepseek: { used: 28.75, limit: 80, name: 'DeepSeek AI' },
-      gemini: { used: 32.10, limit: 75, name: 'Google Gemini Pro' }
-    },
-    leadGeneration: {
-      scraping: { used: 25.80, limit: 50, name: 'Web Scraping APIs' },
-      enrichment: { used: 18.90, limit: 40, name: 'Data Enrichment' }
+      openai: { used: 0, limit: 100, name: 'OpenAI GPT-4', rateLimit: '10,000 tokens/hour', currentTokens: 0 },
+      claude: { used: 0, limit: 75, name: 'Anthropic Claude-3', rateLimit: '8,000 tokens/hour', currentTokens: 0 },
+      deepseek: { used: 0, limit: 50, name: 'DeepSeek AI', rateLimit: '5,000 tokens/hour', currentTokens: 0 }
     },
     automationTools: {
-      zapier: { used: 12.00, limit: 25, name: 'Zapier Automation' },
-      calendly: { used: 8.50, limit: 20, name: 'Scheduling Tools' }
-    },
-    communications: {
-      email: { used: 15.30, limit: 30, name: 'Email Services' },
-      sms: { used: 22.40, limit: 50, name: 'SMS Gateway' }
+      workflows: { used: 0, limit: 25, name: 'AI Workflow Executions', rateLimit: '100 workflows/hour', currentRuns: 0 },
+      enrichment: { used: 0, limit: 20, name: 'Contact Data Enrichment', rateLimit: '500 contacts/hour', currentEnrichments: 0 }
     }
   });
+
+  const [realUsageData, setRealUsageData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const getTotalUsed = () => {
     const total = Object.values(costBreakdown).reduce((acc, category) => {
@@ -105,12 +207,34 @@ const CostControlsDashboard = () => {
   const getCategoryColor = (category) => {
     const colors = {
       aiServices: 'from-purple-500 to-indigo-500',
-      leadGeneration: 'from-blue-500 to-cyan-500',
-      automationTools: 'from-green-500 to-teal-500',
-      communications: 'from-orange-500 to-red-500'
+      automationTools: 'from-green-500 to-teal-500'
     };
     return colors[category] || 'from-gray-500 to-gray-600';
   };
+
+  // Check for budget alerts based on current usage
+  const checkBudgetAlerts = () => {
+    const currentUsage = getTotalUsed();
+    const usagePercentage = (currentUsage / budgetSettings.monthlyBudget) * 100;
+    
+    if (usagePercentage >= budgetSettings.emergencyStop) {
+      return {
+        level: 'emergency',
+        message: `🚨 EMERGENCY STOP: You've reached ${usagePercentage.toFixed(1)}% of your monthly budget ($${currentUsage}/$${budgetSettings.monthlyBudget}). AI operations are blocked to prevent overages.`,
+        color: 'text-red-600 bg-red-100'
+      };
+    } else if (usagePercentage >= budgetSettings.alertThreshold) {
+      return {
+        level: 'warning',
+        message: `⚠️ WARNING: You've used ${usagePercentage.toFixed(1)}% of your monthly budget ($${currentUsage}/$${budgetSettings.monthlyBudget}). Consider monitoring your AI usage closely.`,
+        color: 'text-yellow-600 bg-yellow-100'
+      };
+    }
+    
+    return null;
+  };
+
+  const currentAlert = checkBudgetAlerts();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
@@ -118,31 +242,41 @@ const CostControlsDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
-            Cost Controls & Budget Management
+            AI Rate Limiting & Cost Controls
           </h1>
-          <p className="text-gray-600 text-lg">Smart budget controls that scale with your business growth</p>
+          <p className="text-gray-600 text-lg">Prevent AI API overages and maintain optimal performance with intelligent rate limiting</p>
         </div>
+
+        {/* Budget Alert */}
+        {currentAlert && (
+          <div className={`mb-6 p-4 rounded-lg border-l-4 ${currentAlert.color} ${currentAlert.level === 'emergency' ? 'border-red-500' : 'border-yellow-500'}`}>
+            <p className="font-semibold">{currentAlert.message}</p>
+            {currentAlert.level === 'emergency' && (
+              <p className="text-sm mt-2 text-red-700">All AI operations have been temporarily suspended. Please review your usage or increase your budget limit.</p>
+            )}
+          </div>
+        )}
 
         {/* Budget Overview */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-blue-100">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">${getTotalUsed().toFixed(2)}</div>
-              <div className="text-gray-500">Used This Month</div>
+              <div className="text-gray-500">AI Costs This Month</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">${budgetSettings.monthlyBudget}</div>
-              <div className="text-gray-500">Monthly Budget</div>
+              <div className="text-gray-500">Monthly AI Limit</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">${(budgetSettings.monthlyBudget - getTotalUsed()).toFixed(2)}</div>
-              <div className="text-gray-500">Remaining</div>
+              <div className="text-gray-500">Remaining Budget</div>
             </div>
             <div className="text-center">
               <div className={`text-3xl font-bold ${getUsagePercentage() >= budgetSettings.alertThreshold ? 'text-red-600' : 'text-green-600'}`}>
                 {getUsagePercentage().toFixed(1)}%
               </div>
-              <div className="text-gray-500">Budget Used</div>
+              <div className="text-gray-500">Rate Limit Used</div>
             </div>
           </div>
 
@@ -239,13 +373,28 @@ const CostControlsDashboard = () => {
                   const percentage = (service.used / service.limit) * 100;
                   return (
                     <div key={key} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-gray-900">{service.name}</span>
-                        <span className="text-sm text-gray-500">
-                          ${service.used.toFixed(2)} / ${service.limit}
-                        </span>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-medium text-gray-900">{service.name}</span>
+                          {service.rateLimit && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Rate Limit: {service.rateLimit}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm text-gray-500">
+                            ${service.used.toFixed(2)} / ${service.limit}
+                          </span>
+                          {(service.currentTokens > 0 || service.currentRuns > 0 || service.currentEnrichments > 0 || service.currentEmails > 0) && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              Current: {service.currentTokens || service.currentRuns || service.currentEnrichments || service.currentEmails || 0}
+                              {service.currentTokens ? ' tokens' : service.currentRuns ? ' workflows' : service.currentEnrichments ? ' enrichments' : ' emails'}/hour
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                         <div 
                           className={`h-2 rounded-full ${
                             percentage >= 90 ? 'bg-red-500' :
@@ -254,9 +403,28 @@ const CostControlsDashboard = () => {
                           style={{ width: `${Math.min(percentage, 100)}%` }}
                         ></div>
                       </div>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs text-gray-500">{percentage.toFixed(1)}% used</span>
-                        <button className="text-xs text-blue-600 hover:text-blue-800">Adjust Limit</button>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                          {percentage.toFixed(1)}% of monthly limit
+                          {isLoading && <span className="ml-1">⟳</span>}
+                        </span>
+                        <button 
+                          onClick={() => {
+                            const newLimit = prompt(`Set new monthly limit for ${service.name}:`, service.limit);
+                            if (newLimit && !isNaN(newLimit)) {
+                              setCostBreakdown(prev => ({
+                                ...prev,
+                                [category]: {
+                                  ...prev[category],
+                                  [key]: { ...prev[category][key], limit: Number(newLimit) }
+                                }
+                              }));
+                            }
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          Adjust Limit
+                        </button>
                       </div>
                     </div>
                   );
@@ -336,10 +504,23 @@ const CostControlsDashboard = () => {
           </div>
 
           <div className="flex justify-end mt-6 gap-3">
-            <button className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+            <button 
+              onClick={() => setBudgetSettings({
+                monthlyBudget: 200,
+                autoScale: false,
+                alertThreshold: 75,
+                emergencyStop: 90,
+                aiSafetyMode: true,
+                rateLimitBuffer: 20
+              })}
+              className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+            >
               Reset to Defaults
             </button>
-            <button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all">
+            <button 
+              onClick={saveBudgetSettings}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all"
+            >
               Save Settings
             </button>
           </div>

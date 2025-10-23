@@ -43,8 +43,24 @@ class StripePaymentService {
     
     // Create success URL with payment completion parameters - LIVE FIREBASE URLs
     const liveBaseUrl = 'https://market-genie-f2d41.web.app';
-    const successUrl = `${liveBaseUrl}/whitelabel-setup?payment_success=true&payment_type=${planType}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${liveBaseUrl}/dashboard?payment_cancelled=true&payment_type=${planType}`;
+    let successUrl, cancelUrl;
+    
+    // Route to appropriate signup page based on plan type
+    switch(planType) {
+      case 'whiteLabel':
+        successUrl = `${liveBaseUrl}/whitelabel-setup?payment_success=true&payment_type=${planType}&session_id={CHECKOUT_SESSION_ID}`;
+        break;
+      case 'pro':
+        successUrl = `${liveBaseUrl}/pro-signup?payment_success=true&payment_type=${planType}&session_id={CHECKOUT_SESSION_ID}`;
+        break;
+      case 'lifetime':
+        successUrl = `${liveBaseUrl}/lifetime-signup?payment_success=true&payment_type=${planType}&session_id={CHECKOUT_SESSION_ID}`;
+        break;
+      default:
+        successUrl = `${liveBaseUrl}/dashboard?payment_success=true&payment_type=${planType}&session_id={CHECKOUT_SESSION_ID}`;
+    }
+    
+    cancelUrl = `${liveBaseUrl}/dashboard?payment_cancelled=true&payment_type=${planType}`;
     
     console.log(`💳 Redirecting to Stripe payment: ${planType} - $${this.prices[planType]}`);
     console.log(`📍 Live Success URL: ${successUrl}`);

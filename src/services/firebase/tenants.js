@@ -136,6 +136,7 @@ export class TenantService {
     const isFounder = user.email === 'dubdproducts@gmail.com'
     
     const tenantData = {
+      id: user.uid, // Use user UID as tenant ID
       ownerId: user.uid,
       ownerEmail: user.email,
       ownerName: user.displayName || user.email,
@@ -212,7 +213,8 @@ export class TenantService {
       }
     }
 
-    const result = await FirebaseService.create('MarketGenie_tenants', tenantData)
+    // Use user UID as the tenant ID for consistency
+    const result = await FirebaseService.create('MarketGenie_tenants', tenantData, user.uid)
     
     if (result.error) {
       console.error('Failed to create tenant:', result.error)
@@ -222,7 +224,7 @@ export class TenantService {
     console.log('Created tenant:', result.data)
     
     // Also create a user profile document
-    const userProfileResult = await this.createUserProfile(user, result.data.id)
+    const userProfileResult = await this.createUserProfile(user, user.uid)
     if (userProfileResult.error) {
       console.error('Failed to create user profile:', userProfileResult.error)
     } else {

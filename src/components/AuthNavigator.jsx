@@ -20,7 +20,7 @@ export default function AuthNavigator() {
       }
     } else {
       // User is not authenticated - redirect to login if on protected page
-      const publicPaths = ['/login', '/register', '/', '/unsubscribe']
+      const publicPaths = ['/login', '/register', '/', '/unsubscribe', '/free-signup', '/pro', '/lifetime', '/pro-signup', '/lifetime-signup', '/whitelabel-setup']
       const isPublicPath = publicPaths.includes(location.pathname) || 
                           location.pathname.startsWith('/funnel/') ||
                           location.pathname.startsWith('/oauth/')

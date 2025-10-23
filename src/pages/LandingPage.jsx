@@ -435,7 +435,12 @@ export default function LandingPage() {
                 </ul>
 
                 <Link
-                  to={plan.id === 'starter' ? '/free-signup' : '/register'}
+                  to={
+                    plan.id === 'starter' ? '/free-signup' :
+                    plan.id === 'pro' ? '/pro' :
+                    plan.id === 'lifetime' ? '/lifetime' :
+                    '/register'
+                  }
                   className="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center border border-white/30 text-white hover:bg-white/10"
                 >
                   {plan.buttonText}

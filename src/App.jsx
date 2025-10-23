@@ -13,6 +13,10 @@ import FreeSignup from './pages/FreeSignup'
 import LandingPage from './pages/LandingPage'
 import UnsubscribePage from './pages/UnsubscribePage'
 import WhiteLabelPartnerSetup from './pages/WhiteLabelPartnerSetup'
+import ProPlanSignup from './pages/ProPlanSignup'
+import LifetimePlanSignup from './pages/LifetimePlanSignup'
+import ProPlanPage from './pages/ProPlanPage'
+import LifetimePlanPage from './pages/LifetimePlanPage'
 import OAuthCallback from './pages/OAuthCallback'
 import MicrosoftOAuthCallback from './pages/MicrosoftOAuthCallback'
 import AIAgentHelper from './components/AIAgentHelper'
@@ -6422,8 +6426,14 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/free-signup" element={<FreeSignup />} />
             
-            {/* WhiteLabel Partner Setup - Public */}
+            {/* Plan Landing Pages - Public */}
+            <Route path="/pro" element={<ProPlanPage />} />
+            <Route path="/lifetime" element={<LifetimePlanPage />} />
+            
+            {/* Plan Signup Pages - Post Payment */}
             <Route path="/whitelabel-setup" element={<WhiteLabelPartnerSetup />} />
+            <Route path="/pro-signup" element={<ProPlanSignup />} />
+            <Route path="/lifetime-signup" element={<LifetimePlanSignup />} />
             
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />

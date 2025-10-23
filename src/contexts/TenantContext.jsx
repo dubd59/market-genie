@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import TenantService from '../services/firebase/tenants'
 import { multiTenantDB } from '../services/multiTenantDatabase'
+import corsBypass from '../services/CORSBypass'
 import toast from 'react-hot-toast'
 
 /**
@@ -55,7 +56,7 @@ export function TenantProvider({ children }) {
   const loadUserTenant = async () => {
     let retryCount = 0;
     const maxRetries = 3;
-    const loadTimeout = 30000; // 30 second timeout
+    const loadTimeout = 8000; // 8 second timeout (reduced to prevent spinning wheel)
     
     const attemptLoad = async () => {
       try {
@@ -83,9 +84,22 @@ export function TenantProvider({ children }) {
         if (result.error) {
           console.error('❌ Tenant loading error:', result.error)
           
+          // 🚨 CORS FALLBACK: If CORS detected, use offline tenant immediately
+          if (result.error.message?.includes('CORS') || 
+              result.error.message?.includes('Access-Control-Allow-Origin') ||
+              result.error.message?.includes('WebChannelConnection') ||
+              result.error.code === 'unavailable' ||
+              corsBypass.isCORSDetected()) {
+            
+            console.log('🛡️ CORS detected - using fallback tenant (no retries needed)');
+            const fallbackTenant = await corsBypass.loadTenantFallback(user.uid, user.email);
+            setTenant(fallbackTenant);
+            setLoading(false);
+            return;
+          }
+          
           // Check if it's a connection-related error
           if (result.error.message?.includes('offline') || 
-              result.error.message?.includes('CORS') ||
               result.error.message?.includes('ERR_FAILED') ||
               result.error.message?.includes('Failed to fetch') ||
               result.error.message?.includes('timeout')) {

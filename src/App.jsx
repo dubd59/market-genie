@@ -12,6 +12,7 @@ import Register from './pages/RegisterSimple'
 import FreeSignup from './pages/FreeSignup'
 import LandingPage from './pages/LandingPage'
 import UnsubscribePage from './pages/UnsubscribePage'
+import WhiteLabelPartnerSetup from './pages/WhiteLabelPartnerSetup'
 import OAuthCallback from './pages/OAuthCallback'
 import MicrosoftOAuthCallback from './pages/MicrosoftOAuthCallback'
 import AIAgentHelper from './components/AIAgentHelper'
@@ -6420,6 +6421,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/free-signup" element={<FreeSignup />} />
+            
+            {/* WhiteLabel Partner Setup - Public */}
+            <Route path="/whitelabel-setup" element={<WhiteLabelPartnerSetup />} />
             
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />

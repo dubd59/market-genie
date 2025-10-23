@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, doc, setDoc, getDoc } from '../security/SecureFirebase.js';
 import { isFeatureEnabled } from '../services/planLimits';
+import stripePaymentService from '../services/StripePaymentService';
 
 const WhiteLabelDashboard = () => {
   const { tenant } = useTenant();
@@ -59,6 +60,69 @@ const WhiteLabelDashboard = () => {
 
     loadPartnerData();
   }, [tenant?.id, hasWhiteLabelAccess]);
+
+  // Handle payment success returns from Stripe
+  useEffect(() => {
+    const handlePaymentReturn = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentSuccess = urlParams.get('payment_success');
+      const sessionId = urlParams.get('session_id');
+      const paymentType = urlParams.get('payment_type');
+
+      if (paymentSuccess === 'true' && sessionId) {
+        try {
+          // Process successful payment
+          if (paymentType === 'whiteLabel' || paymentType === 'whitelabel') {
+            // Activate WhiteLabel license
+            const partnerDoc = {
+              tenantId: tenant.id,
+              companyName: tenant.businessName || 'New Partner',
+              contactEmail: tenant.ownerEmail || user.email,
+              status: 'active',
+              activatedAt: new Date(),
+              paymentSessionId: sessionId,
+              licenseType: 'whiteLabel',
+              revenueShare: 0.85,
+              nextPaymentDate: null // One-time payment
+            };
+
+            await setDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id), partnerDoc);
+            setIsPartner(true);
+            setPartnerData(partnerDoc);
+            
+            alert('🎉 WhiteLabel license activated successfully! Welcome to the partner program!');
+          } else if (paymentType === 'pro' || paymentType === 'lifetime') {
+            // Handle Pro/Lifetime upgrades
+            const updateData = {
+              planType: paymentType,
+              upgradeDate: new Date(),
+              paymentSessionId: sessionId
+            };
+            
+            await updateDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id), updateData);
+            
+            // Reload partner data
+            const updatedDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id));
+            if (updatedDoc.exists()) {
+              setPartnerData(updatedDoc.data());
+            }
+            
+            alert(`🚀 Successfully upgraded to ${paymentType === 'pro' ? 'Pro Plan' : 'Lifetime Access'}!`);
+          }
+
+          // Clean up URL parameters
+          const newUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+          
+        } catch (error) {
+          console.error('Error processing payment success:', error);
+          alert('Payment successful but there was an error activating your license. Please contact support.');
+        }
+      }
+    };
+
+    handlePaymentReturn();
+  }, [tenant?.id, user?.email]);
 
   // Load partner performance metrics
   const loadPartnerMetrics = async (partnerId) => {
@@ -157,6 +221,55 @@ const WhiteLabelDashboard = () => {
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Error submitting application. Please try again.');
+    }
+  };
+
+  // Handle WhiteLabel license payment
+  const handleWhiteLabelPayment = async () => {
+    if (!applicationFormData.agreedToTerms) {
+      alert('Please agree to the terms and conditions before proceeding to payment.');
+      return;
+    }
+
+    try {
+      // First submit the application
+      await addDoc(collection(db, 'MarketGenie_whitelabel_applications'), {
+        ...applicationFormData,
+        applicantId: tenant.id,
+        applicantEmail: user.email,
+        tenantPlan: tenant.plan,
+        applicationDate: new Date(),
+        status: 'payment_pending',
+        licensingFee: 497,
+        revenueSharePercentage: 15
+      });
+
+      // Then redirect to Stripe payment
+      await stripePaymentService.initiatePayment('whiteLabel', {
+        userId: user.uid,
+        email: user.email,
+        tenantId: tenant.id,
+        applicationData: applicationFormData
+      });
+
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      alert('Error processing payment. Please try again.');
+    }
+  };
+
+  // Handle different plan upgrades
+  const handlePlanUpgrade = async (planType) => {
+    try {
+      await stripePaymentService.initiatePayment(planType, {
+        userId: user.uid,
+        email: user.email,
+        tenantId: tenant.id,
+        currentPlan: tenant.plan
+      });
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      alert('Error initiating payment. Please try again.');
     }
   };
 
@@ -267,12 +380,20 @@ const WhiteLabelDashboard = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={() => setShowApplicationForm(true)}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105"
-              >
-                Apply for WhiteLabel Partnership
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button 
+                  onClick={handleWhiteLabelPayment}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105"
+                >
+                  💳 Pay $497 & Start Now
+                </button>
+                <button 
+                  onClick={() => setShowApplicationForm(true)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105"
+                >
+                  📝 Apply First
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -303,6 +424,52 @@ const WhiteLabelDashboard = () => {
                 <div className="text-3xl mb-2">📊</div>
                 <div className="text-2xl font-bold text-purple-600">${partnerData?.metrics?.royaltyOwed?.toFixed(2) || '0.00'}</div>
                 <div className="text-gray-500">Royalty Due (15%)</div>
+              </div>
+            </div>
+
+            {/* Plan Upgrades */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">🚀 Upgrade Your Plan</h3>
+              <p className="text-gray-600 mb-6">Get more features and maximize your revenue potential</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg p-6 shadow-md">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-purple-600">Pro Plan</h4>
+                    <div className="text-2xl font-bold text-purple-600">$20<span className="text-sm text-gray-500">/mo</span></div>
+                  </div>
+                  <ul className="text-sm text-gray-600 space-y-2 mb-4">
+                    <li>✓ Advanced Analytics</li>
+                    <li>✓ Priority Support</li>
+                    <li>✓ Custom Integrations</li>
+                    <li>✓ Enhanced Features</li>
+                  </ul>
+                  <button
+                    onClick={() => handlePlanUpgrade('pro')}
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition-all"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+                
+                <div className="bg-white rounded-lg p-6 shadow-md border-2 border-gold-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gold-600">Lifetime Access</h4>
+                    <div className="text-2xl font-bold text-gold-600">$300<span className="text-sm text-gray-500"> once</span></div>
+                  </div>
+                  <ul className="text-sm text-gray-600 space-y-2 mb-4">
+                    <li>✓ Everything in Pro</li>
+                    <li>✓ Lifetime Updates</li>
+                    <li>✓ No Monthly Fees</li>
+                    <li>✓ Maximum ROI</li>
+                  </ul>
+                  <button
+                    onClick={() => handlePlanUpgrade('lifetime')}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all"
+                  >
+                    Get Lifetime Access
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -463,17 +630,26 @@ const WhiteLabelDashboard = () => {
                     </label>
                   </div>
 
-                  <div className="flex gap-4 pt-4">
-                    <button
-                      type="submit"
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
-                    >
-                      Submit Application
-                    </button>
+                  <div className="space-y-4 pt-4">
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={handleWhiteLabelPayment}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
+                      >
+                        💳 Pay $497 & Activate License
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
+                      >
+                        📝 Submit Application Only
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setShowApplicationForm(false)}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="w-full py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                     >
                       Cancel
                     </button>

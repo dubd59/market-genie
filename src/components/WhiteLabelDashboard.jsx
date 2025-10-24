@@ -31,7 +31,9 @@ const WhiteLabelDashboard = () => {
   console.log('🔍 WhiteLabel Access Check:', {
     tenantPlan: tenant?.plan,
     hasWhiteLabelAccess,
-    tenantId: tenant?.id
+    tenantId: tenant?.id,
+    userUid: user?.uid,
+    tenantHasWhiteLabel: tenant?.hasWhiteLabel
   });
 
   // Load partner data on component mount
@@ -43,14 +45,49 @@ const WhiteLabelDashboard = () => {
       }
 
       try {
+        console.log('🔍 Loading partner data for user:', user.uid);
+        
         // Check if user is already a partner (use user.uid as document ID)
         const partnerDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid));
+        console.log('🔍 Partner document exists:', partnerDoc.exists());
+        
         if (partnerDoc.exists()) {
+          console.log('✅ Found existing partner record:', partnerDoc.data());
           setIsPartner(true);
           setPartnerData(partnerDoc.data());
           
           // Load partner metrics
           await loadPartnerMetrics(user.uid);
+        } else if (tenant?.hasWhiteLabel || tenant?.plan === 'lifetime_with_whitelabel') {
+          // Auto-create partner record if tenant has White Label but no partner record exists
+          console.log('🔧 Auto-creating missing partner record for White Label tenant...');
+          console.log('🔍 Tenant data:', { hasWhiteLabel: tenant.hasWhiteLabel, plan: tenant.plan });
+          
+          const partnerData = {
+            userId: user.uid,
+            tenantId: tenant.id,
+            contactEmail: user.email,
+            companyName: tenant.name || 'White Label Partner',
+            status: 'active',
+            activatedAt: new Date(),
+            licenseType: 'whiteLabel',
+            revenueShare: 0.85,
+            nextPaymentDate: null,
+            customerCount: 0,
+            monthlyRevenue: 0,
+            parentTenantId: tenant.id,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          console.log('📝 Creating partner record with data:', partnerData);
+          await setDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid), partnerData);
+          setIsPartner(true);
+          setPartnerData(partnerData);
+          
+          console.log('✅ Auto-created partner record successfully!');
+        } else {
+          console.log('❌ No White Label access found - showing signup interface');
         }
 
         // If founder, load all partner applications for approval
@@ -62,6 +99,12 @@ const WhiteLabelDashboard = () => {
         console.error('Error loading partner data:', error);
       } finally {
         setIsLoading(false);
+        console.log('🔍 Final component state:', { 
+          isLoading: false, 
+          isPartner, 
+          hasWhiteLabelAccess,
+          partnerDataExists: !!partnerData 
+        });
       }
     };
 
@@ -281,6 +324,34 @@ const WhiteLabelDashboard = () => {
     }
   };
 
+  // Partner Sales Tools Handlers
+  const handleGenerateSignupLinks = () => {
+    alert('🚧 Coming Soon: Generate custom signup links for your customers with your branding and pricing!');
+  };
+
+  const handleSetCustomPricing = () => {
+    alert('🚧 Coming Soon: Set custom pricing plans for your customers and maximize your revenue!');
+  };
+
+  const handleViewSalesFunnel = () => {
+    alert('🚧 Coming Soon: Analytics dashboard showing your customer acquisition funnel and conversion rates!');
+  };
+
+  const handleCopyPartnerLink = () => {
+    const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'XXXXXXXX'}`;
+    const partnerLink = `https://marketgenie.app/signup?partner=${partnerCode}`;
+    
+    navigator.clipboard.writeText(partnerLink).then(() => {
+      alert(`✅ Partner link copied! Share this link: ${partnerLink}`);
+    }).catch(() => {
+      alert(`📋 Your partner link: ${partnerLink}`);
+    });
+  };
+
+  const handleDownloadSalesKit = () => {
+    alert('🚧 Coming Soon: Download complete sales kit with presentations, graphics, and email templates!');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 flex items-center justify-center">
@@ -435,54 +506,48 @@ const WhiteLabelDashboard = () => {
               </div>
             </div>
 
-            {/* Plan Upgrades */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">🚀 Upgrade Your Plan</h3>
-              <p className="text-gray-600 mb-6">Get more features and maximize your revenue potential</p>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg p-6 shadow-md">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-purple-600">Pro Plan</h4>
-                    <div className="text-2xl font-bold text-purple-600">$20<span className="text-sm text-gray-500">/mo</span></div>
-                  </div>
-                  <ul className="text-sm text-gray-600 space-y-2 mb-4">
-                    <li>✓ Advanced Analytics</li>
-                    <li>✓ Priority Support</li>
-                    <li>✓ Custom Integrations</li>
-                    <li>✓ Enhanced Features</li>
-                  </ul>
-                  <button
-                    onClick={() => handlePlanUpgrade('pro')}
-                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition-all"
-                  >
-                    Upgrade to Pro
-                  </button>
+            {/* Plan Status - Show current plan instead of upgrade options for White Label users */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">🎉 Active White Label License</h3>
+                  <p className="text-gray-600">You have full access to all White Label features and revenue opportunities</p>
                 </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-md border-2 border-gold-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gold-600">Lifetime Access</h4>
-                    <div className="text-2xl font-bold text-gold-600">$300<span className="text-sm text-gray-500"> once</span></div>
-                  </div>
-                  <ul className="text-sm text-gray-600 space-y-2 mb-4">
-                    <li>✓ Everything in Pro</li>
-                    <li>✓ Lifetime Updates</li>
-                    <li>✓ No Monthly Fees</li>
-                    <li>✓ Maximum ROI</li>
-                  </ul>
-                  <button
-                    onClick={() => handlePlanUpgrade('lifetime')}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all"
-                  >
-                    Get Lifetime Access
-                  </button>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-600 mb-1">LIFETIME</div>
+                  <div className="text-sm text-gray-500">+ White Label Rights</div>
                 </div>
               </div>
             </div>
 
             {/* Partner Controls */}
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Partner Sales Center */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">💼 Partner Sales Center</h3>
+                <p className="text-gray-600 mb-4">Create custom pricing and signup links for your customers</p>
+                <div className="space-y-3">
+                  <button 
+                    onClick={handleGenerateSignupLinks}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all"
+                  >
+                    🔗 Generate Signup Links
+                  </button>
+                  <button 
+                    onClick={handleSetCustomPricing}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all"
+                  >
+                    💰 Set Custom Pricing
+                  </button>
+                  <button 
+                    onClick={handleViewSalesFunnel}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
+                  >
+                    📊 View Sales Funnel
+                  </button>
+                </div>
+              </div>
+              
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">🎨 Branding Controls</h3>
                 <p className="text-gray-600 mb-4">Customize your branded SaaS platform</p>
@@ -497,6 +562,63 @@ const WhiteLabelDashboard = () => {
                 <button className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-600 transition-all">
                   View Customers
                 </button>
+              </div>
+            </div>
+
+            {/* Marketing Resources */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Partner Marketing Center</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-gray-700 mb-3">🎯 Sales Materials</h4>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={handleDownloadSalesKit}
+                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                    >
+                      📄 Download Sales Deck
+                    </button>
+                    <button 
+                      onClick={handleDownloadSalesKit}
+                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                    >
+                      🎨 Marketing Graphics
+                    </button>
+                    <button 
+                      onClick={handleDownloadSalesKit}
+                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                    >
+                      📧 Email Templates
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700 mb-3">🔗 Referral Tools</h4>
+                  <div className="space-y-2">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="text-sm text-gray-600">Your Partner Code:</div>
+                      <div className="font-mono text-blue-600 font-bold">WL_{partnerData?.partnerId?.slice(-8) || 'XXXXXXXX'}</div>
+                    </div>
+                    <button 
+                      onClick={handleCopyPartnerLink}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white p-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all"
+                    >
+                      📋 Copy Partner Link
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-green-800">💡 Pro Tip</div>
+                    <div className="text-sm text-green-600">Use your custom branded domain and partner code to maximize conversions</div>
+                  </div>
+                  <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all">
+                    Setup Domain
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore, initializeFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { getFunctions } from "firebase/functions";
 import { firebaseErrorHandler } from "./security/FirebaseErrorHandler.js";
@@ -17,13 +17,13 @@ const firebaseConfig = {
 
 console.log('🔥 Firebase initialization starting...');
 
-// Initialize Firebase
+// Initialize Firebase with enhanced error handling
 const app = initializeApp(firebaseConfig);
 
-// Initialize services
+// Initialize services with bulletproof settings
 export const auth = getAuth(app);
 
-// Set authentication persistence
+// 🔐 Set authentication persistence to prevent daily login issues
 (async () => {
   try {
     await setPersistence(auth, browserLocalPersistence);
@@ -33,11 +33,13 @@ export const auth = getAuth(app);
   }
 })();
 
-// Initialize Firestore with standard configuration (CORS-safe)
+// Initialize Firestore with CORS-safe configuration
 export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
   cacheSizeBytes: 40000000, // 40MB cache
 });
+
+console.log('✅ Firebase initialized successfully');
 
 // Other Firebase services
 export const storage = getStorage(app);
@@ -61,26 +63,40 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 
-console.log('✅ Firebase initialized successfully');
+// Enhanced connection monitoring
+let isConnected = true;
 
-// Reconnection utilities for compatibility
-export const reconnectFirebase = async () => {
-  try {
-    console.log('🔄 Reconnecting Firebase...');
-    // Firebase v9+ handles reconnection automatically
-    return true;
-  } catch (error) {
-    console.error('❌ Firebase reconnection failed:', error);
-    return false;
-  }
+const monitorConnection = () => {
+  const handleOnline = () => {
+    if (!isConnected) {
+      console.log('🌐 Network back online - Firebase should reconnect automatically');
+      isConnected = true;
+    }
+  };
+
+  const handleOffline = () => {
+    console.log('📴 Network offline - Firebase entering offline mode');
+    isConnected = false;
+  };
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  return () => {
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+  };
 };
 
-export const checkConnectionHealth = () => {
-  // In Firebase v9+, connection health is managed automatically
-  return navigator.onLine;
-};
+// Start monitoring
+if (typeof window !== 'undefined') {
+  monitorConnection();
+}
 
-// Export utility functions
+// Export connection status
+export const getConnectionStatus = () => isConnected;
+
+// Enhanced error handling wrapper
 export const withErrorHandling = (operation) => {
   return async (...args) => {
     try {
@@ -92,6 +108,7 @@ export const withErrorHandling = (operation) => {
   };
 };
 
+// Utility function for retrying operations
 export const retryOperation = async (operation, maxRetries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -102,7 +119,9 @@ export const retryOperation = async (operation, maxRetries = 3, delay = 1000) =>
       }
       console.log(`⏳ Retry ${attempt}/${maxRetries} after ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 2;
+      delay *= 2; // Exponential backoff
     }
   }
 };
+
+console.log('🚀 Firebase setup complete - ready for operations');

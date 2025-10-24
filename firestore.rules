@@ -253,11 +253,17 @@ service cloud.firestore {
     // WHITELABEL PARTNERS COLLECTION  
     // Lifetime plan users can create and manage their White Label partner records
     match /MarketGenie_whitelabel_partners/{partnerId} {
-      allow read, write: if isSuperAdmin() ||
-                            (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                            (isAuthenticated() && resource.data.contactEmail == request.auth.token.email);
+      allow read: if isSuperAdmin() ||
+                     (isAuthenticated() && partnerId == request.auth.uid) ||
+                     (isAuthenticated() && resource != null && resource.data.userId == request.auth.uid) ||
+                     (isAuthenticated() && resource != null && resource.data.contactEmail == request.auth.token.email);
+      allow write: if isSuperAdmin() ||
+                      (isAuthenticated() && partnerId == request.auth.uid) ||
+                      (isAuthenticated() && resource != null && resource.data.userId == request.auth.uid) ||
+                      (isAuthenticated() && resource != null && resource.data.contactEmail == request.auth.token.email);
       allow create: if isAuthenticated() && 
-                       (request.resource.data.userId == request.auth.uid || 
+                       (partnerId == request.auth.uid ||
+                        request.resource.data.userId == request.auth.uid || 
                         request.resource.data.contactEmail == request.auth.token.email);
       allow list: if isSuperAdmin() ||
                      (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com');

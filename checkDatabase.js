@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC4pJAF4Ao2KbD8aWdgXBQjBqKHKfV5rEE",
+  apiKey: process.env.FIREBASE_API_KEY || "YOUR_API_KEY_HERE",
   authDomain: "market-genie-f2d41.firebaseapp.com",
   databaseURL: "https://market-genie-f2d41-default-rtdb.firebaseio.com",
   projectId: "market-genie-f2d41",

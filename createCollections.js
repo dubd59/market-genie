@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDRdYaXJkJNZIkMzKM4cZEFTADOJJhDiEs",
+  apiKey: process.env.FIREBASE_API_KEY || "YOUR_API_KEY_HERE",
   authDomain: "market-genie-f2d41.firebaseapp.com",
   projectId: "market-genie-f2d41",
   storageBucket: "market-genie-f2d41.firebasestorage.app",

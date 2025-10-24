@@ -26,24 +26,31 @@ const WhiteLabelDashboard = () => {
 
   // Check if user has WhiteLabel access (Lifetime or Founder only)
   const hasWhiteLabelAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
+  
+  // Debug logging
+  console.log('🔍 WhiteLabel Access Check:', {
+    tenantPlan: tenant?.plan,
+    hasWhiteLabelAccess,
+    tenantId: tenant?.id
+  });
 
   // Load partner data on component mount
   useEffect(() => {
     const loadPartnerData = async () => {
-      if (!tenant?.id || !hasWhiteLabelAccess) {
+      if (!user?.uid || !hasWhiteLabelAccess) {
         setIsLoading(false);
         return;
       }
 
       try {
-        // Check if user is already a partner
-        const partnerDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id));
+        // Check if user is already a partner (use user.uid as document ID)
+        const partnerDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid));
         if (partnerDoc.exists()) {
           setIsPartner(true);
           setPartnerData(partnerDoc.data());
           
           // Load partner metrics
-          await loadPartnerMetrics(tenant.id);
+          await loadPartnerMetrics(user.uid);
         }
 
         // If founder, load all partner applications for approval
@@ -59,7 +66,7 @@ const WhiteLabelDashboard = () => {
     };
 
     loadPartnerData();
-  }, [tenant?.id, hasWhiteLabelAccess]);
+  }, [user?.uid, hasWhiteLabelAccess]);
 
   // Handle payment success returns from Stripe
   useEffect(() => {
@@ -75,6 +82,7 @@ const WhiteLabelDashboard = () => {
           if (paymentType === 'whiteLabel' || paymentType === 'whitelabel') {
             // Activate WhiteLabel license
             const partnerDoc = {
+              userId: user.uid, // Add user ID for rules compliance
               tenantId: tenant.id,
               companyName: tenant.businessName || 'New Partner',
               contactEmail: tenant.ownerEmail || user.email,
@@ -86,7 +94,7 @@ const WhiteLabelDashboard = () => {
               nextPaymentDate: null // One-time payment
             };
 
-            await setDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id), partnerDoc);
+            await setDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid), partnerDoc);
             setIsPartner(true);
             setPartnerData(partnerDoc);
             
@@ -99,10 +107,10 @@ const WhiteLabelDashboard = () => {
               paymentSessionId: sessionId
             };
             
-            await updateDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id), updateData);
+            await updateDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid), updateData);
             
             // Reload partner data
-            const updatedDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', tenant.id));
+            const updatedDoc = await getDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid));
             if (updatedDoc.exists()) {
               setPartnerData(updatedDoc.data());
             }
@@ -122,7 +130,7 @@ const WhiteLabelDashboard = () => {
     };
 
     handlePaymentReturn();
-  }, [tenant?.id, user?.email]);
+  }, [user?.uid, user?.email]);
 
   // Load partner performance metrics
   const loadPartnerMetrics = async (partnerId) => {

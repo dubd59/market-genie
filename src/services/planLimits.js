@@ -66,6 +66,28 @@ export const PLAN_LIMITS = {
       multiTenant: true
     }
   },
+
+  // Lifetime plan with active White Label license
+  lifetime_with_whitelabel: {
+    name: 'Lifetime + White Label',
+    maxContacts: -1, // unlimited
+    maxEmailsPerMonth: -1, // unlimited
+    maxCampaigns: -1, // unlimited
+    features: {
+      basicAutomation: true,
+      emailSupport: true,
+      leadCaptureForms: true,
+      basicAI: true,
+      advancedAI: true,
+      premiumIntegrations: true,
+      prioritySupport: true,
+      customIntegrations: true,
+      analytics3D: true,
+      voiceControl: true,
+      whiteLabel: true,
+      multiTenant: true
+    }
+  },
   
   // Existing users get founder benefits
   founder: {

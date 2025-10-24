@@ -100,9 +100,9 @@ const ProPlanPage = () => {
                   onClick={handleGetProAccess}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-500 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
                 >
-                  Start Pro Trial Now
+                  Start Pro Now - $20/month
                 </button>
-                <div className="text-xs text-gray-500 mt-2">7-day free trial • Secure payment via Stripe</div>
+                <div className="text-xs text-gray-500 mt-2">Monthly subscription • Cancel anytime • Secure payment via Stripe</div>
               </div>
             </div>
           </div>
@@ -207,17 +207,17 @@ const ProPlanPage = () => {
             Start Your Pro Journey Today
           </h3>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join successful marketers who've upgraded to Pro. Try it risk-free with our 7-day trial.
+            Join successful marketers who've upgraded to Pro. Get started with full access immediately.
           </p>
           <button
             onClick={handleGetProAccess}
             className="bg-gradient-to-r from-blue-600 to-purple-500 text-white py-4 px-12 rounded-xl font-bold text-xl hover:from-blue-700 hover:to-purple-600 transform hover:scale-105 transition-all duration-200 shadow-xl"
           >
-            Start 7-Day Free Trial
+            Get Pro Access - $20/month
             <ArrowRight className="ml-2 h-5 w-5 inline" />
           </button>
           <div className="text-sm text-gray-500 mt-4">
-            No commitment • Cancel anytime • Secure payment via Stripe
+            Monthly subscription • Cancel anytime • Secure payment via Stripe
           </div>
         </div>
       </div>
@@ -239,8 +239,8 @@ const ProPlanPage = () => {
               <div className="text-gray-600">Priority Support</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">7 Days</div>
-              <div className="text-gray-600">Free Trial</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">$20</div>
+              <div className="text-gray-600">Monthly Plan</div>
             </div>
           </div>
         </div>

@@ -33,16 +33,71 @@ const WhiteLabelPartnerSetup = () => {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
+    console.log('🔍 WhiteLabel Setup - Payment params:', { paymentSuccess, paymentType, sessionId });
+    console.log('🔍 WhiteLabel Setup - Auth state:', { user: !!user, userEmail: user?.email, tenant: !!tenant, tenantId: tenant?.id });
+    
     if (paymentSuccess && paymentType === 'whiteLabel' && sessionId) {
-      handlePaymentSuccess();
+      // Add a small delay to ensure auth contexts are fully loaded
+      setTimeout(() => {
+        handlePaymentSuccess();
+      }, 1000);
     }
-  }, [paymentSuccess, paymentType, sessionId]);
+  }, [paymentSuccess, paymentType, sessionId, user, tenant]);
 
   const handlePaymentSuccess = async () => {
     try {
       setIsLoading(true);
+      console.log('🎯 handlePaymentSuccess called');
+      console.log('🔍 Auth check - user:', !!user, 'tenant:', !!tenant);
+      console.log('🔍 User details:', user ? { uid: user.uid, email: user.email } : 'Not logged in');
+      console.log('🔍 Tenant details:', tenant ? { id: tenant.id, plan: tenant.plan } : 'No tenant');
       
+      // If user is already logged in (came from Lifetime dashboard), upgrade their account
+      if (user && tenant) {
+        console.log('✅ User already logged in, upgrading existing account to White Label');
+        
+        // Upgrade existing tenant to include White Label permissions
+        const upgradeData = {
+          hasWhiteLabel: true,
+          whiteLabelActivatedAt: new Date(),
+          whiteLabelPaymentSession: sessionId,
+          plan: 'lifetime_with_whitelabel' // Enhanced plan type
+        };
+
+        console.log('📝 Updating tenant with upgrade data:', upgradeData);
+        // Update the existing tenant record
+        await setDoc(doc(db, 'MarketGenie_tenants', tenant.id), upgradeData, { merge: true });
+
+        // Create WhiteLabel partner record linked to existing account
+        const partnerDoc = {
+          tenantId: tenant.id,
+          userId: user.uid,
+          companyName: setupData.companyName || tenant.name || 'White Label Partner',
+          contactEmail: user.email,
+          status: 'active',
+          activatedAt: new Date(),
+          paymentSessionId: sessionId,
+          licenseType: 'whiteLabel',
+          revenueShare: 0.85, // Partner gets 85%
+          licensingFee: 497,
+          nextPaymentDate: null, // One-time payment
+          brandingConfig: setupData.brandingPreferences,
+          customerCount: 0,
+          monthlyRevenue: 0,
+          parentTenantId: tenant.id // Link to the original Lifetime account
+        };
+
+        console.log('📝 Creating partner record:', partnerDoc);
+        await setDoc(doc(db, 'MarketGenie_whitelabel_partners', user.uid), partnerDoc);
+        setPartnerData(partnerDoc);
+        setSetupStep('setup-complete');
+        
+        console.log('✅ Successfully upgraded Lifetime account to White Label!');
+        return;
+      }
+
       // If user is not logged in, they need to create an account first
+      console.log('❌ User not logged in or no tenant - showing account creation');
       if (!user) {
         setSetupStep('create-account');
         return;
@@ -137,8 +192,9 @@ const WhiteLabelPartnerSetup = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
           <div className="text-center mb-8">
             <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">🎉 Welcome to WhiteLabel Partnership!</h1>
-            <p className="text-gray-600 mt-2">Your license has been activated successfully</p>
+            <h1 className="text-3xl font-bold text-gray-800">🎉 White Label License Activated!</h1>
+            <p className="text-gray-600 mt-2">Your Lifetime account has been upgraded with White Label permissions</p>
+            <p className="text-sm text-gray-500 mt-1">You can now resell MarketGenie under your own brand with 85% revenue share</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">

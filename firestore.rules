@@ -237,6 +237,32 @@ service cloud.firestore {
                       isSuperAdmin());
     }
 
+    // WHITELABEL APPLICATIONS COLLECTION
+    // Lifetime plan users can create White Label applications
+    match /MarketGenie_whitelabel_applications/{applicationId} {
+      allow read, write: if isSuperAdmin() ||
+                            (isAuthenticated() && resource.data.applicantId == getUserTenantId()) ||
+                            (isAuthenticated() && resource.data.applicantEmail == request.auth.token.email);
+      allow create: if isAuthenticated() && 
+                       (request.resource.data.applicantId == getUserTenantId() || 
+                        request.resource.data.applicantEmail == request.auth.token.email);
+      allow list: if isSuperAdmin() ||
+                     (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com');
+    }
+
+    // WHITELABEL PARTNERS COLLECTION  
+    // Lifetime plan users can create and manage their White Label partner records
+    match /MarketGenie_whitelabel_partners/{partnerId} {
+      allow read, write: if isSuperAdmin() ||
+                            (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                            (isAuthenticated() && resource.data.contactEmail == request.auth.token.email);
+      allow create: if isAuthenticated() && 
+                       (request.resource.data.userId == request.auth.uid || 
+                        request.resource.data.contactEmail == request.auth.token.email);
+      allow list: if isSuperAdmin() ||
+                     (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com');
+    }
+
     // CATCH-ALL RULE FOR AUTHENTICATED FOUNDER ACCOUNT
     // Allow founder account access to any collection as fallback
     match /{collection}/{document=**} {

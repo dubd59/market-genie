@@ -15,6 +15,7 @@ const ProPlanSignup = () => {
   const [setupStep, setSetupStep] = useState('welcome');
   const [isLoading, setIsLoading] = useState(false);
   const [upgradeData, setUpgradeData] = useState(null);
+  const [accountCreationMode, setAccountCreationMode] = useState(false);
 
   // Check if this is a payment success redirect
   const paymentSuccess = searchParams.get('payment_success') === 'true';
@@ -22,10 +23,10 @@ const ProPlanSignup = () => {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    if (paymentSuccess && paymentType === 'pro' && sessionId) {
+    if (paymentSuccess && paymentType === 'pro' && sessionId && !accountCreationMode) {
       handlePaymentSuccess();
     }
-  }, [paymentSuccess, paymentType, sessionId]);
+  }, [paymentSuccess, paymentType, sessionId, setupStep, accountCreationMode]);
 
   const handlePaymentSuccess = async () => {
     try {
@@ -33,6 +34,7 @@ const ProPlanSignup = () => {
       
       // If user is not logged in, they need to create an account first
       if (!user) {
+        setAccountCreationMode(true);
         setSetupStep('create-account');
         return;
       }
@@ -84,15 +86,123 @@ const ProPlanSignup = () => {
 
       if (result.error) {
         alert('Error creating account: ' + result.error.message);
+        setIsLoading(false);
         return;
       }
 
-      // Continue with upgrade after account creation
-      await handlePaymentSuccess();
+      // Get the new user from the signup result
+      const newUser = result.data.user;
+      console.log('✅ Account created for user:', newUser.uid, newUser.email);
+
+      // Create tenant directly with the new user info
+      await createTenantForNewUser(newUser);
       
     } catch (error) {
       console.error('Account creation error:', error);
       alert('Error creating account. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  const createTenantForNewUser = async (newUser) => {
+    try {
+      setIsLoading(true);
+
+      // Create tenant with Pro plan for the new user
+      const tenantId = newUser.uid;
+      const tenantRef = doc(db, 'MarketGenie_tenants', tenantId);
+      
+      const proData = {
+        plan: 'pro',
+        planType: 'pro',
+        upgradeDate: new Date(),
+        paymentSessionId: sessionId,
+        subscriptionStatus: 'active',
+        monthlyFee: 20,
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        features: {
+          advancedCRM: true,
+          aiSwarm: true,
+          advancedIntegrations: true,
+          prioritySupport: true,
+          customFunnels: true,
+          advancedAnalytics: true
+        }
+      };
+
+      const newTenantData = {
+        id: tenantId,
+        ownerId: newUser.uid,
+        ownerEmail: newUser.email,
+        ownerName: newUser.displayName || newUser.email,
+        name: `${newUser.displayName || newUser.email}'s Pro Workspace`,
+        status: 'active',
+        role: 'user',
+        createdAt: new Date(),
+        settings: {
+          theme: 'light',
+          timezone: 'America/New_York',
+          currency: 'USD',
+          dateFormat: 'MM/DD/YYYY'
+        },
+        ...proData
+      };
+
+      // Ensure the auth token for the newly created user is fresh.
+      // Security rules require request.auth.uid to match ownerId.
+      try {
+        if (newUser && typeof newUser.getIdToken === 'function') {
+          await newUser.getIdToken(true);
+          // Small pause to allow auth state to settle in the client and server
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      } catch (tokenErr) {
+        console.warn('⚠️ Token refresh for new user failed (continuing):', tokenErr);
+      }
+
+      // Attempt to write the tenant. If permission denied, try a single retry
+      // after forcing a token refresh (covers race conditions between signUp and security rules).
+      try {
+        await setDoc(tenantRef, newTenantData);
+      } catch (writeErr) {
+        console.warn('⚠️ Tenant write failed, checking for permission issues:', writeErr);
+        const isPermission = writeErr?.code === 'permission-denied' || (writeErr?.message || '').toLowerCase().includes('permission');
+        if (isPermission) {
+          try {
+            console.log('🔄 Permission denied - refreshing token and retrying tenant write');
+            if (newUser && typeof newUser.getIdToken === 'function') {
+              await newUser.getIdToken(true);
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+            await setDoc(tenantRef, newTenantData);
+            console.log('✅ Tenant write succeeded on retry');
+          } catch (retryErr) {
+            console.error('❌ Tenant write failed after retry:', retryErr);
+            throw retryErr;
+          }
+        } else {
+          throw writeErr;
+        }
+      }
+
+      console.log('✅ Created tenant for new user:', tenantId);
+      setUpgradeData(proData);
+      setSetupStep('upgrade-complete');
+
+      // Refresh tenant context
+      if (refreshTenant) {
+        await refreshTenant();
+      }
+
+    } catch (error) {
+      console.error('Error creating tenant for new user:', error);
+      // Surface permission-specific errors clearly so we can triage faster
+      if (error?.code === 'permission-denied' || (error?.message || '').toLowerCase().includes('permission')) {
+        setSetupStep('permission-denied');
+        alert('We could not create your workspace due to permission rules. Please contact support and include your email.');
+      } else {
+        setSetupStep('error');
+      }
     } finally {
       setIsLoading(false);
     }

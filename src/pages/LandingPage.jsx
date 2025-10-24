@@ -35,6 +35,26 @@ export default function LandingPage() {
     }
   }
 
+  // Direct payment handlers - skip intermediate pages
+  const handlePlanPurchase = (planId) => {
+    switch(planId) {
+      case 'free':
+        // Free plan - go to signup
+        window.location.href = '/free-signup'
+        break
+      case 'pro':
+        // Pro plan - direct to Stripe
+        window.location.href = 'https://buy.stripe.com/test_cNibJ16vfdU08u89pXaVa05'
+        break
+      case 'lifetime':
+        // Lifetime plan - direct to Stripe  
+        window.location.href = 'https://buy.stripe.com/test_aFa14n7zj6rybGkeKhaVa06'
+        break
+      default:
+        window.location.href = '/register'
+    }
+  }
+
   const features = [
     {
       icon: Bot,
@@ -434,17 +454,12 @@ export default function LandingPage() {
                   ))}
                 </ul>
 
-                <Link
-                  to={
-                    plan.id === 'starter' ? '/free-signup' :
-                    plan.id === 'pro' ? '/pro' :
-                    plan.id === 'lifetime' ? '/lifetime' :
-                    '/register'
-                  }
+                <button
+                  onClick={() => handlePlanPurchase(plan.id)}
                   className="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center border border-white/30 text-white hover:bg-white/10"
                 >
                   {plan.buttonText}
-                </Link>
+                </button>
               </motion.div>
             ))}
           </div>

@@ -224,92 +224,63 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
 
   const [leadGenerationIntegrations, setLeadGenerationIntegrations] = useState([
     {
-      id: 'hunter-io',
-      name: 'Hunter.io Email Finding',
+      id: 'prospeo-io',
+      name: 'Prospeo.io',
       type: 'Lead Generation',
       status: 'disconnected',
-      icon: '🎯',
-      description: 'Find and verify email addresses for prospects',
+      icon: '🥇',
+      description: '75 FREE credits! Email + mobile finder with highest free tier',
       lastSync: 'Never',
-      account: 'Not connected'
+      account: 'Not connected',
+      freeCredits: '75 FREE credits',
+      features: ['Email Finder', 'Mobile Finder', 'Chrome Extension', 'API Access', 'Bulk Processing']
     },
     {
       id: 'voila-norbert',
-      name: 'Voila Norbert',
+      name: 'VoilaNorbert',
       type: 'Lead Generation',
       status: 'disconnected',
-      icon: '🎭',
-      description: 'Simple email finder with 50 free credits (no credit card)',
+      icon: '�',
+      description: '50 FREE credits! 98% success rate with Google Sheets add-on',
       lastSync: 'Never',
-      account: 'Not connected'
+      account: 'Not connected',
+      freeCredits: '50 FREE credits',
+      features: ['98% Success Rate', 'Chrome Extension', 'Google Sheets Add-on', 'API + Zapier']
     },
     {
-      id: 'rocketreach',
-      name: 'RocketReach',
+      id: 'hunter-io',
+      name: 'Hunter.io',
       type: 'Lead Generation',
       status: 'disconnected',
-      icon: '🚀',
-      description: 'High-quality contact data with phone numbers',
+      icon: '🎯',
+      description: '50 FREE credits! Most reliable email finder, easy setup',
       lastSync: 'Never',
-      account: 'Not connected'
+      account: 'Not connected',
+      freeCredits: '50 FREE credits',
+      features: ['98% Email Accuracy', 'Browser Extension', 'Domain Search', 'Email Verification']
+
     },
     {
-      id: 'apollo',
-      name: 'Apollo.io',
+      id: 'anymailfinder',
+      name: 'AnymailFinder',
       type: 'Lead Generation',
       status: 'disconnected',
-      icon: '🌟',
-      description: 'Sales intelligence and prospecting platform',
+      icon: '�',
+      description: '3-day FREE trial! Pay only for valid emails, credits roll over',
       lastSync: 'Never',
-      account: 'Not connected'
-    },
-    {
-      id: 'zoominfo',
-      name: 'ZoomInfo',
-      type: 'Lead Generation',
-      status: 'disconnected',
-      icon: '🔍',
-      description: 'B2B contact database and sales intelligence',
-      lastSync: 'Never',
-      account: 'Not connected'
-    },
-    {
-      id: 'clearbit',
-      name: 'Clearbit',
-      type: 'Lead Generation',
-      status: 'disconnected',
-      icon: '🏢',
-      description: 'Company data enrichment and lead scoring',
-      lastSync: 'Never',
-      account: 'Not connected'
-    },
+      account: 'Not connected',
+      freeCredits: '3-day FREE trial',
+    }
+  ]);
+
+  const [automationIntegrations, setAutomationIntegrations] = useState([
     {
       id: 'zapier',
       name: 'Zapier',
       type: 'Automation',
       status: 'disconnected',
       icon: '⚡',
-      description: 'Automate workflows between different apps and services',
-      lastSync: 'Never',
-      account: 'Not connected'
-    },
-    {
-      id: 'phantombuster',
-      name: 'PhantomBuster',
-      type: 'Lead Generation',
-      status: 'disconnected',
-      icon: '👻',
-      description: 'Automated lead generation and social media scraping',
-      lastSync: 'Never',
-      account: 'Not connected'
-    },
-    {
-      id: 'linkedin-helper',
-      name: 'LinkedIn Helper',
-      type: 'Lead Generation',
-      status: 'disconnected',
-      icon: '🤝',
-      description: 'Automated LinkedIn outreach and connection management',
+      description: 'Automate workflows between lead generation tools and Market Genie',
       lastSync: 'Never',
       account: 'Not connected'
     },
@@ -319,7 +290,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
       type: 'CRM Integration',
       status: 'disconnected',
       icon: '☁️',
-      description: 'Sync leads and contacts with Salesforce CRM',
+      description: 'Enterprise CRM for large teams (optional)',
       lastSync: 'Never',
       account: 'Not connected'
     }
@@ -554,10 +525,10 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           await onCalendarConnect('google');
           toast.success('Google Calendar connected successfully!');
         } else {
-          toast.info('Google Calendar integration coming soon!');
+          toast('Google Calendar integration coming soon!', { icon: 'ℹ️' });
         }
       } else if (integration.id === 'calendly') {
-        toast.info('Calendly integration coming soon!');
+        toast('Calendly integration coming soon!', { icon: 'ℹ️' });
       }
     } catch (error) {
       toast.error(`Failed to connect ${integration.name}: ${error.message}`);
@@ -613,6 +584,34 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
     } catch (error) {
       console.error('Error connecting integration:', error);
       toast.error(`Error connecting ${selectedIntegration.name}`);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    if (!selectedIntegration || !integrationConfig.apiKey) {
+      toast.error('Please enter an API key first');
+      return;
+    }
+
+    try {
+      toast('Testing connection...', { icon: 'ℹ️' });
+      
+      // Test the connection using the integration service
+      const result = await IntegrationService.testConnection(selectedIntegration.id, {
+        tenantId: tenant.id,
+        userId: user.uid,
+        integration: selectedIntegration,
+        config: integrationConfig
+      });
+
+      if (result.success) {
+        toast.success(`${selectedIntegration.name} connection test successful!`);
+      } else {
+        toast.error(result.error || `Connection test failed for ${selectedIntegration.name}`);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error(`Error testing ${selectedIntegration.name} connection`);
     }
   };
 
@@ -727,7 +726,10 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
             >
               Disconnect
             </button>
-            <button className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm">
+            <button 
+              onClick={() => connectIntegration(integration)}
+              className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+            >
               Configure
             </button>
           </>
@@ -786,6 +788,10 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
         case 'hunter-io':
           return [
             { key: 'apiKey', label: 'Hunter.io API Key', type: 'password', placeholder: 'Your Hunter.io API key' }
+          ];
+        case 'prospeo-io':
+          return [
+            { key: 'apiKey', label: 'Prospeo.io API Key', type: 'password', placeholder: 'Your Prospeo.io API key' }
           ];
         case 'voila-norbert':
           return [
@@ -851,6 +857,14 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
             </div>
 
             <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+                disabled={!integrationConfig.apiKey}
+              >
+                Test Connection
+              </button>
               <button
                 type="submit"
                 className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all"

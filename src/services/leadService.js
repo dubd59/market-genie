@@ -666,17 +666,40 @@ class LeadService {
   async searchDomainMultiProvider(tenantId, domain, limit = 5) {
     console.log(`🔍 Multi-provider search for domain: ${domain}`)
     
-    // Try providers in order of preference
-    const providers = [
-      { name: 'hunter-io', method: 'searchDomain' },
-      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' },
-      { name: 'rocketreach', method: 'searchRocketReach' }
+    // Define available providers with connection status check
+    const potentialProviders = [
+      { name: 'prospeo-io', backendName: 'prospeo', method: 'findEmailWithProvider' },
+      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' },
+      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' }
     ]
+    
+    // Check which providers are actually connected and available
+    const availableProviders = []
+    for (const provider of potentialProviders) {
+      try {
+        const credentials = await IntegrationService.getIntegrationCredentials(tenantId, provider.backendName)
+        if (credentials.success && credentials.data.status === 'connected') {
+          availableProviders.push(provider)
+          console.log(`✅ ${provider.name} is connected and available`)
+        } else {
+          console.log(`⚠️ ${provider.name} is not connected (status: ${credentials.data?.status || 'no credentials'})`)
+        }
+      } catch (error) {
+        console.log(`❌ ${provider.name} connection check failed:`, error.message)
+      }
+    }
+    
+    if (availableProviders.length === 0) {
+      console.log('❌ No lead generation providers are connected!')
+      return { success: false, data: [], providers: [], error: 'No connected providers available' }
+    }
+    
+    console.log(`🎯 Using ${availableProviders.length} connected providers:`, availableProviders.map(p => p.name))
     
     let allResults = []
     let successfulProviders = []
     
-    for (const provider of providers) {
+    for (const provider of availableProviders) {
       try {
         console.log(`🎯 Trying ${provider.name} for ${domain}`)
         
@@ -689,24 +712,23 @@ class LeadService {
             continue // Skip to next provider
           }
         } else if (provider.name === 'voila-norbert') {
-          // Voila Norbert works differently - find individuals
-          result = await IntegrationService.findEmailVoilaNorbert(tenantId, domain, 'Contact', 'Person')
-          if (result.success) {
-            // Convert single result to array format
-            result.data = [result.data]
-          }
-        } else if (provider.name === 'rocketreach') {
-          // RocketReach works differently - search by company name
-          const companyName = domain.split('.')[0]
-          result = await IntegrationService.searchRocketReach(tenantId, {
-            current_employer: companyName,
-            limit: limit
-          })
-          
-          // Handle CORS limitations gracefully
-          if (!result.success && result.corsLimited) {
-            console.log(`⚠️ ${provider.name} skipped due to CORS limitations`)
-            continue // Skip to next provider
+          // VoilaNorbert is designed for specific person searches, not domain searches
+          // Skip for domain-based lead generation to avoid wasting credits
+          console.log(`⚠️ Skipping VoilaNorbert for domain search - designed for specific person searches`)
+          result = { success: false, error: 'VoilaNorbert requires specific person names, not domain searches' };
+          continue;
+        } else if (provider.name === 'prospeo-io') {
+          // Use Firebase proxy for Prospeo domain search - pass null names to trigger domain search
+          result = await IntegrationService.findEmailWithProvider(tenantId, provider.backendName, domain, null, null, domain)
+          if (result.success && result.data) {
+            // Handle both single contact and multiple contacts format
+            if (result.data.contacts) {
+              // Domain search returns multiple contacts
+              result.data = result.data.contacts
+            } else if (result.data.email) {
+              // Single email result - convert to array format
+              result.data = [result.data]
+            }
           }
         }
         

@@ -4,6 +4,12 @@ const nodemailer = require('nodemailer');
 const axios = require('axios');
 const { Resend } = require('resend');
 
+// Import lead generation proxy
+const { leadGenProxy } = require('./leadGenProxy');
+
+// Export lead generation proxy
+exports.leadGenProxy = leadGenProxy;
+
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();

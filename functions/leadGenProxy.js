@@ -172,74 +172,21 @@ async function searchProspeo(apiKey, searchData) {
         throw new Error(countData.error || `Prospeo API error: ${countResponse.status}`);
       }
 
-      // Since domain-search doesn't exist, try common name patterns with email-finder
+      // Since domain-search doesn't exist, we cannot reliably get real domain emails
+      // Return empty results rather than fake/common name attempts
       if (countData.response && countData.response.count > 0) {
-        console.log(`Found ${countData.response.count} emails for ${domain}, trying common names...`);
+        console.log(`Found ${countData.response.count} emails for ${domain}, but domain-search API not available`);
         
-        // Try common executive names
-        const commonNames = [
-          { first: 'John', last: 'Smith' },
-          { first: 'Jane', last: 'Doe' },
-          { first: 'Mike', last: 'Johnson' },
-          { first: 'Sarah', last: 'Wilson' },
-          { first: 'David', last: 'Brown' }
-        ];
-        
-        const foundContacts = [];
-        
-        for (const name of commonNames.slice(0, 2)) { // Try first 2 to save credits
-          try {
-            const nameResponse = await fetch('https://api.prospeo.io/email-finder', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-KEY': apiKey
-              },
-              body: JSON.stringify({
-                first_name: name.first,
-                last_name: name.last,
-                company: domain
-              })
-            });
-            
-            const nameData = await nameResponse.json();
-            
-            if (nameResponse.ok && !nameData.error && nameData.response && nameData.response.email) {
-              foundContacts.push({
-                email: nameData.response.email,
-                first_name: name.first,
-                last_name: name.last,
-                company: domain,
-                phone: nameData.response.mobile || null,
-                confidence: 85,
-                source: 'Prospeo.io'
-              });
-            }
-          } catch (nameError) {
-            console.log(`Error trying ${name.first} ${name.last}:`, nameError.message);
+        return {
+          success: true,
+          provider: 'prospeo',
+          data: {
+            contacts: [],
+            message: `Domain has ${countData.response.count} emails in database, but requires specific person search`,
+            credits_remaining: countData.response?.credits || 'Unknown',
+            note: 'Use Contact Manager with specific names for this domain'
           }
-        }
-        
-        if (foundContacts.length > 0) {
-          return {
-            success: true,
-            provider: 'prospeo',
-            data: {
-              contacts: foundContacts,
-              credits_remaining: countData.response?.credits || 'Unknown'
-            }
-          };
-        } else {
-          return {
-            success: true,
-            provider: 'prospeo',
-            data: {
-              contacts: [],
-              message: `Domain has ${countData.response.count} emails but none found with common names`,
-              credits_remaining: countData.response?.credits || 'Unknown'
-            }
-          };
-        }
+        };
       } else {
         return {
           success: false,

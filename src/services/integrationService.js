@@ -165,6 +165,8 @@ class IntegrationService {
   async connectProspeo(tenantId, apiKey) {
     try {
       console.log('🔌 Testing Prospeo.io API connection via Firebase proxy...');
+      console.log('🏢 Tenant ID:', tenantId);
+      console.log('🔑 API Key received:', apiKey?.substring(0, 8) + '...');
       
       // Clean and validate the API key
       const cleanApiKey = apiKey.trim();
@@ -1778,6 +1780,13 @@ class IntegrationService {
   async connectService(serviceId, options) {
     try {
       const { tenantId, userId, integration, config } = options;
+      
+      console.log('🔗 connectService called with:', {
+        serviceId,
+        tenantId: tenantId?.substring(0, 8) + '...',
+        configKeys: Object.keys(config || {}),
+        apiKey: config?.apiKey?.substring(0, 8) + '...'
+      });
       
       if (!config || Object.keys(config).length === 0) {
         return { success: false, error: 'Configuration data is required' };

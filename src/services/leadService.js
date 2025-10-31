@@ -720,21 +720,31 @@ class LeadService {
         } else if (provider.name === 'prospeo-io') {
           // Use direct Prospeo API (75 free credits available!)
           result = await IntegrationService.searchDomainProspeo(tenantId, domain, limit)
-          if (result.success && result.data) {
-            // Prospeo returns ready-to-use lead data
-            console.log(`🎯 Prospeo returned ${result.data.length} leads`)
+          if (result.success && result.data && result.data.contacts) {
+            // Prospeo returns contacts array in result.data.contacts
+            console.log(`🎯 Prospeo returned ${result.data.contacts.length} leads`)
           } else if (result.error?.includes('insufficient credits')) {
             console.log(`⚠️ ${provider.name} out of credits - skipping`)
             continue
           }
         }
         
-        if (result && result.success && result.data && result.data.length > 0) {
-          console.log(`✅ ${provider.name} found ${result.data.length} contacts for ${domain}`)
+        // Handle different response structures
+        let contacts = [];
+        if (result && result.success && result.data) {
+          if (provider.name === 'prospeo-io' && result.data.contacts) {
+            contacts = result.data.contacts;
+          } else if (Array.isArray(result.data)) {
+            contacts = result.data;
+          }
+        }
+        
+        if (contacts.length > 0) {
+          console.log(`✅ ${provider.name} found ${contacts.length} contacts for ${domain}`)
           successfulProviders.push(provider.name)
           
           // Add provider info to each result
-          const enrichedResults = result.data.map(contact => ({
+          const enrichedResults = contacts.map(contact => ({
             ...contact,
             source: contact.source || provider.name,
             provider: provider.name

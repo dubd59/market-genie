@@ -4,8 +4,11 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 
 // Initialize Firebase Admin
+// Supports GOOGLE_APPLICATION_CREDENTIALS environment variable or default path
+const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './service-account-key.json';
+
 try {
-  const serviceAccount = JSON.parse(readFileSync('./service-account-key.json', 'utf8'));
+  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
   
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -18,6 +21,7 @@ try {
   console.log('\n📝 To fix this:');
   console.log('1. Download your service account key from Firebase Console');
   console.log('2. Save it as service-account-key.json in the project root');
+  console.log('   OR set GOOGLE_APPLICATION_CREDENTIALS environment variable');
   console.log('3. Run this script again');
   process.exit(1);
 }

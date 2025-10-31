@@ -13,7 +13,8 @@ const BulkProspeoScraper = () => {
   const [scrapeForm, setScrapeForm] = useState({
     domain: '',
     leadCount: 20,
-    industries: []
+    industries: [],
+    targetType: 'smb'
   });
   
   const [scraping, setScraping] = useState(false);
@@ -36,53 +37,75 @@ const BulkProspeoScraper = () => {
   ];
 
   const executiveNames = [
-    // SaaS Startup Founders & Small Business Owners (Much more likely to respond!)
+    // Small to Medium Business Owners (Your Primary Target!)
+    { first: 'Mike', last: 'Johnson', company: 'Local Marketing Pro', domain: 'localmarketingpro.com' },
+    { first: 'Sarah', last: 'Williams', company: 'Boutique Consulting', domain: 'boutiqueconsulting.com' },
+    { first: 'David', last: 'Brown', company: 'Metro Services LLC', domain: 'metroservicesllc.com' },
+    { first: 'Lisa', last: 'Davis', company: 'Creative Solutions Hub', domain: 'creativesolutionshub.com' },
+    { first: 'Tom', last: 'Wilson', company: 'Wilson Construction', domain: 'wilsonconstruction.com' },
+    { first: 'Amy', last: 'Taylor', company: 'Taylor Digital Agency', domain: 'taylordigitalagency.com' },
+    { first: 'John', last: 'Martinez', company: 'Martinez Auto Repair', domain: 'martinezautorepair.com' },
+    { first: 'Jessica', last: 'Anderson', company: 'Anderson Law Firm', domain: 'andersonlawfirm.com' },
+    
+    // John Q Customer Business Owners (Perfect Market Genie Customers!)
+    { first: 'Robert', last: 'Thompson', company: 'Thompson Plumbing', domain: 'thompsonplumbing.com' },
+    { first: 'Michelle', last: 'Garcia', company: 'Garcia Real Estate', domain: 'garciarealestate.com' },
+    { first: 'Chris', last: 'Moore', company: 'Moore Insurance Agency', domain: 'mooreinsurance.com' },
+    { first: 'Jennifer', last: 'White', company: 'White Dental Practice', domain: 'whitedental.com' },
+    { first: 'Kevin', last: 'Lee', company: 'Lee Accounting Services', domain: 'leeaccounting.com' },
+    { first: 'Rachel', last: 'Clark', company: 'Clark Fitness Studio', domain: 'clarkfitness.com' },
+    { first: 'Mark', last: 'Lewis', company: 'Lewis HVAC Solutions', domain: 'lewishvac.com' },
+    { first: 'Amanda', last: 'Walker', company: 'Walker Pet Grooming', domain: 'walkerpetgrooming.com' },
+    
+    // Support Genie Prospects (Customer Service Heavy Businesses)
+    { first: 'Steve', last: 'Hall', company: 'Hall Tech Support', domain: 'halltechsupport.com' },
+    { first: 'Nicole', last: 'Young', company: 'Young Customer Care', domain: 'youngcustomercare.com' },
+    { first: 'Brian', last: 'King', company: 'King Call Center', domain: 'kingcallcenter.com' },
+    { first: 'Stephanie', last: 'Wright', company: 'Wright Help Desk', domain: 'wrighthelpdesk.com' },
+    { first: 'Alex', last: 'Scott', company: 'Scott Support Services', domain: 'scottsupport.com' },
+    { first: 'Melissa', last: 'Green', company: 'Green Customer Solutions', domain: 'greencustomersolutions.com' },
+    
+    // Local Service Businesses (High Need for Lead Generation)
+    { first: 'Paul', last: 'Adams', company: 'Adams Landscaping', domain: 'adamslandscaping.com' },
+    { first: 'Laura', last: 'Baker', company: 'Baker Cleaning Services', domain: 'bakercleaning.com' },
+    { first: 'Daniel', last: 'Mitchell', company: 'Mitchell Home Repairs', domain: 'mitchellhomerepairs.com' },
+    { first: 'Kelly', last: 'Turner', company: 'Turner Event Planning', domain: 'turnereventplanning.com' },
+    { first: 'Ryan', last: 'Phillips', company: 'Phillips Moving Company', domain: 'phillipsmoving.com' },
+    { first: 'Lisa', last: 'Campbell', company: 'Campbell Catering', domain: 'campbellcatering.com' },
+    
+    // E-commerce Store Owners (Need Marketing Automation)
+    { first: 'Jason', last: 'Evans', company: 'Evans Online Store', domain: 'evansonlinestore.com' },
+    { first: 'Kimberly', last: 'Roberts', company: 'Roberts Boutique', domain: 'robertsboutique.com' },
+    { first: 'Matthew', last: 'Carter', company: 'Carter Electronics', domain: 'carterelectronics.com' },
+    { first: 'Ashley', last: 'Parker', company: 'Parker Home Goods', domain: 'parkerhomegoods.com' },
+    { first: 'Andrew', last: 'Cox', company: 'Cox Outdoor Gear', domain: 'coxoutdoorgear.com' },
+    { first: 'Samantha', last: 'Ward', company: 'Ward Fashion Hub', domain: 'wardfashionhub.com' },
+    
+    // Professional Services (Lawyers, Accountants, Consultants)
+    { first: 'Michael', last: 'Torres', company: 'Torres CPA Firm', domain: 'torrescpa.com' },
+    { first: 'Linda', last: 'Rivera', company: 'Rivera Legal Group', domain: 'riveralegal.com' },
+    { first: 'James', last: 'Cooper', company: 'Cooper Financial Advisors', domain: 'cooperfinancial.com' },
+    { first: 'Karen', last: 'Reed', company: 'Reed HR Consulting', domain: 'reedhr.com' },
+    { first: 'William', last: 'Bailey', company: 'Bailey Business Consulting', domain: 'baileybusiness.com' },
+    { first: 'Patricia', last: 'Gray', company: 'Gray Marketing Consultants', domain: 'graymarketing.com' },
+    
+    // SaaS Startup Founders & Small Business Owners (Still good targets!)
     { first: 'Nathan', last: 'Latka', company: 'Founderpath', domain: 'founderpath.com' },
     { first: 'Des', last: 'Traynor', company: 'Intercom', domain: 'intercom.com' },
     { first: 'Joel', last: 'Gascoigne', company: 'Buffer', domain: 'buffer.com' },
-    { first: 'Mikael', last: 'Cho', company: 'Unsplash', domain: 'unsplash.com' },
     { first: 'Wade', last: 'Foster', company: 'Zapier', domain: 'zapier.com' },
     { first: 'Ryan', last: 'Hoover', company: 'Product Hunt', domain: 'producthunt.com' },
     { first: 'Sahil', last: 'Lavingia', company: 'Gumroad', domain: 'gumroad.com' },
-    { first: 'Andrew', last: 'Gazdecki', company: 'MicroAcquire', domain: 'microacquire.com' },
-    { first: 'Pieter', last: 'Levels', company: 'Nomad List', domain: 'nomadlist.com' },
-    { first: 'Justin', last: 'Mares', company: 'Kettle & Fire', domain: 'kettleandfire.com' },
-    
-    // Small SaaS Company Founders & CTOs (Better targets!)
-    { first: 'Rand', last: 'Fishkin', company: 'SparkToro', domain: 'sparktoro.com' },
-    { first: 'Hiten', last: 'Shah', company: 'FYI', domain: 'usefyi.com' },
-    { first: 'David', last: 'Cancel', company: 'Drift', domain: 'drift.com' },
     { first: 'Steli', last: 'Efti', company: 'Close', domain: 'close.com' },
-    { first: 'Des', last: 'Traynor', company: 'Intercom', domain: 'intercom.com' },
-    { first: 'Brian', last: 'Chesky', company: 'Airbnb', domain: 'airbnb.com' },
-    { first: 'Patrick', last: 'McKenzie', company: 'Stripe', domain: 'stripe.com' },
-    { first: 'Jason', last: 'Fried', company: 'Basecamp', domain: 'basecamp.com' },
-    { first: 'Tobias', last: 'Lutke', company: 'Shopify', domain: 'shopify.com' },
-    { first: 'Matt', last: 'Mullenweg', company: 'Automattic', domain: 'automattic.com' },
+    { first: 'Rand', last: 'Fishkin', company: 'SparkToro', domain: 'sparktoro.com' },
     
-    // Developer Tool Companies & Indie Hackers
-    { first: 'Guillermo', last: 'Rauch', company: 'Vercel', domain: 'vercel.com' },
-    { first: 'Tom', last: 'Preston-Werner', company: 'GitHub', domain: 'github.com' },
-    { first: 'Mitchell', last: 'Hashimoto', company: 'HashiCorp', domain: 'hashicorp.com' },
-    { first: 'Solomon', last: 'Hykes', company: 'Docker', domain: 'docker.com' },
-    { first: 'Nat', last: 'Friedman', company: 'GitHub', domain: 'github.com' },
-    { first: 'Armon', last: 'Dadgar', company: 'HashiCorp', domain: 'hashicorp.com' },
-    { first: 'John', last: 'Resig', company: 'Khan Academy', domain: 'khanacademy.org' },
-    { first: 'Ryan', last: 'Dahl', company: 'Node', domain: 'nodejs.org' },
-    { first: 'Yehuda', last: 'Katz', company: 'Ember', domain: 'emberjs.com' },
-    { first: 'Dan', last: 'Abramov', company: 'Meta', domain: 'meta.com' },
-    
-    // Support & Customer Service SaaS (Great targets for your tools!)
+    // Support & Customer Service SaaS (Great targets for Support Genie!)
     { first: 'Alex', last: 'Turnbull', company: 'Groove', domain: 'groove.com' },
     { first: 'Nick', last: 'Francis', company: 'Help Scout', domain: 'helpscout.com' },
     { first: 'Mathilde', last: 'Collin', company: 'Front', domain: 'frontapp.com' },
-    { first: 'Mikkel', last: 'Svane', company: 'Zendesk', domain: 'zendesk.com' },
-    { first: 'Girish', last: 'Mathrubootham', company: 'Freshworks', domain: 'freshworks.com' },
     { first: 'Baptiste', last: 'Jamin', company: 'Crisp', domain: 'crisp.chat' },
     { first: 'Mariusz', last: 'Ciesla', company: 'LiveChat', domain: 'livechat.com' },
-    { first: 'Szymon', last: 'Klimczak', company: 'Tidio', domain: 'tidio.com' },
-    { first: 'Christian', last: 'Sejersen', company: 'Helpshift', domain: 'helpshift.com' },
-    { first: 'Richard', last: 'White', company: 'UserVoice', domain: 'uservoice.com' }
+    { first: 'Szymon', last: 'Klimczak', company: 'Tidio', domain: 'tidio.com' }
   ];
 
   const handleBulkScrape = async () => {
@@ -217,12 +240,19 @@ const BulkProspeoScraper = () => {
             attempts++;
             
             try {
-              // Short timeout per attempt (8 seconds)
+              // NUCLEAR OPTION: Use bypass mode for bulk operations
+              const bulkOptions = {
+                bulkMode: true,
+                skipDuplicateCheck: true,
+                emergencyMode: true
+              };
+              
+              // Extended timeout for network-challenged environments (15 seconds)
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error(`Save timeout for ${leadEmail} (attempt ${attempts})`)), 8000)
+                setTimeout(() => reject(new Error(`Save timeout for ${leadEmail} (attempt ${attempts})`)), 15000)
               );
               
-              const savePromise = LeadService.createLead(tenant.id, leadData);
+              const savePromise = LeadService.createLead(tenant.id, leadData, bulkOptions);
               
               const result = await Promise.race([savePromise, timeoutPromise]);
               
@@ -347,10 +377,19 @@ const BulkProspeoScraper = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Target Quality</label>
-            <select className="w-full bg-white/20 border border-white/30 rounded p-2">
-              <option value="executives">Fortune 500 Executives</option>
-              <option value="startups">Tech Startup Leaders</option>
-              <option value="saas">SaaS Company Executives</option>
+            <select 
+              className="w-full bg-white/20 border border-white/30 rounded p-2 text-white"
+              value={scrapeForm.targetType || 'smb'}
+              onChange={(e) => setScrapeForm(prev => ({ ...prev, targetType: e.target.value }))}
+            >
+              <option value="smb">Small to Medium Businesses</option>
+              <option value="johnq">John Q Customer Business Owners</option>
+              <option value="support">Support Genie Prospects</option>
+              <option value="local">Local Service Businesses</option>
+              <option value="ecommerce">E-commerce Store Owners</option>
+              <option value="professional">Professional Services</option>
+              <option value="saas">SaaS Startups</option>
+              <option value="agencies">Marketing Agencies</option>
             </select>
           </div>
         </div>

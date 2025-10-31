@@ -1,5 +1,5 @@
 import { FirebaseAPI } from '../FirebaseAPI.js'
-import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc } from '../security/SecureFirebase.js'
+import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc, setDoc } from '../security/SecureFirebase.js'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import IntegrationService from './integrationService.js'
@@ -32,13 +32,25 @@ class LeadService {
   }
 
   // Create a new lead (with duplicate checking)
-  async createLead(tenantId, leadData) {
+  async createLead(tenantId, leadData, options = {}) {
     try {
-      // Check if lead with this email already exists
-      const existingLead = await this.findLeadByEmail(tenantId, leadData.email)
-      if (existingLead) {
-        console.log(`Skipping duplicate lead: ${leadData.email}`)
-        return { success: false, error: 'Lead already exists', duplicate: true }
+      // NUCLEAR OPTION: Complete bypass for bulk operations
+      if (options.bulkMode || options.skipDuplicateCheck) {
+        console.log(`🚀 BULK MODE: Skipping all validation checks for ${leadData.email}`);
+      } else {
+        // EMERGENCY FIX: Skip duplicate check during network issues
+        let existingLead = null;
+        try {
+          existingLead = await this.findLeadByEmail(tenantId, leadData.email);
+        } catch (duplicateCheckError) {
+          console.warn(`⚠️ Duplicate check failed, proceeding with save: ${duplicateCheckError.message}`);
+          // Continue with save operation even if duplicate check fails
+        }
+        
+        if (existingLead) {
+          console.log(`Skipping duplicate lead: ${leadData.email}`)
+          return { success: false, error: 'Lead already exists', duplicate: true }
+        }
       }
 
       const enrichedLead = {
@@ -53,14 +65,59 @@ class LeadService {
       }
 
       const leadsCollection = this.getLeadsCollection(tenantId)
-      const docRef = await addDoc(leadsCollection, enrichedLead)
       
-      if (docRef.id) {
-        await this.updateTenantUsage(tenantId, 'leads', 1)
-        return { success: true, data: { id: docRef.id, ...enrichedLead } }
+      // NUCLEAR OPTION: Direct Firebase write with aggressive retry
+      if (options.bulkMode) {
+        console.log(`🚀 BULK MODE: Using direct Firebase write for ${leadData.email}`);
+        try {
+          // Generate a Firestore-safe unique ID (no underscores, only alphanumeric)
+          const timestamp = Date.now().toString();
+          const randomStr = Math.random().toString(36).substr(2, 9);
+          const uniqueId = `${timestamp}${randomStr}`;
+          
+          // Use the secure doc function with the correct parameters
+          const collectionPath = `MarketGenie_tenants/${tenantId}/leads`;
+          const docRef = doc(db, collectionPath, uniqueId);
+          
+          await setDoc(docRef, enrichedLead);
+          console.log(`✅ BULK MODE: Direct write successful for ${leadData.email}`);
+          
+          return { success: true, data: { id: docRef.id, ...enrichedLead } };
+        } catch (bulkError) {
+          console.error(`❌ BULK MODE: Direct write failed for ${leadData.email}:`, bulkError);
+          // Fall through to regular retry logic
+        }
+      }
+      
+      // EMERGENCY FIX: Add retry logic with exponential backoff
+      let retries = 3;
+      let lastError = null;
+      
+      while (retries > 0) {
+        try {
+          const docRef = await addDoc(leadsCollection, enrichedLead)
+          
+          if (docRef.id) {
+            try {
+              await this.updateTenantUsage(tenantId, 'leads', 1)
+            } catch (usageError) {
+              console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
+              // Don't fail the entire operation for usage tracking
+            }
+            return { success: true, data: { id: docRef.id, ...enrichedLead } }
+          }
+          break;
+        } catch (error) {
+          lastError = error;
+          retries--;
+          if (retries > 0) {
+            console.warn(`🔄 Retrying lead save (${retries} attempts left): ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+          }
+        }
       }
 
-      return { success: false, error: 'Failed to create lead' }
+      return { success: false, error: lastError?.message || 'Failed to create lead after retries' }
     } catch (error) {
       console.error('Error creating lead:', error)
       return { success: false, error: error.message }

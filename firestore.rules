@@ -129,6 +129,32 @@ service cloud.firestore {
                      (request.auth.token.email == 'dubdproducts@gmail.com' || isSuperAdmin());
     }
 
+    // LEADS COLLECTION
+    // Lead data isolated by tenant - CRITICAL FOR LEAD SCRAPER
+    match /MarketGenie_tenants/{tenantId}/leads/{leadId} {
+      // EMERGENCY FIX: More permissive rules for lead operations
+      allow read, write, create, delete: if isAuthenticated() && 
+                            (belongsToUserTenant(tenantId) || 
+                             (tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com') ||
+                             isSuperAdmin() ||
+                             request.auth.token.email == 'dubdproducts@gmail.com');
+      allow list: if isAuthenticated() && 
+                     (belongsToUserTenant(tenantId) || 
+                      (tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com') ||
+                      isSuperAdmin() ||
+                      request.auth.token.email == 'dubdproducts@gmail.com');
+    }
+
+    // LEADS COLLECTION - ALTERNATIVE PATH (for backward compatibility)
+    match /leads/{leadId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                            (request.auth.token.email == 'dubdproducts@gmail.com' ||
+                             isSuperAdmin());
+      allow list: if isAuthenticated() && 
+                     (request.auth.token.email == 'dubdproducts@gmail.com' ||
+                      isSuperAdmin());
+    }
+
     // TASKS COLLECTION
     // Tasks isolated by tenant
     match /tasks/{taskId} {

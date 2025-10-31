@@ -219,62 +219,6 @@ class IntegrationService {
     }
   }
 
-  // Find email using Prospeo.io via Firebase proxy
-  async findEmailProspeo(tenantId, domain, firstName, lastName, company) {
-    try {
-      const credentials = await this.getIntegrationCredentials(tenantId, 'prospeo-io');
-      if (!credentials.success) {
-        return { success: false, error: 'Prospeo.io not connected' };
-      }
-
-      console.log(`🔍 Prospeo email search: ${firstName} ${lastName} at ${company || domain}`);
-
-      // Use Firebase proxy for email finding
-      const PROXY_URL = 'https://leadgenproxy-aopxj7f3aa-uc.a.run.app';
-
-      const response = await fetch(PROXY_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          provider: 'prospeo',
-          apiKey: credentials.data.apiKey,
-          searchData: {
-            firstName: firstName,
-            lastName: lastName,
-            company: company || domain,
-            domain: domain
-          }
-        })
-      });
-
-      const result = await response.json();
-      console.log('Prospeo proxy email finder response:', result);
-
-      if (result.success && result.data.email) {
-        return {
-          success: true,
-          data: {
-            email: result.data.email,
-            first_name: result.data.first_name || firstName,
-            last_name: result.data.last_name || lastName,
-            company: company || domain,
-            domain: result.data.domain || domain,
-            email_status: result.data.email_status,
-            confidence: 95,
-            source: 'Prospeo.io'
-          }
-        };
-      }
-
-      return { success: false, error: result.error || 'No email found for this person' };
-    } catch (error) {
-      console.error('❌ Prospeo email finding error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
   // Search domain using Prospeo.io via Firebase proxy
   async searchDomainProspeo(tenantId, domain, limit = 5) {
     try {
@@ -525,13 +469,22 @@ class IntegrationService {
         company: company
       };
 
+      // Map integration names to proxy provider names
+      const providerMap = {
+        'prospeo-io': 'prospeo',
+        'voilanorbert': 'voilanorbert',
+        'hunter': 'hunter'
+      };
+      
+      const proxyProvider = providerMap[provider] || provider;
+
       const response = await fetch('https://leadgenproxy-aopxj7f3aa-uc.a.run.app', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          provider: provider,
+          provider: proxyProvider,
           apiKey: credentials.data.apiKey,
           searchData: searchData
         })
@@ -568,7 +521,7 @@ class IntegrationService {
   }
 
   async findEmailProspeo(tenantId, domain, firstName, lastName, company) {
-    return await this.findEmailWithProvider(tenantId, 'prospeo', domain, firstName, lastName, company);
+    return await this.findEmailWithProvider(tenantId, 'prospeo-io', domain, firstName, lastName, company);
   }
 
   async findEmailHunter(tenantId, domain, firstName, lastName) {

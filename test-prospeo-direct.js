@@ -6,7 +6,7 @@ async function testProspeoAPIDirect() {
   console.log('==========================');
   
   // You'll need to get your API key from Firebase or the UI
-  const apiKey = 'YOUR_PROSPEO_API_KEY_HERE'; // Replace with your actual API key
+  const apiKey = 'pk_d96cfaf95fe8e43df4e5e4346b949ba4f9ff16b5'; // Replace with your actual API key
   
   if (apiKey === 'YOUR_PROSPEO_API_KEY_HERE') {
     console.log('❌ Please update the API key in this script first!');
@@ -95,4 +95,4 @@ This will test:
 `);
 
 // Uncomment to run automatically:
-// testProspeoAPIDirect().then(result => console.log('Final result:', result));
+testProspeoAPIDirect().then(result => console.log('Final result:', result));

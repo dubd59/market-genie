@@ -76,20 +76,27 @@ async function searchProspeo(apiKey, searchData) {
   
   const { firstName, lastName, company, domain } = searchData;
   
+  console.log('🔍 Prospeo search data received:', { firstName, lastName, company, domain });
+  
   try {
     // If we have specific person info, use email-finder endpoint
     if (firstName && lastName && firstName !== 'null' && lastName !== 'null') {
+      // Prospeo expects company field with domain as value
+      const requestBody = {
+        first_name: firstName,
+        last_name: lastName,
+        company: domain  // Use domain as company - this is what works!
+      };
+      
+      console.log('📡 Sending to Prospeo API (domain as company):', requestBody);
+      
       const response = await fetch('https://api.prospeo.io/email-finder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-KEY': apiKey
         },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          company: company || domain
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();

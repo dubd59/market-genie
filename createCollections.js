@@ -1,17 +1,28 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
+// Create collections using Firebase Admin SDK
+// This script has full administrative access and bypasses Firestore security rules
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDRdYaXJkJNZIkMzKM4cZEFTADOJJhDiEs",
-  authDomain: "market-genie-f2d41.firebaseapp.com",
-  projectId: "market-genie-f2d41",
-  storageBucket: "market-genie-f2d41.firebasestorage.app",
-  messagingSenderId: "1023666208479",
-  appId: "1:1023666208479:web:7cf3c7b4db4b24cfb02e6c"
-};
+// Initialize Firebase Admin
+try {
+  const serviceAccount = JSON.parse(readFileSync('./service-account-key.json', 'utf8'));
+  
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: 'market-genie-f2d41'
+  });
+  
+  console.log('✅ Firebase Admin initialized successfully!');
+} catch (error) {
+  console.log('❌ Error loading service account key:', error.message);
+  console.log('\n📝 To fix this:');
+  console.log('1. Download your service account key from Firebase Console');
+  console.log('2. Save it as service-account-key.json in the project root');
+  console.log('3. Run this script again');
+  process.exit(1);
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = admin.firestore();
 
 async function createCollections() {
   console.log('🚀 Creating all database collections...');
@@ -19,7 +30,7 @@ async function createCollections() {
   try {
     // 1. Create Tenants Collection
     console.log('📁 Creating tenants collection...');
-    await setDoc(doc(db, 'tenants', 'founder-tenant'), {
+    await db.collection('tenants').doc('founder-tenant').set({
       id: "founder-tenant",
       name: "Market Genie - Founder Account",
       domain: "marketgenie.com",
@@ -46,8 +57,8 @@ async function createCollections() {
         status: "active",
         subscriptionId: "sub_enterprise_001"
       },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
     });
 
     // 2. Create Deals Collection
@@ -75,8 +86,8 @@ async function createCollections() {
           decisionMakers: 3
         },
         activities: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "deal_002",
@@ -99,8 +110,8 @@ async function createCollections() {
           monthlyVolume: "10000 contacts"
         },
         activities: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "deal_003",
@@ -124,13 +135,13 @@ async function createCollections() {
           migrationComplexity: "high"
         },
         activities: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
       }
     ];
 
     for (const deal of deals) {
-      await setDoc(doc(db, 'deals', deal.id), deal);
+      await db.collection('deals').doc(deal.id).set(deal);
     }
 
     // 3. Create Contacts Collection
@@ -171,10 +182,10 @@ async function createCollections() {
           technicalExpertise: "High"
         },
         notes: "Very interested in enterprise solutions. Has budget approval authority. Technical background helps with complex implementations.",
-        lastContactDate: serverTimestamp(),
+        lastContactDate: admin.firestore.FieldValue.serverTimestamp(),
         nextFollowUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "contact_002",
@@ -212,8 +223,8 @@ async function createCollections() {
         notes: "Looking for marketing automation tools. Fast-growing startup with good funding.",
         lastContactDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         nextFollowUpDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "contact_003",
@@ -250,13 +261,13 @@ async function createCollections() {
         notes: "Needs to modernize current systems. Large organization with complex requirements.",
         lastContactDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         nextFollowUpDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }
     ];
 
     for (const contact of contacts) {
-      await setDoc(doc(db, 'contacts', contact.id), contact);
+      await db.collection('contacts').doc(contact.id).set(contact);
     }
 
     // 4. Create Companies Collection
@@ -296,8 +307,8 @@ async function createCollections() {
         keyContacts: ["contact_001"],
         activeDeals: ["deal_001"],
         totalDealValue: 75000,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "company_002",
@@ -333,8 +344,8 @@ async function createCollections() {
         keyContacts: ["contact_002"],
         activeDeals: ["deal_002"],
         totalDealValue: 25000,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "company_003",
@@ -369,13 +380,13 @@ async function createCollections() {
         keyContacts: ["contact_003"],
         activeDeals: ["deal_003"],
         totalDealValue: 45000,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }
     ];
 
     for (const company of companies) {
-      await setDoc(doc(db, 'companies', company.id), company);
+      await db.collection('companies').doc(company.id).set(company);
     }
 
     // 5. Create Tasks Collection
@@ -404,8 +415,8 @@ async function createCollections() {
           attendees: "Sarah Johnson, CTO + 3 team members",
           duration: "60 minutes"
         },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "task_002",
@@ -431,18 +442,18 @@ async function createCollections() {
           timeline: "4-6 weeks implementation"
         },
         progress: 35,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }
     ];
 
     for (const task of tasks) {
-      await setDoc(doc(db, 'tasks', task.id), task);
+      await db.collection('tasks').doc(task.id).set(task);
     }
 
     // 6. Create Settings Collection
     console.log('⚙️ Creating settings collection...');
-    await setDoc(doc(db, 'settings', 'general_settings'), {
+    await db.collection('settings').doc('general_settings').set({
       tenantId: "founder-tenant",
       category: "general",
       companyInfo: {
@@ -465,11 +476,11 @@ async function createCollections() {
         sms: false,
         desktop: true
       },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    await setDoc(doc(db, 'settings', 'crm_settings'), {
+    await db.collection('settings').doc('crm_settings').set({
       tenantId: "founder-tenant",
       category: "crm",
       pipeline: {
@@ -504,8 +515,8 @@ async function createCollections() {
         autoLogEmails: true,
         autoUpdateLastContact: true
       },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     console.log(`

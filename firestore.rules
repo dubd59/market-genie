@@ -81,48 +81,40 @@ service cloud.firestore {
       match /leads/{leadId} {
         allow read, write, delete: if isAuthenticated() && 
                                       (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId ||
-                                       request.auth.token.email == 'dubdproducts@gmail.com');
+                                       request.auth.token.tenantId == tenantId);
         allow create: if isAuthenticated() && 
                          (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId ||
-                          request.auth.token.email == 'dubdproducts@gmail.com');
+                          request.auth.token.tenantId == tenantId);
       }
       
       // Campaigns subcollection
       match /campaigns/{campaignId} {
         allow read, write, delete: if isAuthenticated() && 
                                       (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId ||
-                                       request.auth.token.email == 'dubdproducts@gmail.com');
+                                       request.auth.token.tenantId == tenantId);
         allow create: if isAuthenticated() && 
                          (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId ||
-                          request.auth.token.email == 'dubdproducts@gmail.com');
+                          request.auth.token.tenantId == tenantId);
       }
       
       // Analytics subcollection
       match /analytics/{analyticId} {
         allow read, write, delete: if isAuthenticated() && 
                                       (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId ||
-                                       request.auth.token.email == 'dubdproducts@gmail.com');
+                                       request.auth.token.tenantId == tenantId);
         allow create: if isAuthenticated() && 
                          (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId ||
-                          request.auth.token.email == 'dubdproducts@gmail.com');
+                          request.auth.token.tenantId == tenantId);
       }
       
       // Other tenant-specific subcollections catch-all
       match /{subcollection}/{document=**} {
         allow read, write, delete: if isAuthenticated() && 
                                       (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId ||
-                                       request.auth.token.email == 'dubdproducts@gmail.com');
+                                       request.auth.token.tenantId == tenantId);
         allow create: if isAuthenticated() && 
                          (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId ||
-                          request.auth.token.email == 'dubdproducts@gmail.com');
+                          request.auth.token.tenantId == tenantId);
       }
     }
 

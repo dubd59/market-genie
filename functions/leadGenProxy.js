@@ -96,12 +96,38 @@ async function searchProspeo(apiKey, searchData) {
       console.log('Prospeo email-finder response:', data);
       
       if (!response.ok) {
-        throw new Error(data.error || `Prospeo API error: ${response.status}`);
+        const errorMsg = typeof data.error === 'string' ? data.error : `Prospeo API error: ${response.status}`;
+        throw new Error(errorMsg);
       }
 
       // Check if the API returned an error
-      if (data.error) {
-        throw new Error(data.message || 'Prospeo API returned an error');
+      if (data.error === true) {
+        // Handle specific Prospeo error codes
+        if (data.message === 'NO_RESULT') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'No email found for this person'
+          };
+        } else if (data.message === 'INVALID_DOMAIN_NAME') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'Invalid domain name provided'
+          };
+        } else if (data.message === 'NO_VALID_NAME') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'Invalid name provided'
+          };
+        } else {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: data.message || 'Prospeo API returned an error'
+          };
+        }
       }
 
       // Check if email was found in the correct response format
@@ -426,16 +452,27 @@ async function handleProspeoTest(req, res) {
     const data = await response.json();
     console.log('Prospeo API response data:', data);
     
-    if (response.ok && !data.error) {
+    if (response.ok && data.error === false) {
       return res.json({ 
         success: true, 
         message: 'Prospeo.io connection successful!',
         credits: data.response?.remaining_credits || 'Unknown'
       });
     } else {
+      // Handle Prospeo API errors more specifically
+      let errorMessage = 'Connection failed';
+      
+      if (data.error === true) {
+        errorMessage = data.message || 'Prospeo API returned an error';
+      } else if (data.error) {
+        errorMessage = typeof data.error === 'string' ? data.error : 'API error';
+      } else if (!response.ok) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      
       return res.json({ 
         success: false, 
-        error: data.error || data.message || `API responded with status ${response.status}`,
+        error: errorMessage,
         details: data
       });
     }

@@ -1690,6 +1690,7 @@ class IntegrationService {
   async testLeadProvider(provider, apiKey) {
     try {
       console.log(`🔌 Testing ${provider} API connection through Firebase proxy...`)
+      console.log(`🔑 API Key being used: ${apiKey?.substring(0, 8)}...`);
       
       // Use different test data for each provider based on their API requirements
       let testData;
@@ -1703,7 +1704,7 @@ class IntegrationService {
         testData = {
           firstName: 'Tim',
           lastName: 'Cook',
-          company: 'Apple'
+          company: 'apple.com'  // Use domain format instead of company name
         };
       } else {
         testData = {

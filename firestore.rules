@@ -75,6 +75,16 @@ service cloud.firestore {
       allow list: if isSuperAdmin() ||
                      (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com') ||
                      isAuthenticated();
+      
+      // SUBCOLLECTIONS FOR TENANT-SPECIFIC DATA
+      // All subcollections under a tenant inherit the same access control:
+      // - Users can access their own tenant's subcollections (via tenantId claim)
+      // - Super admins can access all subcollections
+      match /{subcollection}/{document=**} {
+        allow read, write, create, delete: if isAuthenticated() && 
+                                              (isSuperAdmin() || 
+                                               request.auth.token.tenantId == tenantId);
+      }
     }
 
     // DEALS COLLECTION  

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTenant } from '../contexts/TenantContext'
 import LeadService from '../services/leadService'
+import ProspeoLeadSearch from './ProspeoLeadSearch'
 import toast from 'react-hot-toast'
 
 const LiveLeadGeneration = () => {
@@ -402,6 +403,11 @@ const LiveLeadGeneration = () => {
                   Add Lead
                 </button>
               </form>
+            </div>
+
+            {/* Prospeo Lead Search */}
+            <div className="mt-6">
+              <ProspeoLeadSearch />
             </div>
           </div>
 

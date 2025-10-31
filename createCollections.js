@@ -57,8 +57,8 @@ async function createCollections() {
         status: "active",
         subscriptionId: "sub_enterprise_001"
       },
-      createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     // 2. Create Deals Collection
@@ -86,8 +86,8 @@ async function createCollections() {
           decisionMakers: 3
         },
         activities: [],
-        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "deal_002",
@@ -110,8 +110,8 @@ async function createCollections() {
           monthlyVolume: "10000 contacts"
         },
         activities: [],
-        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       {
         id: "deal_003",
@@ -135,8 +135,8 @@ async function createCollections() {
           migrationComplexity: "high"
         },
         activities: [],
-        createdAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }
     ];
 

@@ -79,42 +79,30 @@ service cloud.firestore {
       // SUBCOLLECTIONS FOR TENANT-SPECIFIC DATA
       // Leads subcollection
       match /leads/{leadId} {
-        allow read, write, delete: if isAuthenticated() && 
-                                      (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId);
-        allow create: if isAuthenticated() && 
-                         (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId);
+        allow read, write, create, delete: if isAuthenticated() && 
+                                              (isSuperAdmin() || 
+                                               request.auth.token.tenantId == tenantId);
       }
       
       // Campaigns subcollection
       match /campaigns/{campaignId} {
-        allow read, write, delete: if isAuthenticated() && 
-                                      (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId);
-        allow create: if isAuthenticated() && 
-                         (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId);
+        allow read, write, create, delete: if isAuthenticated() && 
+                                              (isSuperAdmin() || 
+                                               request.auth.token.tenantId == tenantId);
       }
       
       // Analytics subcollection
       match /analytics/{analyticId} {
-        allow read, write, delete: if isAuthenticated() && 
-                                      (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId);
-        allow create: if isAuthenticated() && 
-                         (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId);
+        allow read, write, create, delete: if isAuthenticated() && 
+                                              (isSuperAdmin() || 
+                                               request.auth.token.tenantId == tenantId);
       }
       
       // Other tenant-specific subcollections catch-all
       match /{subcollection}/{document=**} {
-        allow read, write, delete: if isAuthenticated() && 
-                                      (isSuperAdmin() || 
-                                       request.auth.token.tenantId == tenantId);
-        allow create: if isAuthenticated() && 
-                         (isSuperAdmin() || 
-                          request.auth.token.tenantId == tenantId);
+        allow read, write, create, delete: if isAuthenticated() && 
+                                              (isSuperAdmin() || 
+                                               request.auth.token.tenantId == tenantId);
       }
     }
 

@@ -2875,6 +2875,11 @@ END:VCALENDAR`;
                     <p className="text-gray-600">Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
                   </div>
 
+                  {/* Bulk Prospeo Scraper - TOP PRIORITY */}
+                  <div className="mb-8">
+                    <BulkProspeoScraper />
+                  </div>
+
                   {/* Enhanced Scraping Agents */}
                   <div className="bg-white rounded-xl shadow-xl p-8 border border-blue-200">
                     <div className="flex items-center justify-between mb-6">

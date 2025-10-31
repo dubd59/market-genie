@@ -1,26 +1,36 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+// Check leads using Firebase Admin SDK
+// This script has full administrative access and bypasses Firestore security rules
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyBNJjpGUFq8R3eeM8oL7JaQw_tnJpULKrk',
-  authDomain: 'marketeenie-0121.firebaseapp.com',
-  projectId: 'marketeenie-0121',
-  storageBucket: 'marketeenie-0121.firebasestorage.app',
-  messagingSenderId: '295720650414',
-  appId: '1:295720650414:web:4b9b1e0b59fbae6a3d3e65',
-  measurementId: 'G-V19EEJGN2F'
-};
+// Initialize Firebase Admin
+try {
+  const serviceAccount = JSON.parse(readFileSync('./service-account-key.json', 'utf8'));
+  
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: 'market-genie-f2d41'
+  });
+  
+  console.log('✅ Firebase Admin initialized successfully!');
+} catch (error) {
+  console.log('❌ Error loading service account key:', error.message);
+  console.log('\n📝 To fix this:');
+  console.log('1. Download your service account key from Firebase Console');
+  console.log('2. Save it as service-account-key.json in the project root');
+  console.log('3. Run this script again');
+  process.exit(1);
+}
+
+const db = admin.firestore();
 
 async function checkLeads() {
   try {
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    
     console.log('🔍 Checking for leads in your database...');
     
-    // Check your tenant's leads collection
-    const leadsRef = collection(db, 'MarketGenie_tenants', 'genie-labs', 'leads');
-    const snapshot = await getDocs(leadsRef);
+    // Check your tenant's leads collection (as subcollection)
+    const leadsRef = db.collection('MarketGenie_tenants').doc('genie-labs').collection('leads');
+    const snapshot = await leadsRef.get();
     
     console.log(`\n📊 RESULTS:`);
     console.log(`Total leads found: ${snapshot.size}`);
@@ -33,15 +43,15 @@ async function checkLeads() {
       });
     } else {
       console.log('\n❌ NO LEADS FOUND IN DATABASE');
-      console.log('This confirms that while the scraper found emails and used 9 Prospeo credits,');
-      console.log('ALL database saves failed due to Firebase connection timeouts.');
-      console.log('\n🔧 The leads were lost because:');
-      console.log('1. Prospeo API successfully found 17 emails');
-      console.log('2. Each database save attempt timed out after 10 seconds');
-      console.log('3. No leads were actually stored despite scraper "completion"');
+      console.log('This may indicate that:');
+      console.log('1. Leads have not been scraped yet');
+      console.log('2. Database save operations failed');
+      console.log('3. The tenant ID "genie-labs" may not exist or is incorrect');
+      console.log('\n💡 Try running checkDatabase.js to see all tenants');
     }
   } catch (error) {
     console.error('❌ Error checking database:', error.message);
+    console.error('Full error:', error);
   }
 }
 

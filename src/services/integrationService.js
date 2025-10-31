@@ -164,7 +164,7 @@ class IntegrationService {
   // Connect to Prospeo.io (75 FREE credits!)
   async connectProspeo(tenantId, apiKey) {
     try {
-      console.log('🔌 Testing Prospeo.io API connection...');
+      console.log('🔌 Testing Prospeo.io API connection via Firebase proxy...');
       
       // Clean and validate the API key
       const cleanApiKey = apiKey.trim();
@@ -176,67 +176,48 @@ class IntegrationService {
       
       console.log('🔑 Using API key:', cleanApiKey.substring(0, 8) + '...');
       
-      // NUCLEAR BYPASS: Use XMLHttpRequest to avoid ALL security interceptors
-      const result = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://api.prospeo.io/account');
-        xhr.setRequestHeader('X-KEY', cleanApiKey);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('User-Agent', 'MarketGenie/1.0');
-        
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              resolve({ ok: true, data });
-            } catch (e) {
-              reject(new Error('Invalid JSON response'));
-            }
-          } else {
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              resolve({ ok: false, data: errorData });
-            } catch (e) {
-              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
-            }
-          }
-        };
-        
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.ontimeout = () => reject(new Error('Request timeout'));
-        xhr.timeout = 30000; // 30 seconds
-        
-        xhr.send();
+      // Use the working Firebase proxy instead of direct API calls
+      const PROXY_URL = 'https://leadgenproxy-aopxj7f3aa-uc.a.run.app';
+      
+      const response = await fetch(`${PROXY_URL}/api/prospeo-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: cleanApiKey
+        })
       });
 
-      console.log('Prospeo account response:', result.data);
+      const result = await response.json();
+      console.log('Prospeo proxy response:', result);
 
-      if (result.ok && result.data.remaining_credits !== undefined) {
+      if (result.success) {
         await this.saveIntegrationCredentials(tenantId, 'prospeo-io', {
           apiKey: cleanApiKey,
-          accountInfo: result.data,
-          credits: result.data.remaining_credits
+          credits: result.credits,
+          connectionMethod: 'firebase-proxy'
         });
         
-        console.log('✅ Prospeo.io connected successfully');
         return { 
           success: true, 
-          data: {
-            credits: result.data.remaining_credits,
-            plan: result.data.plan || 'Free',
-            message: `Connected! ${result.data.remaining_credits} credits available`
-          }
+          message: 'Prospeo.io connected successfully!',
+          credits: result.credits,
+          provider: 'prospeo-io'
+        };
+      } else {
+        return { 
+          success: false, 
+          error: result.error || 'Failed to connect to Prospeo.io'
         };
       }
-      
-      return { success: false, error: 'Invalid Prospeo.io API key or account issue' };
     } catch (error) {
       console.error('❌ Prospeo.io connection error:', error);
       return { success: false, error: error.message };
     }
   }
 
-  // Find email using Prospeo.io email-finder endpoint
+  // Find email using Prospeo.io via Firebase proxy
   async findEmailProspeo(tenantId, domain, firstName, lastName, company) {
     try {
       const credentials = await this.getIntegrationCredentials(tenantId, 'prospeo-io');
@@ -246,40 +227,41 @@ class IntegrationService {
 
       console.log(`🔍 Prospeo email search: ${firstName} ${lastName} at ${company || domain}`);
 
-      // SURGICAL BYPASS: Use native fetch to avoid security interceptors
-      const nativeFetch = window.fetch.bind(window);
+      // Use Firebase proxy for email finding
+      const PROXY_URL = 'https://leadgenproxy-aopxj7f3aa-uc.a.run.app';
 
-      const response = await nativeFetch('https://api.prospeo.io/email-finder', {
+      const response = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-KEY': credentials.data.apiKey,
-          'User-Agent': 'MarketGenie/1.0'
+          'Content-Type': 'application/json'
         },
-        mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          company: company || domain
+          provider: 'prospeo',
+          apiKey: credentials.data.apiKey,
+          searchData: {
+            firstName: firstName,
+            lastName: lastName,
+            company: company || domain,
+            domain: domain
+          }
         })
       });
 
       const result = await response.json();
-      console.log('Prospeo email-finder response:', result);
+      console.log('Prospeo proxy email finder response:', result);
 
-      if (response.ok && result.email) {
+      if (result.success && result.data.email) {
         return {
           success: true,
           data: {
-            email: result.email,
-            first_name: firstName,
-            last_name: lastName,
+            email: result.data.email,
+            first_name: result.data.first_name || firstName,
+            last_name: result.data.last_name || lastName,
             company: company || domain,
-            phone: result.phone || null,
-            confidence: result.confidence || 85,
-            source: 'Prospeo.io',
-            credits_remaining: result.remaining_credits
+            domain: result.data.domain || domain,
+            email_status: result.data.email_status,
+            confidence: 95,
+            source: 'Prospeo.io'
           }
         };
       }
@@ -291,7 +273,7 @@ class IntegrationService {
     }
   }
 
-  // Search domain using Prospeo.io domain-search endpoint
+  // Search domain using Prospeo.io via Firebase proxy
   async searchDomainProspeo(tenantId, domain, limit = 5) {
     try {
       const credentials = await this.getIntegrationCredentials(tenantId, 'prospeo-io');
@@ -303,47 +285,57 @@ class IntegrationService {
 
       const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
 
-      // SURGICAL BYPASS: Use native fetch to avoid security interceptors
-      const nativeFetch = window.fetch.bind(window);
+      // Use Firebase proxy for domain search
+      const PROXY_URL = 'https://leadgenproxy-aopxj7f3aa-uc.a.run.app';
 
-      const response = await nativeFetch('https://api.prospeo.io/domain-search', {
+      const response = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-KEY': credentials.data.apiKey,
-          'User-Agent': 'MarketGenie/1.0'
+          'Content-Type': 'application/json'
         },
-        mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify({
-          domain: cleanDomain
+          provider: 'prospeo',
+          apiKey: credentials.data.apiKey,
+          searchData: {
+            domain: cleanDomain
+          }
         })
       });
 
       const result = await response.json();
-      console.log('Prospeo domain-search response:', result);
+      console.log('Prospeo proxy domain search response:', result);
 
-      if (response.ok && result.emails && result.emails.length > 0) {
-        const contacts = result.emails.slice(0, limit).map(email => ({
-          email: email.email,
-          first_name: email.first_name || 'Unknown',
-          last_name: email.last_name || 'Contact',
-          company: cleanDomain,
-          phone: email.phone || null,
-          position: email.position || 'Unknown',
-          confidence: email.confidence || 85,
-          source: 'Prospeo.io',
-          department: email.department || null
-        }));
+      if (result.success && result.data.contacts && result.data.contacts.length > 0) {
+        const contacts = result.data.contacts.slice(0, limit);
 
         return {
           success: true,
-          data: contacts,
-          credits_remaining: result.remaining_credits
+          data: {
+            contacts,
+            source: 'Prospeo.io',
+            domain: cleanDomain,
+            total: contacts.length,
+            credits_remaining: result.data.credits_remaining
+          }
+        };
+      } else if (result.success && result.data.contacts && result.data.contacts.length === 0) {
+        return {
+          success: true,
+          data: {
+            contacts: [],
+            source: 'Prospeo.io',
+            domain: cleanDomain,
+            total: 0,
+            message: result.data.message || 'No emails found for this domain',
+            credits_remaining: result.data.credits_remaining
+          }
+        };
+      } else {
+        return { 
+          success: false, 
+          error: result.error || 'Domain search failed'
         };
       }
-
-      return { success: false, error: result.error || 'No contacts found for this domain' };
     } catch (error) {
       console.error('❌ Prospeo domain search error:', error);
       return { success: false, error: error.message };

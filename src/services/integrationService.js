@@ -157,6 +157,153 @@ class IntegrationService {
     }
   }
 
+  // ===================================
+  // PROSPEO.IO INTEGRATION
+  // ===================================
+  
+  // Connect to Prospeo.io (75 FREE credits!)
+  async connectProspeo(tenantId, apiKey) {
+    try {
+      console.log('🔌 Testing Prospeo.io API connection...');
+      
+      // Test the API key by checking account info
+      const response = await fetch('https://api.prospeo.io/account', {
+        method: 'GET',
+        headers: {
+          'X-KEY': apiKey
+        }
+      });
+
+      const result = await response.json();
+      console.log('Prospeo account response:', result);
+
+      if (response.ok && result.remaining_credits !== undefined) {
+        await this.saveIntegrationCredentials(tenantId, 'prospeo-io', {
+          apiKey: apiKey,
+          accountInfo: result,
+          credits: result.remaining_credits
+        });
+        
+        console.log('✅ Prospeo.io connected successfully');
+        return { 
+          success: true, 
+          data: {
+            credits: result.remaining_credits,
+            plan: result.plan || 'Free',
+            message: `Connected! ${result.remaining_credits} credits available`
+          }
+        };
+      }
+      
+      return { success: false, error: 'Invalid Prospeo.io API key or account issue' };
+    } catch (error) {
+      console.error('❌ Prospeo.io connection error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Find email using Prospeo.io email-finder endpoint
+  async findEmailProspeo(tenantId, domain, firstName, lastName, company) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'prospeo-io');
+      if (!credentials.success) {
+        return { success: false, error: 'Prospeo.io not connected' };
+      }
+
+      console.log(`🔍 Prospeo email search: ${firstName} ${lastName} at ${company || domain}`);
+
+      const response = await fetch('https://api.prospeo.io/email-finder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-KEY': credentials.data.apiKey
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          company: company || domain
+        })
+      });
+
+      const result = await response.json();
+      console.log('Prospeo email-finder response:', result);
+
+      if (response.ok && result.email) {
+        return {
+          success: true,
+          data: {
+            email: result.email,
+            first_name: firstName,
+            last_name: lastName,
+            company: company || domain,
+            phone: result.phone || null,
+            confidence: result.confidence || 85,
+            source: 'Prospeo.io',
+            credits_remaining: result.remaining_credits
+          }
+        };
+      }
+
+      return { success: false, error: result.error || 'No email found for this person' };
+    } catch (error) {
+      console.error('❌ Prospeo email finding error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Search domain using Prospeo.io domain-search endpoint
+  async searchDomainProspeo(tenantId, domain, limit = 5) {
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'prospeo-io');
+      if (!credentials.success) {
+        return { success: false, error: 'Prospeo.io not connected' };
+      }
+
+      console.log(`🔍 Prospeo domain search: ${domain}`);
+
+      const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+
+      const response = await fetch('https://api.prospeo.io/domain-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-KEY': credentials.data.apiKey
+        },
+        body: JSON.stringify({
+          domain: cleanDomain
+        })
+      });
+
+      const result = await response.json();
+      console.log('Prospeo domain-search response:', result);
+
+      if (response.ok && result.emails && result.emails.length > 0) {
+        const contacts = result.emails.slice(0, limit).map(email => ({
+          email: email.email,
+          first_name: email.first_name || 'Unknown',
+          last_name: email.last_name || 'Contact',
+          company: cleanDomain,
+          phone: email.phone || null,
+          position: email.position || 'Unknown',
+          confidence: email.confidence || 85,
+          source: 'Prospeo.io',
+          department: email.department || null
+        }));
+
+        return {
+          success: true,
+          data: contacts,
+          credits_remaining: result.remaining_credits
+        };
+      }
+
+      return { success: false, error: result.error || 'No contacts found for this domain' };
+    } catch (error) {
+      console.error('❌ Prospeo domain search error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Find emails using Hunter.io
   async findEmails(tenantId, domain, firstName, lastName) {
     try {
@@ -317,10 +464,6 @@ class IntegrationService {
   // Legacy method names for backward compatibility
   async connectVoilaNorbert(tenantId, apiKey) {
     return await this.connectLeadProvider(tenantId, 'voilanorbert', apiKey);
-  }
-
-  async connectProspeo(tenantId, apiKey) {
-    return await this.connectLeadProvider(tenantId, 'prospeo', apiKey);
   }
 
   async connectHunter(tenantId, apiKey) {

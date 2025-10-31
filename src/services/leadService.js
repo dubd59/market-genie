@@ -666,11 +666,11 @@ class LeadService {
   async searchDomainMultiProvider(tenantId, domain, limit = 5) {
     console.log(`🔍 Multi-provider search for domain: ${domain}`)
     
-    // Define available providers with connection status check
+    // Define available providers with connection status check (Prospeo first with direct API)
     const potentialProviders = [
-      { name: 'prospeo-io', backendName: 'prospeo', method: 'findEmailWithProvider' },
-      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' },
-      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' }
+      { name: 'prospeo-io', backendName: 'prospeo-io', method: 'searchDomainProspeo' },
+      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' },
+      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' }
     ]
     
     // Check which providers are actually connected and available
@@ -718,17 +718,14 @@ class LeadService {
           result = { success: false, error: 'VoilaNorbert requires specific person names, not domain searches' };
           continue;
         } else if (provider.name === 'prospeo-io') {
-          // Use Firebase proxy for Prospeo domain search - pass null names to trigger domain search
-          result = await IntegrationService.findEmailWithProvider(tenantId, provider.backendName, domain, null, null, domain)
+          // Use direct Prospeo API (75 free credits available!)
+          result = await IntegrationService.searchDomainProspeo(tenantId, domain, limit)
           if (result.success && result.data) {
-            // Handle both single contact and multiple contacts format
-            if (result.data.contacts) {
-              // Domain search returns multiple contacts
-              result.data = result.data.contacts
-            } else if (result.data.email) {
-              // Single email result - convert to array format
-              result.data = [result.data]
-            }
+            // Prospeo returns ready-to-use lead data
+            console.log(`🎯 Prospeo returned ${result.data.length} leads`)
+          } else if (result.error?.includes('insufficient credits')) {
+            console.log(`⚠️ ${provider.name} out of credits - skipping`)
+            continue
           }
         }
         

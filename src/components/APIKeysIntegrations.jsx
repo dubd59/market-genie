@@ -791,7 +791,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           ];
         case 'prospeo-io':
           return [
-            { key: 'apiKey', label: 'Prospeo.io API Key', type: 'password', placeholder: 'Your Prospeo.io API key' }
+            { key: 'apiKey', label: 'Prospeo.io API Key', type: 'password', placeholder: 'Your Prospeo.io API key (75 FREE credits)' }
           ];
         case 'voila-norbert':
           return [

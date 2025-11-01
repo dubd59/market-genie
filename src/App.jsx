@@ -59,6 +59,7 @@ import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 import CRMPipeline from './components/CRMPipeline'
 import BusinessProfileSettings from './components/BusinessProfileSettings'
 import ContactManager from './components/ContactManager'
+import BulkProspeoScraper from './components/BulkProspeoScraper'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
 import AuthNavigator from './components/AuthNavigator'
@@ -2872,6 +2873,11 @@ END:VCALENDAR`;
                   <div className="text-center mb-8">
                     <h3 className="text-3xl font-bold text-gray-800 mb-2">🤖 AI-Powered Lead Scraping Agents</h3>
                     <p className="text-gray-600">Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
+                  </div>
+
+                  {/* Bulk Prospeo Scraper - TOP PRIORITY */}
+                  <div className="mb-8">
+                    <BulkProspeoScraper />
                   </div>
 
                   {/* Enhanced Scraping Agents */}
@@ -5690,6 +5696,11 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
     return (
       <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>🚀 Ultimate Lead Generation Ecosystem</h2>
+        
+        {/* Bulk Prospeo Scraper - NEW FEATURE */}
+        <div className="mb-10">
+          <BulkProspeoScraper />
+        </div>
         
         {/* Integration Connection Status */}
         <div className="mb-10">

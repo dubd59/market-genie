@@ -1,26 +1,40 @@
-// Simple database check using web SDK
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+// Database check using Firebase Admin SDK
+// This script has full administrative access and bypasses Firestore security rules
+import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC4pJAF4Ao2KbD8aWdgXBQjBqKHKfV5rEE",
-  authDomain: "market-genie-f2d41.firebaseapp.com",
-  databaseURL: "https://market-genie-f2d41-default-rtdb.firebaseio.com",
-  projectId: "market-genie-f2d41",
-  storageBucket: "market-genie-f2d41.firebasestorage.app",
-  messagingSenderId: "474050672468",
-  appId: "1:474050672468:web:c5b61f2a3e5b8e3f8b02a3"
-};
+// Initialize Firebase Admin
+// Supports GOOGLE_APPLICATION_CREDENTIALS environment variable or default path
+const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || './service-account-key.json';
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+try {
+  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: 'market-genie-f2d41'
+  });
+  
+  console.log('✅ Firebase Admin initialized successfully!');
+} catch (error) {
+  console.log('❌ Error loading service account key:', error.message);
+  console.log('\n📝 To fix this:');
+  console.log('1. Download your service account key from Firebase Console');
+  console.log('2. Save it as service-account-key.json in the project root');
+  console.log('   OR set GOOGLE_APPLICATION_CREDENTIALS environment variable');
+  console.log('3. Run this script again');
+  process.exit(1);
+}
+
+const db = admin.firestore();
 
 async function checkDatabase() {
   try {
-    console.log('🔍 Checking MarketGenie_tenants collection...');
+    console.log('🔍 Checking Firebase Collection Structure...');
+    console.log(' Checking tenant collection...');
     
-    const tenantsRef = collection(db, 'MarketGenie_tenants');
-    const snapshot = await getDocs(tenantsRef);
+    const tenantsRef = db.collection('MarketGenie_tenants');
+    const snapshot = await tenantsRef.get();
     
     if (snapshot.empty) {
       console.log('❌ No tenants found in MarketGenie_tenants collection');
@@ -34,7 +48,7 @@ async function checkDatabase() {
       console.log(`   Owner: ${data.ownerEmail || 'N/A'} (${data.ownerId || 'N/A'})`);
       console.log(`   Plan: ${data.plan || data.planType || 'N/A'}`);
       console.log(`   Status: ${data.status || 'N/A'}`);
-      console.log(`   Created: ${data.createdAt?.toDate?.() || data.createdAt || 'N/A'}`);
+      console.log(`   Created: ${data.createdAt?.toDate?.() || data.created_at?.toDate?.() || 'N/A'}`);
       if (data.features) {
         console.log(`   Features: ${Object.keys(data.features).filter(k => data.features[k]).join(', ')}`);
       }

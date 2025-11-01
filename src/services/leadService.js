@@ -1,5 +1,5 @@
 import { FirebaseAPI } from '../FirebaseAPI.js'
-import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc } from '../security/SecureFirebase.js'
+import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc, setDoc } from '../security/SecureFirebase.js'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import IntegrationService from './integrationService.js'
@@ -32,13 +32,25 @@ class LeadService {
   }
 
   // Create a new lead (with duplicate checking)
-  async createLead(tenantId, leadData) {
+  async createLead(tenantId, leadData, options = {}) {
     try {
-      // Check if lead with this email already exists
-      const existingLead = await this.findLeadByEmail(tenantId, leadData.email)
-      if (existingLead) {
-        console.log(`Skipping duplicate lead: ${leadData.email}`)
-        return { success: false, error: 'Lead already exists', duplicate: true }
+      // NUCLEAR OPTION: Complete bypass for bulk operations
+      if (options.bulkMode || options.skipDuplicateCheck) {
+        console.log(`🚀 BULK MODE: Skipping all validation checks for ${leadData.email}`);
+      } else {
+        // EMERGENCY FIX: Skip duplicate check during network issues
+        let existingLead = null;
+        try {
+          existingLead = await this.findLeadByEmail(tenantId, leadData.email);
+        } catch (duplicateCheckError) {
+          console.warn(`⚠️ Duplicate check failed, proceeding with save: ${duplicateCheckError.message}`);
+          // Continue with save operation even if duplicate check fails
+        }
+        
+        if (existingLead) {
+          console.log(`Skipping duplicate lead: ${leadData.email}`)
+          return { success: false, error: 'Lead already exists', duplicate: true }
+        }
       }
 
       const enrichedLead = {
@@ -53,14 +65,42 @@ class LeadService {
       }
 
       const leadsCollection = this.getLeadsCollection(tenantId)
-      const docRef = await addDoc(leadsCollection, enrichedLead)
       
-      if (docRef.id) {
-        await this.updateTenantUsage(tenantId, 'leads', 1)
-        return { success: true, data: { id: docRef.id, ...enrichedLead } }
+      // EMERGENCY FIX: Temporarily disable bulk mode to use regular addDoc
+      if (options.bulkMode) {
+        console.log(`🚀 BULK MODE: Skipping direct write, using regular addDoc for ${leadData.email}`);
+        // Just fall through to regular retry logic
+      }
+      
+      // EMERGENCY FIX: Add retry logic with exponential backoff
+      let retries = 3;
+      let lastError = null;
+      
+      while (retries > 0) {
+        try {
+          const docRef = await addDoc(leadsCollection, enrichedLead)
+          
+          if (docRef.id) {
+            try {
+              await this.updateTenantUsage(tenantId, 'leads', 1)
+            } catch (usageError) {
+              console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
+              // Don't fail the entire operation for usage tracking
+            }
+            return { success: true, data: { id: docRef.id, ...enrichedLead } }
+          }
+          break;
+        } catch (error) {
+          lastError = error;
+          retries--;
+          if (retries > 0) {
+            console.warn(`🔄 Retrying lead save (${retries} attempts left): ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+          }
+        }
       }
 
-      return { success: false, error: 'Failed to create lead' }
+      return { success: false, error: lastError?.message || 'Failed to create lead after retries' }
     } catch (error) {
       console.error('Error creating lead:', error)
       return { success: false, error: error.message }
@@ -666,11 +706,11 @@ class LeadService {
   async searchDomainMultiProvider(tenantId, domain, limit = 5) {
     console.log(`🔍 Multi-provider search for domain: ${domain}`)
     
-    // Define available providers with connection status check
+    // Define available providers with connection status check (Prospeo first with direct API)
     const potentialProviders = [
-      { name: 'prospeo-io', backendName: 'prospeo', method: 'findEmailWithProvider' },
-      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' },
-      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' }
+      { name: 'prospeo-io', backendName: 'prospeo-io', method: 'searchDomainProspeo' },
+      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' },
+      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' }
     ]
     
     // Check which providers are actually connected and available
@@ -718,26 +758,33 @@ class LeadService {
           result = { success: false, error: 'VoilaNorbert requires specific person names, not domain searches' };
           continue;
         } else if (provider.name === 'prospeo-io') {
-          // Use Firebase proxy for Prospeo domain search - pass null names to trigger domain search
-          result = await IntegrationService.findEmailWithProvider(tenantId, provider.backendName, domain, null, null, domain)
-          if (result.success && result.data) {
-            // Handle both single contact and multiple contacts format
-            if (result.data.contacts) {
-              // Domain search returns multiple contacts
-              result.data = result.data.contacts
-            } else if (result.data.email) {
-              // Single email result - convert to array format
-              result.data = [result.data]
-            }
+          // Use direct Prospeo API (75 free credits available!)
+          result = await IntegrationService.searchDomainProspeo(tenantId, domain, limit)
+          if (result.success && result.data && result.data.contacts) {
+            // Prospeo returns contacts array in result.data.contacts
+            console.log(`🎯 Prospeo returned ${result.data.contacts.length} leads`)
+          } else if (result.error?.includes('insufficient credits')) {
+            console.log(`⚠️ ${provider.name} out of credits - skipping`)
+            continue
           }
         }
         
-        if (result && result.success && result.data && result.data.length > 0) {
-          console.log(`✅ ${provider.name} found ${result.data.length} contacts for ${domain}`)
+        // Handle different response structures
+        let contacts = [];
+        if (result && result.success && result.data) {
+          if (provider.name === 'prospeo-io' && result.data.contacts) {
+            contacts = result.data.contacts;
+          } else if (Array.isArray(result.data)) {
+            contacts = result.data;
+          }
+        }
+        
+        if (contacts.length > 0) {
+          console.log(`✅ ${provider.name} found ${contacts.length} contacts for ${domain}`)
           successfulProviders.push(provider.name)
           
           // Add provider info to each result
-          const enrichedResults = result.data.map(contact => ({
+          const enrichedResults = contacts.map(contact => ({
             ...contact,
             source: contact.source || provider.name,
             provider: provider.name

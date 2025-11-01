@@ -1,0 +1,18 @@
+firstName,lastName,email,company,title,status,confidence
+Mikael,Cho,mikael@unsplash.com,Unsplash,CEO,valid,high
+David,Cancel,david.cancel@drift.com,Drift,CEO,valid,high
+Nick,Francis,nick@helpscout.com,Help Scout,CEO,valid,high
+Andrew,Gazdecki,andrew@microacquire.com,MicroAcquire,CEO,valid,high
+Nat,Friedman,natfriedman@github.com,GitHub,CEO,valid,high
+Patrick,McKenzie,patrick@stripe.com,Stripe,Executive,valid,high
+Girish,Mathrubootham,girish@freshworks.com,Freshworks,CEO,valid,high
+Mathilde,Collin,mathilde@frontapp.com,Front,CEO,valid,high
+Joel,Gascoigne,joel@buffer.com,Buffer,CEO,valid,high
+Yehuda,Katz,yehuda@emberjs.com,Ember,Creator,valid,high
+Mitchell,Hashimoto,mitchell.hashimoto@hashicorp.com,HashiCorp,Co-Founder,valid,high
+Jason,Fried,jason@basecamp.com,Basecamp,CEO,valid,high
+Mikkel,Svane,msvane@zendesk.com,Zendesk,CEO,valid,high
+Christian,Sejersen,christian@helpshift.com,Helpshift,CEO,valid,high
+Ryan,Hoover,ryan@producthunt.com,Product Hunt,Founder,valid,high
+Rand,Fishkin,rand@sparktoro.com,SparkToro,CEO,valid,high
+Steli,Efti,steli.efti@close.com,Close,CEO,valid,high

@@ -66,27 +66,10 @@ class LeadService {
 
       const leadsCollection = this.getLeadsCollection(tenantId)
       
-      // NUCLEAR OPTION: Direct Firebase write with aggressive retry
+      // EMERGENCY FIX: Temporarily disable bulk mode to use regular addDoc
       if (options.bulkMode) {
-        console.log(`🚀 BULK MODE: Using direct Firebase write for ${leadData.email}`);
-        try {
-          // Generate a Firestore-safe unique ID (no underscores, only alphanumeric)
-          const timestamp = Date.now().toString();
-          const randomStr = Math.random().toString(36).substr(2, 9);
-          const uniqueId = `${timestamp}${randomStr}`;
-          
-          // Use the secure doc function with the correct parameters
-          const collectionPath = `MarketGenie_tenants/${tenantId}/leads`;
-          const docRef = doc(db, collectionPath, uniqueId);
-          
-          await setDoc(docRef, enrichedLead);
-          console.log(`✅ BULK MODE: Direct write successful for ${leadData.email}`);
-          
-          return { success: true, data: { id: docRef.id, ...enrichedLead } };
-        } catch (bulkError) {
-          console.error(`❌ BULK MODE: Direct write failed for ${leadData.email}:`, bulkError);
-          // Fall through to regular retry logic
-        }
+        console.log(`🚀 BULK MODE: Skipping direct write, using regular addDoc for ${leadData.email}`);
+        // Just fall through to regular retry logic
       }
       
       // EMERGENCY FIX: Add retry logic with exponential backoff

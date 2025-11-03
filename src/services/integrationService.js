@@ -47,6 +47,26 @@ class IntegrationService {
   async getIntegrationCredentials(tenantId, integrationName) {
     try {
       console.log(`Getting credentials for tenant: ${tenantId}, integration: ${integrationName}`);
+      
+      // 🚨 EMERGENCY FIX: Check for emergency API key in localStorage
+      if (integrationName === 'prospeo-io') {
+        const emergencyApiKey = localStorage.getItem('prospeo_api_key_emergency');
+        const prospeoFixApplied = localStorage.getItem('prospeo_fix_applied');
+        
+        if (emergencyApiKey && prospeoFixApplied === 'true') {
+          console.log('🚨 Using emergency Prospeo API key from localStorage');
+          return {
+            success: true,
+            data: {
+              apiKey: emergencyApiKey,
+              status: 'connected',
+              connectionMethod: 'emergency_fix',
+              _emergencyMode: true
+            }
+          };
+        }
+      }
+      
       const credentialsDoc = doc(db, 'MarketGenie_tenants', tenantId, 'integrations', integrationName)
       console.log('Reading from document path:', credentialsDoc.path);
       

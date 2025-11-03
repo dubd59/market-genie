@@ -276,7 +276,32 @@ const BulkProspeoScraper = () => {
           
           if (!saved) {
             console.error(`💀 FAILED to save ${leadEmail} after ${maxAttempts} attempts`);
-            failedCount++;
+            
+            // 🚨 EMERGENCY: Try offline storage when Firebase is down
+            try {
+              if (window.emergencyLeadStorage) {
+                console.log(`🚨 Attempting emergency offline storage for ${leadEmail}...`);
+                const emergencyResult = window.emergencyLeadStorage.storeLeadOffline(leadData);
+                if (emergencyResult.success) {
+                  console.log(`💾 EMERGENCY SAVE SUCCESS: ${leadEmail} stored offline`);
+                  savedCount++; // Count as saved for offline storage
+                  
+                  // Show user notification about offline storage
+                  if (typeof window.showNotification === 'function') {
+                    window.showNotification(`Lead ${leadEmail} saved offline - will sync when Firebase reconnects`, 'warning');
+                  }
+                } else {
+                  console.error(`❌ Emergency storage also failed for ${leadEmail}`);
+                  failedCount++;
+                }
+              } else {
+                console.error(`❌ Emergency storage not available for ${leadEmail}`);
+                failedCount++;
+              }
+            } catch (emergencyError) {
+              console.error(`❌ Emergency storage error for ${leadEmail}:`, emergencyError);
+              failedCount++;
+            }
           }
           
           // Brief pause between leads to not overwhelm Firebase

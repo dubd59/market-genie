@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuclear Firebase Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        .button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        .console-output {
+            background: #111;
+            border: 1px solid #333;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 NUCLEAR FIREBASE DIAGNOSTIC</h1>
+        <p>Emergency troubleshooting for complete Firebase connectivity failure</p>
+    </div>
+    
+    <div style="text-align: center;">
+        <button class="button" onclick="runDiagnostic()">🔍 RUN FULL DIAGNOSTIC</button>
+        <button class="button" onclick="clearConsole()">🗑️ CLEAR CONSOLE</button>
+        <button class="button" onclick="window.open('https://console.firebase.google.com/project/market-genie-f2d41/overview', '_blank')">🔥 FIREBASE CONSOLE</button>
+        <button class="button" onclick="window.open('https://market-genie-f2d41.web.app', '_blank')">🎯 OPEN MAIN APP</button>
+    </div>
+    
+    <div id="console-output" class="console-output">
+        🚀 Nuclear Diagnostic Ready!
+        
+        Click "RUN FULL DIAGNOSTIC" to start complete Firebase analysis.
+        
+        This will test:
+        ✅ Environment & Browser
+        ✅ Firebase Initialization  
+        ✅ Network Connectivity
+        ✅ Authentication State
+        ✅ Firestore Operations
+        ✅ Tenant Permissions
+        ✅ Lead Saving Process
+    </div>
+
+    <!-- Firebase v9 SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
+        // Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyA7C3QkdiRfLOHIzrUebvlLKwLKASnPWmA",
+          authDomain: "market-genie-f2d41.firebaseapp.com",
+          projectId: "market-genie-f2d41",
+          storageBucket: "market-genie-f2d41.firebasestorage.app",
+          messagingSenderId: "346539496568",
+          appId: "1:346539496568:web:44a85da9dc62ad8cc9a8b2"
+        };
+
+        class NuclearDiagnostic {
+          constructor() {
+            this.results = {};
+            this.startTime = Date.now();
+            this.outputElement = document.getElementById('console-output');
+          }
+
+          log(test, status, details = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            const result = { timestamp, status, details };
+            this.results[test] = result;
+            
+            const emoji = status === 'PASS' ? '✅' : status === 'FAIL' ? '❌' : status === 'INFO' ? 'ℹ️' : '⚠️';
+            const message = `${emoji} [${timestamp}] ${test}: ${status} ${details}`;
+            
+            console.log(message);
+            this.outputElement.textContent += message + '\n';
+            this.outputElement.scrollTop = this.outputElement.scrollHeight;
+            
+            return result;
+          }
+
+          async runFullDiagnostic() {
+            this.outputElement.textContent = '';
+            this.log('DIAGNOSTIC_START', 'INFO', '🚀 STARTING NUCLEAR FIREBASE DIAGNOSTIC');
+            this.log('SEPARATOR', 'INFO', '='.repeat(50));
+            
+            try {
+              await this.testEnvironment();
+              await this.testFirebaseInit();
+              await this.testNetworkConnectivity();
+              await this.testAuthentication();
+              await this.testFirestoreOperations();
+              await this.testTenantOperations();
+              await this.testBulkScraperScenario();
+              this.generateSummary();
+            } catch (error) {
+              this.log('DIAGNOSTIC_FAILURE', 'FAIL', `Fatal error: ${error.message}`);
+            }
+          }
+
+          async testEnvironment() {
+            this.log('ENVIRONMENT_TEST', 'INFO', '📋 Testing browser environment...');
+            
+            this.log('BROWSER_INFO', 'INFO', navigator.userAgent.substring(0, 100) + '...');
+            this.log('CURRENT_URL', 'INFO', window.location.href);
+            this.log('PROTOCOL', navigator.onLine ? 'PASS' : 'FAIL', `Protocol: ${window.location.protocol}`);
+            this.log('NAVIGATOR_ONLINE', navigator.onLine ? 'PASS' : 'FAIL', `Online: ${navigator.onLine}`);
+            
+            // Test local storage
+            try {
+              localStorage.setItem('nuclear-test', 'test');
+              localStorage.removeItem('nuclear-test');
+              this.log('LOCAL_STORAGE', 'PASS', 'Local storage available');
+            } catch (e) {
+              this.log('LOCAL_STORAGE', 'FAIL', `Local storage error: ${e.message}`);
+            }
+            
+            // Check for common blocking issues
+            if (window.location.protocol === 'file:') {
+              this.log('PROTOCOL_WARNING', 'FAIL', 'Running on file:// - Firebase requires HTTP/HTTPS');
+            }
+          }
+
+          async testFirebaseInit() {
+            this.log('FIREBASE_TEST', 'INFO', '🔥 Testing Firebase initialization...');
+            
+            try {
+              // Initialize Firebase app
+              const app = initializeApp(firebaseConfig, 'nuclear-diagnostic-' + Date.now());
+              this.log('FIREBASE_INIT', 'PASS', 'Firebase app initialized');
+              
+              // Get Firestore instance
+              this.db = getFirestore(app);
+              this.log('FIRESTORE_INIT', 'PASS', 'Firestore instance created');
+              
+              // Get Auth instance
+              this.auth = getAuth(app);
+              this.log('AUTH_INIT', 'PASS', 'Auth instance created');
+              
+              // Test Firebase config
+              this.log('PROJECT_ID', 'INFO', `Project: ${firebaseConfig.projectId}`);
+              this.log('AUTH_DOMAIN', 'INFO', `Domain: ${firebaseConfig.authDomain}`);
+              
+            } catch (error) {
+              this.log('FIREBASE_INIT', 'FAIL', `Firebase init failed: ${error.message}`);
+              throw error;
+            }
+          }
+
+          async testNetworkConnectivity() {
+            this.log('NETWORK_TEST', 'INFO', '🌐 Testing network connectivity...');
+            
+            // Test basic internet
+            try {
+              const controller = new AbortController();
+              setTimeout(() => controller.abort(), 5000);
+              
+              await fetch('https://www.google.com/favicon.ico', { 
+                method: 'HEAD',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                signal: controller.signal
+              });
+              this.log('INTERNET_ACCESS', 'PASS', 'Basic internet connectivity confirmed');
+            } catch (error) {
+              this.log('INTERNET_ACCESS', 'FAIL', `Internet test failed: ${error.message}`);
+            }
+
+            // Test Firebase endpoints
+            const endpoints = [
+              'https://firestore.googleapis.com',
+              'https://market-genie-f2d41.firebaseapp.com',
+              'https://identitytoolkit.googleapis.com'
+            ];
+            
+            for (const endpoint of endpoints) {
+              try {
+                const controller = new AbortController();
+                setTimeout(() => controller.abort(), 5000);
+                
+                await fetch(endpoint, { 
+                  method: 'HEAD', 
+                  mode: 'no-cors',
+                  cache: 'no-cache',
+                  signal: controller.signal
+                });
+                
+                const shortName = endpoint.split('//')[1].split('.')[0];
+                this.log(`ENDPOINT_${shortName.toUpperCase()}`, 'PASS', `${shortName} reachable`);
+              } catch (error) {
+                const shortName = endpoint.split('//')[1].split('.')[0];
+                this.log(`ENDPOINT_${shortName.toUpperCase()}`, 'FAIL', `${shortName}: ${error.message}`);
+              }
+            }
+          }
+
+          async testAuthentication() {
+            this.log('AUTH_TEST', 'INFO', '🔐 Testing authentication state...');
+            
+            return new Promise((resolve) => {
+              const timeout = setTimeout(() => {
+                this.log('AUTH_TIMEOUT', 'FAIL', 'Timeout waiting for auth state (5s)');
+                resolve();
+              }, 5000);
+              
+              const unsubscribe = onAuthStateChanged(this.auth, (user) => {
+                clearTimeout(timeout);
+                unsubscribe();
+                
+                if (user) {
+                  this.log('AUTH_STATE', 'PASS', `Authenticated user: ${user.uid}`);
+                  this.log('AUTH_EMAIL', 'INFO', user.email || 'No email provided');
+                  this.log('AUTH_PROVIDER', 'INFO', user.providerData[0]?.providerId || 'Unknown provider');
+                  
+                  // Get custom claims
+                  user.getIdTokenResult().then((idTokenResult) => {
+                    const claims = idTokenResult.claims;
+                    this.log('AUTH_CLAIMS', 'INFO', `Claims count: ${Object.keys(claims).length}`);
+                    
+                    // Check for tenant ID
+                    const tenantId = claims.tenantId || claims.tenant_id;
+                    if (tenantId) {
+                      this.log('TENANT_ID_CLAIM', 'PASS', `TenantId: ${tenantId}`);
+                    } else {
+                      this.log('TENANT_ID_CLAIM', 'FAIL', 'No tenant ID in claims');
+                    }
+                    
+                    // Check for admin status
+                    if (claims.admin) {
+                      this.log('ADMIN_CLAIM', 'PASS', 'User has admin privileges');
+                    }
+                    
+                  }).catch(error => {
+                    this.log('AUTH_CLAIMS', 'FAIL', `Cannot get claims: ${error.message}`);
+                  }).finally(() => resolve());
+                  
+                } else {
+                  this.log('AUTH_STATE', 'FAIL', 'No authenticated user found');
+                  this.log('AUTH_RECOMMENDATION', 'INFO', 'User must log in to access Firestore');
+                  resolve();
+                }
+              });
+            });
+          }
+
+          async testFirestoreOperations() {
+            this.log('FIRESTORE_TEST', 'INFO', '🗃️ Testing Firestore operations...');
+            
+            if (!this.db) {
+              this.log('FIRESTORE_SKIP', 'FAIL', 'No Firestore instance available');
+              return;
+            }
+            
+            // Test network control
+            try {
+              await disableNetwork(this.db);
+              this.log('FIRESTORE_DISABLE', 'PASS', 'Network disabled successfully');
+              
+              await enableNetwork(this.db);
+              this.log('FIRESTORE_ENABLE', 'PASS', 'Network re-enabled successfully');
+            } catch (error) {
+              this.log('FIRESTORE_NETWORK_CONTROL', 'FAIL', `Network control failed: ${error.message}`);
+            }
+            
+            // Test simple read
+            try {
+              const testDocRef = doc(this.db, 'test', 'connectivity-' + Date.now());
+              const startTime = Date.now();
+              
+              const docSnap = await getDoc(testDocRef);
+              const duration = Date.now() - startTime;
+              
+              this.log('FIRESTORE_READ', 'PASS', `Read completed in ${duration}ms (exists: ${docSnap.exists()})`);
+            } catch (error) {
+              this.log('FIRESTORE_READ', 'FAIL', `Read operation failed: ${error.message}`);
+              
+              // Analyze specific error types
+              if (error.message.includes('offline')) {
+                this.log('ERROR_ANALYSIS', 'FAIL', 'CLIENT OFFLINE ERROR - Firebase cannot connect');
+              } else if (error.message.includes('permission')) {
+                this.log('ERROR_ANALYSIS', 'FAIL', 'PERMISSION ERROR - Security rules blocking access');
+              }
+            }
+            
+            // Test simple write
+            try {
+              const testDocRef = doc(this.db, 'test', 'connectivity-' + Date.now());
+              const testData = {
+                timestamp: new Date(),
+                test: 'nuclear-diagnostic',
+                userAgent: navigator.userAgent.substring(0, 50),
+                random: Math.random(),
+                testId: Date.now()
+              };
+              
+              const startTime = Date.now();
+              await setDoc(testDocRef, testData);
+              const duration = Date.now() - startTime;
+              
+              this.log('FIRESTORE_WRITE', 'PASS', `Write completed in ${duration}ms`);
+            } catch (error) {
+              this.log('FIRESTORE_WRITE', 'FAIL', `Write operation failed: ${error.message}`);
+              
+              // Analyze specific error types
+              if (error.message.includes('offline')) {
+                this.log('ERROR_ANALYSIS', 'FAIL', 'CLIENT OFFLINE ERROR - Complete connectivity failure');
+              } else if (error.message.includes('permission')) {
+                this.log('ERROR_ANALYSIS', 'FAIL', 'PERMISSION ERROR - Security rules preventing writes');
+              } else if (error.message.includes('quota')) {
+                this.log('ERROR_ANALYSIS', 'FAIL', 'QUOTA ERROR - Firebase usage limits exceeded');
+              }
+            }
+          }
+
+          async testTenantOperations() {
+            this.log('TENANT_TEST', 'INFO', '🏢 Testing tenant-specific operations...');
+            
+            const tenantId = '8ZJY8LY3g2H3Mw2eRcmd';
+            this.log('TENANT_ID', 'INFO', `Testing tenant: ${tenantId}`);
+            
+            // Test tenant document access
+            try {
+              const tenantDocRef = doc(this.db, 'MarketGenie_tenants', tenantId);
+              const startTime = Date.now();
+              const docSnap = await getDoc(tenantDocRef);
+              const duration = Date.now() - startTime;
+              
+              if (docSnap.exists()) {
+                this.log('TENANT_READ', 'PASS', `Tenant document accessed in ${duration}ms`);
+                const data = docSnap.data();
+                this.log('TENANT_DATA', 'INFO', `Document keys: ${Object.keys(data).slice(0, 5).join(', ')}`);
+              } else {
+                this.log('TENANT_READ', 'FAIL', 'Tenant document does not exist');
+              }
+                
+            } catch (error) {
+              this.log('TENANT_READ', 'FAIL', `Tenant read failed: ${error.message}`);
+            }
+            
+            // Test leads subcollection write (the critical operation)
+            try {
+              const leadsDocRef = doc(this.db, 'MarketGenie_tenants', tenantId, 'leads', 'nuclear-test-' + Date.now());
+              const testLead = {
+                email: 'test@nuclear-diagnostic.com',
+                company: 'Nuclear Test Corp',
+                firstName: 'Test',
+                lastName: 'User',
+                timestamp: new Date(),
+                source: 'nuclear-diagnostic',
+                testId: Date.now()
+              };
+              
+              const startTime = Date.now();
+              await setDoc(leadsDocRef, testLead);
+              const duration = Date.now() - startTime;
+              
+              this.log('TENANT_LEADS_WRITE', 'PASS', `Lead saved to subcollection in ${duration}ms`);
+              
+              // Immediately verify the write
+              const readBack = await getDoc(leadsDocRef);
+              if (readBack.exists()) {
+                this.log('TENANT_LEADS_VERIFY', 'PASS', 'Lead verified in database');
+              } else {
+                this.log('TENANT_LEADS_VERIFY', 'FAIL', 'Lead write succeeded but verification failed');
+              }
+              
+            } catch (error) {
+              this.log('TENANT_LEADS_WRITE', 'FAIL', `Lead save failed: ${error.message}`);
+              
+              // This is the critical failure point for bulk scraper
+              if (error.message.includes('offline')) {
+                this.log('CRITICAL_ERROR', 'FAIL', '🚨 ROOT CAUSE: Firebase completely offline for lead writes');
+              } else if (error.message.includes('permission')) {
+                this.log('CRITICAL_ERROR', 'FAIL', '🚨 ROOT CAUSE: Security rules blocking lead subcollection');
+              }
+            }
+          }
+
+          async testBulkScraperScenario() {
+            this.log('BULK_SCRAPER_TEST', 'INFO', '🎯 Simulating bulk scraper scenario...');
+            
+            const tenantId = '8ZJY8LY3g2H3Mw2eRcmd';
+            const testLeads = [
+              { email: 'chris@mooreinsurance.com', company: 'Moore Insurance' },
+              { email: 'sarah@boutiqueconsulting.com', company: 'Boutique Consulting' },
+              { email: 'kevin@leeaccounting.com', company: 'Lee Accounting' }
+            ];
+            
+            let successCount = 0;
+            let failCount = 0;
+            const errors = [];
+            
+            for (const [index, lead] of testLeads.entries()) {
+              try {
+                const leadDoc = doc(this.db, 'MarketGenie_tenants', tenantId, 'leads', `bulk-test-${Date.now()}-${index}`);
+                const leadData = {
+                  ...lead,
+                  firstName: lead.email.split('@')[0],
+                  lastName: 'TestUser',
+                  timestamp: new Date(),
+                  source: 'nuclear-bulk-test',
+                  prospeoData: { verified: true },
+                  testRun: true
+                };
+                
+                const startTime = Date.now();
+                await setDoc(leadDoc, leadData);
+                const duration = Date.now() - startTime;
+                
+                this.log(`BULK_LEAD_${index + 1}`, 'PASS', `${lead.email} saved in ${duration}ms`);
+                successCount++;
+                
+              } catch (error) {
+                this.log(`BULK_LEAD_${index + 1}`, 'FAIL', `${lead.email}: ${error.message}`);
+                failCount++;
+                errors.push(error.message);
+              }
+            }
+            
+            this.log('BULK_RESULTS', 'INFO', `Bulk test: ${successCount} success, ${failCount} failed`);
+            
+            if (failCount > 0) {
+              this.log('BULK_SCRAPER_DIAGNOSIS', 'FAIL', '🚨 BULK SCRAPER WILL FAIL - Database writes not working');
+              this.log('ERROR_PATTERN', 'FAIL', `Common error: ${errors[0] || 'Unknown'}`);
+            } else {
+              this.log('BULK_SCRAPER_DIAGNOSIS', 'PASS', '✅ Bulk scraper should work - All writes successful');
+            }
+          }
+
+          generateSummary() {
+            this.log('SEPARATOR', 'INFO', '='.repeat(50));
+            this.log('SUMMARY_START', 'INFO', '📊 NUCLEAR DIAGNOSTIC SUMMARY');
+            
+            const totalTests = Object.keys(this.results).length;
+            const passed = Object.values(this.results).filter(r => r.status === 'PASS').length;
+            const failed = Object.values(this.results).filter(r => r.status === 'FAIL').length;
+            const duration = Date.now() - this.startTime;
+            
+            this.log('SUMMARY_STATS', 'INFO', `Total: ${totalTests} tests, Passed: ${passed}, Failed: ${failed}, Duration: ${duration}ms`);
+            
+            // Identify critical failures
+            const criticalFailures = Object.entries(this.results)
+              .filter(([_, result]) => result.status === 'FAIL')
+              .map(([test]) => test);
+            
+            if (criticalFailures.length > 0) {
+              this.log('CRITICAL_FAILURES', 'FAIL', `Found ${criticalFailures.length} critical issues`);
+              
+              // Provide specific recommendations
+              if (criticalFailures.includes('INTERNET_ACCESS')) {
+                this.log('RECOMMENDATION_1', 'INFO', '🔧 Check internet connection and firewall settings');
+              }
+              if (criticalFailures.includes('AUTH_STATE')) {
+                this.log('RECOMMENDATION_2', 'INFO', '🔧 User must log into Market Genie app first');
+              }
+              if (criticalFailures.includes('FIRESTORE_WRITE') || criticalFailures.includes('TENANT_LEADS_WRITE')) {
+                this.log('RECOMMENDATION_3', 'INFO', '🔧 Firebase connectivity completely broken - check service status');
+                this.log('FIREBASE_STATUS', 'INFO', '🔗 Check: https://status.firebase.google.com/');
+              }
+              if (criticalFailures.some(f => f.includes('PERMISSION'))) {
+                this.log('RECOMMENDATION_4', 'INFO', '🔧 Security rules blocking access - check Firestore rules');
+              }
+              
+            } else {
+              this.log('ALL_TESTS_PASSED', 'PASS', '✅ All systems operational - issue may be application-specific');
+              this.log('NEXT_STEPS', 'INFO', '🎯 Try running the bulk scraper - it should work now');
+            }
+            
+            // Store results globally
+            window.nuclearDiagnosticResults = this.results;
+            this.log('RESULTS_STORED', 'INFO', '💾 Full results available in browser console: window.nuclearDiagnosticResults');
+            
+            this.log('DIAGNOSTIC_COMPLETE', 'INFO', '🏁 Nuclear diagnostic complete!');
+          }
+        }
+
+        // Make diagnostic available globally
+        window.NuclearDiagnostic = NuclearDiagnostic;
+        window.runNuclearDiagnostic = async () => {
+          const diagnostic = new NuclearDiagnostic();
+          return await diagnostic.runFullDiagnostic();
+        };
+
+        // Auto-load message
+        console.log('🚀 Nuclear Firebase Diagnostic loaded successfully!');
+        console.log('Click the button or run: window.runNuclearDiagnostic()');
+    </script>
+
+    <script>
+        function runDiagnostic() {
+            if (window.runNuclearDiagnostic) {
+                window.runNuclearDiagnostic();
+            } else {
+                document.getElementById('console-output').textContent = 'Error: Diagnostic module not loaded. Please refresh the page.';
+            }
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').textContent = '🗑️ Console cleared. Ready for new diagnostic run.\n\nClick "RUN FULL DIAGNOSTIC" to start analysis.';
+        }
+
+        // Show loading status
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const output = document.getElementById('console-output');
+                output.textContent += '\n\n✅ Diagnostic tool fully loaded and ready!\n📋 Click "RUN FULL DIAGNOSTIC" to begin analysis.';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

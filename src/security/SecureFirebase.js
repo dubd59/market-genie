@@ -33,6 +33,7 @@ import {
 } from 'firebase/firestore';
 
 import { dbGuardian } from './DatabaseGuardian.js';
+import { writeWithHealthCheck } from '../utils/firebaseHealthCheck.js';
 
 /**
  * 🛡️ SECURE COLLECTION REFERENCE
@@ -64,7 +65,7 @@ export function doc(db, collectionPath, docId, ...pathSegments) {
 
 /**
  * 🛡️ SECURE ADD DOCUMENT
- * Adds document with collection validation
+ * Adds document with collection validation and health checking
  */
 export async function addDoc(collectionRef, data) {
   // Validate the collection reference
@@ -83,7 +84,10 @@ export async function addDoc(collectionRef, data) {
     _createdAt: new Date().toISOString()
   };
   
-  return firebaseAddDoc(collectionRef, secureData);
+  // Use health-checked write operation
+  return await writeWithHealthCheck(async () => {
+    return firebaseAddDoc(collectionRef, secureData);
+  });
 }
 
 /**

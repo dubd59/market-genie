@@ -63,6 +63,33 @@ export function TenantProvider({ children }) {
         setLoading(true)
         setError(null)
 
+        // 🚨 EMERGENCY TENANT FIX: Check for forced tenant override
+        const emergencyTenantFix = localStorage.getItem('emergency_tenant_fix');
+        const forcedTenant = localStorage.getItem('tenant_override') || localStorage.getItem('correct_tenant_forced');
+        
+        if (emergencyTenantFix === 'applied' && forcedTenant) {
+          console.log('🚨 EMERGENCY FIX DETECTED - Using forced tenant:', forcedTenant);
+          
+          // Create emergency tenant object
+          const emergencyTenant = {
+            id: forcedTenant,
+            tenantId: forcedTenant,
+            name: 'Market Genie (Emergency Fixed)',
+            status: 'active',
+            initialized: true,
+            _emergencyFixed: true,
+            _fixedAt: new Date().toISOString()
+          };
+          
+          setTenant(emergencyTenant);
+          setLoading(false);
+          
+          console.log('✅ Emergency tenant fix applied successfully');
+          console.log('📊 Using tenant:', forcedTenant);
+          
+          return;
+        }
+
         console.log('🏢 Loading tenant for user:', user?.email)
         
         // Double-check we still have a valid user before proceeding

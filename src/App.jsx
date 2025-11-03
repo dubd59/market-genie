@@ -8,6 +8,15 @@ import Dashboard from './pages/Dashboard'
 // import CampaignBuilder from './pages/CampaignBuilder'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+
+// 🚀 CRITICAL FIX: Import Firebase v8 compatibility bridge for diagnostics
+import './utils/firebaseV8Bridge.js'
+// 🏥 HEALTH CHECK: Start Firebase connection monitoring
+import { startHealthMonitoring } from './utils/firebaseHealthCheck.js'
+// 🧪 DATABASE TESTS: Load database write tests for debugging
+import './utils/databaseWriteTest.js'
+// 🔐 SECURITY DIAGNOSTIC: Load Firebase security rules diagnostic
+import './utils/firebaseSecurityDiagnostic.js'
 import Register from './pages/RegisterSimple'
 import FreeSignup from './pages/FreeSignup'
 import LandingPage from './pages/LandingPage'
@@ -225,6 +234,12 @@ function SophisticatedDashboard() {
 
     return () => clearInterval(refreshInterval);
   }, [activeSection, tenant?.id]); // Re-run when section changes or tenant is loaded
+
+  // 🏥 Initialize Firebase health monitoring
+  useEffect(() => {
+    console.log('🚀 Starting Firebase health monitoring system...');
+    startHealthMonitoring();
+  }, []);
 
   // Campaign State
   const [campaigns, setCampaigns] = useState([])

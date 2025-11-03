@@ -68,34 +68,46 @@ class LeadService {
       
       // EMERGENCY FIX: Temporarily disable bulk mode to use regular addDoc
       if (options.bulkMode) {
-        console.log(`🚀 BULK MODE: Skipping direct write, using regular addDoc for ${leadData.email}`);
-        // Just fall through to regular retry logic
+        console.log(`🚀 BULK MODE: Enhanced reliability mode for ${leadData.email}`);
       }
       
-      // EMERGENCY FIX: Add retry logic with exponential backoff
-      let retries = 3;
+      // NUCLEAR FIX: Enhanced retry logic with bulletproof error handling
+      let retries = 5; // Increased retries
       let lastError = null;
       
       while (retries > 0) {
         try {
-          const docRef = await addDoc(leadsCollection, enrichedLead)
+          console.log(`💾 Attempting to save ${leadData.email} (${6-retries}/5)`);
           
-          if (docRef.id) {
-            try {
-              await this.updateTenantUsage(tenantId, 'leads', 1)
-            } catch (usageError) {
+          // Create a timeout wrapper for the addDoc operation
+          const savePromise = addDoc(leadsCollection, enrichedLead);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database write timeout')), 10000)
+          );
+          
+          const docRef = await Promise.race([savePromise, timeoutPromise]);
+          
+          if (docRef && docRef.id) {
+            console.log(`✅ Successfully saved ${leadData.email} with ID: ${docRef.id}`);
+            
+            // Update usage tracking (non-blocking)
+            this.updateTenantUsage(tenantId, 'leads', 1).catch(usageError => {
               console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
-              // Don't fail the entire operation for usage tracking
-            }
-            return { success: true, data: { id: docRef.id, ...enrichedLead } }
+            });
+            
+            return { success: true, data: { id: docRef.id, ...enrichedLead } };
           }
           break;
         } catch (error) {
           lastError = error;
           retries--;
+          console.warn(`❌ Save attempt failed for ${leadData.email}: ${error.message} (${retries} retries left)`);
+          
           if (retries > 0) {
-            console.warn(`🔄 Retrying lead save (${retries} attempts left): ${error.message}`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+            // Exponential backoff with jitter
+            const delay = Math.min(1000 * Math.pow(2, 5-retries) + Math.random() * 1000, 8000);
+            console.log(`⏳ Waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
       }

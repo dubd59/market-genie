@@ -468,7 +468,8 @@ const BulkProspeoScraper = () => {
               if (isTransportError && attempts >= 2) {
                 console.log(`🚨 FIREBASE TRANSPORT ERROR DETECTED - Triggering emergency save for ${leadEmail}`);
                 try {
-                  await triggerEmergencyLeadSave(leadData);
+                  // Emergency save expects an array of leads, so wrap single lead in array
+                  await triggerEmergencyLeadSave([leadData], tenant.id);
                   console.log(`✅ Emergency save successful for ${leadEmail}`);
                   savedCount++;
                   saved = true;

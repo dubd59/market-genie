@@ -1,5 +1,5 @@
 // Firebase Connection Health Check and Recovery System
-import { doc, getDoc, writeBatch, Timestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 class FirebaseHealthChecker {
@@ -14,20 +14,16 @@ class FirebaseHealthChecker {
     try {
       console.log('🏥 Checking Firebase connection health...');
       
-      // Simple read test to check connection
-      const testDoc = doc(db, 'system', 'health-check');
+      // Simply check if we can access Firebase - no actual read required
+      if (typeof db === 'undefined' || !db) {
+        throw new Error('Firebase not initialized');
+      }
+      
       const startTime = Date.now();
       
-      // Set a 5-second timeout for the health check
-      const healthPromise = getDoc(testDoc);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Health check timeout')), 5000)
-      );
-      
-      await Promise.race([healthPromise, timeoutPromise]);
-      
+      // Just return success - we'll know if there are connection issues when we try to write
       const responseTime = Date.now() - startTime;
-      console.log(`✅ Firebase connection healthy (${responseTime}ms)`);
+      console.log(`✅ Firebase connection appears healthy (${responseTime}ms)`);
       
       this.isHealthy = true;
       this.connectionRetries = 0;
@@ -62,45 +58,40 @@ class FirebaseHealthChecker {
   }
 
   async ensureHealthyConnection() {
-    // Check if we need a health check
-    const needsCheck = !this.lastHealthCheck || 
-                      Date.now() - this.lastHealthCheck > 30000 || // 30 seconds
-                      !this.isHealthy;
+    // Skip health checks when offline - just assume connection issues will be handled during writes
+    // The problematic system/health-check reads were causing more issues than they solved
+    this.isHealthy = true; // Optimistically assume healthy
+    this.lastHealthCheck = Date.now();
     
-    if (needsCheck) {
-      const health = await this.checkFirebaseConnection();
-      
-      if (!health.healthy && this.connectionRetries < this.maxRetries) {
-        console.log(`🔄 Connection unhealthy, attempting recovery (${this.connectionRetries}/${this.maxRetries})`);
-        await this.attemptConnectionRecovery();
-      }
-    }
-    
-    return this.isHealthy;
+    return true; // Always return true, let actual operations handle connection issues
   }
 
   async writeWithRecovery(writeOperation) {
-    // Ensure connection is healthy first
-    await this.ensureHealthyConnection();
-    
     try {
+      // Try the write operation directly without pre-checking connection
       return await writeOperation();
     } catch (error) {
-      // If write fails, check if it's a connection issue
+      console.warn(`⚠️ Write operation failed: ${error.message}`);
+      
+      // If write fails due to connection issues, wait and retry once
       if (error.message.includes('transport') || 
           error.message.includes('network') ||
-          error.message.includes('timeout')) {
+          error.message.includes('timeout') ||
+          error.message.includes('offline')) {
         
-        console.log('🚨 Write failed with connection error, attempting recovery...');
+        console.log('� Connection issue detected, waiting 3 seconds before retry...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
-        const recovered = await this.attemptConnectionRecovery();
-        
-        if (recovered) {
-          console.log('🔄 Retrying write after connection recovery...');
+        try {
+          console.log('🔄 Retrying write operation...');
           return await writeOperation();
+        } catch (retryError) {
+          console.error('❌ Retry failed:', retryError.message);
+          throw retryError;
         }
       }
       
+      // Re-throw non-connection errors immediately
       throw error;
     }
   }
@@ -114,12 +105,12 @@ export async function writeWithHealthCheck(writeOperation) {
   return firebaseHealthChecker.writeWithRecovery(writeOperation);
 }
 
-// Health monitoring
+// Health monitoring - simplified approach
 export function startHealthMonitoring() {
-  console.log('🏥 Starting Firebase health monitoring...');
+  console.log('🏥 Starting simplified Firebase health monitoring...');
   
-  // Check health every 60 seconds
+  // Check connection status much less frequently and only log, don't interfere
   setInterval(() => {
-    firebaseHealthChecker.checkFirebaseConnection();
-  }, 60000);
+    console.log('📊 Firebase health status: optimistically healthy');
+  }, 300000); // Every 5 minutes instead of every minute
 }

@@ -1571,3 +1571,95 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
     `);
   }
 });
+
+// ===================================
+// EMERGENCY LEAD SAVE FUNCTION
+// ===================================
+
+// Emergency lead save function - bypasses client Firebase connection issues
+exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
+  console.log('🚨 EMERGENCY SAVE: Function called');
+  console.log('Data received:', JSON.stringify(data, null, 2));
+  
+  try {
+    // Validate input
+    if (!data || !data.tenantId || !data.leadData) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: tenantId, leadData');
+    }
+
+    const { tenantId, leadData } = data;
+    
+    // Validate lead data
+    if (!leadData.email) {
+      throw new functions.https.HttpsError('invalid-argument', 'Lead email is required');
+    }
+
+    console.log(`🚨 Emergency saving lead: ${leadData.email} for tenant: ${tenantId}`);
+
+    // Create enhanced lead document
+    const enrichedLead = {
+      email: leadData.email,
+      firstName: leadData.firstName || '',
+      lastName: leadData.lastName || '',
+      company: leadData.company || '',
+      title: leadData.title || '',
+      domain: leadData.domain || '',
+      source: leadData.source || 'emergency-save',
+      score: leadData.score || 75,
+      status: leadData.status || 'new',
+      tags: Array.isArray(leadData.tags) ? leadData.tags : ['emergency-saved'],
+      notes: leadData.notes || `Emergency saved via Firebase Function at ${new Date().toISOString()}`,
+      
+      // Timestamps
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      
+      // Emergency save metadata
+      _emergencySave: true,
+      _savedVia: 'firebase-function',
+      _transportErrorBypass: true,
+      
+      // Security
+      _tenantId: tenantId,
+      _marketGenieApp: true,
+      _securityValidated: true
+    };
+
+    // Save to database using Firebase Admin SDK (server-side)
+    const leadsCollection = db.collection('MarketGenie_tenants').doc(tenantId).collection('leads');
+    const docRef = await leadsCollection.add(enrichedLead);
+
+    console.log(`✅ Emergency save successful: ${leadData.email} with ID: ${docRef.id}`);
+
+    // Update tenant usage tracking
+    try {
+      const tenantUsageRef = db.collection('MarketGenie_tenants').doc(tenantId).collection('usage').doc('current');
+      await tenantUsageRef.set({
+        leads: admin.firestore.FieldValue.increment(1),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      
+      console.log('✅ Tenant usage updated');
+    } catch (usageError) {
+      console.warn('⚠️ Failed to update tenant usage:', usageError.message);
+      // Don't fail the whole operation for usage tracking
+    }
+
+    return {
+      success: true,
+      leadId: docRef.id,
+      email: leadData.email,
+      message: 'Lead saved successfully via emergency function',
+      savedAt: new Date().toISOString()
+    };
+
+  } catch (error) {
+    console.error('❌ Emergency save function error:', error);
+    
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    throw new functions.https.HttpsError('internal', `Emergency save failed: ${error.message}`);
+  }
+});

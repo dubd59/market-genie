@@ -13,6 +13,8 @@ import Login from './pages/Login'
 import './utils/firebaseV8Bridge.js'
 // 🏥 HEALTH CHECK: Start Firebase connection monitoring
 import { startHealthMonitoring } from './utils/firebaseHealthCheck.js'
+// 🚨 EMERGENCY RECONNECTION: Emergency Firebase reconnection monitoring
+import { startEmergencyMonitoring } from './utils/emergencyFirebaseReconnect.js'
 // 🧪 DATABASE TESTS: Load database write tests for debugging
 import './utils/databaseWriteTest.js'
 // 🔐 SECURITY DIAGNOSTIC: Load Firebase security rules diagnostic
@@ -239,6 +241,8 @@ function SophisticatedDashboard() {
   useEffect(() => {
     console.log('🚀 Starting Firebase health monitoring system...');
     startHealthMonitoring();
+    console.log('🚨 Starting emergency Firebase reconnection monitoring...');
+    startEmergencyMonitoring();
   }, []);
 
   // Campaign State

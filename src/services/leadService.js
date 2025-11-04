@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateD
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import IntegrationService from './integrationService.js'
+import { emergencyReconnect, triggerEmergencyReconnect } from '../utils/emergencyFirebaseReconnect.js'
 
 class LeadService {
   constructor() {
@@ -71,9 +72,10 @@ class LeadService {
         console.log(`🚀 BULK MODE: Enhanced reliability mode for ${leadData.email}`);
       }
       
-      // NUCLEAR FIX: Enhanced retry logic with bulletproof error handling
+      // NUCLEAR FIX: Enhanced retry logic with bulletproof error handling + Emergency Reconnection
       let retries = 5; // Increased retries
       let lastError = null;
+      let consecutiveTransportErrors = 0;
       
       while (retries > 0) {
         try {
@@ -90,6 +92,9 @@ class LeadService {
           if (docRef && docRef.id) {
             console.log(`✅ Successfully saved ${leadData.email} with ID: ${docRef.id}`);
             
+            // Reset transport error counter on success
+            consecutiveTransportErrors = 0;
+            
             // Update usage tracking (non-blocking)
             this.updateTenantUsage(tenantId, 'leads', 1).catch(usageError => {
               console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
@@ -101,11 +106,41 @@ class LeadService {
         } catch (error) {
           lastError = error;
           retries--;
+          
+          // Detect severe connectivity issues
+          const isTransportError = error.message.includes('transport') || 
+                                  error.message.includes('WebChannel') ||
+                                  error.message.includes('timeout') ||
+                                  error.message.includes('network') ||
+                                  error.message.includes('offline');
+          
+          if (isTransportError) {
+            consecutiveTransportErrors++;
+            console.warn(`🚨 Transport error #${consecutiveTransportErrors}: ${error.message}`);
+            
+            // Trigger emergency reconnection after 2 consecutive transport errors
+            if (consecutiveTransportErrors >= 2 && retries > 1) {
+              console.log('🚨 SEVERE CONNECTIVITY DETECTED - Triggering emergency reconnection...');
+              try {
+                const reconnectSuccess = await triggerEmergencyReconnect();
+                if (reconnectSuccess) {
+                  console.log('🎉 Emergency reconnection successful - continuing with save...');
+                  consecutiveTransportErrors = 0; // Reset counter
+                } else {
+                  console.warn('⚠️ Emergency reconnection failed - continuing with normal retry...');
+                }
+              } catch (reconnectError) {
+                console.error('❌ Emergency reconnection error:', reconnectError.message);
+              }
+            }
+          }
+          
           console.warn(`❌ Save attempt failed for ${leadData.email}: ${error.message} (${retries} retries left)`);
           
           if (retries > 0) {
-            // Exponential backoff with jitter
-            const delay = Math.min(1000 * Math.pow(2, 5-retries) + Math.random() * 1000, 8000);
+            // Exponential backoff with jitter - longer delays for transport errors
+            const baseDelay = isTransportError ? 3000 : 1000;
+            const delay = Math.min(baseDelay * Math.pow(2, 5-retries) + Math.random() * 1000, 15000);
             console.log(`⏳ Waiting ${delay}ms before retry...`);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
@@ -844,9 +879,9 @@ class LeadService {
     console.log(`🔍 Multi-provider person search: ${firstName} ${lastName} at ${domain}`)
     
     const providers = [
+      { name: 'prospeo-io', method: 'findEmailProspeo' },
       { name: 'hunter-io', method: 'findEmails' },
-      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' },
-      { name: 'rocketreach', method: 'findPersonRocketReach' }
+      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' }
     ]
     
     for (const provider of providers) {
@@ -854,12 +889,12 @@ class LeadService {
         console.log(`🎯 Trying ${provider.name} for ${firstName} ${lastName}`)
         
         let result
-        if (provider.name === 'hunter-io') {
+        if (provider.name === 'prospeo-io') {
+          result = await IntegrationService.findEmailProspeo(tenantId, domain, firstName, lastName, domain)
+        } else if (provider.name === 'hunter-io') {
           result = await IntegrationService.findEmails(tenantId, domain, firstName, lastName)
         } else if (provider.name === 'voila-norbert') {
           result = await IntegrationService.findEmailVoilaNorbert(tenantId, domain, firstName, lastName)
-        } else if (provider.name === 'rocketreach') {
-          result = await IntegrationService.findPersonRocketReach(tenantId, domain, firstName, lastName)
         }
         
         if (result && result.success && result.data && result.data.email) {

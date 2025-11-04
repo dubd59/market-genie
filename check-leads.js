@@ -33,7 +33,7 @@ async function checkLeads() {
     console.log('🔍 Checking for leads in your database...');
     
     // Check your tenant's leads collection (as subcollection)
-    const leadsRef = db.collection('MarketGenie_tenants').doc('genie-labs').collection('leads');
+    const leadsRef = db.collection('MarketGenie_tenants').doc('U9vez3sI36Ti5JqoWi5gJUMq2nX2').collection('leads');
     const snapshot = await leadsRef.get();
     
     console.log(`\n📊 RESULTS:`);
@@ -50,7 +50,7 @@ async function checkLeads() {
       console.log('This may indicate that:');
       console.log('1. Leads have not been scraped yet');
       console.log('2. Database save operations failed');
-      console.log('3. The tenant ID "genie-labs" may not exist or is incorrect');
+      console.log('3. The tenant ID "U9vez3sI36Ti5JqoWi5gJUMq2nX2" may not exist or is incorrect');
       console.log('\n💡 Try running checkDatabase.js to see all tenants');
     }
   } catch (error) {

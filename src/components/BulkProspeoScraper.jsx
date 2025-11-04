@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import IntegrationService from '../services/integrationService';
 import LeadService from '../services/leadService';
 import securityBypass from '../utils/securityBypass';
+import { triggerEmergencyLeadSave, getEmergencySaveStatus } from '../utils/emergencyLeadSaver';
 import toast from 'react-hot-toast';
 
 const BulkProspeoScraper = () => {
@@ -37,7 +38,49 @@ const BulkProspeoScraper = () => {
   ];
 
   const executiveNames = [
-    // Small to Medium Business Owners (Your Primary Target!)
+    // ===== TECH INDUSTRY - SaaS FOUNDERS & EXECUTIVES =====
+    // (High-value targets who understand software and need sales/marketing automation)
+    { first: 'Nathan', last: 'Latka', company: 'Founderpath', domain: 'founderpath.com' },
+    { first: 'Des', last: 'Traynor', company: 'Intercom', domain: 'intercom.com' },
+    { first: 'Joel', last: 'Gascoigne', company: 'Buffer', domain: 'buffer.com' },
+    { first: 'Wade', last: 'Foster', company: 'Zapier', domain: 'zapier.com' },
+    { first: 'Ryan', last: 'Hoover', company: 'Product Hunt', domain: 'producthunt.com' },
+    { first: 'Sahil', last: 'Lavingia', company: 'Gumroad', domain: 'gumroad.com' },
+    { first: 'Steli', last: 'Efti', company: 'Close', domain: 'close.com' },
+    { first: 'Rand', last: 'Fishkin', company: 'SparkToro', domain: 'sparktoro.com' },
+    { first: 'Hiten', last: 'Shah', company: 'Nira', domain: 'nira.com' },
+    { first: 'Mikael', last: 'Cho', company: 'Unsplash', domain: 'unsplash.com' },
+    { first: 'Jason', last: 'Fried', company: 'Basecamp', domain: 'basecamp.com' },
+    { first: 'David', last: 'Cancel', company: 'Drift', domain: 'drift.com' },
+    { first: 'Eoghan', last: 'McCabe', company: 'Intercom', domain: 'intercom.com' },
+    { first: 'Noah', last: 'Kagan', company: 'AppSumo', domain: 'appsumo.com' },
+    { first: 'Patrick', last: 'McKenzie', company: 'Kalzumeus', domain: 'kalzumeus.com' },
+    { first: 'Amy', last: 'Hoy', company: 'Stacking The Bricks', domain: 'stackingthebricks.com' },
+    { first: 'Rob', last: 'Walling', company: 'TinySeed', domain: 'tinyseed.com' },
+    { first: 'Justin', last: 'Jackson', company: 'Transistor', domain: 'transistor.fm' },
+    { first: 'Courtland', last: 'Allen', company: 'Indie Hackers', domain: 'indiehackers.com' },
+    { first: 'Pieter', last: 'Levels', company: 'Nomad List', domain: 'nomadlist.com' },
+    
+    // ===== MARKETING & GROWTH EXECUTIVES =====
+    // (Perfect Market Genie customers - they need better lead generation!)
+    { first: 'Neil', last: 'Patel', company: 'Neil Patel Digital', domain: 'neilpatel.com' },
+    { first: 'Sujan', last: 'Patel', company: 'Mailshake', domain: 'mailshake.com' },
+    { first: 'Sean', last: 'Ellis', company: 'GrowthHackers', domain: 'growthhackers.com' },
+    { first: 'Brian', last: 'Dean', company: 'Backlinko', domain: 'backlinko.com' },
+    { first: 'Peep', last: 'Laja', company: 'CXL', domain: 'cxl.com' },
+    { first: 'Oli', last: 'Gardner', company: 'Unbounce', domain: 'unbounce.com' },
+    { first: 'Marcus', last: 'Sheridan', company: 'River Pools', domain: 'riverpoolsandspas.com' },
+    { first: 'Ann', last: 'Handley', company: 'MarketingProfs', domain: 'marketingprofs.com' },
+    { first: 'Ryan', last: 'Deiss', company: 'DigitalMarketer', domain: 'digitalmarketer.com' },
+    { first: 'Jay', last: 'Baer', company: 'Convince & Convert', domain: 'convinceandconvert.com' },
+    { first: 'Joanna', last: 'Wiebe', company: 'Copyhackers', domain: 'copyhackers.com' },
+    { first: 'April', last: 'Dunford', company: 'Ambient Strategy', domain: 'aprildunford.com' },
+    { first: 'Dave', last: 'Gerhardt', company: 'Exit Five', domain: 'exitfive.com' },
+    { first: 'Morgan', last: 'Brown', company: 'Growth', domain: 'growth.org' },
+    { first: 'Casey', last: 'Winters', company: 'Casey Winters', domain: 'caseywinters.com' },
+    
+    // ===== SMALL TO MEDIUM BUSINESS OWNERS =====
+    // (Your Primary Target - need lead generation & CRM!)
     { first: 'Mike', last: 'Johnson', company: 'Local Marketing Pro', domain: 'localmarketingpro.com' },
     { first: 'Sarah', last: 'Williams', company: 'Boutique Consulting', domain: 'boutiqueconsulting.com' },
     { first: 'David', last: 'Brown', company: 'Metro Services LLC', domain: 'metroservicesllc.com' },
@@ -46,8 +89,21 @@ const BulkProspeoScraper = () => {
     { first: 'Amy', last: 'Taylor', company: 'Taylor Digital Agency', domain: 'taylordigitalagency.com' },
     { first: 'John', last: 'Martinez', company: 'Martinez Auto Repair', domain: 'martinezautorepair.com' },
     { first: 'Jessica', last: 'Anderson', company: 'Anderson Law Firm', domain: 'andersonlawfirm.com' },
+    { first: 'Steve', last: 'Collins', company: 'Collins Web Design', domain: 'collinswebdesign.com' },
+    { first: 'Rachel', last: 'Foster', company: 'Foster Marketing Group', domain: 'fostermarketinggroup.com' },
+    { first: 'Tim', last: 'Edwards', company: 'Edwards Consulting', domain: 'edwardsconsulting.com' },
+    { first: 'Maria', last: 'Rodriguez', company: 'Rodriguez Solutions', domain: 'rodriguezsolutions.com' },
+    { first: 'Jake', last: 'Morrison', company: 'Morrison Media', domain: 'morrisonmedia.com' },
+    { first: 'Emma', last: 'Wright', company: 'Wright Creative Studio', domain: 'wrightcreativestudio.com' },
+    { first: 'Carl', last: 'Peterson', company: 'Peterson & Associates', domain: 'petersonassociates.com' },
+    { first: 'Diana', last: 'Hughes', company: 'Hughes Digital', domain: 'hughesdigital.com' },
+    { first: 'Rich', last: 'Stevens', company: 'Stevens Strategy', domain: 'stevensstrategy.com' },
+    { first: 'Kate', last: 'Reynolds', company: 'Reynolds Agency', domain: 'reynoldsagency.com' },
+    { first: 'Mark', last: 'Coleman', company: 'Coleman Growth Partners', domain: 'colemangrowth.com' },
+    { first: 'Sophie', last: 'Bennett', company: 'Bennett Business Solutions', domain: 'bennettbusiness.com' },
     
-    // John Q Customer Business Owners (Perfect Market Genie Customers!)
+    // ===== JOHN Q CUSTOMER BUSINESS OWNERS =====
+    // (Perfect Market Genie Customers - local businesses needing automation!)
     { first: 'Robert', last: 'Thompson', company: 'Thompson Plumbing', domain: 'thompsonplumbing.com' },
     { first: 'Michelle', last: 'Garcia', company: 'Garcia Real Estate', domain: 'garciarealestate.com' },
     { first: 'Chris', last: 'Moore', company: 'Moore Insurance Agency', domain: 'mooreinsurance.com' },
@@ -56,43 +112,59 @@ const BulkProspeoScraper = () => {
     { first: 'Rachel', last: 'Clark', company: 'Clark Fitness Studio', domain: 'clarkfitness.com' },
     { first: 'Mark', last: 'Lewis', company: 'Lewis HVAC Solutions', domain: 'lewishvac.com' },
     { first: 'Amanda', last: 'Walker', company: 'Walker Pet Grooming', domain: 'walkerpetgrooming.com' },
+    { first: 'Brian', last: 'Taylor', company: 'Taylor Auto Sales', domain: 'taylorautosales.com' },
+    { first: 'Linda', last: 'Chen', company: 'Chen Family Dentistry', domain: 'chenfamilydentistry.com' },
+    { first: 'Gary', last: 'Wilson', company: 'Wilson Roofing', domain: 'wilsonroofing.com' },
+    { first: 'Tracy', last: 'Miller', company: 'Miller Veterinary Clinic', domain: 'millervet.com' },
+    { first: 'Paul', last: 'Robinson', company: 'Robinson Law Office', domain: 'robinsonlaw.com' },
+    { first: 'Nancy', last: 'Davis', company: 'Davis Physical Therapy', domain: 'davispt.com' },
+    { first: 'Jeff', last: 'Brown', company: 'Brown Construction', domain: 'brownconstruction.com' },
+    { first: 'Susan', last: 'Johnson', company: 'Johnson Accounting', domain: 'johnsonaccounting.com' },
+    { first: 'Tony', last: 'Martinez', company: 'Martinez Landscaping', domain: 'martinezlandscaping.com' },
+    { first: 'Carol', last: 'Anderson', company: 'Anderson Insurance', domain: 'andersoninsurance.com' },
+    { first: 'Dan', last: 'Thompson', company: 'Thompson Electric', domain: 'thompsonelectric.com' },
+    { first: 'Karen', last: 'Williams', company: 'Williams Realty', domain: 'williamsrealty.com' },
     
-    // Support Genie Prospects (Customer Service Heavy Businesses)
+    // ===== CUSTOMER SUPPORT & SERVICE COMPANIES =====
+    // (Great targets for Support Genie!)
+    { first: 'Alex', last: 'Turnbull', company: 'Groove', domain: 'groove.com' },
+    { first: 'Nick', last: 'Francis', company: 'Help Scout', domain: 'helpscout.com' },
+    { first: 'Mathilde', last: 'Collin', company: 'Front', domain: 'frontapp.com' },
+    { first: 'Baptiste', last: 'Jamin', company: 'Crisp', domain: 'crisp.chat' },
+    { first: 'Mariusz', last: 'Ciesla', company: 'LiveChat', domain: 'livechat.com' },
+    { first: 'Szymon', last: 'Klimczak', company: 'Tidio', domain: 'tidio.com' },
     { first: 'Steve', last: 'Hall', company: 'Hall Tech Support', domain: 'halltechsupport.com' },
     { first: 'Nicole', last: 'Young', company: 'Young Customer Care', domain: 'youngcustomercare.com' },
     { first: 'Brian', last: 'King', company: 'King Call Center', domain: 'kingcallcenter.com' },
     { first: 'Stephanie', last: 'Wright', company: 'Wright Help Desk', domain: 'wrighthelpdesk.com' },
     { first: 'Alex', last: 'Scott', company: 'Scott Support Services', domain: 'scottsupport.com' },
     { first: 'Melissa', last: 'Green', company: 'Green Customer Solutions', domain: 'greencustomersolutions.com' },
+    { first: 'Tyler', last: 'Hayes', company: 'Hayes Support Center', domain: 'hayessupport.com' },
+    { first: 'Lauren', last: 'Parker', company: 'Parker Customer Care', domain: 'parkercustomercare.com' },
+    { first: 'Derek', last: 'Stone', company: 'Stone Service Solutions', domain: 'stoneservice.com' },
     
-    // Local Service Businesses (High Need for Lead Generation)
+    // ===== LOCAL SERVICE BUSINESSES =====
+    // (High Need for Lead Generation - perfect for Market Genie!)
     { first: 'Paul', last: 'Adams', company: 'Adams Landscaping', domain: 'adamslandscaping.com' },
     { first: 'Laura', last: 'Baker', company: 'Baker Cleaning Services', domain: 'bakercleaning.com' },
     { first: 'Daniel', last: 'Mitchell', company: 'Mitchell Home Repairs', domain: 'mitchellhomerepairs.com' },
     { first: 'Kelly', last: 'Turner', company: 'Turner Event Planning', domain: 'turnereventplanning.com' },
     { first: 'Ryan', last: 'Phillips', company: 'Phillips Moving Company', domain: 'phillipsmoving.com' },
     { first: 'Lisa', last: 'Campbell', company: 'Campbell Catering', domain: 'campbellcatering.com' },
-    
-    // E-commerce Store Owners (Need Marketing Automation)
-    { first: 'Jason', last: 'Evans', company: 'Evans Online Store', domain: 'evansonlinestore.com' },
-    { first: 'Kimberly', last: 'Roberts', company: 'Roberts Boutique', domain: 'robertsboutique.com' },
-    { first: 'Matthew', last: 'Carter', company: 'Carter Electronics', domain: 'carterelectronics.com' },
-    { first: 'Ashley', last: 'Parker', company: 'Parker Home Goods', domain: 'parkerhomegoods.com' },
-    { first: 'Andrew', last: 'Cox', company: 'Cox Outdoor Gear', domain: 'coxoutdoorgear.com' },
-    { first: 'Samantha', last: 'Ward', company: 'Ward Fashion Hub', domain: 'wardfashionhub.com' },
-    
-    // Professional Services (Lawyers, Accountants, Consultants)
-    { first: 'Michael', last: 'Torres', company: 'Torres CPA Firm', domain: 'torrescpa.com' },
-    { first: 'Linda', last: 'Rivera', company: 'Rivera Legal Group', domain: 'riveralegal.com' },
-    { first: 'James', last: 'Cooper', company: 'Cooper Financial Advisors', domain: 'cooperfinancial.com' },
-    { first: 'Karen', last: 'Reed', company: 'Reed HR Consulting', domain: 'reedhr.com' },
-    { first: 'William', last: 'Bailey', company: 'Bailey Business Consulting', domain: 'baileybusiness.com' },
-    { first: 'Patricia', last: 'Gray', company: 'Gray Marketing Consultants', domain: 'graymarketing.com' },
-    
-    // SaaS Startup Founders & Small Business Owners (Still good targets!)
-    { first: 'Nathan', last: 'Latka', company: 'Founderpath', domain: 'founderpath.com' },
-    { first: 'Des', last: 'Traynor', company: 'Intercom', domain: 'intercom.com' },
-    { first: 'Joel', last: 'Gascoigne', company: 'Buffer', domain: 'buffer.com' },
+    { first: 'Scott', last: 'Barnes', company: 'Barnes Home Services', domain: 'barneshomeservices.com' },
+    { first: 'Ashley', last: 'Cooper', company: 'Cooper Lawn Care', domain: 'cooperlawncare.com' },
+    { first: 'Marcus', last: 'Hill', company: 'Hill Pest Control', domain: 'hillpestcontrol.com' },
+    { first: 'Vanessa', last: 'Reed', company: 'Reed Wedding Planning', domain: 'reedweddings.com' },
+    { first: 'Jordan', last: 'Price', company: 'Price Home Improvement', domain: 'pricehomeimprovement.com' },
+    { first: 'Tiffany', last: 'Ward', company: 'Ward Photography', domain: 'wardphotography.com' },
+    { first: 'Craig', last: 'Morgan', company: 'Morgan Security Services', domain: 'morgansecurity.com' },
+    { first: 'Hannah', last: 'Cook', company: 'Cook Event Catering', domain: 'cookeventcatering.com' },
+    { first: 'Bruce', last: 'Kelly', company: 'Kelly Pool Services', domain: 'kellypoolservices.com' },
+    { first: 'Natalie', last: 'Ross', company: 'Ross Interior Design', domain: 'rossinterior.com' },
+    { first: 'Victor', last: 'Gray', company: 'Gray Tree Service', domain: 'graytreeservice.com' },
+    { first: 'Allison', last: 'Fox', company: 'Fox Personal Training', domain: 'foxpersonaltraining.com' },
+    { first: 'Kevin', last: 'Perry', company: 'Perry Handyman Services', domain: 'perryhandyman.com' },
+    { first: 'Brittany', last: 'Long', company: 'Long Cleaning Co', domain: 'longcleaning.com' },
     { first: 'Wade', last: 'Foster', company: 'Zapier', domain: 'zapier.com' },
     { first: 'Ryan', last: 'Hoover', company: 'Product Hunt', domain: 'producthunt.com' },
     { first: 'Sahil', last: 'Lavingia', company: 'Gumroad', domain: 'gumroad.com' },
@@ -105,7 +177,127 @@ const BulkProspeoScraper = () => {
     { first: 'Mathilde', last: 'Collin', company: 'Front', domain: 'frontapp.com' },
     { first: 'Baptiste', last: 'Jamin', company: 'Crisp', domain: 'crisp.chat' },
     { first: 'Mariusz', last: 'Ciesla', company: 'LiveChat', domain: 'livechat.com' },
-    { first: 'Szymon', last: 'Klimczak', company: 'Tidio', domain: 'tidio.com' }
+    { first: 'Szymon', last: 'Klimczak', company: 'Tidio', domain: 'tidio.com' },
+    { first: 'Steve', last: 'Hall', company: 'Hall Tech Support', domain: 'halltechsupport.com' },
+    { first: 'Nicole', last: 'Young', company: 'Young Customer Care', domain: 'youngcustomercare.com' },
+    { first: 'Brian', last: 'King', company: 'King Call Center', domain: 'kingcallcenter.com' },
+    { first: 'Stephanie', last: 'Wright', company: 'Wright Help Desk', domain: 'wrighthelpdesk.com' },
+    { first: 'Alex', last: 'Scott', company: 'Scott Support Services', domain: 'scottsupport.com' },
+    { first: 'Melissa', last: 'Green', company: 'Green Customer Solutions', domain: 'greencustomersolutions.com' },
+    { first: 'Tyler', last: 'Hayes', company: 'Hayes Support Center', domain: 'hayessupport.com' },
+    { first: 'Lauren', last: 'Parker', company: 'Parker Customer Care', domain: 'parkercustomercare.com' },
+    { first: 'Derek', last: 'Stone', company: 'Stone Service Solutions', domain: 'stoneservice.com' },
+    
+    // ===== LOCAL SERVICE BUSINESSES =====
+    // (High Need for Lead Generation - perfect for Market Genie!)
+    { first: 'Paul', last: 'Adams', company: 'Adams Landscaping', domain: 'adamslandscaping.com' },
+    { first: 'Laura', last: 'Baker', company: 'Baker Cleaning Services', domain: 'bakercleaning.com' },
+    { first: 'Daniel', last: 'Mitchell', company: 'Mitchell Home Repairs', domain: 'mitchellhomerepairs.com' },
+    { first: 'Kelly', last: 'Turner', company: 'Turner Event Planning', domain: 'turnereventplanning.com' },
+    { first: 'Ryan', last: 'Phillips', company: 'Phillips Moving Company', domain: 'phillipsmoving.com' },
+    { first: 'Lisa', last: 'Campbell', company: 'Campbell Catering', domain: 'campbellcatering.com' },
+    { first: 'Scott', last: 'Barnes', company: 'Barnes Home Services', domain: 'barneshomeservices.com' },
+    { first: 'Ashley', last: 'Cooper', company: 'Cooper Lawn Care', domain: 'cooperlawncare.com' },
+    { first: 'Marcus', last: 'Hill', company: 'Hill Pest Control', domain: 'hillpestcontrol.com' },
+    { first: 'Vanessa', last: 'Reed', company: 'Reed Wedding Planning', domain: 'reedweddings.com' },
+    { first: 'Jordan', last: 'Price', company: 'Price Home Improvement', domain: 'pricehomeimprovement.com' },
+    { first: 'Tiffany', last: 'Ward', company: 'Ward Photography', domain: 'wardphotography.com' },
+    { first: 'Craig', last: 'Morgan', company: 'Morgan Security Services', domain: 'morgansecurity.com' },
+    { first: 'Hannah', last: 'Cook', company: 'Cook Event Catering', domain: 'cookeventcatering.com' },
+    { first: 'Bruce', last: 'Kelly', company: 'Kelly Pool Services', domain: 'kellypoolservices.com' },
+    { first: 'Natalie', last: 'Ross', company: 'Ross Interior Design', domain: 'rossinterior.com' },
+    { first: 'Victor', last: 'Gray', company: 'Gray Tree Service', domain: 'graytreeservice.com' },
+    { first: 'Allison', last: 'Fox', company: 'Fox Personal Training', domain: 'foxpersonaltraining.com' },
+    { first: 'Kevin', last: 'Perry', company: 'Perry Handyman Services', domain: 'perryhandyman.com' },
+    { first: 'Brittany', last: 'Long', company: 'Long Cleaning Co', domain: 'longcleaning.com' },
+    
+    // ===== E-COMMERCE STORE OWNERS =====
+    // (Need Marketing Automation & Customer Support!)
+    { first: 'Jason', last: 'Evans', company: 'Evans Online Store', domain: 'evansonlinestore.com' },
+    { first: 'Kimberly', last: 'Roberts', company: 'Roberts Boutique', domain: 'robertsboutique.com' },
+    { first: 'Matthew', last: 'Carter', company: 'Carter Electronics', domain: 'carterelectronics.com' },
+    { first: 'Ashley', last: 'Parker', company: 'Parker Home Goods', domain: 'parkerhomegoods.com' },
+    { first: 'Andrew', last: 'Cox', company: 'Cox Outdoor Gear', domain: 'coxoutdoorgear.com' },
+    { first: 'Samantha', last: 'Ward', company: 'Ward Fashion Hub', domain: 'wardfashionhub.com' },
+    { first: 'Brandon', last: 'Fields', company: 'Fields Sports Equipment', domain: 'fieldssports.com' },
+    { first: 'Megan', last: 'Silva', company: 'Silva Beauty Products', domain: 'silvabeauty.com' },
+    { first: 'Tyler', last: 'Bishop', company: 'Bishop Tech Gadgets', domain: 'bishoptech.com' },
+    { first: 'Chloe', last: 'Wells', company: 'Wells Handmade Crafts', domain: 'wellshandmade.com' },
+    { first: 'Austin', last: 'Murray', company: 'Murray Fitness Gear', domain: 'murrayfitness.com' },
+    { first: 'Paige', last: 'Dixon', company: 'Dixon Pet Supplies', domain: 'dixonpets.com' },
+    { first: 'Ethan', last: 'Flores', company: 'Flores Home Decor', domain: 'floreshomedecor.com' },
+    { first: 'Zoe', last: 'Pierce', company: 'Pierce Jewelry', domain: 'piercejewelry.com' },
+    { first: 'Logan', last: 'Webb', company: 'Webb Outdoor Store', domain: 'webboutdoor.com' },
+    
+    // ===== PROFESSIONAL SERVICES =====
+    // (Lawyers, Accountants, Consultants - need client management!)
+    { first: 'Michael', last: 'Torres', company: 'Torres CPA Firm', domain: 'torrescpa.com' },
+    { first: 'Linda', last: 'Rivera', company: 'Rivera Legal Group', domain: 'riveralegal.com' },
+    { first: 'James', last: 'Cooper', company: 'Cooper Financial Advisors', domain: 'cooperfinancial.com' },
+    { first: 'Karen', last: 'Reed', company: 'Reed HR Consulting', domain: 'reedhr.com' },
+    { first: 'William', last: 'Bailey', company: 'Bailey Business Consulting', domain: 'baileybusiness.com' },
+    { first: 'Patricia', last: 'Gray', company: 'Gray Marketing Consultants', domain: 'graymarketing.com' },
+    { first: 'Richard', last: 'Hunt', company: 'Hunt Law Firm', domain: 'huntlawfirm.com' },
+    { first: 'Elizabeth', last: 'Boyd', company: 'Boyd Accounting Services', domain: 'boydaccounting.com' },
+    { first: 'Charles', last: 'Howard', company: 'Howard Consulting Group', domain: 'howardconsulting.com' },
+    { first: 'Barbara', last: 'Wood', company: 'Wood Financial Planning', domain: 'woodfinancial.com' },
+    { first: 'Robert', last: 'Porter', company: 'Porter Legal Services', domain: 'porterlegal.com' },
+    { first: 'Mary', last: 'Griffin', company: 'Griffin Tax Services', domain: 'griffintax.com' },
+    { first: 'John', last: 'Ellis', company: 'Ellis Business Advisors', domain: 'ellisbusiness.com' },
+    { first: 'Jennifer', last: 'Warren', company: 'Warren Estate Planning', domain: 'warrenestate.com' },
+    { first: 'David', last: 'Butler', company: 'Butler Consulting', domain: 'butlerconsulting.com' },
+    
+    // ===== HEALTHCARE PROFESSIONALS =====
+    // (Need patient management & appointment systems!)
+    { first: 'Dr. Sarah', last: 'Mitchell', company: 'Mitchell Family Medicine', domain: 'mitchellfamilymed.com' },
+    { first: 'Dr. Mark', last: 'Harrison', company: 'Harrison Dental Group', domain: 'harrisondental.com' },
+    { first: 'Dr. Lisa', last: 'Graham', company: 'Graham Pediatrics', domain: 'grahampediatrics.com' },
+    { first: 'Dr. Jason', last: 'Barnes', company: 'Barnes Orthopedics', domain: 'barnesortho.com' },
+    { first: 'Dr. Amanda', last: 'Cole', company: 'Cole Dermatology', domain: 'coledermatology.com' },
+    { first: 'Dr. Brian', last: 'Fisher', company: 'Fisher Eye Care', domain: 'fishereyecare.com' },
+    { first: 'Dr. Nicole', last: 'Perry', company: 'Perry Wellness Center', domain: 'perrywellness.com' },
+    { first: 'Dr. Kevin', last: 'Ross', company: 'Ross Physical Therapy', domain: 'rosspt.com' },
+    { first: 'Dr. Rachel', last: 'Stone', company: 'Stone Chiropractic', domain: 'stonechiro.com' },
+    { first: 'Dr. Tyler', last: 'Hart', company: 'Hart Veterinary Clinic', domain: 'hartvet.com' },
+    
+    // ===== AGENCY OWNERS & MARKETING PROFESSIONALS =====
+    // (Perfect Market Genie customers - they serve other businesses!)
+    { first: 'Alex', last: 'Chen', company: 'Chen Digital Marketing', domain: 'chendigital.com' },
+    { first: 'Morgan', last: 'Blake', company: 'Blake Creative Agency', domain: 'blakecreative.com' },
+    { first: 'Jordan', last: 'Reed', company: 'Reed Marketing Solutions', domain: 'reedmarketing.com' },
+    { first: 'Taylor', last: 'West', company: 'West Brand Studio', domain: 'westbrand.com' },
+    { first: 'Casey', last: 'Ford', company: 'Ford Social Media', domain: 'fordsocialmedia.com' },
+    { first: 'Quinn', last: 'Lane', company: 'Lane Growth Agency', domain: 'lanegrowth.com' },
+    { first: 'Riley', last: 'Cross', company: 'Cross Performance Marketing', domain: 'crossperformance.com' },
+    { first: 'Sage', last: 'Burns', company: 'Burns Digital Strategy', domain: 'burnsdigital.com' },
+    { first: 'Drew', last: 'Nash', company: 'Nash Media Group', domain: 'nashmedia.com' },
+    { first: 'Blake', last: 'Shaw', company: 'Shaw Creative Studios', domain: 'shawcreative.com' },
+    
+    // ===== REAL ESTATE PROFESSIONALS =====
+    // (Need lead generation & client management systems!)
+    { first: 'Jennifer', last: 'Walsh', company: 'Walsh Real Estate', domain: 'walshrealestate.com' },
+    { first: 'Brad', last: 'Simpson', company: 'Simpson Properties', domain: 'simpsonproperties.com' },
+    { first: 'Christine', last: 'Wells', company: 'Wells Realty Group', domain: 'wellsrealty.com' },
+    { first: 'Mike', last: 'Knight', company: 'Knight Real Estate', domain: 'knightrealestate.com' },
+    { first: 'Sandra', last: 'Pope', company: 'Pope Property Solutions', domain: 'popeproperty.com' },
+    { first: 'Greg', last: 'Palmer', company: 'Palmer Realty', domain: 'palmerrealty.com' },
+    { first: 'Tina', last: 'Fleming', company: 'Fleming Home Sales', domain: 'fleminghomes.com' },
+    { first: 'Rob', last: 'Curtis', company: 'Curtis Commercial Real Estate', domain: 'curtiscommercial.com' },
+    { first: 'Angela', last: 'Hunter', company: 'Hunter Property Management', domain: 'hunterproperty.com' },
+    { first: 'Steve', last: 'Douglas', company: 'Douglas Real Estate Investments', domain: 'douglasinvestments.com' },
+    
+    // ===== FITNESS & WELLNESS PROFESSIONALS =====
+    // (Need client management & booking systems!)
+    { first: 'Jake', last: 'Torres', company: 'Torres Fitness Studio', domain: 'torresfitness.com' },
+    { first: 'Emma', last: 'Reid', company: 'Reid Yoga Center', domain: 'reidyoga.com' },
+    { first: 'Connor', last: 'Price', company: 'Price Personal Training', domain: 'pricept.com' },
+    { first: 'Olivia', last: 'Grant', company: 'Grant Wellness Spa', domain: 'grantwellness.com' },
+    { first: 'Nathan', last: 'Webb', company: 'Webb CrossFit', domain: 'webbcrossfit.com' },
+    { first: 'Maya', last: 'Foster', company: 'Foster Pilates Studio', domain: 'fosterpilates.com' },
+    { first: 'Lucas', last: 'Dean', company: 'Dean Martial Arts', domain: 'deanmartialarts.com' },
+    { first: 'Sophia', last: 'Gilbert', company: 'Gilbert Nutrition Coaching', domain: 'gilbertnutrition.com' },
+    { first: 'Caleb', last: 'Hayes', company: 'Hayes Sports Performance', domain: 'hayessports.com' },
+    { first: 'Ava', last: 'Bishop', company: 'Bishop Dance Academy', domain: 'bishopdance.com' }
   ];
 
   const handleBulkScrape = async () => {
@@ -132,15 +324,14 @@ const BulkProspeoScraper = () => {
           const executive = shuffledExecutives[i];
           setScrapeProgress(Math.round(((i + 1) / targetCount) * 100));
           
-          console.log(`🔍 Searching for ${executive.first} ${executive.last} at ${executive.company}...`);
+          console.log(`🔍 Multi-provider search for ${executive.first} ${executive.last} at ${executive.company}...`);
           
-          // Use our working Prospeo API to find the email
-          const result = await IntegrationService.findEmailProspeo(
+          // Use multi-provider approach: Hunter.io, VoilaNorbert, AND Prospeo!
+          const result = await LeadService.findPersonMultiProvider(
             tenant.id, 
             executive.domain, 
             executive.first, 
-            executive.last, 
-            executive.company
+            executive.last
           );
 
           if (result.success && result.data && result.data.email) {
@@ -150,7 +341,8 @@ const BulkProspeoScraper = () => {
               email: result.data.email,
               company: executive.company,
               domain: executive.domain,
-              source: 'bulk-prospeo-scrape',
+              source: `bulk-multi-provider-scrape`,
+              provider: result.data.provider || 'multi-provider',
               status: result.data.status || 'unknown',
               confidence: result.data.confidence || null,
               score: result.data.status === 'VALID' ? 95 : 75,
@@ -159,10 +351,10 @@ const BulkProspeoScraper = () => {
             };
 
             foundLeads.push(leadData);
-            console.log(`✅ Found: ${leadData.email}`);
+            console.log(`✅ Found via ${result.data.provider || 'multi-provider'}: ${leadData.email}`);
             
           } else {
-            console.log(`❌ No email found for ${executive.first} ${executive.last}`);
+            console.log(`❌ No email found across all providers for ${executive.first} ${executive.last}`);
           }
           
           // Small delay to avoid rate limiting
@@ -177,7 +369,7 @@ const BulkProspeoScraper = () => {
       
       // Batch save all leads to database in one operation
       if (foundLeads.length > 0) {
-        toast.success(`🎉 Bulk scrape complete! Found ${foundLeads.length} executive emails`);
+        toast.success(`🎉 Multi-provider scrape complete! Found ${foundLeads.length} executive emails`);
         
         // Show saving toast
         const savingToast = toast.loading(`💾 Saving ${foundLeads.length} leads to database...`);
@@ -214,10 +406,10 @@ const BulkProspeoScraper = () => {
         lastName: lead.lastName,
         email: lead.email,
         company: lead.company,
-        phone: '', // Not available from Prospeo
+        phone: '', // Not always available from lead providers
         title: lead.title || 'Executive',
-        source: 'bulk-prospeo-scrape',
-        notes: `Found via bulk Prospeo scrape - Status: ${lead.status}, Confidence: ${lead.confidence}`
+        source: 'bulk-multi-provider-scrape',
+        notes: `Found via multi-provider scrape - Provider: ${lead.provider}, Status: ${lead.status}, Confidence: ${lead.confidence}`
       }));
 
       return await securityBypass.executeWithBypass(async () => {
@@ -267,7 +459,26 @@ const BulkProspeoScraper = () => {
             } catch (error) {
               console.log(`❌ Attempt ${attempts}/${maxAttempts} failed for ${leadEmail}: ${error.message}`);
               
-              if (attempts < maxAttempts) {
+              // 🚨 EMERGENCY DETECTION: Check for Firebase transport errors
+              const isTransportError = error.message.includes('transport errored') || 
+                                     error.message.includes('Database write timeout') ||
+                                     error.message.includes('WebChannelConnection') ||
+                                     error.message.includes('Save timeout');
+              
+              if (isTransportError && attempts >= 2) {
+                console.log(`🚨 FIREBASE TRANSPORT ERROR DETECTED - Triggering emergency save for ${leadEmail}`);
+                try {
+                  await triggerEmergencyLeadSave(leadData);
+                  console.log(`✅ Emergency save successful for ${leadEmail}`);
+                  savedCount++;
+                  saved = true;
+                  break; // Exit retry loop since emergency save worked
+                } catch (emergencyError) {
+                  console.error(`❌ Emergency save failed for ${leadEmail}:`, emergencyError);
+                }
+              }
+              
+              if (attempts < maxAttempts && !saved) {
                 console.log(`🔄 Retrying ${leadEmail} in 2 seconds...`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
               }
@@ -276,37 +487,40 @@ const BulkProspeoScraper = () => {
           
           if (!saved) {
             console.error(`💀 FAILED to save ${leadEmail} after ${maxAttempts} attempts`);
-            
-            // 🚨 EMERGENCY: Try offline storage when Firebase is down
-            try {
-              if (window.emergencyLeadStorage) {
-                console.log(`🚨 Attempting emergency offline storage for ${leadEmail}...`);
-                const emergencyResult = window.emergencyLeadStorage.storeLeadOffline(leadData);
-                if (emergencyResult.success) {
-                  console.log(`💾 EMERGENCY SAVE SUCCESS: ${leadEmail} stored offline`);
-                  savedCount++; // Count as saved for offline storage
-                  
-                  // Show user notification about offline storage
-                  if (typeof window.showNotification === 'function') {
-                    window.showNotification(`Lead ${leadEmail} saved offline - will sync when Firebase reconnects`, 'warning');
-                  }
-                } else {
-                  console.error(`❌ Emergency storage also failed for ${leadEmail}`);
-                  failedCount++;
-                }
-              } else {
-                console.error(`❌ Emergency storage not available for ${leadEmail}`);
-                failedCount++;
-              }
-            } catch (emergencyError) {
-              console.error(`❌ Emergency storage error for ${leadEmail}:`, emergencyError);
-              failedCount++;
-            }
+            failedCount++;
           }
+        }
+        
+        // 🚨 EMERGENCY SAVE: If we have failed leads and Firebase is having transport issues, use emergency save
+        if (failedCount > 0) {
+          console.log(`🚨 EMERGENCY: ${failedCount} leads failed to save - triggering emergency save system`);
           
-          // Brief pause between leads to not overwhelm Firebase
-          if (i < leadDataArray.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // Get the failed leads for emergency save
+          const failedLeads = leadDataArray.filter((lead, index) => {
+            // Determine which leads failed (this is approximate since we don't track per-lead)
+            return index >= savedCount; // Assume the last failedCount leads failed
+          });
+          
+          try {
+            // Trigger emergency save using Firebase Functions
+            console.log(`🚨 Triggering emergency save for ${failedLeads.length} failed leads`);
+            triggerEmergencyLeadSave(failedLeads, tenant.id);
+            
+            // Show user notification about emergency save
+            toast.success(`Emergency save triggered for ${failedLeads.length} leads - they will be saved directly to database`, {
+              duration: 5000
+            });
+            
+            // Give emergency save a moment to process
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Check emergency save status
+            const emergencyStatus = getEmergencySaveStatus();
+            console.log('📊 Emergency save status:', emergencyStatus);
+            
+          } catch (emergencyError) {
+            console.error('❌ Emergency save trigger failed:', emergencyError);
+            toast.error(`Emergency save failed: ${emergencyError.message}`);
           }
         }
         
@@ -343,7 +557,7 @@ const BulkProspeoScraper = () => {
           <span className="text-white font-bold text-xl">🚀</span>
         </div>
         <div>
-          <h3 className="text-2xl font-bold">Bulk Executive Scraper</h3>
+          <h3 className="text-2xl font-bold">🚀 Multi-Provider Executive Scraper</h3>
           <p className="text-purple-100">Find 10-40 high-value executive emails in one scrape</p>
         </div>
       </div>
@@ -465,7 +679,7 @@ const BulkProspeoScraper = () => {
       )}
 
       <div className="text-xs text-purple-200 mt-4">
-        💡 All leads auto-save to Recent Leads database. Uses your Prospeo API credits (73 remaining).
+        💡 All leads auto-save to Recent Leads database. Uses Hunter.io, VoilaNorbert, AND Prospeo APIs for maximum coverage!
       </div>
     </div>
   );

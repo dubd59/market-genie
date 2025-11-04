@@ -10,6 +10,142 @@ const { leadGenProxy } = require('./leadGenProxy');
 // Export lead generation proxy
 exports.leadGenProxy = leadGenProxy;
 
+// Function to create founder tenant document
+exports.createFounderTenant = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Creating founder tenant document...');
+    
+    // Create the founder-tenant document
+    const founderTenantData = {
+      id: 'founder-tenant',
+      tenantId: 'founder-tenant',
+      name: 'Market Genie Founder',
+      ownerId: 'U9vez3sI36Ti5JqoWi5gJUMq2nX2',
+      ownerEmail: 'dubdproducts@gmail.com',
+      type: 'founder',
+      status: 'active',
+      initialized: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      plan: 'unlimited',
+      features: {
+        maxLeads: -1,
+        maxUsers: -1,
+        maxIntegrations: -1,
+        advancedFeatures: true
+      }
+    };
+    
+    // Write the document
+    await db.collection('MarketGenie_tenants').doc('founder-tenant').set(founderTenantData);
+    
+    console.log('Founder tenant document created successfully');
+    
+    // Verify it was created
+    const createdDoc = await db.collection('MarketGenie_tenants').doc('founder-tenant').get();
+    
+    if (createdDoc.exists) {
+      console.log('Verification successful:', createdDoc.data());
+      
+      res.status(200).json({
+        success: true,
+        message: 'Founder tenant document created successfully',
+        data: createdDoc.data()
+      });
+    } else {
+      throw new Error('Document was not created properly');
+    }
+    
+  } catch (error) {
+    console.error('Error creating founder tenant:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Function to copy integrations from old tenant to founder tenant
+exports.copyIntegrationsToFounder = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Copying integrations from old tenant to founder tenant...');
+    
+    const oldTenantId = 'U9vez3sI36Ti5JqoWi5gJUMq2nX2';
+    const newTenantId = 'founder-tenant';
+    
+    // Get all integrations from old tenant
+    const integrationsRef = db.collection('MarketGenie_tenants').doc(oldTenantId).collection('integrations');
+    const integrationsSnapshot = await integrationsRef.get();
+    
+    let copiedCount = 0;
+    const copiedIntegrations = [];
+    
+    if (!integrationsSnapshot.empty) {
+      console.log(`Found ${integrationsSnapshot.size} integrations to copy`);
+      
+      // Copy each integration
+      for (const doc of integrationsSnapshot.docs) {
+        const integrationData = doc.data();
+        const integrationId = doc.id;
+        
+        console.log(`Copying integration: ${integrationId}`);
+        
+        // Write to new tenant
+        await db.collection('MarketGenie_tenants')
+          .doc(newTenantId)
+          .collection('integrations')
+          .doc(integrationId)
+          .set(integrationData);
+        
+        copiedCount++;
+        copiedIntegrations.push({
+          id: integrationId,
+          name: integrationData.name || integrationId,
+          status: integrationData.status || 'active'
+        });
+      }
+    }
+    
+    console.log(`Successfully copied ${copiedCount} integrations`);
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully copied ${copiedCount} integrations to founder tenant`,
+      copiedCount,
+      integrations: copiedIntegrations
+    });
+    
+  } catch (error) {
+    console.error('Error copying integrations:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();

@@ -72,6 +72,41 @@ export class TenantService {
       return { success: false, error: { message: errorMessage, code: error.code } }
     }
   }
+  
+  // Get tenant by specific ID (e.g., from JWT token)
+  static async getTenantById(tenantId) {
+    if (!auth.currentUser) {
+      return { data: null, error: { message: 'No authenticated user' } }
+    }
+
+    try {
+      console.log('🎯 Getting tenant by ID:', tenantId)
+      
+      const tenantResult = await connectionService.executeWithRetry(
+        () => FirebaseService.getById('MarketGenie_tenants', tenantId),
+        `Get tenant by ID: ${tenantId}`
+      )
+
+      if (tenantResult.success && tenantResult.data.data) {
+        console.log('✅ Found tenant by ID:', tenantId);
+        return { data: tenantResult.data.data, error: null };
+      } else {
+        console.log('❌ Tenant not found:', tenantId);
+        return { data: null, error: { message: `Tenant not found: ${tenantId}` } };
+      }
+
+    } catch (error) {
+      console.error('getTenantById error:', error)
+      
+      // Check if this is a connection error
+      if (connectionService.isCORSError(error) || connectionService.isNetworkError(error)) {
+        return { data: null, error: { message: 'Database connection issue. Please refresh the page.' } }
+      }
+      
+      return { data: null, error: { message: error.message } }
+    }
+  }
+  
   // Get current user's tenant
   static async getCurrentUserTenant() {
     if (!auth.currentUser) {

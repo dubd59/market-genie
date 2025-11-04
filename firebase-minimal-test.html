@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Firebase Test</title>
+    <script type="module">
+        // Test Firebase with absolute minimal setup
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+        import { getFirestore, addDoc, collection } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8vZLOo4Oy7HCQwL6jxCEBAP5a8VPJgDs",
+            authDomain: "market-genie-f2d41.firebaseapp.com",
+            projectId: "market-genie-f2d41",
+            storageBucket: "market-genie-f2d41.firebasestorage.app",
+            messagingSenderId: "395490306033",
+            appId: "1:395490306033:web:f2a8e4b1a1c6e9e9b7c8f1"
+        };
+
+        console.log('🧪 Starting MINIMAL Firebase test...');
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        async function runMinimalTest() {
+            try {
+                console.log('🔑 Signing in anonymously...');
+                await signInAnonymously(auth);
+                console.log('✅ Anonymous auth successful');
+
+                console.log('💾 Testing minimal write operation...');
+                const testDoc = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    message: 'Minimal test write'
+                };
+
+                const result = await addDoc(collection(db, 'test-minimal'), testDoc);
+                console.log('✅ SUCCESS: Document written with ID:', result.id);
+                
+                document.body.innerHTML = `
+                    <h1>✅ Firebase Working!</h1>
+                    <p>Document ID: ${result.id}</p>
+                    <p>No WebChannel transport errors!</p>
+                `;
+
+            } catch (error) {
+                console.error('❌ FAILED:', error);
+                document.body.innerHTML = `
+                    <h1>❌ Firebase Failed</h1>
+                    <p>Error: ${error.message}</p>
+                    <p>Code: ${error.code}</p>
+                `;
+            }
+        }
+
+        runMinimalTest();
+    </script>
+</head>
+<body>
+    <h1>Testing Firebase...</h1>
+</body>
+</html>

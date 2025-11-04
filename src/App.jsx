@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { TenantProvider } from './contexts/TenantContext'
 import { GenieProvider } from './contexts/GenieContext'
@@ -11,10 +11,6 @@ import Login from './pages/Login'
 
 // 🚀 CRITICAL FIX: Import Firebase v8 compatibility bridge for diagnostics
 import './utils/firebaseV8Bridge.js'
-// 🏥 HEALTH CHECK: Start Firebase connection monitoring
-import { startHealthMonitoring } from './utils/firebaseHealthCheck.js'
-// 🚨 EMERGENCY RECONNECTION: Emergency Firebase reconnection monitoring
-import { startEmergencyMonitoring } from './utils/emergencyFirebaseReconnect.js'
 // 🧪 DATABASE TESTS: Load database write tests for debugging
 import './utils/databaseWriteTest.js'
 // 🔐 SECURITY DIAGNOSTIC: Load Firebase security rules diagnostic
@@ -157,6 +153,26 @@ function SophisticatedDashboard() {
   const { user, logout, checkAuthHealth, refreshAuthToken } = useAuth()
   const { tenant, loading: tenantLoading } = useTenant()
 
+  // Emergency Migration State
+  const [migrationInProgress, setMigrationInProgress] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+
+  // Store current user and tenant in window for debugging and emergency services
+  useEffect(() => {
+    if (user) {
+      window.currentUser = user;
+      console.log(`👤 Current user stored in window: ${user.email}`);
+    }
+  }, [user]);
+
+  // Store current tenant in window for emergency services to access
+  useEffect(() => {
+    if (tenant?.id) {
+      window.currentMarketGenieTenant = tenant;
+      console.log(`📍 Current tenant stored in window: ${tenant.id}`);
+    }
+  }, [tenant]);
+
   // Connection Health State
   const [connectionHealthy, setConnectionHealthy] = useState(true)
   const [lastHealthCheck, setLastHealthCheck] = useState(Date.now())
@@ -237,12 +253,9 @@ function SophisticatedDashboard() {
     return () => clearInterval(refreshInterval);
   }, [activeSection, tenant?.id]); // Re-run when section changes or tenant is loaded
 
-  // 🏥 Initialize Firebase health monitoring
+  // 🧹 Clean Firebase operations - no interference with native connection management
   useEffect(() => {
-    console.log('🚀 Starting Firebase health monitoring system...');
-    startHealthMonitoring();
-    console.log('🚨 Starting emergency Firebase reconnection monitoring...');
-    startEmergencyMonitoring();
+    console.log('🚀 Firebase initialized with clean operations...');
   }, []);
 
   // Campaign State
@@ -370,6 +383,97 @@ function SophisticatedDashboard() {
     const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [tenant?.id]);
+
+  // 🚨 Emergency Leads Listener - Add emergency leads to Recent Leads UI
+  useEffect(() => {
+    const handleEmergencyLeadsSync = (event) => {
+      const emergencyLeads = event.detail.leads;
+      console.log(`📱 Received ${emergencyLeads.length} emergency leads for UI display`);
+      
+      // Add emergency leads to the existing leads array
+      setLeads(prevLeads => {
+        // Remove any existing emergency leads with the same IDs to avoid duplicates
+        const existingEmergencyIds = new Set(emergencyLeads.map(lead => lead.id));
+        const nonDuplicateLeads = prevLeads.filter(lead => 
+          !lead.isEmergency || !existingEmergencyIds.has(lead.id)
+        );
+        
+        // Add new emergency leads
+        const updatedLeads = [...nonDuplicateLeads, ...emergencyLeads];
+        
+        console.log(`📊 Updated leads list: ${updatedLeads.length} total leads (${emergencyLeads.length} new emergency)`);
+        return updatedLeads;
+      });
+      
+      // Update lead stats to include emergency leads
+      setLeadStats(prevStats => ({
+        ...prevStats,
+        totalLeads: (prevStats.totalLeads || 0) + emergencyLeads.length,
+        emergencyLeads: emergencyLeads.length
+      }));
+    };
+
+    const handleRefreshRecentLeads = () => {
+      console.log('🔄 Refreshing Recent Leads section...');
+      // Force re-render of Recent Leads - call the proper load function
+      if (typeof loadLeadData === 'function') {
+        loadLeadData();
+      } else {
+        console.log('📊 No loadLeadData function available, using simple refresh');
+        // Just trigger a re-render
+        setLeads(prevLeads => [...prevLeads]);
+      }
+    };
+
+    const handleForceLoadFromDatabase = (event) => {
+      console.log('🔄 FORCE DATABASE REFRESH: Emergency leads saved to database, reloading Recent Leads...');
+      console.log('📊 Event details:', event.detail);
+      
+      // Force immediate reload from database
+      if (typeof loadLeadData === 'function') {
+        loadLeadData();
+        console.log('✅ Recent Leads reloaded from database');
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('emergencyLeadsSync', handleEmergencyLeadsSync);
+    window.addEventListener('refreshRecentLeads', handleRefreshRecentLeads);
+    window.addEventListener('forceLoadLeadsFromDatabase', handleForceLoadFromDatabase);
+
+    // 🔄 START BACKGROUND DATABASE SYNC for emergency leads
+    const initializeBackgroundSync = async () => {
+      try {
+        const { default: EmergencyLeadStorage } = await import('./services/EmergencyLeadStorage.js');
+        const emergencyStorage = new EmergencyLeadStorage();
+        
+        // Start background sync that keeps trying until all leads are saved to database
+        emergencyStorage.startBackgroundDatabaseSync();
+        
+        // Store reference for cleanup
+        window.emergencyStorageSync = emergencyStorage;
+        
+        console.log('🔄 Background database sync started for emergency leads');
+      } catch (error) {
+        console.error('❌ Failed to start background database sync:', error);
+      }
+    };
+    
+    initializeBackgroundSync();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('emergencyLeadsSync', handleEmergencyLeadsSync);
+      window.removeEventListener('refreshRecentLeads', handleRefreshRecentLeads);
+      window.removeEventListener('forceLoadLeadsFromDatabase', handleForceLoadFromDatabase);
+      
+      // Stop background sync
+      if (window.emergencyStorageSync) {
+        window.emergencyStorageSync.stopBackgroundDatabaseSync();
+        window.emergencyStorageSync = null;
+      }
+    };
+  }, []); // Only run once on mount
 
   // Load appointments data
   useEffect(() => {
@@ -1059,18 +1163,35 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   const handleRemoveDuplicates = async () => {
-    if (!confirm('This will remove duplicate leads (keeping the newest copy of each email). Continue?')) {
+    if (!confirm('This will remove duplicate leads from Firebase (keeping the newest copy of each email). Emergency leads will be preserved. Continue?')) {
       return
     }
 
     toast.loading('Removing duplicate leads...', { duration: 5000 })
 
     try {
+      // Save emergency leads before removing duplicates
+      const emergencyLeads = leads.filter(lead => lead.isEmergency);
+      
       const result = await LeadService.removeDuplicateLeads(tenant.id)
       
       if (result.success) {
         toast.success(result.message || 'Duplicates removed successfully')
-        await loadLeadData() // Refresh the lead list
+        
+        // Refresh Firebase leads but preserve emergency leads
+        await loadLeadData()
+        
+        // Re-add emergency leads after refresh
+        if (emergencyLeads.length > 0) {
+          setLeads(prevLeads => {
+            // Remove any existing emergency leads to avoid duplicates
+            const nonEmergencyLeads = prevLeads.filter(lead => !lead.isEmergency);
+            // Add back the saved emergency leads
+            return [...nonEmergencyLeads, ...emergencyLeads];
+          });
+          
+          toast.success(`Preserved ${emergencyLeads.length} emergency leads`, { duration: 3000 });
+        }
       } else {
         toast.error(result.error || 'Failed to remove duplicates')
       }
@@ -2650,7 +2771,7 @@ END:VCALENDAR`;
                       </button>
                       <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                       {/* Admin Panel - FOUNDER ONLY ACCESS */}
-                      {user?.email === 'dubdproducts@gmail.com' && tenant?.role === 'founder' && (
+                      {user?.email === 'dubdproducts@gmail.com' && (
                         <>
                           <button 
                             onClick={() => {setSecureActiveSection('Admin Panel'); setShowAccountMenu(false)}}
@@ -2661,6 +2782,13 @@ END:VCALENDAR`;
                           <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                         </>
                       )}
+                      {/* Emergency Migration - Quick Access */}
+                      <button 
+                        onClick={() => {setSecureActiveSection('Emergency Migration'); setShowAccountMenu(false)}}
+                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-purple-400 hover:bg-gray-700' : 'text-purple-600 hover:bg-gray-100'}`}
+                      >
+                        🚚 Migrate Leads (Emergency)
+                      </button>
                       <button 
                         onClick={async () => {
                           await logout()
@@ -3378,9 +3506,20 @@ END:VCALENDAR`;
                               <td className="py-3 text-blue-600">{lead.email}</td>
                               <td className="py-3">{lead.company || '—'}</td>
                               <td className="py-3">
-                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                                  {lead.source}
-                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    lead.isEmergency 
+                                      ? 'bg-red-100 text-red-700 border border-red-300' 
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {lead.isEmergency ? '🚨 ' : ''}{lead.source}
+                                  </span>
+                                  {lead.isEmergency && (
+                                    <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
+                                      Local Storage
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-3">
                                 <div className="flex flex-wrap gap-1">
@@ -5137,7 +5276,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
             />
           )}
           {activeSection === 'AI Swarm' && <AISwarmDashboard />}
-          {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && tenant?.role === 'founder' && renderAdminPanel()}
+          {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && renderAdminPanel()}
           {activeSection === 'Account Settings' && renderAccountSettings()}
           {activeSection === 'Profile' && renderProfile()}
           {activeSection === 'Billing' && renderBilling()}
@@ -5592,6 +5731,103 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
         </div>
       </div>
     )
+  }
+
+  function renderEmergencyMigration() {
+    const handleMigration = async () => {
+      setMigrationInProgress(true);
+      setMigrationResult(null);
+      
+      try {
+        // Use the emergency storage migration function
+        if (window.emergencyStorageSync && window.emergencyStorageSync.migrateDefaultTenantLeads) {
+          const result = await window.emergencyStorageSync.migrateDefaultTenantLeads();
+          setMigrationResult(result);
+          
+          if (result.success) {
+            toast.success(`🎉 ${result.message}`);
+          } else {
+            toast.error(`❌ Migration failed: ${result.error}`);
+          }
+        } else {
+          throw new Error('Migration service not available');
+        }
+      } catch (error) {
+        const errorResult = {
+          success: false,
+          error: error.message
+        };
+        setMigrationResult(errorResult);
+        toast.error(`❌ Migration failed: ${error.message}`);
+      } finally {
+        setMigrationInProgress(false);
+      }
+    };
+
+    return (
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
+        <div className="max-w-4xl mx-auto">
+          <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>🚚 Emergency Lead Migration</h2>
+          
+          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Migrate Leads from Default Tenant
+            </h3>
+            <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              This tool will move all leads from the 'default-tenant' collection to your correct tenant ID. 
+              After migration, your leads will appear in the Recent Leads tab.
+            </p>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <button
+                onClick={handleMigration}
+                disabled={migrationInProgress}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  migrationInProgress 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-purple-600 hover:bg-purple-700'
+                } text-white`}
+              >
+                {migrationInProgress ? '🔄 Migrating...' : '🚚 Start Migration'}
+              </button>
+              
+              <button
+                onClick={() => setActiveSection('Lead Generation')}
+                className={`px-6 py-3 rounded-lg font-medium border transition-colors ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Go to Recent Leads
+              </button>
+            </div>
+
+            {migrationResult && (
+              <div className={`p-4 rounded-lg ${
+                migrationResult.success 
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-red-50 border border-red-200'
+              }`}>
+                <h4 className={`font-medium ${
+                  migrationResult.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {migrationResult.success ? '✅ Migration Successful!' : '❌ Migration Failed'}
+                </h4>
+                <p className={`mt-2 ${
+                  migrationResult.success ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {migrationResult.success 
+                    ? `Successfully migrated ${migrationResult.migrated} leads. Skipped ${migrationResult.skipped} leads. Check your Recent Leads tab!`
+                    : migrationResult.error
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   function renderAdminPanel() {

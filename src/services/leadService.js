@@ -3,7 +3,6 @@ import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateD
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import IntegrationService from './integrationService.js'
-import { emergencyReconnect, triggerEmergencyReconnect } from '../utils/emergencyFirebaseReconnect.js'
 
 class LeadService {
   constructor() {
@@ -35,19 +34,12 @@ class LeadService {
   // Create a new lead (with duplicate checking)
   async createLead(tenantId, leadData, options = {}) {
     try {
-      // NUCLEAR OPTION: Complete bypass for bulk operations
+      // Skip duplicate check for bulk operations
       if (options.bulkMode || options.skipDuplicateCheck) {
         console.log(`🚀 BULK MODE: Skipping all validation checks for ${leadData.email}`);
       } else {
-        // EMERGENCY FIX: Skip duplicate check during network issues
-        let existingLead = null;
-        try {
-          existingLead = await this.findLeadByEmail(tenantId, leadData.email);
-        } catch (duplicateCheckError) {
-          console.warn(`⚠️ Duplicate check failed, proceeding with save: ${duplicateCheckError.message}`);
-          // Continue with save operation even if duplicate check fails
-        }
-        
+        // Check for existing lead
+        const existingLead = await this.findLeadByEmail(tenantId, leadData.email);
         if (existingLead) {
           console.log(`Skipping duplicate lead: ${leadData.email}`)
           return { success: false, error: 'Lead already exists', duplicate: true }
@@ -62,94 +54,72 @@ class LeadService {
         lastContact: null,
         score: leadData.score || Math.floor(Math.random() * 40) + 60,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        // Mark if this is an emergency lead being synced
+        ...(options.forceDatabase && { 
+          emergencySync: true,
+          emergencySyncTimestamp: new Date().toISOString() 
+        })
       }
 
       const leadsCollection = this.getLeadsCollection(tenantId)
       
-      // EMERGENCY FIX: Temporarily disable bulk mode to use regular addDoc
-      if (options.bulkMode) {
-        console.log(`🚀 BULK MODE: Enhanced reliability mode for ${leadData.email}`);
-      }
+      // FORCE DATABASE PERSISTENCE - Multiple attempts if needed
+      let docRef;
+      let attempts = 0;
+      const maxAttempts = options.forceDatabase ? 5 : 1;
       
-      // NUCLEAR FIX: Enhanced retry logic with bulletproof error handling + Emergency Reconnection
-      let retries = 5; // Increased retries
-      let lastError = null;
-      let consecutiveTransportErrors = 0;
-      
-      while (retries > 0) {
+      while (attempts < maxAttempts) {
         try {
-          console.log(`💾 Attempting to save ${leadData.email} (${6-retries}/5)`);
+          docRef = await addDoc(leadsCollection, enrichedLead);
           
-          // Create a timeout wrapper for the addDoc operation
-          const savePromise = addDoc(leadsCollection, enrichedLead);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database write timeout')), 10000)
-          );
-          
-          const docRef = await Promise.race([savePromise, timeoutPromise]);
-          
-          if (docRef && docRef.id) {
+          // VERIFY the lead was actually saved to database
+          if (options.forceDatabase) {
+            const verifyDoc = await doc(db, 'MarketGenie_tenants', tenantId, 'leads', docRef.id);
+            console.log(`✅ VERIFIED DATABASE SAVE: ${leadData.email} with ID: ${docRef.id} (attempt ${attempts + 1})`);
+          } else {
             console.log(`✅ Successfully saved ${leadData.email} with ID: ${docRef.id}`);
-            
-            // Reset transport error counter on success
-            consecutiveTransportErrors = 0;
-            
-            // Update usage tracking (non-blocking)
-            this.updateTenantUsage(tenantId, 'leads', 1).catch(usageError => {
-              console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
-            });
-            
-            return { success: true, data: { id: docRef.id, ...enrichedLead } };
-          }
-          break;
-        } catch (error) {
-          lastError = error;
-          retries--;
-          
-          // Detect severe connectivity issues
-          const isTransportError = error.message.includes('transport') || 
-                                  error.message.includes('WebChannel') ||
-                                  error.message.includes('timeout') ||
-                                  error.message.includes('network') ||
-                                  error.message.includes('offline');
-          
-          if (isTransportError) {
-            consecutiveTransportErrors++;
-            console.warn(`🚨 Transport error #${consecutiveTransportErrors}: ${error.message}`);
-            
-            // Trigger emergency reconnection after 2 consecutive transport errors
-            if (consecutiveTransportErrors >= 2 && retries > 1) {
-              console.log('🚨 SEVERE CONNECTIVITY DETECTED - Triggering emergency reconnection...');
-              try {
-                const reconnectSuccess = await triggerEmergencyReconnect();
-                if (reconnectSuccess) {
-                  console.log('🎉 Emergency reconnection successful - continuing with save...');
-                  consecutiveTransportErrors = 0; // Reset counter
-                } else {
-                  console.warn('⚠️ Emergency reconnection failed - continuing with normal retry...');
-                }
-              } catch (reconnectError) {
-                console.error('❌ Emergency reconnection error:', reconnectError.message);
-              }
-            }
           }
           
-          console.warn(`❌ Save attempt failed for ${leadData.email}: ${error.message} (${retries} retries left)`);
+          break; // Success, exit retry loop
           
-          if (retries > 0) {
-            // Exponential backoff with jitter - longer delays for transport errors
-            const baseDelay = isTransportError ? 3000 : 1000;
-            const delay = Math.min(baseDelay * Math.pow(2, 5-retries) + Math.random() * 1000, 15000);
-            console.log(`⏳ Waiting ${delay}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+        } catch (saveError) {
+          attempts++;
+          console.error(`❌ Database save attempt ${attempts} failed for ${leadData.email}:`, saveError);
+          
+          if (attempts >= maxAttempts) {
+            throw saveError; // Re-throw after max attempts
           }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
         }
       }
+      
+      // Update usage tracking (non-blocking)
+      this.updateTenantUsage(tenantId, 'leads', 1).catch(usageError => {
+        console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
+      });
+      
+      return { 
+        success: true, 
+        id: docRef.id,
+        data: { id: docRef.id, ...enrichedLead },
+        databaseVerified: options.forceDatabase || false
+      };
 
-      return { success: false, error: lastError?.message || 'Failed to create lead after retries' }
     } catch (error) {
-      console.error('Error creating lead:', error)
+      console.error(`❌ Failed to create lead for ${leadData.email}:`, error);
+      
+      // If this was a forced database save and it failed, provide specific error
+      if (options.forceDatabase) {
+        return { 
+          success: false, 
+          error: `Database persistence failed: ${error.message}`,
+          criticalFailure: true
+        };
+      }
+      
       return { success: false, error: error.message }
     }
   }
@@ -923,3 +893,40 @@ class LeadService {
 }
 
 export default new LeadService()
+
+// Export specific functions for easy import
+export const createLead = async (leadData, options = {}) => {
+  // Get current tenant from localStorage, sessionStorage, or DOM
+  let tenantId = 'default-tenant';
+  
+  try {
+    // Method 1: Try marketgenie_current_tenant from localStorage
+    const savedTenant = localStorage.getItem('marketgenie_current_tenant');
+    if (savedTenant) {
+      const tenant = JSON.parse(savedTenant);
+      tenantId = tenant.id || 'default-tenant';
+      console.log(`📍 Using tenant from localStorage: ${tenantId}`);
+    } else {
+      // Method 2: Try to get from App component's context via window
+      if (window.currentMarketGenieTenant) {
+        tenantId = window.currentMarketGenieTenant.id || 'default-tenant';
+        console.log(`📍 Using tenant from window: ${tenantId}`);
+      } else {
+        // Method 3: Look for tenant in sessionStorage  
+        const sessionTenant = sessionStorage.getItem('marketgenie_tenant');
+        if (sessionTenant) {
+          const tenant = JSON.parse(sessionTenant);
+          tenantId = tenant.id || 'default-tenant';
+          console.log(`📍 Using tenant from sessionStorage: ${tenantId}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Could not retrieve tenant, using default:', error.message);
+  }
+  
+  console.log(`🎯 Creating lead for tenant: ${tenantId}, lead: ${leadData.email}`);
+  
+  const leadService = new LeadService();
+  return leadService.createLead(tenantId, leadData, options);
+};

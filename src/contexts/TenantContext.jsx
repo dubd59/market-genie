@@ -99,12 +99,25 @@ export function TenantProvider({ children }) {
           return
         }
         
+        // 🎯 FIX: Check JWT token for tenantId first
+        let jwtTenantId = null;
+        try {
+          const idTokenResult = await user.getIdTokenResult(true);
+          jwtTenantId = idTokenResult.claims.tenantId;
+          console.log('🎫 JWT Token tenant ID:', jwtTenantId);
+        } catch (jwtError) {
+          console.log('⚠️ Could not get JWT tenant ID:', jwtError.message);
+        }
+        
         // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Tenant loading timeout')), loadTimeout)
         );
         
-        const loadPromise = TenantService.getCurrentUserTenant();
+        // Use JWT tenant ID if available, otherwise fall back to user-based tenant
+        const loadPromise = jwtTenantId 
+          ? TenantService.getTenantById(jwtTenantId)
+          : TenantService.getCurrentUserTenant();
         
         const result = await Promise.race([loadPromise, timeoutPromise]);
         

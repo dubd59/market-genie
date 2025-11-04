@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import IntegrationService from '../services/integrationService';
 import LeadService from '../services/leadService';
 import securityBypass from '../utils/securityBypass';
-import { triggerEmergencyLeadSave, getEmergencySaveStatus } from '../utils/emergencyLeadSaver';
 import toast from 'react-hot-toast';
 
 const BulkProspeoScraper = () => {
@@ -459,25 +458,9 @@ const BulkProspeoScraper = () => {
             } catch (error) {
               console.log(`❌ Attempt ${attempts}/${maxAttempts} failed for ${leadEmail}: ${error.message}`);
               
-              // 🚨 EMERGENCY DETECTION: Check for Firebase transport errors
-              const isTransportError = error.message.includes('transport errored') || 
-                                     error.message.includes('Database write timeout') ||
-                                     error.message.includes('WebChannelConnection') ||
-                                     error.message.includes('Save timeout');
-              
-              if (isTransportError && attempts >= 2) {
-                console.log(`🚨 FIREBASE TRANSPORT ERROR DETECTED - Triggering emergency save for ${leadEmail}`);
-                try {
-                  // Emergency save expects an array of leads, so wrap single lead in array
-                  await triggerEmergencyLeadSave([leadData], tenant.id);
-                  console.log(`✅ Emergency save successful for ${leadEmail}`);
-                  savedCount++;
-                  saved = true;
-                  break; // Exit retry loop since emergency save worked
-                } catch (emergencyError) {
-                  console.error(`❌ Emergency save failed for ${leadEmail}:`, emergencyError);
-                }
-              }
+              // Log the error details for debugging
+              console.error(`💥 Save failed for ${leadEmail}:`, error.message);
+              console.error(`💥 Error details:`, error);
               
               if (attempts < maxAttempts && !saved) {
                 console.log(`🔄 Retrying ${leadEmail} in 2 seconds...`);
@@ -492,45 +475,12 @@ const BulkProspeoScraper = () => {
           }
         }
         
-        // 🚨 EMERGENCY SAVE: If we have failed leads and Firebase is having transport issues, use emergency save
-        if (failedCount > 0) {
-          console.log(`🚨 EMERGENCY: ${failedCount} leads failed to save - triggering emergency save system`);
-          
-          // Get the failed leads for emergency save
-          const failedLeads = leadDataArray.filter((lead, index) => {
-            // Determine which leads failed (this is approximate since we don't track per-lead)
-            return index >= savedCount; // Assume the last failedCount leads failed
-          });
-          
-          try {
-            // Trigger emergency save using Firebase Functions
-            console.log(`🚨 Triggering emergency save for ${failedLeads.length} failed leads`);
-            triggerEmergencyLeadSave(failedLeads, tenant.id);
-            
-            // Show user notification about emergency save
-            toast.success(`Emergency save triggered for ${failedLeads.length} leads - they will be saved directly to database`, {
-              duration: 5000
-            });
-            
-            // Give emergency save a moment to process
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Check emergency save status
-            const emergencyStatus = getEmergencySaveStatus();
-            console.log('📊 Emergency save status:', emergencyStatus);
-            
-          } catch (emergencyError) {
-            console.error('❌ Emergency save trigger failed:', emergencyError);
-            toast.error(`Emergency save failed: ${emergencyError.message}`);
-          }
-        }
-        
-        console.log(`📊 Final results: ${savedCount} saved, ${failedCount} failed out of ${leadDataArray.length} total`);
+        console.log(` Final results: ${savedCount} saved, ${failedCount} failed out of ${leadDataArray.length} total`);
         
         if (savedCount > 0) {
           return { success: true, savedCount: savedCount, failedCount: failedCount };
         } else {
-          throw new Error(`All ${leadDataArray.length} leads failed to save - Firebase connection issues`);
+          throw new Error(`All ${leadDataArray.length} leads failed to save - Database connection issues`);
         }
       });
       

@@ -1579,7 +1579,12 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
 // Emergency lead save function - bypasses client Firebase connection issues
 exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
   console.log('🚨 EMERGENCY SAVE: Function called');
-  console.log('Data received:', JSON.stringify(data, null, 2));
+  // Safe logging to avoid circular reference errors
+  console.log('Data received:', {
+    tenantId: data?.tenantId,
+    leadEmail: data?.leadData?.email,
+    leadCompany: data?.leadData?.company
+  });
   
   try {
     // Validate input

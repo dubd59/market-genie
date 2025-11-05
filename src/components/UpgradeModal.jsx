@@ -140,7 +140,14 @@ const UpgradeModal = ({ isOpen, onClose, limitType, currentPlan }) => {
         {/* Footer */}
         <div className="p-6 bg-gray-50 border-t text-center">
           <p className="text-sm text-gray-600">
-            Questions? <a href="mailto:support@marketgenie.com" className="text-blue-600 hover:underline">Contact our support team</a>
+            Questions? <a 
+              href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Contact our AI support portal
+            </a> or email <a href="mailto:Help@dubdproducts.com" className="text-blue-600 hover:underline">Help@dubdproducts.com</a>
           </p>
         </div>
       </div>

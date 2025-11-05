@@ -250,10 +250,19 @@ class ProductionErrorBoundary extends Component {
                 <p className="text-xs text-gray-500">
                   If this problem persists, please{' '}
                   <a 
-                    href="mailto:support@marketgenie.app" 
+                    href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-500"
                   >
-                    contact support
+                    contact our AI support portal
+                  </a>
+                  {' '}or email{' '}
+                  <a 
+                    href="mailto:Help@dubdproducts.com" 
+                    className="text-blue-600 hover:text-blue-500"
+                  >
+                    Help@dubdproducts.com
                   </a>
                 </p>
               </div>

@@ -11,7 +11,7 @@ import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
 import FunnelMetricsService from '../services/FunnelMetricsService';
 
-const SuperiorFunnelBuilder = () => {
+const WhiteLabelFunnelBuilder = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
@@ -2546,4 +2546,4 @@ Visit: marketgenie.com for more tools and templates`;
   );
 };
 
-export default SuperiorFunnelBuilder;
+export default WhiteLabelFunnelBuilder;

@@ -608,14 +608,21 @@ export default function LandingPage() {
           <div className="border-t border-white/10 mt-12 pt-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center md:text-left">
-                <h4 className="text-white font-semibold mb-2">📧 Email Support</h4>
-                <p className="text-gray-300">support@marketgenie.app</p>
-                <p className="text-gray-300">sales@marketgenie.app</p>
+                <h4 className="text-white font-semibold mb-2">🤖 AI Support Portal</h4>
+                <a 
+                  href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors block"
+                >
+                  Support Genie Help Center
+                </a>
+                <p className="text-gray-300 text-sm">Available 24/7</p>
               </div>
               <div className="text-center">
-                <h4 className="text-white font-semibold mb-2">💬 Live Chat</h4>
-                <p className="text-gray-300">Available 24/7</p>
-                <a href="https://help.marketgenie.app/chat" className="text-yellow-400 hover:text-yellow-300 transition-colors">Start Chat</a>
+                <h4 className="text-white font-semibold mb-2">� Email Support</h4>
+                <a href="mailto:Help@dubdproducts.com" className="text-yellow-400 hover:text-yellow-300 transition-colors">Help@dubdproducts.com</a>
+                <p className="text-gray-300 text-sm">24/7 Response</p>
               </div>
               <div className="text-center md:text-right">
                 <h4 className="text-white font-semibold mb-2">📞 Phone Support</h4>

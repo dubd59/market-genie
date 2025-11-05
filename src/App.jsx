@@ -56,7 +56,7 @@ import FirebaseUserDataService from './services/firebaseUserData'
 import AppointmentService from './services/appointmentService'
 import CalendarService from './services/calendarService'
 import AISwarmDashboard from './components/AISwarmDashboard'
-import CostControlsDashboard from './components/CostControlsDashboard'
+import ResourceDocumentationCenter from './components/ResourceDocumentationCenter'
 import WhiteLabelDashboard from './components/WhiteLabelDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
 import LeadGenerationWorkflows from './components/LeadGenerationWorkflows'
@@ -139,7 +139,7 @@ function SophisticatedDashboard() {
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
     if (path.includes('ai-swarm')) return 'AI Swarm'
-    if (path.includes('cost-controls')) return 'Cost Controls'
+    if (path.includes('resources-docs')) return 'Resources & Docs'
     if (path.includes('white-label-saas')) return 'White-Label SaaS'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
     if (path.includes('admin-panel')) return 'Admin Panel'
@@ -2669,7 +2669,7 @@ END:VCALENDAR`;
         'Contact Manager': '/dashboard/contact-manager',
         'Pipeline View': '/dashboard/crm-pipeline',
         'AI Swarm': '/dashboard/ai-swarm',
-        'Cost Controls': '/dashboard/cost-controls',
+        'Resources & Docs': '/dashboard/resources-docs',
         'White-Label SaaS': '/dashboard/white-label-saas',
         'API Keys & Integrations': '/dashboard/api-keys',
         'Admin Panel': '/dashboard/admin-panel'
@@ -5267,7 +5267,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
             </div>
           )}
           {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard />}
-          {activeSection === 'Cost Controls' && <CostControlsDashboard />}
+          {activeSection === 'Resources & Docs' && <ResourceDocumentationCenter />}
           
           {activeSection === 'API Keys & Integrations' && (
             <APIKeysIntegrations 

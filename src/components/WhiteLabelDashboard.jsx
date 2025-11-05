@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, doc, setDoc, getDoc } from '../security/SecureFirebase.js';
 import { isFeatureEnabled } from '../services/planLimits';
 import stripePaymentService from '../services/StripePaymentService';
+import WhiteLabelFunnelBuilder from './WhiteLabelFunnelBuilder';
 
 const WhiteLabelDashboard = () => {
   const { tenant } = useTenant();
@@ -27,21 +28,14 @@ const WhiteLabelDashboard = () => {
   // New state for Partner Sales Center features
   const [showSignupLinksModal, setShowSignupLinksModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
-  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showFunnelBuilder, setShowFunnelBuilder] = useState(false);
   const [signupLinks, setSignupLinks] = useState([]);
   const [customPricing, setCustomPricing] = useState({
     basicPlan: { price: 47, name: 'Basic Plan', features: ['Lead Generation', 'Email Automation', '1000 Contacts'] },
     proPlan: { price: 97, name: 'Professional', features: ['Everything in Basic', 'Advanced Analytics', '10000 Contacts', 'Priority Support'] },
     enterprisePlan: { price: 197, name: 'Enterprise', features: ['Everything in Pro', 'White Label Rights', 'Unlimited Everything', 'Custom Integrations'] }
   });
-  const [analyticsData, setAnalyticsData] = useState({
-    signups: 0,
-    conversions: 0,
-    revenue: 0,
-    conversionRate: 0,
-    recentActivity: []
-  });
-
+  
   // Check if user has WhiteLabel access (Lifetime or Founder only)
   const hasWhiteLabelAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
   
@@ -352,7 +346,7 @@ const WhiteLabelDashboard = () => {
   };
 
   const handleViewSalesFunnel = () => {
-    setShowAnalyticsModal(true);
+    setShowFunnelBuilder(true);
   };
 
   // Generate a new signup link
@@ -403,25 +397,6 @@ const WhiteLabelDashboard = () => {
     }
   };
 
-  // Load analytics data (mock for now, replace with real Firebase data)
-  const loadAnalyticsData = () => {
-    // Simulate analytics data - in production, load from Firebase
-    const mockData = {
-      signups: Math.floor(Math.random() * 150) + 50,
-      conversions: Math.floor(Math.random() * 45) + 15,
-      revenue: (Math.floor(Math.random() * 5000) + 2000),
-      conversionRate: 0,
-      recentActivity: [
-        { date: '2025-11-05', event: 'Signup', customer: 'john@example.com', plan: 'Pro', revenue: 97 },
-        { date: '2025-11-04', event: 'Conversion', customer: 'sarah@company.com', plan: 'Basic', revenue: 47 },
-        { date: '2025-11-03', event: 'Signup', customer: 'mike@startup.com', plan: 'Enterprise', revenue: 197 },
-        { date: '2025-11-02', event: 'Signup', customer: 'lisa@agency.com', plan: 'Pro', revenue: 97 }
-      ]
-    };
-    mockData.conversionRate = mockData.conversions > 0 ? ((mockData.conversions / mockData.signups) * 100).toFixed(1) : 0;
-    setAnalyticsData(mockData);
-  };
-
   const handleCopyPartnerLink = () => {
     const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'XXXXXXXX'}`;
     // Use the dedicated signup route that handles partner parameters properly
@@ -435,8 +410,391 @@ const WhiteLabelDashboard = () => {
     });
   };
 
-  const handleDownloadSalesKit = () => {
-    alert('🚧 Coming Soon: Download complete sales kit with presentations, graphics, and email templates!');
+  // Partner Marketing Materials Functions
+  const downloadSalesDeck = () => {
+    const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'PARTNER'}`;
+    const currentDomain = window.location.origin;
+    const partnerLink = `${currentDomain}/signup?partner=${partnerCode}`;
+    
+    // Create RTF content with compact spacing and 12pt font
+    const salesDeckContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;} {\\f1 Arial;} {\\f2 Calibri;}}
+{\\colortbl;\\red0\\green0\\blue0;\\red0\\green102\\blue204;\\red204\\green0\\blue0;\\red0\\green153\\blue0;\\red255\\green102\\blue0;}
+
+{\\f2\\fs32\\b\\cf2 [YOUR COMPANY NAME] - AI Marketing Automation Platform\\par}
+{\\f2\\fs24\\b Sales Presentation & Business Opportunity\\par}
+\\par\\par
+{\\f2\\fs32\\b\\cf2 WHAT WE OFFER:\\par}
+{\\f2\\fs26\\b AI-Powered Marketing Automation Platform\\par}
+\\par
+{\\f1\\fs24 \\u9989? Automated Lead Generation & Prospecting\\par}
+{\\f1\\fs24 \\u9989? Email & SMS Campaign Automation\\par}
+{\\f1\\fs24 \\u9989? Complete CRM & Pipeline Management\\par}
+{\\f1\\fs24 \\u9989? AI-Powered Sales Funnel Builder\\par}
+{\\f1\\fs24 \\u9989? Multi-Channel Marketing Automation\\par}
+{\\f1\\fs24 \\u9989? Advanced Analytics & Reporting\\par}
+\\par\\par
+{\\f2\\fs32\\b\\cf2 EXCLUSIVE PRICING FOR YOUR CLIENTS:\\par}
+\\par
+{\\f1\\fs24 Instead of paying market rates of $97-$297/month, your clients get:\\par}
+\\par
+{\\f2\\fs26\\b\\cf4 Basic Plan: $${customPricing.basicPlan.price}/month }{\\f1\\fs24\\cf3 (Save ${Math.round((1 - customPricing.basicPlan.price/97) * 100)}%!)\\par}
+{\\f2\\fs26\\b\\cf4 Professional: $${customPricing.proPlan.price}/month }{\\f1\\fs24\\cf3 (Save ${Math.round((1 - customPricing.proPlan.price/197) * 100)}%!)\\par}
+{\\f2\\fs26\\b\\cf4 Enterprise: $${customPricing.enterprisePlan.price}/month }{\\f1\\fs24\\cf3 (Save ${Math.round((1 - customPricing.enterprisePlan.price/297) * 100)}%!)\\par}
+\\par\\par
+{\\f2\\fs32\\b\\cf2 WHY CHOOSE OUR PLATFORM?\\par}
+\\par
+{\\f1\\fs24 \\u9989? Complete All-in-One Solution\\par}
+{\\f1\\fs24 \\u9989? AI-Powered Automation (No Manual Work)\\par}
+{\\f1\\fs24 \\u9989? No Setup Fees or Hidden Costs\\par}
+{\\f1\\fs24 \\u9989? 24/7 Professional Support Included\\par}
+{\\f1\\fs24 \\u9989? White Label Rights Available\\par}
+{\\f1\\fs24 \\u9989? Proven ROI for Businesses of All Sizes\\par}
+{\\f1\\fs24 \\u9989? Simple Setup - Live in 24 Hours\\par}
+\\par\\par
+{\\f2\\fs32\\b\\cf2 CLIENT SUCCESS STORIES:\\par}
+\\par
+{\\f1\\fs24\\i "Increased our lead generation by 400% in the first month"\\par}
+{\\f1\\fs22 - Local Business Owner\\par}
+\\par
+{\\f1\\fs24\\i "Saved 20 hours per week on marketing tasks"\\par}
+{\\f1\\fs22 - Digital Agency\\par}
+\\par
+{\\f1\\fs24\\i "ROI paid for itself in the first 2 weeks"\\par}
+{\\f1\\fs22 - E-commerce Store\\par}
+\\par\\par
+{\\f2\\fs32\\b\\cf2 GET STARTED TODAY:\\par}
+\\par
+{\\f2\\fs24\\b Your Exclusive Client Signup Link:\\par}
+{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par
+{\\f2\\fs24\\b Your Partner Reference Code: }{\\f1\\fs24\\cf2 ${partnerCode}\\par}
+\\par\\par
+{\\f2\\fs28\\b\\cf2 QUESTIONS OR SUPPORT:\\par}
+{\\f1\\fs24 Contact: ${user?.email || '[YOUR EMAIL ADDRESS]'}\\par}
+{\\f1\\fs24 Phone: [YOUR PHONE NUMBER]\\par}
+{\\f1\\fs24 Website: [YOUR WEBSITE]\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf3 INSTRUCTIONS FOR USE:\\par}
+{\\f1\\fs24 1. Replace [YOUR COMPANY NAME] with your business name\\par}
+{\\f1\\fs24 2. Add your contact information above\\par}
+{\\f1\\fs24 3. Share your exclusive signup link with prospects\\par}
+{\\f1\\fs24 4. Use this presentation to explain the value proposition\\par}
+{\\f1\\fs24 5. Emphasize the exclusive pricing only available through you\\par}
+\\par
+{\\f1\\fs22\\i This platform is white-labeled for your business.\\par}
+{\\f1\\fs22\\i Generated by your AI Marketing Automation System\\par}
+}`;
+
+    // Create and download as RTF file
+    const blob = new Blob([salesDeckContent], { type: 'application/rtf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Sales-Deck-${partnerCode}.rtf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Sales deck downloaded! Now with 12pt font and compact 2-3 space sections.');
+  };
+
+  const downloadMarketingGraphics = () => {
+    const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'PARTNER'}`;
+    
+    // Create RTF content with compact spacing and 12pt font
+    const graphicsContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;} {\\f1 Arial;} {\\f2 Calibri;}}
+{\\colortbl;\\red0\\green0\\blue0;\\red0\\green102\\blue204;\\red204\\green0\\blue0;\\red0\\green153\\blue0;\\red255\\green102\\blue0;\\red102\\green0\\blue204;}
+
+{\\f2\\fs32\\b\\cf2 [YOUR COMPANY NAME] - Social Media & Marketing Content Kit\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 LINKEDIN POSTS:\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 Post #1:\\par}
+{\\f1\\fs24 \\u128640? Exciting news! I'm now offering an AI-powered marketing automation platform that's transforming how businesses generate leads and close sales.\\par}
+\\par
+{\\f1\\fs24 Get exclusive access at ${Math.round((1 - customPricing.basicPlan.price/97) * 100)}% OFF regular pricing!\\par}
+\\par
+{\\f1\\fs24 \\u9989? Automated Lead Generation\\par}
+{\\f1\\fs24 \\u9989? Email & SMS Automation\\par}
+{\\f1\\fs24 \\u9989? Complete CRM System\\par}
+{\\f1\\fs24 \\u9989? AI Funnel Builder\\par}
+\\par
+{\\f1\\fs24 Limited time offer - message me for your exclusive access!\\par}
+{\\f1\\fs22\\cf2 #MarketingAutomation #AI #BusinessGrowth #Sales\\par}
+\\par\\par
+{\\f2\\fs24\\b\\cf6 Post #2:\\par}
+{\\f1\\fs24 \\u128161? Are you tired of manually chasing leads and managing scattered marketing tools?\\par}
+\\par
+{\\f1\\fs24 I've partnered with an AI marketing platform that automates everything:\\par}
+{\\f1\\fs24 \\u8594? Finds qualified prospects automatically\\par}
+{\\f1\\fs24 \\u8594? Sends personalized follow-up sequences\\par}
+{\\f1\\fs24 \\u8594? Tracks every interaction in one dashboard\\par}
+{\\f1\\fs24 \\u8594? Builds high-converting sales funnels\\par}
+\\par
+{\\f1\\fs24 My clients are seeing 300-400% increases in lead generation.\\par}
+{\\f1\\fs24 Want to see how this could work for your business?\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 FACEBOOK/INSTAGRAM POSTS:\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 Post #1:\\par}
+{\\f1\\fs24 \\u128161? Transform your marketing with AI automation!\\par}
+\\par
+{\\f1\\fs24 I'm excited to offer an exclusive AI marketing platform to my network:\\par}
+{\\f1\\fs24 \\u128176? Basic Plan: $${customPricing.basicPlan.price}/month (normally $97)\\par}
+{\\f1\\fs24 \\u128176? Pro Plan: $${customPricing.proPlan.price}/month (normally $197)\\par}
+\\par
+{\\f1\\fs24 \\u127919? Complete marketing automation\\par}
+{\\f1\\fs24 \\u127919? AI-powered lead generation\\par}
+{\\f1\\fs24 \\u127919? No setup fees required\\par}
+{\\f1\\fs24 \\u127919? Live in 24 hours\\par}
+\\par
+{\\f1\\fs24 Comment "INFO" for exclusive access!\\par}
+\\par\\par
+{\\f2\\fs24\\b\\cf6 Post #2:\\par}
+{\\f1\\fs24 \\u128293? BUSINESS OWNERS: Stop wasting time on manual marketing!\\par}
+\\par
+{\\f1\\fs24 This AI platform handles:\\par}
+{\\f1\\fs24 \\u9989? Lead generation (automatically finds prospects)\\par}
+{\\f1\\fs24 \\u9989? Email sequences (sends follow-ups for you)\\par}
+{\\f1\\fs24 \\u9989? Pipeline management (tracks everything)\\par}
+{\\f1\\fs24 \\u9989? Funnel creation (AI builds sales pages)\\par}
+\\par
+{\\f1\\fs24\\b Result: 400% more leads, 80% less work\\par}
+{\\f1\\fs24 Message me to see if this fits your business!\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 TWITTER/X POSTS:\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 Post #1:\\par}
+{\\f1\\fs24 \\u128293? Exclusive offer for business owners!\\par}
+\\par
+{\\f1\\fs24 Get AI marketing automation:\\par}
+{\\f1\\fs24 \\u8594? $${customPricing.basicPlan.price}/month (normally $97)\\par}
+{\\f1\\fs24 \\u8594? Includes lead generation\\par}
+{\\f1\\fs24 \\u8594? Email automation\\par}
+{\\f1\\fs24 \\u8594? Complete CRM\\par}
+{\\f1\\fs24 \\u8594? AI funnel builder\\par}
+\\par
+{\\f1\\fs24 DM for exclusive access! #MarketingAI #Automation\\par}
+\\par\\par
+{\\f2\\fs24\\b\\cf6 Post #2:\\par}
+{\\f1\\fs24 \\u9889? Stop chasing leads manually\\par}
+\\par
+{\\f1\\fs24 This AI platform:\\par}
+{\\f1\\fs24 \\u8594? Finds prospects automatically\\par}
+{\\f1\\fs24 \\u8594? Sends personalized emails\\par}
+{\\f1\\fs24 \\u8594? Tracks all conversations\\par}
+{\\f1\\fs24 \\u8594? Builds sales funnels\\par}
+\\par
+{\\f1\\fs24\\b Result: 4x more leads, 80% less work\\par}
+{\\f1\\fs24 Want to see how? DM me.\\par}
+\\par\\par
+{\\f2\\fs28\\b\\cf2 SUGGESTED HASHTAGS:\\par}
+{\\f1\\fs24\\cf2 #MarketingAutomation #AI #LeadGeneration #BusinessGrowth\\par}
+{\\f1\\fs24\\cf2 #Sales #CRM #EmailMarketing #DigitalMarketing #Entrepreneur\\par}
+{\\f1\\fs24\\cf2 #SmallBusiness #MarketingTech #SalesAutomation\\par}
+\\par\\par
+{\\f2\\fs28\\b\\cf2 CONTENT CALENDAR IDEAS:\\par}
+\\par
+{\\f2\\fs24\\b Monday:} {\\f1\\fs24 Success story/case study\\par}
+{\\f2\\fs24\\b Tuesday:} {\\f1\\fs24 Feature spotlight (AI tools)\\par}
+{\\f2\\fs24\\b Wednesday:} {\\f1\\fs24 Tips & best practices\\par}
+{\\f2\\fs24\\b Thursday:} {\\f1\\fs24 Behind-the-scenes content\\par}
+{\\f2\\fs24\\b Friday:} {\\f1\\fs24 Weekend motivation/results\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf3 INSTRUCTIONS FOR USE:\\par}
+{\\f1\\fs24 1. Replace [YOUR COMPANY NAME] with your business name\\par}
+{\\f1\\fs24 2. Replace contact info with your actual details\\par}
+{\\f1\\fs24 3. Use these templates for consistent messaging\\par}
+{\\f1\\fs24 4. Post 3-5 times per week for best results\\par}
+{\\f1\\fs24 5. Always include your exclusive signup link when appropriate\\par}
+\\par
+{\\f2\\fs24\\b Your Partner Reference Code: }{\\f1\\fs24\\cf2 ${partnerCode}\\par}
+}`;
+
+    const blob = new Blob([graphicsContent], { type: 'application/rtf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Marketing-Content-Kit-${partnerCode}.rtf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Marketing content kit downloaded! Now with 12pt font and compact 2-3 space sections.');
+  };
+
+  const downloadEmailTemplates = () => {
+    const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'PARTNER'}`;
+    const currentDomain = window.location.origin;
+    const partnerLink = `${currentDomain}/signup?partner=${partnerCode}`;
+    
+    const emailTemplates = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;} {\\f1 Arial;} {\\f2 Calibri;}}
+{\\colortbl;\\red0\\green0\\blue0;\\red0\\green102\\blue204;\\red204\\green0\\blue0;\\red0\\green153\\blue0;\\red255\\green102\\blue0;\\red102\\green0\\blue204;}
+
+{\\f2\\fs32\\b\\cf2 [YOUR COMPANY NAME] - Email Outreach Templates\\par}
+{\\f2\\fs24\\b Cold Outreach & Follow-up Sequences\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 EMAIL #1: INTRODUCTION\\par}
+{\\f2\\fs24\\b\\cf6 Subject:} {\\f1\\fs24 Transform Your Marketing with AI (Exclusive Offer Inside)\\par}
+\\par
+{\\f1\\fs24 Hi [PROSPECT NAME],\\par}
+\\par
+{\\f1\\fs24 I hope this email finds you well. I'm reaching out because I believe your business could benefit tremendously from the marketing automation revolution that's happening right now.\\par}
+\\par
+{\\f1\\fs24 I've recently started offering an AI-powered marketing automation platform that's helping businesses like yours:\\par}
+\\par
+{\\f1\\fs24 \\u9989? Generate 400% more qualified leads\\par}
+{\\f1\\fs24 \\u9989? Automate email & SMS campaigns completely\\par}
+{\\f1\\fs24 \\u9989? Track every prospect through a visual pipeline\\par}
+{\\f1\\fs24 \\u9989? Build high-converting sales funnels with AI assistance\\par}
+\\par
+{\\f1\\fs24 The best part? As one of my preferred clients, you get exclusive pricing:\\par}
+{\\f1\\fs24 \\u128176? Basic Plan: $${customPricing.basicPlan.price}/month (normally $97)\\par}
+{\\f1\\fs24 \\u128176? Professional: $${customPricing.proPlan.price}/month (normally $197)\\par}
+\\par
+{\\f1\\fs24 This exclusive pricing is only available through my direct referral link:\\par}
+{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par
+{\\f1\\fs24 Would you be interested in a 15-minute demo to see how this could transform your marketing results?\\par}
+\\par
+{\\f1\\fs24 Best regards,\\par}
+{\\f1\\fs24 [YOUR NAME]\\par}
+{\\f1\\fs24 [YOUR TITLE]\\par}
+{\\f1\\fs24 [YOUR CONTACT INFO]\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 EMAIL #2: FOLLOW-UP (Send 3 days later)\\par}
+{\\f2\\fs24\\b\\cf6 Subject:} {\\f1\\fs24 Quick question about your lead generation\\par}
+\\par
+{\\f1\\fs24 Hi [PROSPECT NAME],\\par}
+\\par
+{\\f1\\fs24 I wanted to follow up on my previous email about the AI marketing automation platform.\\par}
+\\par
+{\\f1\\fs24\\b Quick question: What's your biggest challenge with lead generation right now?\\par}
+\\par
+{\\f1\\fs24 I ask because this platform specifically solves the most common issues I see with my clients:\\par}
+{\\f1\\fs24 \\u8226? Inconsistent lead flow month-to-month\\par}
+{\\f1\\fs24 \\u8226? Manual, time-consuming marketing processes\\par}
+{\\f1\\fs24 \\u8226? Poor lead quality and low conversion rates\\par}
+{\\f1\\fs24 \\u8226? Lack of systematic follow-up\\par}
+\\par
+{\\f1\\fs24 If any of these sound familiar, I'd love to show you how other businesses in [THEIR INDUSTRY] have solved them.\\par}
+\\par
+{\\f1\\fs24 The exclusive pricing I mentioned is still available: }{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par
+{\\f1\\fs24 Even if you're not ready to move forward now, I'm happy to answer any questions about marketing automation.\\par}
+\\par
+{\\f1\\fs24 Best,\\par}
+{\\f1\\fs24 [YOUR NAME]\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 EMAIL #3: SOCIAL PROOF (Send 1 week later)\\par}
+{\\f2\\fs24\\b\\cf6 Subject:} {\\f1\\fs24 Case study: How [BUSINESS TYPE] increased leads by 400%\\par}
+\\par
+{\\f1\\fs24 Hi [PROSPECT NAME],\\par}
+\\par
+{\\f1\\fs24 I wanted to share a quick success story that might interest you.\\par}
+\\par
+{\\f1\\fs24 One of my clients, a [SIMILAR BUSINESS TYPE], was struggling with:\\par}
+{\\f1\\fs24 - Inconsistent lead generation (some months good, some terrible)\\par}
+{\\f1\\fs24 - Spending hours every day on manual outreach\\par}
+{\\f1\\fs24 - Poor conversion rates from their marketing efforts\\par}
+\\par
+{\\f1\\fs24\\b After implementing this AI marketing platform, here's what happened in just 60 days:\\par}
+{\\f1\\fs24\\cf3 \\u128200? 400% increase in qualified leads\\par}
+{\\f1\\fs24\\cf3 \\u128200? 80% reduction in time spent on marketing tasks\\par}
+{\\f1\\fs24\\cf3 \\u128200? 3x improvement in conversion rates\\par}
+\\par
+{\\f1\\fs24 The platform's AI automation now handles:\\par}
+{\\f1\\fs24 \\u9989? Lead prospecting and qualification\\par}
+{\\f1\\fs24 \\u9989? Personalized email sequence delivery\\par}
+{\\f1\\fs24 \\u9989? Follow-up scheduling and reminders\\par}
+{\\f1\\fs24 \\u9989? Complete pipeline management\\par}
+\\par
+{\\f1\\fs24 Your exclusive pricing is still available: }{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par
+{\\f1\\fs24 Would you like to see exactly how this could work for your business? I can show you in just 15 minutes.\\par}
+\\par
+{\\f1\\fs24 Best regards,\\par}
+{\\f1\\fs24 [YOUR NAME]\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf2 EMAIL #4: FINAL FOLLOW-UP\\par}
+{\\f2\\fs24\\b\\cf6 Subject:} {\\f1\\fs24 Last chance for exclusive AI marketing platform pricing\\par}
+\\par
+{\\f1\\fs24 Hi [PROSPECT NAME],\\par}
+\\par
+{\\f1\\fs24 I don't want to keep bothering you, so this will be my last email about the AI marketing automation opportunity.\\par}
+\\par
+{\\f1\\fs24 I genuinely believe this platform could transform your marketing results, and I wanted to make sure you didn't miss out on the exclusive pricing I arranged for my network:\\par}
+\\par
+{\\f1\\fs24\\b\\cf4 \\u128176? $${customPricing.basicPlan.price}/month instead of $97 (${Math.round((1 - customPricing.basicPlan.price/97) * 100)}% savings!)\\par}
+\\par
+{\\f1\\fs24 If you're interested, here's your exclusive link: }{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par
+{\\f1\\fs24 If not, no worries at all. I hope we can connect about other opportunities in the future.\\par}
+\\par
+{\\f1\\fs24 Best of luck with your business growth!\\par}
+\\par
+{\\f1\\fs24 [YOUR NAME]\\par}
+{\\f1\\fs24 [YOUR CONTACT INFO]\\par}
+\\par\\par
+{\\f2\\fs28\\b\\cf2 BONUS: SMS TEMPLATES\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 SMS #1:\\par}
+{\\f1\\fs24 "Hi [NAME], it's [YOUR NAME]. Got you exclusive access to AI marketing automation - $${customPricing.basicPlan.price}/mo (normally $97). Interested in 15-min demo? ${partnerLink}"\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 SMS #2:\\par}
+{\\f1\\fs24 "[NAME], quick follow-up on the AI marketing platform. My other clients are seeing 400% lead increases. Your exclusive pricing expires soon: ${partnerLink}"\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 SMS #3:\\par}
+{\\f1\\fs24 "Hi [NAME], [YOUR NAME] here. Quick question - what's your biggest marketing challenge right now? I might have a solution that could help."\\par}
+\\par\\par
+{\\f2\\fs28\\b\\cf2 EMAIL BEST PRACTICES:\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 TIMING:\\par}
+{\\f1\\fs24 - Send emails Tuesday-Thursday\\par}
+{\\f1\\fs24 - Best times: 10am-2pm or 6pm-8pm\\par}
+{\\f1\\fs24 - Wait 3-7 days between follow-ups\\par}
+{\\f1\\fs24 - Don't give up after 1-2 emails\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 PERSONALIZATION:\\par}
+{\\f1\\fs24 - Always use their actual name\\par}
+{\\f1\\fs24 - Reference their business/industry\\par}
+{\\f1\\fs24 - Mention specific pain points for their sector\\par}
+{\\f1\\fs24 - Include mutual connections if possible\\par}
+\\par
+{\\f2\\fs24\\b\\cf6 FOLLOW-UP STRATEGY:\\par}
+{\\f1\\fs24 - Email 1: Introduction & value proposition\\par}
+{\\f1\\fs24 - Email 2: Pain point focus\\par}
+{\\f1\\fs24 - Email 3: Social proof & case study\\par}
+{\\f1\\fs24 - Email 4: Final opportunity\\par}
+{\\f1\\fs24 - Then move to other channels (phone, LinkedIn, etc.)\\par}
+\\par\\par
+{\\f2\\fs26\\b\\cf3 INSTRUCTIONS FOR USE:\\par}
+{\\f1\\fs24 1. Replace [YOUR COMPANY NAME] with your business name\\par}
+{\\f1\\fs24 2. Replace [YOUR NAME] and contact info with your details\\par}
+{\\f1\\fs24 3. Replace [PROSPECT NAME] with actual prospect names\\par}
+{\\f1\\fs24 4. Customize [THEIR INDUSTRY] and pain points for each prospect\\par}
+{\\f1\\fs24 5. Send emails 3-7 days apart for best results\\par}
+{\\f1\\fs24 6. Track opens and responses to optimize timing\\par}
+\\par
+{\\f2\\fs24\\b Your Partner Reference Code: }{\\f1\\fs24\\cf2 ${partnerCode}\\par}
+{\\f2\\fs24\\b Your Exclusive Signup Link: }{\\f1\\fs22\\cf2 ${partnerLink}\\par}
+\\par\\par
+{\\f1\\fs24\\b\\i Remember: This is YOUR business. Present yourself as the marketing automation expert, not a reseller. You are providing a valuable service to help businesses grow.\\par}
+}`;
+
+    const blob = new Blob([emailTemplates], { type: 'application/rtf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Email-Templates-${partnerCode}.rtf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Email templates downloaded! Now with 12pt font and compact 2-3 space sections.');
   };
 
   if (isLoading) {
@@ -608,47 +966,50 @@ const WhiteLabelDashboard = () => {
             </div>
 
             {/* Partner Controls */}
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Partner Sales Center */}
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Partner Sales Center - Expanded */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">💼 Partner Sales Center</h3>
-                <p className="text-gray-600 mb-4">Create custom pricing and signup links for your customers</p>
-                <div className="space-y-3">
+                <p className="text-gray-600 mb-6">Create custom pricing and signup links for your customers</p>
+                <div className="grid md:grid-cols-2 gap-4">
                   <button 
                     onClick={handleGenerateSignupLinks}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all"
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all text-center"
                   >
                     🔗 Generate Signup Links
                   </button>
                   <button 
                     onClick={handleSetCustomPricing}
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all"
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all text-center"
                   >
                     💰 Set Custom Pricing
                   </button>
-                  <button 
-                    onClick={handleViewSalesFunnel}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
-                  >
-                    📊 View Sales Funnel
-                  </button>
                 </div>
-              </div>
-              
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">🎨 Branding Controls</h3>
-                <p className="text-gray-600 mb-4">Customize your branded SaaS platform</p>
-                <button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all">
-                  Manage Branding
+                <button 
+                  onClick={handleViewSalesFunnel}
+                  className="w-full mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
+                >
+                  🏗️ Your Sales Funnel Builder
                 </button>
               </div>
-              
+
+              {/* Quick Stats Summary */}
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">👥 Customer Management</h3>
-                <p className="text-gray-600 mb-4">View and manage your customers</p>
-                <button className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-teal-600 transition-all">
-                  View Customers
-                </button>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Quick Overview</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                    <span className="text-gray-700">Total Customers</span>
+                    <span className="font-bold text-blue-600">{partnerData?.metrics?.totalCustomers || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                    <span className="text-gray-700">Monthly Revenue</span>
+                    <span className="font-bold text-green-600">${partnerData?.metrics?.monthlyRevenue?.toFixed(2) || '0.00'}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                    <span className="text-gray-700">Your Share (85%)</span>
+                    <span className="font-bold text-purple-600">${((partnerData?.metrics?.monthlyRevenue || 0) * 0.85).toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -660,19 +1021,19 @@ const WhiteLabelDashboard = () => {
                   <h4 className="font-semibold text-gray-700 mb-3">🎯 Sales Materials</h4>
                   <div className="space-y-2">
                     <button 
-                      onClick={handleDownloadSalesKit}
+                      onClick={downloadSalesDeck}
                       className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
                     >
                       📄 Download Sales Deck
                     </button>
                     <button 
-                      onClick={handleDownloadSalesKit}
+                      onClick={downloadMarketingGraphics}
                       className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
                     >
                       🎨 Marketing Graphics
                     </button>
                     <button 
-                      onClick={handleDownloadSalesKit}
+                      onClick={downloadEmailTemplates}
                       className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
                     >
                       📧 Email Templates
@@ -693,18 +1054,6 @@ const WhiteLabelDashboard = () => {
                       📋 Copy Partner Link
                     </button>
                   </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-green-800">💡 Pro Tip</div>
-                    <div className="text-sm text-green-600">Use your custom branded domain and partner code to maximize conversions</div>
-                  </div>
-                  <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all">
-                    Setup Domain
-                  </button>
                 </div>
               </div>
             </div>
@@ -1141,81 +1490,21 @@ const WhiteLabelDashboard = () => {
           </div>
         )}
 
-        {/* Sales Funnel Analytics Modal */}
-        {showAnalyticsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">📊 Sales Funnel Analytics</h2>
-                  <button 
-                    onClick={() => setShowAnalyticsModal(false)}
-                    className="text-gray-500 hover:text-gray-700 text-2xl"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <button
-                  onClick={loadAnalyticsData}
-                  className="mb-6 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+        {/* White Label Sales Funnel Builder */}
+        {showFunnelBuilder && (
+          <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+            <div className="min-h-screen">
+              <div className="flex justify-between items-center p-6 bg-white border-b border-gray-200">
+                <h1 className="text-2xl font-bold text-gray-800">🏗️ Your Sales Funnel Builder</h1>
+                <button 
+                  onClick={() => setShowFunnelBuilder(false)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all"
                 >
-                  🔄 Refresh Data
+                  ← Back to Dashboard
                 </button>
-
-                {/* Analytics Overview */}
-                <div className="grid md:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-                    <div className="text-3xl font-bold">{analyticsData.signups}</div>
-                    <div className="text-blue-100">Total Signups</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-                    <div className="text-3xl font-bold">{analyticsData.conversions}</div>
-                    <div className="text-green-100">Conversions</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
-                    <div className="text-3xl font-bold">{analyticsData.conversionRate}%</div>
-                    <div className="text-purple-100">Conversion Rate</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-lg">
-                    <div className="text-3xl font-bold">${analyticsData.revenue}</div>
-                    <div className="text-yellow-100">Revenue This Month</div>
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4">🎯 Recent Activity</h3>
-                  <div className="space-y-3">
-                    {analyticsData.recentActivity.map((activity, index) => (
-                      <div key={index} className="bg-white p-4 rounded-lg flex justify-between items-center">
-                        <div>
-                          <div className="font-medium">{activity.event}: {activity.customer}</div>
-                          <div className="text-sm text-gray-500">{activity.date} • {activity.plan} Plan</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-green-600">${activity.revenue}</div>
-                          <div className="text-sm text-gray-500">Revenue</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">💰 Revenue Breakdown</h4>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <div className="text-green-700">Total Revenue: <span className="font-bold">${analyticsData.revenue}</span></div>
-                    </div>
-                    <div>
-                      <div className="text-green-700">Your Share (85%): <span className="font-bold">${(analyticsData.revenue * 0.85).toFixed(2)}</span></div>
-                    </div>
-                    <div>
-                      <div className="text-green-700">MarketGenie Royalty (15%): <span className="font-bold">${(analyticsData.revenue * 0.15).toFixed(2)}</span></div>
-                    </div>
-                  </div>
-                </div>
+              </div>
+              <div className="p-6">
+                <WhiteLabelFunnelBuilder />
               </div>
             </div>
           </div>

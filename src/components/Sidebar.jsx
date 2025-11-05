@@ -8,7 +8,7 @@ import {
   Cog6ToothIcon,
   ChartBarIcon,
   BuildingStorefrontIcon,
-  CurrencyDollarIcon,
+  DocumentTextIcon,
   SparklesIcon,
   KeyIcon,
   Bars3Icon,
@@ -23,7 +23,7 @@ const sections = [
   { name: 'Appointments', icon: CalendarDaysIcon },
   { name: 'AI Swarm', icon: SparklesIcon },
   { name: 'API Keys & Integrations', icon: KeyIcon },
-  { name: 'Cost Controls', icon: CurrencyDollarIcon },
+  { name: 'Resources & Docs', icon: DocumentTextIcon },
   { name: 'White-Label SaaS', icon: BuildingStorefrontIcon }
 ];
 

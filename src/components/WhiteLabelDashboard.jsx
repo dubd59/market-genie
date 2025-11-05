@@ -358,7 +358,9 @@ const WhiteLabelDashboard = () => {
   // Generate a new signup link
   const generateNewSignupLink = (linkData) => {
     const partnerCode = `WL_${user?.uid?.slice(-8) || 'XXXXXXXX'}`;
-    const baseUrl = 'https://marketgenie.app/signup';
+    // Use the current domain pointing to landing page which has signup options
+    const currentDomain = window.location.origin;
+    const baseUrl = `${currentDomain}/`;
     const params = new URLSearchParams({
       partner: partnerCode,
       plan: linkData.plan || 'basic',
@@ -422,7 +424,9 @@ const WhiteLabelDashboard = () => {
 
   const handleCopyPartnerLink = () => {
     const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'XXXXXXXX'}`;
-    const partnerLink = `https://marketgenie.app/signup?partner=${partnerCode}`;
+    // Use the current domain pointing to landing page which has signup options
+    const currentDomain = window.location.origin;
+    const partnerLink = `${currentDomain}/?partner=${partnerCode}`;
     
     navigator.clipboard.writeText(partnerLink).then(() => {
       alert(`✅ Partner link copied! Share this link: ${partnerLink}`);

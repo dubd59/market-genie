@@ -17,6 +17,7 @@ import './utils/databaseWriteTest.js'
 import './utils/firebaseSecurityDiagnostic.js'
 import Register from './pages/RegisterSimple'
 import FreeSignup from './pages/FreeSignup'
+import Signup from './pages/Signup'
 import LandingPage from './pages/LandingPage'
 import UnsubscribePage from './pages/UnsubscribePage'
 import WhiteLabelPartnerSetup from './pages/WhiteLabelPartnerSetup'
@@ -6690,6 +6691,7 @@ function App() {
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/free-signup" element={<FreeSignup />} />
             
             {/* Plan Landing Pages - Public */}

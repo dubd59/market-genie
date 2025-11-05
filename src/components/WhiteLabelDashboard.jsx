@@ -358,9 +358,9 @@ const WhiteLabelDashboard = () => {
   // Generate a new signup link
   const generateNewSignupLink = (linkData) => {
     const partnerCode = `WL_${user?.uid?.slice(-8) || 'XXXXXXXX'}`;
-    // Use the current domain pointing to landing page which has signup options
+    // Use the dedicated signup route that handles partner parameters properly
     const currentDomain = window.location.origin;
-    const baseUrl = `${currentDomain}/`;
+    const baseUrl = `${currentDomain}/signup`;
     const params = new URLSearchParams({
       partner: partnerCode,
       plan: linkData.plan || 'basic',
@@ -424,9 +424,9 @@ const WhiteLabelDashboard = () => {
 
   const handleCopyPartnerLink = () => {
     const partnerCode = `WL_${partnerData?.partnerId?.slice(-8) || user?.uid?.slice(-8) || 'XXXXXXXX'}`;
-    // Use the current domain pointing to landing page which has signup options
+    // Use the dedicated signup route that handles partner parameters properly
     const currentDomain = window.location.origin;
-    const partnerLink = `${currentDomain}/?partner=${partnerCode}`;
+    const partnerLink = `${currentDomain}/signup?partner=${partnerCode}`;
     
     navigator.clipboard.writeText(partnerLink).then(() => {
       alert(`✅ Partner link copied! Share this link: ${partnerLink}`);

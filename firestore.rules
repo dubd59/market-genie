@@ -312,6 +312,102 @@ service cloud.firestore {
                      (isAuthenticated() && request.auth.token.email == 'dubdproducts@gmail.com');
     }
 
+    // MARKET GENIE USER DATA COLLECTION
+    // User-specific component data and settings storage
+    match /MarketGenie_userData/{userId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (request.auth.uid == userId || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      
+      // Subcollections under user data
+      match /components/{componentName} {
+        allow read, write, create, delete: if isAuthenticated() && 
+                                             (request.auth.uid == userId || 
+                                              request.auth.token.email == 'dubdproducts@gmail.com');
+      }
+      
+      // Any other subcollections under user data
+      match /{subcollection=**} {
+        allow read, write, create, delete: if isAuthenticated() && 
+                                             (request.auth.uid == userId || 
+                                              request.auth.token.email == 'dubdproducts@gmail.com');
+      }
+    }
+
+    // AI SWARM COLLECTIONS
+    // All collections needed for AI Swarm operations
+    match /MarketGenie_leads/{leadId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_campaigns/{campaignId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_contacts/{contactId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_completed_tasks/{taskId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_ai_content_generations/{generationId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_data_enrichments/{enrichmentId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_agent_performance/{agentId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_automations/{automationId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
+    match /MarketGenie_workflows/{workflowId} {
+      allow read, write, create, delete: if isAuthenticated() && 
+                                           (isDocumentOwner(resource) || 
+                                            request.auth.token.email == 'dubdproducts@gmail.com');
+      allow create: if isAuthenticated() && isValidTenantData();
+      allow list: if isAuthenticated();
+    }
+
     // CATCH-ALL RULE FOR AUTHENTICATED FOUNDER ACCOUNT
     // Allow founder account access to any collection as fallback
     match /{collection}/{document=**} {

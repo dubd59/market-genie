@@ -55,7 +55,6 @@ import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
 import AppointmentService from './services/appointmentService'
 import CalendarService from './services/calendarService'
-import AISwarmDashboard from './components/AISwarmDashboard'
 import ResourceDocumentationCenter from './components/ResourceDocumentationCenter'
 import WhiteLabelDashboard from './components/WhiteLabelDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
@@ -138,7 +137,6 @@ function SophisticatedDashboard() {
     if (path.includes('appointments') || path.includes('appointment-booking')) return 'Appointments'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
-    if (path.includes('ai-swarm')) return 'AI Swarm'
     if (path.includes('resources-docs')) return 'Resources & Docs'
     if (path.includes('white-label-saas')) return 'White-Label SaaS'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
@@ -2668,7 +2666,6 @@ END:VCALENDAR`;
         'CRM & Pipeline': '/dashboard/crm-pipeline',
         'Contact Manager': '/dashboard/contact-manager',
         'Pipeline View': '/dashboard/crm-pipeline',
-        'AI Swarm': '/dashboard/ai-swarm',
         'Resources & Docs': '/dashboard/resources-docs',
         'White-Label SaaS': '/dashboard/white-label-saas',
         'API Keys & Integrations': '/dashboard/api-keys',
@@ -2898,15 +2895,6 @@ END:VCALENDAR`;
                   <span role="img" aria-label="automation" className="text-genie-teal text-3xl mb-2 group-hover:scale-110 transition-transform">🤖</span>
                   <span className="font-semibold text-genie-teal">Start Campaign</span>
                   <span className="text-sm text-gray-600 mt-1">Multi-channel automation</span>
-                </button>
-                
-                <button 
-                  onClick={() => setSecureActiveSection('AI Swarm')} 
-                  className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl p-6 flex flex-col items-center hover:from-purple-200 hover:to-blue-200 transition group"
-                >
-                  <span role="img" aria-label="ai-swarm" className="text-purple-600 text-3xl mb-2 group-hover:scale-110 transition-transform">🧠</span>
-                  <span className="font-semibold text-purple-600">AI Swarm</span>
-                  <span className="text-sm text-gray-600 mt-1">Multiple AI agents working</span>
                 </button>
                 
                 <button 
@@ -5276,7 +5264,6 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               saveCalendarConnections={saveCalendarConnections}
             />
           )}
-          {activeSection === 'AI Swarm' && <AISwarmDashboard />}
           {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && renderAdminPanel()}
           {activeSection === 'Account Settings' && renderAccountSettings()}
           {activeSection === 'Profile' && renderProfile()}

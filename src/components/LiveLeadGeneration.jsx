@@ -44,6 +44,29 @@ const LiveLeadGeneration = () => {
   useEffect(() => {
     if (tenant?.id) {
       loadLeadData()
+      
+      // Set up automatic refresh every 10 seconds to catch new scraped leads
+      const refreshInterval = setInterval(() => {
+        console.log('🔄 Auto-refreshing Recent Leads (checking database + emergency storage)...')
+        loadLeadData()
+      }, 10000) // 10 seconds
+      
+      // Listen for emergency lead storage events
+      const handleForceRefresh = (event) => {
+        console.log('🚨 Emergency lead storage triggered refresh:', event.detail)
+        loadLeadData()
+      }
+      
+      window.addEventListener('forceLoadLeadsFromDatabase', handleForceRefresh)
+      window.addEventListener('refreshRecentLeads', handleForceRefresh)
+      window.addEventListener('emergencyLeadsSync', handleForceRefresh) // 🚨 CRITICAL: Listen for emergency sync events
+      
+      return () => {
+        clearInterval(refreshInterval)
+        window.removeEventListener('forceLoadLeadsFromDatabase', handleForceRefresh)
+        window.removeEventListener('refreshRecentLeads', handleForceRefresh)
+        window.removeEventListener('emergencyLeadsSync', handleForceRefresh) // 🚨 CRITICAL: Cleanup
+      }
     }
   }, [tenant])
 
@@ -51,15 +74,39 @@ const LiveLeadGeneration = () => {
     try {
       setLoading(true)
       
-      // Load leads and stats
+      // Load leads and stats from Firebase database
       const [leadsResult, statsResult] = await Promise.all([
         LeadService.getLeads(tenant.id),
         LeadService.getLeadStats(tenant.id)
       ])
 
+      let allLeads = []
+      
       if (leadsResult.data) {
-        setLeads(leadsResult.data)
+        allLeads = [...leadsResult.data]
       }
+
+      // 🚨 CRITICAL: Also include emergency storage leads that haven't been synced yet
+      try {
+        const emergencyLeadStorage = window.emergencyLeadStorage || window.EmergencyLeadStorage
+        if (emergencyLeadStorage) {
+          const emergencyLeads = emergencyLeadStorage.getAllLeads()
+          if (emergencyLeads && emergencyLeads.length > 0) {
+            console.log(`📱 Including ${emergencyLeads.length} emergency storage leads in Recent Leads display`)
+            
+            // Add emergency leads to the display, avoiding duplicates
+            const existingEmails = new Set(allLeads.map(lead => lead.email))
+            const newEmergencyLeads = emergencyLeads.filter(lead => !existingEmails.has(lead.email))
+            
+            allLeads = [...allLeads, ...newEmergencyLeads]
+            console.log(`📊 Total leads displayed: ${allLeads.length} (${leadsResult.data?.length || 0} from database + ${newEmergencyLeads.length} from emergency storage)`)
+          }
+        }
+      } catch (emergencyError) {
+        console.log('No emergency storage found or error accessing it:', emergencyError.message)
+      }
+
+      setLeads(allLeads)
 
       if (statsResult.data) {
         setLeadStats(statsResult.data)

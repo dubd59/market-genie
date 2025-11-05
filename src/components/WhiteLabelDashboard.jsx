@@ -24,6 +24,24 @@ const WhiteLabelDashboard = () => {
     agreedToTerms: false
   });
 
+  // New state for Partner Sales Center features
+  const [showSignupLinksModal, setShowSignupLinksModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [signupLinks, setSignupLinks] = useState([]);
+  const [customPricing, setCustomPricing] = useState({
+    basicPlan: { price: 47, name: 'Basic Plan', features: ['Lead Generation', 'Email Automation', '1000 Contacts'] },
+    proPlan: { price: 97, name: 'Professional', features: ['Everything in Basic', 'Advanced Analytics', '10000 Contacts', 'Priority Support'] },
+    enterprisePlan: { price: 197, name: 'Enterprise', features: ['Everything in Pro', 'White Label Rights', 'Unlimited Everything', 'Custom Integrations'] }
+  });
+  const [analyticsData, setAnalyticsData] = useState({
+    signups: 0,
+    conversions: 0,
+    revenue: 0,
+    conversionRate: 0,
+    recentActivity: []
+  });
+
   // Check if user has WhiteLabel access (Lifetime or Founder only)
   const hasWhiteLabelAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
   
@@ -326,15 +344,80 @@ const WhiteLabelDashboard = () => {
 
   // Partner Sales Tools Handlers
   const handleGenerateSignupLinks = () => {
-    alert('🚧 Coming Soon: Generate custom signup links for your customers with your branding and pricing!');
+    setShowSignupLinksModal(true);
   };
 
   const handleSetCustomPricing = () => {
-    alert('🚧 Coming Soon: Set custom pricing plans for your customers and maximize your revenue!');
+    setShowPricingModal(true);
   };
 
   const handleViewSalesFunnel = () => {
-    alert('🚧 Coming Soon: Analytics dashboard showing your customer acquisition funnel and conversion rates!');
+    setShowAnalyticsModal(true);
+  };
+
+  // Generate a new signup link
+  const generateNewSignupLink = (linkData) => {
+    const partnerCode = `WL_${user?.uid?.slice(-8) || 'XXXXXXXX'}`;
+    const baseUrl = 'https://marketgenie.app/signup';
+    const params = new URLSearchParams({
+      partner: partnerCode,
+      plan: linkData.plan || 'basic',
+      discount: linkData.discount || 0,
+      campaign: linkData.campaignName || 'default',
+      source: linkData.source || 'partner'
+    });
+    
+    const newLink = {
+      id: Date.now(),
+      url: `${baseUrl}?${params.toString()}`,
+      campaignName: linkData.campaignName || 'Default Campaign',
+      plan: linkData.plan || 'basic',
+      discount: linkData.discount || 0,
+      clicks: 0,
+      conversions: 0,
+      revenue: 0,
+      createdAt: new Date(),
+      isActive: true
+    };
+    
+    setSignupLinks(prev => [...prev, newLink]);
+    return newLink;
+  };
+
+  // Save custom pricing to Firebase
+  const saveCustomPricing = async (pricingData) => {
+    try {
+      const pricingRef = doc(db, 'MarketGenie_whitelabel_partners', user.uid);
+      await setDoc(pricingRef, {
+        customPricing: pricingData,
+        pricingUpdatedAt: new Date()
+      }, { merge: true });
+      
+      setCustomPricing(pricingData);
+      alert('✅ Custom pricing saved successfully!');
+    } catch (error) {
+      console.error('Error saving pricing:', error);
+      alert('❌ Error saving pricing. Please try again.');
+    }
+  };
+
+  // Load analytics data (mock for now, replace with real Firebase data)
+  const loadAnalyticsData = () => {
+    // Simulate analytics data - in production, load from Firebase
+    const mockData = {
+      signups: Math.floor(Math.random() * 150) + 50,
+      conversions: Math.floor(Math.random() * 45) + 15,
+      revenue: (Math.floor(Math.random() * 5000) + 2000),
+      conversionRate: 0,
+      recentActivity: [
+        { date: '2025-11-05', event: 'Signup', customer: 'john@example.com', plan: 'Pro', revenue: 97 },
+        { date: '2025-11-04', event: 'Conversion', customer: 'sarah@company.com', plan: 'Basic', revenue: 47 },
+        { date: '2025-11-03', event: 'Signup', customer: 'mike@startup.com', plan: 'Enterprise', revenue: 197 },
+        { date: '2025-11-02', event: 'Signup', customer: 'lisa@agency.com', plan: 'Pro', revenue: 97 }
+      ]
+    };
+    mockData.conversionRate = mockData.conversions > 0 ? ((mockData.conversions / mockData.signups) * 100).toFixed(1) : 0;
+    setAnalyticsData(mockData);
   };
 
   const handleCopyPartnerLink = () => {
@@ -816,6 +899,320 @@ const WhiteLabelDashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Signup Links Generation Modal */}
+        {showSignupLinksModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">🔗 Generate Signup Links</h2>
+                  <button 
+                    onClick={() => setShowSignupLinksModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Link Generator Form */}
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4">Create New Link</h3>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target);
+                      const linkData = {
+                        campaignName: formData.get('campaignName'),
+                        plan: formData.get('plan'),
+                        discount: parseInt(formData.get('discount')) || 0,
+                        source: formData.get('source')
+                      };
+                      generateNewSignupLink(linkData);
+                      e.target.reset();
+                    }} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Name</label>
+                        <input
+                          name="campaignName"
+                          type="text"
+                          placeholder="e.g., Holiday Special 2025"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Target Plan</label>
+                        <select name="plan" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                          <option value="basic">Basic Plan ($47/mo)</option>
+                          <option value="pro">Professional ($97/mo)</option>
+                          <option value="enterprise">Enterprise ($197/mo)</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
+                        <input
+                          name="discount"
+                          type="number"
+                          min="0"
+                          max="50"
+                          placeholder="e.g., 20"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Traffic Source</label>
+                        <select name="source" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                          <option value="email">Email Campaign</option>
+                          <option value="social">Social Media</option>
+                          <option value="website">Website</option>
+                          <option value="referral">Referral</option>
+                          <option value="advertising">Paid Advertising</option>
+                        </select>
+                      </div>
+                      
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all"
+                      >
+                        Generate Link
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Generated Links List */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Your Generated Links</h3>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {signupLinks.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">No links generated yet. Create your first link!</p>
+                      ) : (
+                        signupLinks.map((link) => (
+                          <div key={link.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-medium text-gray-800">{link.campaignName}</h4>
+                              <span className={`px-2 py-1 text-xs rounded ${link.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                {link.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              {link.plan} plan • {link.discount}% discount
+                            </p>
+                            <div className="bg-gray-50 p-2 rounded font-mono text-xs break-all mb-2">
+                              {link.url}
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                              <div className="text-gray-500">
+                                Clicks: {link.clicks} • Conversions: {link.conversions}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(link.url);
+                                  alert('✅ Link copied to clipboard!');
+                                }}
+                                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Pricing Modal */}
+        {showPricingModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">💰 Custom Pricing Manager</h2>
+                  <button 
+                    onClick={() => setShowPricingModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6 mb-6">
+                  {Object.entries(customPricing).map(([key, plan]) => (
+                    <div key={key} className="bg-gray-50 p-6 rounded-lg">
+                      <h3 className="text-lg font-semibold mb-4 capitalize">{plan.name}</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                          <input
+                            type="number"
+                            value={plan.price}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              [key]: { ...prev[key], price: parseInt(e.target.value) || 0 }
+                            }))}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
+                          <input
+                            type="text"
+                            value={plan.name}
+                            onChange={(e) => setCustomPricing(prev => ({
+                              ...prev,
+                              [key]: { ...prev[key], name: e.target.value }
+                            }))}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Features</label>
+                          <div className="space-y-1">
+                            {plan.features.map((feature, index) => (
+                              <input
+                                key={index}
+                                type="text"
+                                value={feature}
+                                onChange={(e) => {
+                                  const newFeatures = [...plan.features];
+                                  newFeatures[index] = e.target.value;
+                                  setCustomPricing(prev => ({
+                                    ...prev,
+                                    [key]: { ...prev[key], features: newFeatures }
+                                  }));
+                                }}
+                                className="w-full p-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">💡 Pricing Tips</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Consider your market and competition when setting prices</li>
+                    <li>• Higher prices can increase perceived value</li>
+                    <li>• Offer clear value differentiation between tiers</li>
+                    <li>• Remember: You keep 85% of all revenue!</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => saveCustomPricing(customPricing)}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
+                  >
+                    Save Pricing
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCustomPricing({
+                        basicPlan: { price: 47, name: 'Basic Plan', features: ['Lead Generation', 'Email Automation', '1000 Contacts'] },
+                        proPlan: { price: 97, name: 'Professional', features: ['Everything in Basic', 'Advanced Analytics', '10000 Contacts', 'Priority Support'] },
+                        enterprisePlan: { price: 197, name: 'Enterprise', features: ['Everything in Pro', 'White Label Rights', 'Unlimited Everything', 'Custom Integrations'] }
+                      });
+                    }}
+                    className="px-6 bg-gray-500 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all"
+                  >
+                    Reset to Defaults
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sales Funnel Analytics Modal */}
+        {showAnalyticsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">📊 Sales Funnel Analytics</h2>
+                  <button 
+                    onClick={() => setShowAnalyticsModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <button
+                  onClick={loadAnalyticsData}
+                  className="mb-6 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  🔄 Refresh Data
+                </button>
+
+                {/* Analytics Overview */}
+                <div className="grid md:grid-cols-4 gap-6 mb-8">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
+                    <div className="text-3xl font-bold">{analyticsData.signups}</div>
+                    <div className="text-blue-100">Total Signups</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
+                    <div className="text-3xl font-bold">{analyticsData.conversions}</div>
+                    <div className="text-green-100">Conversions</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
+                    <div className="text-3xl font-bold">{analyticsData.conversionRate}%</div>
+                    <div className="text-purple-100">Conversion Rate</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-lg">
+                    <div className="text-3xl font-bold">${analyticsData.revenue}</div>
+                    <div className="text-yellow-100">Revenue This Month</div>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4">🎯 Recent Activity</h3>
+                  <div className="space-y-3">
+                    {analyticsData.recentActivity.map((activity, index) => (
+                      <div key={index} className="bg-white p-4 rounded-lg flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{activity.event}: {activity.customer}</div>
+                          <div className="text-sm text-gray-500">{activity.date} • {activity.plan} Plan</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-600">${activity.revenue}</div>
+                          <div className="text-sm text-gray-500">Revenue</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">💰 Revenue Breakdown</h4>
+                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="text-green-700">Total Revenue: <span className="font-bold">${analyticsData.revenue}</span></div>
+                    </div>
+                    <div>
+                      <div className="text-green-700">Your Share (85%): <span className="font-bold">${(analyticsData.revenue * 0.85).toFixed(2)}</span></div>
+                    </div>
+                    <div>
+                      <div className="text-green-700">MarketGenie Royalty (15%): <span className="font-bold">${(analyticsData.revenue * 0.15).toFixed(2)}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

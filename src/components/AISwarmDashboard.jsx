@@ -145,7 +145,7 @@ const AISwarmDashboard = () => {
 
 
 
-  // Load real-time AI Swarm metrics
+  // Load real-time AI Swarm metrics and saved state
   useEffect(() => {
     const loadSwarmMetrics = async () => {
       if (!tenant?.id) return;
@@ -160,6 +160,9 @@ const AISwarmDashboard = () => {
         });
         console.log('✅ AI Swarm metrics loaded:', metrics);
 
+        // Load saved swarm state
+        await loadSwarmState();
+        
         // Load individual agent performance data
         await loadAgentPerformance();
         
@@ -169,6 +172,44 @@ const AISwarmDashboard = () => {
         console.error('❌ Error loading AI Swarm metrics:', error);
         setSwarmMetrics(prev => ({ ...prev, isLoading: false }));
         setAutomationMetrics(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    const loadSwarmState = async () => {
+      if (!tenant?.id || !user?.uid) return;
+      
+      try {
+        // Load saved swarm status
+        const savedSwarmStatus = await persistenceService.getData(
+          `aiSwarmStatus_${tenant.id}_${user.uid}`,
+          'idle'
+        );
+        setSwarmStatus(savedSwarmStatus);
+        
+        // Load saved agent states
+        const savedAgentStates = await persistenceService.getData(
+          `aiAgentStates_${tenant.id}_${user.uid}`,
+          {}
+        );
+        
+        // Update agents with saved states
+        if (Object.keys(savedAgentStates).length > 0) {
+          setAgents(prev => prev.map(agent => ({
+            ...agent,
+            status: savedAgentStates[agent.id]?.status || agent.status,
+            tasks: savedAgentStates[agent.id]?.tasks || agent.tasks,
+            efficiency: savedAgentStates[agent.id]?.efficiency || agent.efficiency
+          })));
+        }
+        
+        console.log('✅ AI Swarm state loaded:', { savedSwarmStatus, savedAgentStates });
+        
+        // If swarm was running, restart it
+        if (savedSwarmStatus === 'running') {
+          startSwarmActivity();
+        }
+      } catch (error) {
+        console.error('❌ Error loading AI Swarm state:', error);
       }
     };
 
@@ -228,17 +269,56 @@ const AISwarmDashboard = () => {
 
 
 
-  const startSwarm = () => {
-    setSwarmStatus('running');
-    // Simulate agent activity
+  // Save swarm state to persistence
+  const saveSwarmState = async (newSwarmStatus, newAgentStates = null) => {
+    if (!tenant?.id || !user?.uid) return;
+    
+    try {
+      // Save swarm status
+      await persistenceService.saveData(
+        `aiSwarmStatus_${tenant.id}_${user.uid}`,
+        newSwarmStatus
+      );
+      
+      // Save agent states if provided
+      if (newAgentStates) {
+        const agentStateMap = {};
+        newAgentStates.forEach(agent => {
+          agentStateMap[agent.id] = {
+            status: agent.status,
+            tasks: agent.tasks,
+            efficiency: agent.efficiency
+          };
+        });
+        
+        await persistenceService.saveData(
+          `aiAgentStates_${tenant.id}_${user.uid}`,
+          agentStateMap
+        );
+      }
+      
+      console.log('✅ AI Swarm state saved:', { newSwarmStatus, newAgentStates: newAgentStates?.length || 'no update' });
+    } catch (error) {
+      console.error('❌ Error saving AI Swarm state:', error);
+    }
+  };
+
+  // Start swarm activity simulation
+  const startSwarmActivity = () => {
     const interval = setInterval(() => {
-      setAgents(prev => prev.map(agent => ({
-        ...agent,
-        tasks: agent.status === 'active' || agent.status === 'busy' 
-          ? agent.tasks + Math.floor(Math.random() * 3)
-          : agent.tasks,
-        efficiency: Math.min(100, agent.efficiency + (Math.random() - 0.5) * 2)
-      })));
+      setAgents(prev => {
+        const updatedAgents = prev.map(agent => ({
+          ...agent,
+          tasks: agent.status === 'active' || agent.status === 'busy' 
+            ? agent.tasks + Math.floor(Math.random() * 3)
+            : agent.tasks,
+          efficiency: Math.min(100, agent.efficiency + (Math.random() - 0.5) * 2)
+        }));
+        
+        // Save updated agent states
+        saveSwarmState(swarmStatus, updatedAgents);
+        return updatedAgents;
+      });
       
       setSwarmMetrics(prev => ({
         ...prev,
@@ -246,25 +326,36 @@ const AISwarmDashboard = () => {
         costToday: prev.costToday + (Math.random() * 2),
         leadsGenerated: prev.leadsGenerated + Math.floor(Math.random() * 2)
       }));
-    }, 3000);
+    }, 10000); // Reduced frequency to 10 seconds
 
     return () => clearInterval(interval);
   };
 
-  const pauseSwarm = () => {
+  const startSwarm = async () => {
+    setSwarmStatus('running');
+    await saveSwarmState('running');
+    startSwarmActivity();
+  };
+
+  const pauseSwarm = async () => {
     setSwarmStatus('paused');
+    await saveSwarmState('paused');
   };
 
-  const stopSwarm = () => {
+  const stopSwarm = async () => {
     setSwarmStatus('idle');
+    await saveSwarmState('idle');
   };
 
-  const toggleAgent = (agentId) => {
-    setAgents(prev => prev.map(agent => 
+  const toggleAgent = async (agentId) => {
+    const updatedAgents = agents.map(agent => 
       agent.id === agentId 
         ? { ...agent, status: agent.status === 'active' ? 'idle' : 'active' }
         : agent
-    ));
+    );
+    
+    setAgents(updatedAgents);
+    await saveSwarmState(swarmStatus, updatedAgents);
   };
 
   const getStatusColor = (status) => {

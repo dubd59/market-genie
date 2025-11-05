@@ -1,4 +1,7 @@
-const functions = require('firebase-functions');
+const {onRequest} = require('firebase-functions/v2/https');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const functions = require('firebase-functions'); // Keep for backward compatibility
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
@@ -11,7 +14,7 @@ const { leadGenProxy } = require('./leadGenProxy');
 exports.leadGenProxy = leadGenProxy;
 
 // Function to create founder tenant document
-exports.createFounderTenant = functions.https.onRequest(async (req, res) => {
+exports.createFounderTenant = onRequest(async (req, res) => {
   // Enable CORS
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -77,7 +80,7 @@ exports.createFounderTenant = functions.https.onRequest(async (req, res) => {
 });
 
 // Function to copy integrations from old tenant to founder tenant
-exports.copyIntegrationsToFounder = functions.https.onRequest(async (req, res) => {
+exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
   // Enable CORS
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -149,6 +152,122 @@ exports.copyIntegrationsToFounder = functions.https.onRequest(async (req, res) =
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
+
+// 🎯 CRITICAL: Set tenant custom claims for new users
+exports.setUserTenantClaims = onCall(async (request) => {
+  // Verify the user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { uid, tenantId } = request.data;
+  const callerUid = request.auth.uid;
+
+  // Users can only set claims for themselves
+  if (uid !== callerUid) {
+    throw new HttpsError('permission-denied', 'Can only set claims for yourself');
+  }
+
+  try {
+    console.log(`Setting tenant claims for user ${uid}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(uid, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Successfully set tenant claims for user ${uid}`);
+    
+    return {
+      success: true,
+      message: 'Tenant claims set successfully',
+      tenantId: tenantId
+    };
+    
+  } catch (error) {
+    console.error('Error setting tenant claims:', error);
+    throw new HttpsError('internal', `Failed to set tenant claims: ${error.message}`);
+  }
+});
+
+// 🎯 CRITICAL: Auto-set tenant claims when user creates tenant
+exports.onTenantCreated = onDocumentCreated('MarketGenie_tenants/{tenantId}', async (event) => {
+  try {
+    const tenantData = event.data.data();
+    const tenantId = event.params.tenantId;
+    const ownerId = tenantData.ownerId;
+
+      if (!ownerId) {
+        console.log('No ownerId found in tenant data, skipping claims setup');
+        return;
+      }
+
+      console.log(`Auto-setting tenant claims for owner ${ownerId} of tenant ${tenantId}`);
+      
+      // Set custom claims for the tenant owner
+      await admin.auth().setCustomUserClaims(ownerId, {
+        tenantId: tenantId,
+        role: 'owner',
+        updatedAt: Date.now()
+      });
+
+      console.log(`✅ Auto-set tenant claims for user ${ownerId}`);
+      
+    } catch (error) {
+      console.error('Error auto-setting tenant claims:', error);
+    }
+  });
+
+// 🛠️ ADMIN: Fix existing user claims (call manually)
+exports.fixUserClaims = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { userId, tenantId } = req.body;
+    
+    if (!userId || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and tenantId are required'
+      });
+    }
+
+    console.log(`Fixing claims for user ${userId}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(userId, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Fixed claims for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'User claims fixed successfully',
+      userId: userId,
+      tenantId: tenantId
+    });
+    
+  } catch (error) {
+    console.error('Error fixing user claims:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // Create transporter with user's SMTP credentials
 const createTransporter = (smtpConfig) => {

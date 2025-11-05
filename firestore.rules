@@ -13,25 +13,31 @@ service cloud.firestore {
     }
     
     function getUserTenantId() {
-      return request.auth.token.tenantId;
+      // 🎯 SIMPLIFIED: Use user's UID as their tenant ID (no custom claims needed)
+      return request.auth.uid;
     }
     
     function getUserTenantIdFromClaims() {
-      return request.auth.token.tenantId;
+      // 🎯 SIMPLIFIED: Use user's UID as their tenant ID (no custom claims needed)
+      return request.auth.uid;
     }
     
     function belongsToUserTenant(tenantId) {
-      return isAuthenticated() && getUserTenantId() == tenantId;
+      // 🎯 SIMPLIFIED: User belongs to tenant if tenantId matches their UID
+      return isAuthenticated() && request.auth.uid == tenantId;
     }
     
     function isDocumentOwner(resource) {
+      // 🎯 SIMPLIFIED: User owns document if their UID matches tenantId or ownerId
       return isAuthenticated() && 
-             resource.data.tenantId == getUserTenantId();
+             (resource.data.tenantId == request.auth.uid ||
+              resource.data.ownerId == request.auth.uid);
     }
     
     function isValidTenantData() {
+      // 🎯 SIMPLIFIED: Valid if tenantId matches user's UID
       return 'tenantId' in request.resource.data &&
-             request.resource.data.tenantId == getUserTenantId();
+             request.resource.data.tenantId == request.auth.uid;
     }
 
     function isSuperAdmin() {
@@ -78,12 +84,12 @@ service cloud.firestore {
       
       // SUBCOLLECTIONS FOR TENANT-SPECIFIC DATA
       // All subcollections under a tenant inherit the same access control:
-      // - Users can access their own tenant's subcollections (via tenantId claim)
+      // 🎯 SIMPLIFIED: Users can access their own tenant's subcollections (UID = tenantId)
       // - Super admins can access all subcollections
       match /{subcollection}/{document=**} {
         allow read, write, create, delete: if isAuthenticated() && 
                                               (isSuperAdmin() || 
-                                               request.auth.token.tenantId == tenantId);
+                                               request.auth.uid == tenantId);
       }
     }
 
@@ -142,11 +148,10 @@ service cloud.firestore {
     // LEADS COLLECTION
     // Lead data isolated by tenant - CRITICAL FOR LEAD SCRAPER
     match /MarketGenie_tenants/{tenantId}/leads/{leadId} {
-      // EMERGENCY TEMP FIX: More permissive rules for lead operations
+      // 🎯 SIMPLIFIED: Emergency lead access - user can access if tenantId matches their UID
       allow read, write, create, delete: if isAuthenticated() && 
-                            (belongsToUserTenant(tenantId) || 
+                            (request.auth.uid == tenantId || 
                              (tenantId == 'founder-tenant' && request.auth.token.email == 'dubdproducts@gmail.com') ||
-                             (tenantId == '8ZJY8LY3g2H3Mw2eRcmd' && isAuthenticated()) ||  // TEMP: Allow specific tenant
                              isSuperAdmin() ||
                              request.auth.token.email == 'dubdproducts@gmail.com');
       allow list: if isAuthenticated() && 

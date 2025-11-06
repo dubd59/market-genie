@@ -19,6 +19,8 @@ import Register from './pages/RegisterSimple'
 import FreeSignup from './pages/FreeSignup'
 import Signup from './pages/Signup'
 import LandingPage from './pages/LandingPage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 import UnsubscribePage from './pages/UnsubscribePage'
 import WhiteLabelPartnerSetup from './pages/WhiteLabelPartnerSetup'
 import ProPlanSignup from './pages/ProPlanSignup'
@@ -260,13 +262,8 @@ function SophisticatedDashboard() {
   // Campaign State
   const [campaigns, setCampaigns] = useState([])
   const [campaignStats, setCampaignStats] = useState({
-    totalCampaigns: 12,
-    totalEmailsSent: 2430,
-    averageOpenRate: 68,
-    averageResponseRate: 24,
-    totalEmailsOpened: 1654,
-    totalEmailsBounced: 73,
-    totalUnsubscribed: 18
+    totalCampaigns: 0,
+    totalEmailsSent: 0
   })
   const [campaignFormData, setCampaignFormData] = useState({
     name: '',
@@ -1824,26 +1821,10 @@ Enter number (1-4):`);
   const updateCampaignStats = () => {
     const activeCampaigns = campaigns.filter(c => c.status === 'Active')
     const totalEmailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.emailsSent || 0), 0)
-    const avgOpenRate = campaigns.length > 0 
-      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.openRate || 0), 0) / campaigns.length)
-      : 0
-    const avgResponseRate = campaigns.length > 0 
-      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.responseRate || 0), 0) / campaigns.length)
-      : 0
-
-    // Calculate new metrics
-    const totalEmailsOpened = Math.round(totalEmailsSent * (avgOpenRate / 100))
-    const totalEmailsBounced = campaigns.reduce((sum, campaign) => sum + (campaign.emailsBounced || 0), 0)
-    const totalUnsubscribed = campaigns.reduce((sum, campaign) => sum + (campaign.unsubscribed || 0), 0)
 
     setCampaignStats({
       totalCampaigns: activeCampaigns.length,
-      totalEmailsSent: totalEmailsSent,
-      averageOpenRate: avgOpenRate,
-      averageResponseRate: avgResponseRate,
-      totalEmailsOpened: totalEmailsOpened,
-      totalEmailsBounced: totalEmailsBounced,
-      totalUnsubscribed: totalUnsubscribed
+      totalEmailsSent: totalEmailsSent
     })
   }
 
@@ -3933,42 +3914,17 @@ END:VCALENDAR`;
             <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
-              {/* Campaign Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl mb-1">📧</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Active Campaigns</div>
+              {/* Campaign Stats - Real Data Only */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 max-w-2xl">
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Active Campaigns</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="sent" className="text-genie-teal text-2xl mb-1">📤</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="opened" className="text-genie-teal text-2xl mb-1">📬</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsOpened.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Opened</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="open-rate" className="text-genie-teal text-2xl mb-1">📊</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Open Rate</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="responses" className="text-genie-teal text-2xl mb-1">💬</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Response Rate</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="bounced" className="text-red-500 text-2xl mb-1">⚠️</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsBounced.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Bounced</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="unsubscribed" className="text-orange-500 text-2xl mb-1">🚫</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalUnsubscribed.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Unsubscribed</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
                 </div>
               </div>
 
@@ -6692,6 +6648,10 @@ function App() {
             
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            
+            {/* Legal Pages - Public */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             
             {/* OAuth Callback Routes - Public */}
             <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />

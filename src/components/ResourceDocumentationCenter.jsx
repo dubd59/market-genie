@@ -117,7 +117,7 @@ const ResourceDocumentationCenter = () => {
         <p className="text-blue-700 mb-4">Master every feature of Market Genie with our comprehensive user guide. Click any section below for detailed instructions.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Getting Started */}
         <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -167,30 +167,30 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-blue-500 pl-4">
                       <p className="font-semibold">Step 1: Creating Your Account</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Visit the Market Genie signup page</li>
-                        <li>Enter your business email address</li>
-                        <li>Create a strong password (minimum 8 characters)</li>
-                        <li>Verify your email address by clicking the confirmation link</li>
+                        <li>Visit the Market Genie signup page - Navigate to our secure registration portal where you'll begin your journey to automated lead generation and business growth.</li>
+                        <li>Enter your business email address - Use your primary business email as this will be your main communication channel for notifications, lead alerts, and important account updates.</li>
+                        <li>Create a strong password (minimum 8 characters) - Choose a password that includes uppercase letters, numbers, and special characters to ensure maximum security for your valuable business data.</li>
+                        <li>Verify your email address by clicking the confirmation link - Check your inbox (and spam folder) for our verification email and click the secure link to activate your account within 24 hours.</li>
                       </ul>
                     </div>
                     
                     <div className="border-l-4 border-blue-500 pl-4">
                       <p className="font-semibold">Step 2: Initial Login Process</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Return to the login page after email verification</li>
-                        <li>Enter your credentials and click "Sign In"</li>
-                        <li>Complete the onboarding wizard (business details, goals)</li>
-                        <li>Choose your subscription plan (Free, Pro, or Enterprise)</li>
+                        <li>Return to the login page after email verification - Access our secure login portal using the same credentials you created during registration.</li>
+                        <li>Enter your credentials and click "Sign In" - Input your verified email and password, then click the secure sign-in button to access your personalized dashboard.</li>
+                        <li>Complete the onboarding wizard (business details, goals) - Follow our guided setup process to configure your business profile, target markets, and lead generation objectives for optimal results.</li>
+                        <li>Choose your subscription plan (Free, Pro, or Enterprise) - Select the plan that best fits your business needs, with options ranging from our free starter tier to enterprise-level features and support.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-blue-500 pl-4">
                       <p className="font-semibold">Step 3: Security Setup</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Enable two-factor authentication (recommended)</li>
-                        <li>Set up recovery email and phone number</li>
-                        <li>Review privacy settings and data preferences</li>
-                        <li>Accept terms of service and privacy policy</li>
+                        <li>Enable two-factor authentication (recommended) - Add an extra layer of security to protect your business data by enabling SMS or authenticator app verification for all login attempts.</li>
+                        <li>Set up recovery email and phone number - Provide backup contact information to ensure you can always regain access to your account, even if your primary credentials are compromised.</li>
+                        <li>Review privacy settings and data preferences - Customize how your data is used, what notifications you receive, and which features have access to your business information.</li>
+                        <li>Accept terms of service and privacy policy - Review and acknowledge our comprehensive legal agreements that protect both your business and our service standards.</li>
                       </ul>
                     </div>
                   </div>
@@ -202,34 +202,34 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Main Navigation Sidebar</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li><strong>SuperGenie Dashboard:</strong> Overview of all activities and metrics</li>
-                        <li><strong>Lead Generation:</strong> Tools for finding and capturing prospects</li>
-                        <li><strong>Outreach Automation:</strong> Email and LinkedIn campaign management</li>
-                        <li><strong>CRM & Pipeline:</strong> Customer relationship management</li>
-                        <li><strong>Appointments:</strong> Booking and calendar integration</li>
-                        <li><strong>API Keys & Integrations:</strong> Third-party service connections</li>
-                        <li><strong>Resources & Docs:</strong> This documentation center</li>
-                        <li><strong>White-Label SaaS:</strong> Partner program and reseller tools</li>
+                        <li><strong>SuperGenie Dashboard:</strong> Overview of all activities and metrics - Your central command center displaying real-time analytics, campaign performance, and key business insights at a glance.</li>
+                        <li><strong>Lead Generation:</strong> Tools for finding and capturing prospects - Access powerful scraping tools, database searches, and lead capture forms to build your sales pipeline efficiently.</li>
+                        <li><strong>Outreach Automation:</strong> Email and LinkedIn campaign management - Create, schedule, and monitor personalized outreach sequences with advanced automation and A/B testing capabilities.</li>
+                        <li><strong>CRM & Pipeline:</strong> Customer relationship management - Organize leads, track interactions, manage deal stages, and monitor your entire sales funnel from prospect to customer.</li>
+                        <li><strong>Appointments:</strong> Booking and calendar integration - Seamlessly schedule meetings with integrated calendar sync, automated reminders, and professional booking pages.</li>
+                        <li><strong>API Keys & Integrations:</strong> Third-party service connections - Configure and manage all external service integrations including Prospeo, Hunter, VoilaNorbert, and email providers.</li>
+                        <li><strong>Resources & Docs:</strong> This documentation center - Access comprehensive guides, tutorials, troubleshooting help, and best practices for maximizing your success.</li>
+                        <li><strong>White-Label SaaS:</strong> Partner program and reseller tools - Explore partnership opportunities, revenue sharing programs, and white-label solutions for scaling your business.</li>
                       </ul>
                     </div>
                     
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Header Features</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Search bar for quick navigation</li>
-                        <li>Notification bell for important updates</li>
-                        <li>User profile dropdown with settings</li>
-                        <li>Subscription plan indicator</li>
+                        <li>Search bar for quick navigation - Instantly find any feature, contact, campaign, or setting using our intelligent search that learns from your usage patterns.</li>
+                        <li>Notification bell for important updates - Stay informed about campaign completions, new leads, system updates, and urgent items requiring your attention.</li>
+                        <li>User profile dropdown with settings - Access your account preferences, subscription details, security settings, and logout options from any page.</li>
+                        <li>Subscription plan indicator - View your current plan status, usage limits, and upgrade options to ensure you're maximizing your account benefits.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Quick Action Buttons</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>+ New Campaign: Start email or LinkedIn outreach</li>
-                        <li>+ Add Leads: Import or manually add prospects</li>
-                        <li>+ Schedule Meeting: Book appointments with leads</li>
-                        <li>AI Assistant: Get help with any task</li>
+                        <li>+ New Campaign: Start email or LinkedIn outreach - Launch targeted campaigns with pre-built templates, personalization options, and automated follow-up sequences.</li>
+                        <li>+ Add Leads: Import or manually add prospects - Upload CSV files, integrate with existing databases, or add contacts individually with automatic data enrichment.</li>
+                        <li>+ Schedule Meeting: Book appointments with leads - Send professional booking links, sync with your calendar, and automate confirmation emails and reminders.</li>
+                        <li>AI Assistant: Get help with any task - Access our intelligent chatbot for instant support, feature explanations, and guided workflows for complex processes.</li>
                       </ul>
                     </div>
                   </div>
@@ -241,30 +241,30 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-purple-500 pl-4">
                       <p className="font-semibold">Profile Information</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Update your name, title, and company information</li>
-                        <li>Upload professional profile photo</li>
-                        <li>Set timezone and language preferences</li>
-                        <li>Configure email signature for outreach</li>
+                        <li>Update your name, title, and company information - Keep your professional details current to ensure personalized communications and accurate team member identification.</li>
+                        <li>Upload professional profile photo - Add a high-quality headshot that will appear in email signatures, meeting invitations, and team directories for better engagement.</li>
+                        <li>Set timezone and language preferences - Configure your location settings to ensure accurate scheduling, reporting timestamps, and localized content delivery.</li>
+                        <li>Configure email signature for outreach - Design professional email signatures with your contact information, social links, and branding that automatically append to all outbound communications.</li>
                       </ul>
                     </div>
                     
                     <div className="border-l-4 border-purple-500 pl-4">
                       <p className="font-semibold">Notification Preferences</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Email notifications for new leads and responses</li>
-                        <li>Push notifications for urgent items</li>
-                        <li>Weekly/monthly performance reports</li>
-                        <li>System maintenance and update alerts</li>
+                        <li>Email notifications for new leads and responses - Customize when and how you receive alerts about incoming leads, prospect replies, and campaign engagement activity.</li>
+                        <li>Push notifications for urgent items - Set up instant browser or mobile alerts for high-priority events like hot leads, expired campaigns, or system issues requiring immediate attention.</li>
+                        <li>Weekly/monthly performance reports - Schedule automated summaries of your campaign results, lead generation metrics, and business growth indicators delivered to your inbox.</li>
+                        <li>System maintenance and update alerts - Stay informed about planned downtime, new feature releases, and important security updates that may affect your workflow.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-purple-500 pl-4">
                       <p className="font-semibold">Security Settings</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Change password and enable 2FA</li>
-                        <li>Manage active sessions and devices</li>
-                        <li>Set data retention preferences</li>
-                        <li>Configure privacy and sharing settings</li>
+                        <li>Change password and enable 2FA - Update your login credentials regularly and add two-factor authentication for enterprise-grade security protection of your business data.</li>
+                        <li>Manage active sessions and devices - Monitor all logged-in devices and locations, with the ability to remotely terminate suspicious sessions for enhanced account security.</li>
+                        <li>Set data retention preferences - Control how long your data is stored, configure automatic deletion schedules, and manage compliance with industry regulations.</li>
+                        <li>Configure privacy and sharing settings - Determine what information is shared with integrations, team members, and third-party services while maintaining full control over your data.</li>
                       </ul>
                     </div>
                   </div>
@@ -277,30 +277,30 @@ const ResourceDocumentationCenter = () => {
                       <div className="border border-orange-200 rounded-lg p-3">
                         <h5 className="font-bold">Free Plan</h5>
                         <ul className="mt-2 space-y-1 text-xs list-disc ml-4">
-                          <li>Up to 100 leads per month</li>
-                          <li>Basic email templates</li>
-                          <li>Manual lead import</li>
-                          <li>Community support</li>
+                          <li>Up to 100 leads per month - Perfect for testing our platform and small-scale prospecting with basic lead generation capabilities.</li>
+                          <li>Basic email templates - Access to essential email templates with limited customization options for simple outreach campaigns.</li>
+                          <li>Manual lead import - Upload leads individually or via CSV files with standard data fields and basic validation.</li>
+                          <li>Community support - Get help through our user community forum with peer assistance and basic documentation access.</li>
                         </ul>
                       </div>
                       <div className="border border-orange-200 rounded-lg p-3">
                         <h5 className="font-bold">Pro Plan ($97/month)</h5>
                         <ul className="mt-2 space-y-1 text-xs list-disc ml-4">
-                          <li>Unlimited leads</li>
-                          <li>AI-powered automation</li>
-                          <li>Advanced analytics</li>
-                          <li>Priority support</li>
-                          <li>CRM integration</li>
+                          <li>Unlimited leads - Generate and store unlimited prospects with no monthly caps, perfect for aggressive growth strategies.</li>
+                          <li>AI-powered automation - Advanced machine learning algorithms optimize your campaigns, personalization, and follow-up timing for maximum conversion rates.</li>
+                          <li>Advanced analytics - Comprehensive reporting dashboards with ROI tracking, conversion metrics, and predictive insights for data-driven decisions.</li>
+                          <li>Priority support - Direct access to our technical support team with guaranteed response times and dedicated account management.</li>
+                          <li>CRM integration - Seamless connection with popular CRM platforms like Salesforce, HubSpot, and Pipedrive for unified workflow management.</li>
                         </ul>
                       </div>
                       <div className="border border-orange-200 rounded-lg p-3">
                         <h5 className="font-bold">Enterprise ($297/month)</h5>
                         <ul className="mt-2 space-y-1 text-xs list-disc ml-4">
-                          <li>Everything in Pro</li>
-                          <li>White-label access</li>
-                          <li>Custom integrations</li>
-                          <li>Dedicated support</li>
-                          <li>Advanced reporting</li>
+                          <li>Everything in Pro - All advanced features plus enterprise-grade scalability and security for large organizations and agencies.</li>
+                          <li>White-label access - Complete rebranding capabilities allowing you to offer Market Genie as your own service with custom domains and branding.</li>
+                          <li>Custom integrations - Bespoke API connections and custom development work to integrate with your existing business systems and workflows.</li>
+                          <li>Dedicated support - Personal account manager, priority technical support, and custom training sessions for your team members.</li>
+                          <li>Advanced reporting - Enterprise-level analytics with custom dashboards, API access, and white-labeled reporting for client presentations.</li>
                         </ul>
                       </div>
                     </div>
@@ -360,31 +360,31 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Initial Setup</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Navigate to "Lead Generation" in the sidebar</li>
-                        <li>Click "Configure Lead Scraper" button</li>
-                        <li>Connect your Prospeo API key (required for email finding)</li>
-                        <li>Set your target market criteria (industry, company size, location)</li>
+                        <li>Navigate to "Lead Generation" in the sidebar - Access the comprehensive lead discovery tools from your main dashboard menu for immediate prospecting capabilities.</li>
+                        <li>Click "Configure Lead Scraper" button - Launch the setup wizard that will guide you through connecting data sources and setting targeting parameters.</li>
+                        <li>Connect your Prospeo API key (required for email finding) - Integrate your Prospeo account to enable automatic email discovery and verification for maximum deliverability rates.</li>
+                        <li>Set your target market criteria (industry, company size, location) - Define your ideal customer profile to ensure the system finds the most relevant prospects for your business.</li>
                       </ul>
                     </div>
                     
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Search Criteria Configuration</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li><strong>Industry Targeting:</strong> Select specific industries or use broad categories</li>
-                        <li><strong>Company Size:</strong> Filter by employee count (1-10, 11-50, 51-200, 200+)</li>
-                        <li><strong>Geographic Location:</strong> Target by country, state, or city</li>
-                        <li><strong>Job Titles:</strong> Specify decision-maker roles (CEO, Marketing Manager, etc.)</li>
-                        <li><strong>Keywords:</strong> Add relevant business keywords for more precise targeting</li>
+                        <li><strong>Industry Targeting:</strong> Select specific industries or use broad categories - Choose from over 500 industry classifications to find prospects in your exact market niche with precision targeting.</li>
+                        <li><strong>Company Size:</strong> Filter by employee count (1-10, 11-50, 51-200, 200+) - Target organizations that match your ideal customer size for better conversion rates and resource allocation.</li>
+                        <li><strong>Geographic Location:</strong> Target by country, state, or city - Narrow your search to specific regions where you operate or want to expand your business presence.</li>
+                        <li><strong>Job Titles:</strong> Specify decision-maker roles (CEO, Marketing Manager, etc.) - Focus on contacts with purchasing authority and budget control to maximize your sales efficiency.</li>
+                        <li><strong>Keywords:</strong> Add relevant business keywords for more precise targeting - Use industry-specific terms, technology mentions, or business challenges to find highly qualified prospects.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-green-500 pl-4">
                       <p className="font-semibold">Advanced Filters</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Revenue ranges for company financial targeting</li>
-                        <li>Technology stack filters (uses Salesforce, HubSpot, etc.)</li>
-                        <li>Funding stage for startups (Seed, Series A, B, C+)</li>
-                        <li>Recent news mentions or company growth indicators</li>
+                        <li>Revenue ranges for company financial targeting - Filter prospects by annual revenue to ensure you're targeting companies with appropriate budgets for your products or services.</li>
+                        <li>Technology stack filters (uses Salesforce, HubSpot, etc.) - Find companies using specific tools or platforms that indicate compatibility with your solutions or readiness for your services.</li>
+                        <li>Funding stage for startups (Seed, Series A, B, C+) - Target high-growth companies at the right funding stage for optimal timing and budget availability for new purchases.</li>
+                        <li>Recent news mentions or company growth indicators - Identify prospects experiencing growth, funding, expansions, or other trigger events that create buying opportunities.</li>
                       </ul>
                     </div>
                   </div>
@@ -396,8 +396,8 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-blue-500 pl-4">
                       <p className="font-semibold">LinkedIn Lead Discovery</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Set up LinkedIn Sales Navigator integration</li>
-                        <li>Use Boolean search operators for precise targeting</li>
+                        <li>Set up LinkedIn Sales Navigator integration - Connect your Sales Navigator account to access premium LinkedIn search capabilities and advanced filtering options.</li>
+                        <li>Use Boolean search operators for precise targeting - Master advanced search syntax with AND, OR, NOT operators to create highly specific prospect queries that find exactly who you need.</li>
                         <li>Monitor company pages for new hires and promotions</li>
                         <li>Extract leads from industry groups and events</li>
                         <li>Track engagement on posts to identify active prospects</li>
@@ -761,43 +761,43 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-orange-500 pl-4">
                       <p className="font-semibold">Campaign Setup</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Navigate to "Outreach Automation" from main menu</li>
-                        <li>Click "Create New Campaign" and select "Email Campaign"</li>
-                        <li>Choose campaign type: Cold Outreach, Nurture Sequence, or Product Launch</li>
-                        <li>Set campaign goals and success metrics</li>
-                        <li>Select your target lead list or import contacts</li>
+                        <li>Navigate to "Outreach Automation" from main menu - Access the campaign builder where you'll create sophisticated multi-touch sequences that nurture prospects automatically.</li>
+                        <li>Click "Create New Campaign" and select "Email Campaign" - Launch the campaign wizard that guides you through setting up professional outreach sequences with proven templates.</li>
+                        <li>Choose campaign type: Cold Outreach, Nurture Sequence, or Product Launch - Select the appropriate campaign framework designed for your specific business objectives and target audience behavior.</li>
+                        <li>Set campaign goals and success metrics - Define measurable objectives like open rates, reply rates, meeting bookings, or sales conversions to track campaign effectiveness.</li>
+                        <li>Select your target lead list or import contacts - Choose from your existing prospect database or upload new contacts with automatic data validation and enrichment.</li>
                       </ul>
                     </div>
                     
                     <div className="border-l-4 border-orange-500 pl-4">
                       <p className="font-semibold">Email Sequence Builder</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Design your email sequence (typically 3-7 emails)</li>
-                        <li>Set delays between emails (3-5 days recommended)</li>
-                        <li>Use AI-powered subject line generation</li>
-                        <li>Personalize content with dynamic fields (name, company, etc.)</li>
-                        <li>Include clear call-to-action buttons</li>
+                        <li>Design your email sequence (typically 3-7 emails) - Create a strategic series of touchpoints that gradually build trust and move prospects through your sales funnel effectively.</li>
+                        <li>Set delays between emails (3-5 days recommended) - Schedule appropriate intervals that maintain engagement without overwhelming prospects, based on industry best practices.</li>
+                        <li>Use AI-powered subject line generation - Leverage machine learning algorithms to create compelling subject lines that maximize open rates and avoid spam filters.</li>
+                        <li>Personalize content with dynamic fields (name, company, etc.) - Insert custom variables that automatically populate with prospect-specific information for authentic, tailored messaging.</li>
+                        <li>Include clear call-to-action buttons - Add prominent, trackable CTA buttons that guide prospects to your desired next step with professional design and compelling copy.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-orange-500 pl-4">
                       <p className="font-semibold">Email Templates & Content</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li><strong>Email 1:</strong> Introduction and value proposition</li>
-                        <li><strong>Email 2:</strong> Social proof and case studies</li>
-                        <li><strong>Email 3:</strong> Address common objections</li>
-                        <li><strong>Email 4:</strong> Limited-time offer or urgency</li>
-                        <li><strong>Email 5:</strong> Final attempt with alternative offer</li>
+                        <li><strong>Email 1:</strong> Introduction and value proposition - Create a compelling first impression that quickly communicates how you solve their specific business challenges.</li>
+                        <li><strong>Email 2:</strong> Social proof and case studies - Share relevant success stories and testimonials that demonstrate proven results for similar companies or situations.</li>
+                        <li><strong>Email 3:</strong> Address common objections - Proactively handle typical concerns about price, timing, implementation, or competitor comparisons with factual responses.</li>
+                        <li><strong>Email 4:</strong> Limited-time offer or urgency - Introduce time-sensitive incentives or exclusive opportunities that encourage prompt decision-making and action.</li>
+                        <li><strong>Email 5:</strong> Final attempt with alternative offer - Provide a different approach, smaller commitment option, or resource that maintains the relationship even if not ready to buy.</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-orange-500 pl-4">
                       <p className="font-semibold">Scheduling & Timing</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Optimal send times: Tuesday-Thursday, 10 AM or 2 PM</li>
-                        <li>Avoid Mondays and Fridays for business outreach</li>
-                        <li>Consider timezone differences for global campaigns</li>
-                        <li>Use A/B testing for optimal timing</li>
+                        <li>Optimal send times: Tuesday-Thursday, 10 AM or 2 PM - Schedule emails during peak business hours when prospects are most likely to check and respond to professional communications.</li>
+                        <li>Avoid Mondays and Fridays for business outreach - Respect busy start-of-week planning and end-of-week wrap-up periods when decision-makers have limited attention for new opportunities.</li>
+                        <li>Consider timezone differences for global campaigns - Automatically adjust send times based on recipient locations to ensure messages arrive during their local business hours for maximum impact.</li>
+                        <li>Use A/B testing for optimal timing - Experiment with different send times and days to discover what works best for your specific audience and industry vertical.</li>
                         <li>Set up automatic follow-ups based on engagement</li>
                       </ul>
                     </div>
@@ -967,7 +967,7 @@ const ResourceDocumentationCenter = () => {
         <p className="text-purple-700 mb-4">Everything you need to know about our white label partnership program and revenue sharing. Click any section for detailed instructions.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Partnership Overview */}
         <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -1243,19 +1243,31 @@ const ResourceDocumentationCenter = () => {
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Signup link generator with tracking</span>
+                  <div>
+                    <span className="font-semibold">Signup link generator with tracking</span>
+                    <p className="text-sm text-gray-600 mt-1">Create unique referral links with real-time analytics, conversion tracking, and commission calculations for all your marketing campaigns</p>
+                  </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Custom pricing manager for special offers</span>
+                  <div>
+                    <span className="font-semibold">Custom pricing manager for special offers</span>
+                    <p className="text-sm text-gray-600 mt-1">Build personalized pricing proposals with flexible discounts, bundle options, and professional branded quotes for enterprise clients</p>
+                  </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>Marketing materials and sales deck</span>
+                  <div>
+                    <span className="font-semibold">Marketing materials and sales deck</span>
+                    <p className="text-sm text-gray-600 mt-1">Access professionally designed presentations, brochures, case studies, and white papers customized with your company branding</p>
+                  </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
-                  <span>AI Funnel Builder for partner use</span>
+                  <div>
+                    <span className="font-semibold">AI Funnel Builder for partner use</span>
+                    <p className="text-sm text-gray-600 mt-1">Leverage the same AI-powered funnel creation tools your customers use to build lead magnets and sales funnels for your own business growth</p>
+                  </div>
                 </li>
               </ul>
               <button 
@@ -1503,7 +1515,7 @@ const ResourceDocumentationCenter = () => {
         <p className="text-green-700 mb-4">Configure all third-party services and API integrations for optimal performance. Click any service for detailed setup instructions.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Prospeo API */}
         <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -1570,11 +1582,11 @@ const ResourceDocumentationCenter = () => {
                     <div className="border-l-4 border-blue-500 pl-4">
                       <p className="font-semibold">Step 3: Configure in Market Genie</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Go to "API Keys & Integrations" in Market Genie</li>
-                        <li>Find the "Prospeo API" section</li>
-                        <li>Paste your API key in the designated field</li>
-                        <li>Click "Test Connection" to verify setup</li>
-                        <li>Save settings when test passes</li>
+                        <li>Go to "API Keys & Integrations" in Market Genie - Navigate to the central integration hub where all your third-party service connections are managed securely.</li>
+                        <li>Find the "Prospeo API" section - Locate the dedicated Prospeo configuration area with clear setup instructions and status indicators for easy management.</li>
+                        <li>Paste your API key in the designated field - Securely enter your unique API credentials in the encrypted input field designed specifically for sensitive authentication data.</li>
+                        <li>Click "Test Connection" to verify setup - Validate your API key with a real-time connection test that confirms proper authentication and service availability.</li>
+                        <li>Save settings when test passes - Finalize your configuration once the connection test succeeds, enabling automatic email discovery for all future lead generation campaigns.</li>
                       </ul>
                     </div>
                   </div>
@@ -1663,11 +1675,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-purple-700 text-sm">AI-powered content generation and funnel building</p>
                 </div>
                 <ol className="space-y-2 text-sm">
-                  <li>1. Create account at <a href="https://platform.openai.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">platform.openai.com</a></li>
-                  <li>2. Add billing information and set limits</li>
-                  <li>3. Generate API key in API section</li>
-                  <li>4. Configure usage limits for cost control</li>
-                  <li>5. Test with AI Funnel Builder</li>
+                  <li>1. Create account at <a href="https://platform.openai.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">platform.openai.com</a> - Register for OpenAI's developer platform to access their powerful GPT models for content generation and AI-powered marketing automation.</li>
+                  <li>2. Add billing information and set limits - Configure your payment method and establish spending limits to control costs while ensuring uninterrupted access to AI features.</li>
+                  <li>3. Generate API key in API section - Create secure API credentials that allow Market Genie to authenticate and communicate with OpenAI's services on your behalf.</li>
+                  <li>4. Configure usage limits for cost control - Set daily or monthly spending caps to prevent unexpected charges while maintaining sufficient capacity for your business needs.</li>
+                  <li>5. Test with AI Funnel Builder - Verify your integration by using Market Genie's AI-powered funnel creation tools to generate compelling marketing content and campaigns.</li>
                 </ol>
               </div>
               <button 
@@ -1808,11 +1820,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-orange-700 text-sm">Secure authentication and Office 365 integration</p>
                 </div>
                 <ol className="space-y-2 text-sm">
-                  <li>1. Access Azure Portal app registrations</li>
-                  <li>2. Create new application registration</li>
-                  <li>3. Configure redirect URIs</li>
-                  <li>4. Generate client secret</li>
-                  <li>5. Test login flow</li>
+                  <li>1. Access Azure Portal app registrations - Navigate to portal.azure.com and sign in with your Microsoft business account to access the Azure Active Directory application management console.</li>
+                  <li>2. Create new application registration - Register Market Genie as a trusted application that can authenticate your users and access Microsoft services on their behalf.</li>
+                  <li>3. Configure redirect URIs - Set up secure callback URLs that Microsoft will use to return authentication tokens after successful user login verification.</li>
+                  <li>4. Generate client secret - Create secure credentials that allow Market Genie to authenticate with Microsoft's OAuth service and maintain secure API communications.</li>
+                  <li>5. Test login flow - Verify the complete authentication process by attempting a login and confirming that user permissions and data access work correctly.</li>
                 </ol>
               </div>
               <button 
@@ -1953,11 +1965,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-green-700 text-sm">Email marketing automation and list management</p>
                 </div>
                 <ol className="space-y-2 text-sm">
-                  <li>1. Sign up at <a href="https://convertkit.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">convertkit.com</a></li>
-                  <li>2. Find API key in account settings</li>
-                  <li>3. Create forms and sequences</li>
-                  <li>4. Configure webhook endpoints</li>
-                  <li>5. Test lead capture integration</li>
+                  <li>1. Sign up at <a href="https://convertkit.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">convertkit.com</a> - Create your ConvertKit account with their creator-focused email marketing platform designed for scaling your business communications.</li>
+                  <li>2. Find API key in account settings - Navigate to your account settings to locate your unique API credentials that enable secure integration with Market Genie.</li>
+                  <li>3. Create forms and sequences - Design professional opt-in forms and automated email sequences that will capture and nurture your Market Genie leads effectively.</li>
+                  <li>4. Configure webhook endpoints - Set up real-time data synchronization between ConvertKit and Market Genie for seamless lead management and campaign tracking.</li>
+                  <li>5. Test lead capture integration - Verify that leads from Market Genie are properly flowing into your ConvertKit lists and triggering your automated sequences correctly.</li>
                 </ol>
               </div>
               <button 
@@ -2562,7 +2574,7 @@ const ResourceDocumentationCenter = () => {
         <p className="text-indigo-700 mb-4">Get instant help from our 24/7 AI support system. Our intelligent support portal handles all questions and provides immediate assistance.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Primary Support */}
         <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -2573,98 +2585,48 @@ const ResourceDocumentationCenter = () => {
               <span className="text-blue-500 text-xl">🎯</span>
               <div className="flex-1">
                 <p className="font-semibold text-blue-800">Primary Support Portal</p>
-                <a 
-                  href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline font-medium text-sm break-all"
-                >
-                  Support Genie Help Center
-                </a>
                 <p className="text-xs text-blue-600 mt-1">Available 24/7 • Instant AI chat • Ticket submission • Immediate assistance</p>
+                <div className="mt-3">
+                  <a 
+                    href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm inline-block font-medium"
+                  >
+                    Launch Support Genie
+                  </a>
+                </div>
               </div>
             </div>
             
             
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <span className="text-green-500 text-xl">�</span>
-              <div>
+            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
+              <span className="text-green-500 text-xl">📧</span>
+              <div className="flex-1">
                 <p className="font-semibold text-green-800">Email Support (24/7)</p>
-                <a 
-                  href="mailto:Help@dubdproducts.com" 
-                  className="text-green-600 hover:text-green-800 underline font-mono text-sm"
-                >
-                  Help@dubdproducts.com
-                </a>
-                <p className="text-xs text-green-600">Available 24/7 • All inquiries welcome • Professional assistance</p>
+                <p className="text-xs text-green-600 mt-1">Available 24/7 • All inquiries welcome • Professional assistance</p>
+                <div className="mt-3">
+                  <a 
+                    href="mailto:Help@dubdproducts.com" 
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm inline-block font-medium"
+                  >
+                    Send Email
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* How to Get Help */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🎯</span> How to Get Help
-          </h3>
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-              <h4 className="font-bold text-blue-800 mb-2">1️⃣ Start with AI Support Portal</h4>
-              <p className="text-sm text-blue-700 mb-2">Our AI system handles 95% of questions instantly</p>
-              <a 
-                href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm inline-block"
-              >
-                Launch Support Portal
-              </a>
-            </div>
-            
-            <div className="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-lg border border-green-200">
-              <h4 className="font-bold text-green-800 mb-2">2️⃣ Email for Complex Issues</h4>
-              <p className="text-sm text-green-700 mb-2">For detailed questions or follow-up support</p>
-              <a 
-                href="mailto:Help@dubdproducts.com" 
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm inline-block"
-              >
-                Send Email
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Self-Help Resources */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>📚</span> Self-Help Resources
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-              <span className="text-blue-500 text-xl mt-1">📖</span>
-              <div>
-                <p className="font-semibold text-gray-800">Knowledge Base</p>
-                <p className="text-sm text-gray-600">Comprehensive articles, tutorials, and troubleshooting guides</p>
-                <p className="text-xs text-blue-600 mt-1">Available 24/7 • 200+ articles • Searchable</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-              <span className="text-purple-500 text-xl mt-1">🎥</span>
-              <div>
-                <p className="font-semibold text-gray-800">Video Training Library</p>
-                <p className="text-sm text-gray-600">Step-by-step video walkthroughs for all features</p>
-                <p className="text-xs text-purple-600 mt-1">50+ videos • HD quality • Mobile friendly</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-              <span className="text-orange-500 text-xl mt-1">📱</span>
-              <div>
-                <p className="font-semibold text-gray-800">Mobile App Support</p>
-                <p className="text-sm text-gray-600">In-app help, chat support, and quick tutorials</p>
-                <p className="text-xs text-orange-600 mt-1">iOS & Android • Push notifications • Offline access</p>
-              </div>
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+              <h4 className="font-bold text-indigo-800 mb-2">🤖 AI Support Capabilities</h4>
+              <ul className="text-sm text-indigo-700 space-y-1">
+                <li>• Account setup and configuration - Complete guidance through initial account creation, subscription selection, user profile setup, and dashboard customization to get you started quickly.</li>
+                <li>• Lead generation and scraping guidance - Expert assistance with configuring search parameters, targeting criteria, API integrations, and troubleshooting scraper performance issues.</li>
+                <li>• Campaign creation and optimization - Strategic advice on building effective marketing campaigns, email sequences, funnel design, and conversion rate optimization techniques.</li>
+                <li>• API integration assistance - Technical support for connecting third-party services, managing API keys, configuring webhooks, and resolving authentication issues.</li>
+                <li>• Troubleshooting and error resolution - Immediate help with diagnosing problems, interpreting error messages, implementing fixes, and preventing future issues.</li>
+                <li>• Feature explanations and tutorials - Comprehensive walkthroughs of all platform features, best practices, and advanced usage techniques to maximize your results.</li>
+                <li>• Billing and subscription support - Assistance with plan changes, payment issues, usage tracking, invoice questions, and account management needs.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -2688,20 +2650,20 @@ const ResourceDocumentationCenter = () => {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
               <h4 className="font-bold text-blue-800 mb-2">🎯 Smart Ticket Routing</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Complex technical issues</li>
-                <li>• Custom integration requests</li>
-                <li>• Billing and account questions</li>
-                <li>• Feature requests and feedback</li>
+                <li>• Complex technical issues - Advanced problems requiring developer intervention, custom code modifications, or specialized technical expertise beyond standard troubleshooting.</li>
+                <li>• Custom integration requests - Bespoke API connections, enterprise-level integrations, and specialized third-party service connections requiring custom development work.</li>
+                <li>• Billing and account questions - Subscription management, payment processing issues, invoice disputes, refund requests, and enterprise pricing discussions.</li>
+                <li>• Feature requests and feedback - Product enhancement suggestions, new feature ideas, user experience feedback, and strategic platform development input.</li>
               </ul>
             </div>
             
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
               <h4 className="font-bold text-purple-800 mb-2">� 24/7 Availability</h4>
               <ul className="text-sm text-purple-700 space-y-1">
-                <li>• No wait times or business hours</li>
-                <li>• Instant chat responses</li>
-                <li>• Comprehensive help database</li>
-                <li>• Multi-language support</li>
+                <li>• No wait times or business hours - Round-the-clock availability means instant access to help whenever you need it, regardless of time zones or holidays.</li>
+                <li>• Instant chat responses - Real-time AI-powered conversations provide immediate answers and solutions without the delays of traditional support channels.</li>
+                <li>• Comprehensive help database - Extensive knowledge base with searchable articles, tutorials, and solutions covering every aspect of the platform and common issues.</li>
+                <li>• Multi-language support - Assistance available in multiple languages to serve our global user base and ensure clear communication for all customers.</li>
               </ul>
             </div>
           </div>
@@ -2716,72 +2678,25 @@ const ResourceDocumentationCenter = () => {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h4 className="font-bold text-blue-800 mb-2">📋 Include This Information</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Your account email address</li>
-                <li>• Detailed description of the issue</li>
-                <li>• Steps to reproduce the problem</li>
-                <li>• Screenshots or error messages</li>
-                <li>• Browser/device information</li>
-                <li>• When the issue first occurred</li>
+                <li>• Your account email address - Essential for account identification and accessing your specific configuration, subscription details, and usage history.</li>
+                <li>• Detailed description of the issue - Clear explanation of what's happening, what you expected to happen, and how it differs from normal behavior.</li>
+                <li>• Steps to reproduce the problem - Specific sequence of actions that consistently triggers the issue, helping our team identify the root cause.</li>
+                <li>• Screenshots or error messages - Visual evidence and exact error text provide crucial diagnostic information for faster problem resolution.</li>
+                <li>• Browser/device information - Technical specifications including browser version, operating system, and device type affect platform performance and compatibility.</li>
+                <li>• When the issue first occurred - Timeline information helps correlate problems with system changes, updates, or configuration modifications.</li>
               </ul>
             </div>
             
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <h4 className="font-bold text-green-800 mb-2">🚀 Pro Tips for Faster Resolution</h4>
               <ul className="text-sm text-green-700 space-y-1">
-                <li>• Start with our AI support portal first</li>
-                <li>• Search the knowledge base</li>
-                <li>• Use descriptive email subject lines</li>
-                <li>• One issue per support ticket</li>
-                <li>• Be specific about expected behavior</li>
-                <li>• Include relevant account details</li>
+                <li>• Start with our AI support portal first - Support Genie can instantly resolve 80% of common issues and provide immediate solutions without waiting for human agents.</li>
+                <li>• Search the knowledge base - Comprehensive documentation often contains step-by-step solutions for known issues, saving time for both you and our support team.</li>
+                <li>• Use descriptive email subject lines - Clear subjects like "Lead Scraper API Error" help prioritize and route your request to the right specialist immediately.</li>
+                <li>• One issue per support ticket - Separate tickets allow for focused troubleshooting, better tracking, and faster resolution of individual problems.</li>
+                <li>• Be specific about expected behavior - Clearly state what should happen versus what actually happens to help identify gaps and solution approaches.</li>
+                <li>• Include relevant account details - Subscription level, feature usage, and recent changes provide context that accelerates diagnosis and solution implementation.</li>
               </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Resources */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🔗</span> Additional Resources
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="text-blue-500 text-xl">🌐</span>
-                <div>
-                  <p className="font-semibold text-gray-800">Status Page</p>
-                  <p className="text-sm text-gray-600">Check service status and outages</p>
-                </div>
-              </div>
-              <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-                Visit
-              </button>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="text-purple-500 text-xl">📊</span>
-                <div>
-                  <p className="font-semibold text-gray-800">API Documentation</p>
-                  <p className="text-sm text-gray-600">Technical integration guides</p>
-                </div>
-              </div>
-              <button className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
-                View Docs
-              </button>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="text-green-500 text-xl">📅</span>
-                <div>
-                  <p className="font-semibold text-gray-800">Book Demo Call</p>
-                  <p className="text-sm text-gray-600">Schedule 1-on-1 training session</p>
-                </div>
-              </div>
-              <button className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
-                Schedule
-              </button>
             </div>
           </div>
         </div>
@@ -2825,7 +2740,7 @@ const ResourceDocumentationCenter = () => {
         <p className="text-red-700 mb-4">Find quick solutions to common problems and get your account running smoothly. Click any category for detailed troubleshooting steps.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Lead Generation Issues */}
         <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -2840,11 +2755,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-blue-700 text-sm">Lead scraper not finding results, email verification failures, export issues</p>
                 </div>
                 <ul className="space-y-2 text-sm">
-                  <li>• No leads found for search query</li>
-                  <li>• Email addresses not verifying</li>
-                  <li>• Scraper timing out or crashing</li>
-                  <li>• Low-quality lead data returned</li>
-                  <li>• Export functionality not working</li>
+                  <li>• No leads found for search query - Occurs when search parameters are too narrow or the target market has limited online presence requiring broader search criteria.</li>
+                  <li>• Email addresses not verifying - Happens when email verification services are experiencing high load or the email addresses are outdated or invalid in the source database.</li>
+                  <li>• Scraper timing out or crashing - Usually caused by network connectivity issues, server overload, or when processing very large datasets that exceed system resources.</li>
+                  <li>• Low-quality lead data returned - Results from scraping sources with incomplete profiles or when targeting overly broad audiences without proper filtering criteria.</li>
+                  <li>• Export functionality not working - Typically due to browser popup blockers, insufficient permissions, or attempting to export datasets that exceed file size limits.</li>
                 </ul>
               </div>
               <button 
@@ -2963,11 +2878,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-purple-700 text-sm">AI generation failures, design problems, deployment issues</p>
                 </div>
                 <ul className="space-y-2 text-sm">
-                  <li>• AI not generating content properly</li>
-                  <li>• Funnel preview not displaying correctly</li>
-                  <li>• Publishing/deployment failures</li>
-                  <li>• Template customization not saving</li>
-                  <li>• Integration issues with landing pages</li>
+                  <li>• AI not generating content properly - Usually occurs when OpenAI API limits are reached, insufficient input context is provided, or network connectivity issues interrupt the generation process.</li>
+                  <li>• Funnel preview not displaying correctly - Typically caused by browser caching issues, incomplete template loading, or conflicts with browser extensions that block certain display elements.</li>
+                  <li>• Publishing/deployment failures - Happens due to hosting connectivity problems, insufficient server resources, or domain configuration issues that prevent successful deployment.</li>
+                  <li>• Template customization not saving - Often results from browser storage limitations, network timeouts during save operations, or conflicting changes being made simultaneously.</li>
+                  <li>• Integration issues with landing pages - Caused by misconfigured tracking codes, incompatible third-party scripts, or improper API connections between the funnel and external services.</li>
                 </ul>
               </div>
               <button 
@@ -3086,11 +3001,11 @@ const ResourceDocumentationCenter = () => {
                   <p className="text-red-700 text-sm">Login failures, password resets, permission errors</p>
                 </div>
                 <ul className="space-y-2 text-sm">
-                  <li>• Cannot log in to account</li>
-                  <li>• Password reset not working</li>
-                  <li>• Account locked or suspended</li>
-                  <li>• Permission denied errors</li>
-                  <li>• Two-factor authentication issues</li>
+                  <li>• Cannot log in to account - Authentication failures often caused by incorrect credentials, browser issues, account lockouts, or expired sessions requiring password reset or cache clearing.</li>
+                  <li>• Password reset not working - Email delivery issues, spam filtering, expired reset links, or incorrect email addresses preventing successful password recovery completion.</li>
+                  <li>• Account locked or suspended - Security measures triggered by multiple failed login attempts, billing issues, terms violations, or suspicious activity requiring support intervention.</li>
+                  <li>• Permission denied errors - Access control issues stemming from subscription limitations, user role restrictions, or backend permission synchronization problems.</li>
+                  <li>• Two-factor authentication issues - Problems with authenticator apps, SMS delivery, backup codes, device synchronization, or lost access to 2FA devices requiring recovery procedures.</li>
                 </ul>
               </div>
               <button 
@@ -3359,7 +3274,12 @@ const ResourceDocumentationCenter = () => {
   const VideoTutorialsContent = () => (
     <div className="space-y-8">
       <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-lg border border-red-200">
-        <h2 className="text-2xl font-bold text-red-800 mb-4">🎥 Video Tutorials</h2>
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="text-2xl font-bold text-red-800">🎥 Video Tutorials</h2>
+          <span className="text-2xl font-bold text-orange-600 bg-orange-100 px-4 py-2 rounded-full border-2 border-orange-300">
+            Coming Soon
+          </span>
+        </div>
         <p className="text-red-700 mb-4">Step-by-step video guides to master every feature of Market Genie.</p>
       </div>
 

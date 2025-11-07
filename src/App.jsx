@@ -2989,6 +2989,11 @@ END:VCALENDAR`;
                 <div className="space-y-6">
                   <div className="text-center mb-8">
                     <h3 className="text-3xl font-bold text-gray-800 mb-2">🤖 AI-Powered Lead Scraping Agents</h3>
+                    <div className="bg-amber-100 border border-amber-400 rounded-lg p-3 mb-4 inline-block">
+                      <p className="text-amber-800 font-bold text-lg">
+                        ⚠️ Please use web browser, this feature will not work properly in handheld devices
+                      </p>
+                    </div>
                     <p className="text-gray-600">Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
                   </div>
 

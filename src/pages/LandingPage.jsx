@@ -246,6 +246,8 @@ export default function LandingPage() {
               className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
               <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
+              <br />
+              <span className="text-yellow-400 text-lg mt-2 block font-semibold">(Compare ingredients to HighLevel and Click Funnels)</span>
             </motion.p>
             
             {/* AI Features Grid */}

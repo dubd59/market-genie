@@ -147,7 +147,10 @@ function SophisticatedDashboard() {
   }
 
   const [activeSection, setActiveSection] = useState(getSectionFromURL())
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('marketGenieDarkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
@@ -1080,7 +1083,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
+    const newDarkMode = !isDarkMode
+    setIsDarkMode(newDarkMode)
+    localStorage.setItem('marketGenieDarkMode', JSON.stringify(newDarkMode))
     document.documentElement.classList.toggle('dark')
   }
 
@@ -2788,11 +2793,11 @@ END:VCALENDAR`;
           <main className={`flex-1 p-4 lg:p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} overflow-auto`}>
           {/* Section content rendering */}
           {activeSection === 'SuperGenie Dashboard' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-4 lg:p-8">
+            <div className={`min-h-screen p-4 lg:p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               <div className="flex items-center justify-between mb-6 lg:mb-8">
                 <h1 className="text-2xl lg:text-4xl font-bold text-genie-teal">Welcome to Market Genie</h1>
                 {dashboardMetrics.lastUpdated && (
-                  <div className="text-sm text-gray-500">
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Last updated: {new Date(dashboardMetrics.lastUpdated).toLocaleTimeString()}
                   </div>
                 )}
@@ -2802,48 +2807,48 @@ END:VCALENDAR`;
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
                 <button 
                   onClick={() => setActiveSection('Lead Generation')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-teal-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-teal-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-teal-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="users" className="text-teal-600 text-xl lg:text-2xl">👥</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : dashboardMetrics.leadCount}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Total Leads</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Total Leads</div>
                     <div className="text-xs text-teal-600 font-medium">📈 Real Data</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('CRM & Pipeline')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-green-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-green-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-green-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="revenue" className="text-green-600 text-xl lg:text-2xl">💰</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : MetricsService.formatCurrency(dashboardMetrics.pipelineValue)}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Pipeline Value</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Pipeline Value</div>
                     <div className="text-xs text-green-600 font-medium">💎 Live CRM</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('Outreach Automation')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-purple-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-purple-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-purple-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="campaigns" className="text-purple-600 text-xl lg:text-2xl">⚡</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : dashboardMetrics.activeCampaigns}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Active Campaigns</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Active Campaigns</div>
                     <div className="text-xs text-purple-600 font-medium">🚀 Running Now</div>
                   </div>
                 </button>
@@ -2890,14 +2895,14 @@ END:VCALENDAR`;
             </div>
           )}
           {activeSection === 'Lead Generation' && (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-4xl font-bold text-genie-teal flex items-center gap-3">
                   <span className="text-5xl animate-pulse">🚀</span>
                   Ultimate Lead Generation Hub
                 </h2>
                 <div className="text-right">
-                  <div className="text-sm text-gray-600">System Status</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>System Status</div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-green-600 font-semibold">ACTIVE</span>
@@ -2906,8 +2911,8 @@ END:VCALENDAR`;
               </div>
 
               {/* Tab Navigation */}
-              <div className="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
-                <div className="flex border-b border-gray-200">
+              <div className={getDarkModeClasses("bg-white rounded-xl shadow-lg mb-8 overflow-hidden", "bg-gray-800 rounded-xl shadow-lg mb-8 overflow-hidden border border-gray-700")}>
+                <div className={getDarkModeClasses("flex border-b border-gray-200", "flex border-b border-gray-600")}>
                   {leadTabs.map((tab) => (
                     <button
                       key={tab.id}
@@ -2915,7 +2920,7 @@ END:VCALENDAR`;
                       className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 font-medium transition-all duration-300 ${
                         activeLeadTab === tab.id
                           ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg'
-                          : 'text-gray-600 hover:text-teal-600 hover:bg-teal-50'
+                          : isDarkMode ? 'text-gray-300 hover:text-teal-400 hover:bg-gray-700' : 'text-gray-600 hover:text-teal-600 hover:bg-teal-50'
                       }`}
                     >
                       <span className="text-xl">{tab.icon}</span>
@@ -2926,7 +2931,7 @@ END:VCALENDAR`;
               </div>
 
               {/* Tab Content - Overview Tab (existing content) */}
-              <div className="bg-white rounded-xl shadow-lg p-8">
+              <div className={getDarkModeClasses("bg-white rounded-xl shadow-lg p-8", "bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700")}>
                 {activeLeadTab === 'overview' && (
                   <div className="space-y-8">
 
@@ -2988,13 +2993,13 @@ END:VCALENDAR`;
               {activeLeadTab === 'scraping' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">🤖 AI-Powered Lead Scraping Agents</h3>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>🤖 AI-Powered Lead Scraping Agents</h3>
                     <div className="bg-amber-100 border border-amber-400 rounded-lg p-3 mb-4 inline-block">
                       <p className="text-amber-800 font-bold text-lg">
                         ⚠️ Please use web browser, this feature will not work properly in handheld devices
                       </p>
                     </div>
-                    <p className="text-gray-600">Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
+                    <p className={`${isDarkMode ? 'text-teal-400' : 'text-gray-600'}`}>Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
                   </div>
 
                   {/* Bulk Prospeo Scraper - TOP PRIORITY */}
@@ -3003,9 +3008,9 @@ END:VCALENDAR`;
                   </div>
 
                   {/* Enhanced Scraping Agents */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-blue-200">
+                  <div className={getDarkModeClasses("bg-white rounded-xl shadow-xl p-8 border border-blue-200", "bg-gray-800 rounded-xl shadow-xl p-8 border border-gray-600")}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={getDarkModeClasses("text-2xl font-bold text-genie-teal flex items-center gap-3", "text-2xl font-bold text-teal-400 flex items-center gap-3")}>
                         <span className="text-3xl">🤖</span>
                         AI-Powered Lead Scraping Agents
                       </h4>
@@ -3089,26 +3094,26 @@ END:VCALENDAR`;
               {activeLeadTab === 'import' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">📁 Bulk Lead Import Center</h3>
-                    <p className="text-gray-600">Import leads from CSV, Excel, or JSON files with intelligent processing</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>📁 Bulk Lead Import Center</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Import leads from CSV, Excel, or JSON files with intelligent processing</p>
                   </div>
 
                   {/* Enhanced Lead Import Tool */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-purple-200">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-purple-200'} rounded-xl shadow-xl p-8`}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} flex items-center gap-3`}>
                         <span className="text-3xl">📊</span>
                         Bulk Lead Import Center
                       </h4>
-                      <div className="text-sm text-gray-500">CSV, Excel, or JSON</div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>CSV, Excel, or JSON</div>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {/* Drag & Drop Zone */}
-                      <div className="border-2 border-dashed border-purple-300 rounded-xl p-8 text-center bg-gradient-to-b from-purple-50 to-purple-100 hover:border-purple-400 transition-colors cursor-pointer group">
+                      <div className={`border-2 border-dashed border-purple-300 rounded-xl p-8 text-center ${isDarkMode ? 'bg-gray-600' : 'bg-gradient-to-b from-purple-50 to-purple-100'} hover:border-purple-400 transition-colors cursor-pointer group`}>
                         <div className="text-6xl mb-4 group-hover:animate-bounce">📁</div>
-                        <div className="text-xl font-semibold text-gray-700 mb-2">Drag & Drop Files Here</div>
-                        <div className="text-gray-500 mb-4">or click to browse</div>
+                        <div className={`text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-2`}>Drag & Drop Files Here</div>
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>or click to browse</div>
                         <input 
                           type="file" 
                           accept=".csv,.xlsx,.json" 
@@ -3174,14 +3179,14 @@ END:VCALENDAR`;
               {activeLeadTab === 'enrichment' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">🎯 AI-Powered Lead Enrichment</h3>
-                    <p className="text-gray-600">Capture and enrich lead information with intelligent validation and data enhancement</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>🎯 AI-Powered Lead Enrichment</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Capture and enrich lead information with intelligent validation and data enhancement</p>
                   </div>
 
                   {/* Enhanced Lead Capture Form with AI Enrichment */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-teal-200">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-teal-200'} rounded-xl shadow-xl p-8`}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} flex items-center gap-3`}>
                         <span className="text-3xl">🎯</span>
                         AI-Powered Lead Enrichment
                       </h4>
@@ -3195,7 +3200,7 @@ END:VCALENDAR`;
                       {/* Primary Contact Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">👤</span>
                             Full Name *
                           </label>
@@ -3204,13 +3209,13 @@ END:VCALENDAR`;
                             placeholder="John Doe" 
                             value={leadFormData.name}
                             onChange={(e) => setLeadFormData(prev => ({...prev, name: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             required 
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📧</span>
                             Email Address *
                           </label>
@@ -3220,7 +3225,7 @@ END:VCALENDAR`;
                               placeholder="john@company.com" 
                               value={leadFormData.email}
                               onChange={(e) => setLeadFormData(prev => ({...prev, email: e.target.value}))}
-                              className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                              className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                               required 
                             />
                             <div className="absolute right-3 top-3 text-green-500">
@@ -3233,7 +3238,7 @@ END:VCALENDAR`;
                       {/* Secondary Contact Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📱</span>
                             Phone Number
                           </label>
@@ -3242,12 +3247,12 @@ END:VCALENDAR`;
                             placeholder="+1 (555) 123-4567" 
                             value={leadFormData.phone}
                             onChange={(e) => setLeadFormData(prev => ({...prev, phone: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🏢</span>
                             Company
                           </label>
@@ -3257,7 +3262,7 @@ END:VCALENDAR`;
                               placeholder="Company Name" 
                               value={leadFormData.company}
                               onChange={(e) => setLeadFormData(prev => ({...prev, company: e.target.value}))}
-                              className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                              className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             />
                             <div className="absolute right-3 top-3 text-blue-500">
                               <span className="text-sm animate-pulse">🔍</span>
@@ -3269,7 +3274,7 @@ END:VCALENDAR`;
                       {/* Social & Web Presence */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🔗</span>
                             LinkedIn
                           </label>
@@ -3278,12 +3283,12 @@ END:VCALENDAR`;
                             placeholder="linkedin.com/in/johndoe" 
                             value={leadFormData.linkedin}
                             onChange={(e) => setLeadFormData(prev => ({...prev, linkedin: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🐦</span>
                             Twitter
                           </label>
@@ -3292,12 +3297,12 @@ END:VCALENDAR`;
                             placeholder="@johndoe" 
                             value={leadFormData.twitter}
                             onChange={(e) => setLeadFormData(prev => ({...prev, twitter: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🌐</span>
                             Website
                           </label>
@@ -3306,7 +3311,7 @@ END:VCALENDAR`;
                             placeholder="company.com" 
                             value={leadFormData.website}
                             onChange={(e) => setLeadFormData(prev => ({...prev, website: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                       </div>
@@ -3314,26 +3319,26 @@ END:VCALENDAR`;
                       {/* Additional Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🏷️</span>
                             Lead Source
                           </label>
                           <select 
                             value={leadFormData.source}
                             onChange={(e) => setLeadFormData(prev => ({...prev, source: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300"
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                           >
-                            <option value="manual">Manual Entry</option>
-                            <option value="website">Website Form</option>
-                            <option value="social">Social Media</option>
-                            <option value="referral">Referral</option>
-                            <option value="cold_outreach">Cold Outreach</option>
-                            <option value="event">Event/Conference</option>
+                            <option value="manual" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Manual Entry</option>
+                            <option value="website" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Website Form</option>
+                            <option value="social" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Social Media</option>
+                            <option value="referral" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Referral</option>
+                            <option value="cold_outreach" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Cold Outreach</option>
+                            <option value="event" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Event/Conference</option>
                           </select>
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📝</span>
                             Notes
                           </label>
@@ -3342,7 +3347,7 @@ END:VCALENDAR`;
                             placeholder="Additional notes about this lead..." 
                             value={leadFormData.description}
                             onChange={(e) => setLeadFormData(prev => ({...prev, description: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                       </div>
@@ -3406,14 +3411,14 @@ END:VCALENDAR`;
               {activeLeadTab === 'recent' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">👥 Recent Leads Management</h3>
-                    <p className="text-gray-600">Manage and organize all your leads in one place</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>👥 Recent Leads Management</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Manage and organize all your leads in one place</p>
                   </div>
 
                   {/* Filters/Search */}
                   <div className="flex flex-col md:flex-row gap-4 mb-4">
-                    <input type="text" placeholder="Search leads..." className="border p-2 rounded flex-1" />
-                    <select className="border p-2 rounded">
+                    <input type="text" placeholder="Search leads..." className={`border p-2 rounded flex-1 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`} />
+                    <select className={`border p-2 rounded ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}>
                       <option>All Sources</option>
                       <option>Website</option>
                       <option>Referral</option>
@@ -3429,9 +3434,9 @@ END:VCALENDAR`;
                   </div>
 
                   {/* Enhanced Recent Leads Table */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-xl font-semibold text-genie-teal">Recent Leads ({leads.length})</h4>
+                      <h4 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>Recent Leads ({leads.length})</h4>
                       {selectedLeads.length > 0 && (
                         <div className="flex items-center gap-3">
                           <span className="text-sm text-gray-600">{selectedLeads.length} selected</span>
@@ -3448,7 +3453,7 @@ END:VCALENDAR`;
                     <div className="overflow-x-auto">
                       <table className="w-full text-left">
                         <thead>
-                          <tr className="border-b border-gray-200">
+                          <tr className={`${isDarkMode ? 'border-b border-gray-600' : 'border-b border-gray-200'}`}>
                             <th className="py-3 px-2">
                               <input 
                                 type="checkbox" 
@@ -3457,18 +3462,18 @@ END:VCALENDAR`;
                                 className="rounded"
                               />
                             </th>
-                            <th className="py-3">Name</th>
-                            <th className="py-3">Email</th>
-                            <th className="py-3">Company</th>
-                            <th className="py-3">Source</th>
-                            <th className="py-3">Tags</th>
-                            <th className="py-3">Score</th>
-                            <th className="py-3">Actions</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Name</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Email</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Company</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Source</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Tags</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Score</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
                           {leads.length > 0 ? leads.map((lead, index) => (
-                            <tr key={lead.id} className={`border-b border-gray-100 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-blue-25' : ''}`}>
+                            <tr key={lead.id} className={`${isDarkMode ? 'border-b border-gray-600 hover:bg-gray-600' : 'border-b border-gray-100 hover:bg-gray-50'} ${index % 2 === 0 ? (isDarkMode ? 'bg-gray-800' : 'bg-blue-25') : (isDarkMode ? 'bg-gray-700' : '')}`}>
                               <td className="py-3 px-2">
                                 <input 
                                   type="checkbox" 
@@ -3477,9 +3482,9 @@ END:VCALENDAR`;
                                   className="rounded"
                                 />
                               </td>
-                              <td className="py-3 font-medium">{lead.firstName} {lead.lastName}</td>
-                              <td className="py-3 text-blue-600">{lead.email}</td>
-                              <td className="py-3">{lead.company || '—'}</td>
+                              <td className={`py-3 font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{lead.firstName} {lead.lastName}</td>
+                              <td className={`py-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{lead.email}</td>
+                              <td className={`py-3 ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{lead.company || '—'}</td>
                               <td className="py-3">
                                 <div className="flex flex-wrap gap-1">
                                   <span className={`px-2 py-1 rounded text-xs ${
@@ -3533,7 +3538,7 @@ END:VCALENDAR`;
                             </tr>
                           )) : (
                             <tr>
-                              <td colSpan="8" className="py-8 text-center text-gray-500">
+                              <td colSpan="8" className={`py-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                 <div className="text-4xl mb-2">🎯</div>
                                 <div>No leads yet. Add your first lead above or use the scraping tools!</div>
                               </td>
@@ -3750,101 +3755,101 @@ END:VCALENDAR`;
               {activeLeadTab === 'analytics' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">📈 Lead Analytics & Performance</h3>
-                    <p className="text-gray-600">Comprehensive insights into your lead generation performance and trends</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>📈 Lead Analytics & Performance</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comprehensive insights into your lead generation performance and trends</p>
                   </div>
 
                   {/* Key Metrics Overview */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-blue-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-blue-500' : 'bg-white border-l-4 border-l-blue-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-blue-500 text-3xl mb-2">📊</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.activeReports || 0}</div>
-                      <div className="text-gray-500">Active Reports</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.activeReports || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Reports</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-green-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-green-500' : 'bg-white border-l-4 border-l-green-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-green-500 text-3xl mb-2">💡</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.keyInsights || 0}</div>
-                      <div className="text-gray-500">Key Insights</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.keyInsights || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Key Insights</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-purple-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-purple-500' : 'bg-white border-l-4 border-l-purple-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-purple-500 text-3xl mb-2">📈</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.monthlyGrowthRate || 0}%</div>
-                      <div className="text-gray-500">Growth Rate</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.monthlyGrowthRate || 0}%</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Growth Rate</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-teal-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-teal-500' : 'bg-white border-l-4 border-l-teal-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-teal-500 text-3xl mb-2">🎯</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.totalLeads || 0}</div>
-                      <div className="text-gray-500">Total Leads</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.totalLeads || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Leads</div>
                     </div>
                   </div>
 
                   {/* Lead Performance Analytics */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Lead Sources Performance */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                      <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                         <span className="text-2xl">🚀</span>
                         Lead Sources Performance
                       </h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-blue-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-blue-500">🤖</span>
-                            <span className="font-medium">AI Scraping</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>AI Scraping</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-blue-600">{leadStats.aiScrapingSuccessRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Success Rate</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Success Rate</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-green-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-green-500">📁</span>
-                            <span className="font-medium">Bulk Import</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Bulk Import</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">{leadStats.bulkImportValidationRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Validation Rate</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Validation Rate</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-purple-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-purple-500">🎯</span>
-                            <span className="font-medium">Manual Entry</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Manual Entry</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-purple-600">{leadStats.manualEntryQualityRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Quality Score</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Quality Score</div>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Lead Quality Analytics */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                      <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                         <span className="text-2xl">⭐</span>
                         Lead Quality Breakdown
                       </h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-green-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                            <span className="font-medium">High Quality (80-100)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>High Quality (80-100)</span>
                           </div>
                           <div className="text-lg font-bold text-green-600">{leadStats.highQuality || 0}</div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-yellow-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                            <span className="font-medium">Medium Quality (60-79)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Medium Quality (60-79)</span>
                           </div>
                           <div className="text-lg font-bold text-yellow-600">{leadStats.mediumQuality || 0}</div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-red-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                            <span className="font-medium">Needs Review (0-59)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Needs Review (0-59)</span>
                           </div>
                           <div className="text-lg font-bold text-red-600">{leadStats.lowQuality || 0}</div>
                         </div>
@@ -3853,57 +3858,57 @@ END:VCALENDAR`;
                   </div>
 
                   {/* Recent Activity & Trends */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                       <span className="text-2xl">📊</span>
                       Recent Activity & Trends
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-blue-50 to-blue-100'}`}>
                         <div className="text-2xl font-bold text-blue-600">+{leadStats.leadsThisWeek || 0}</div>
-                        <div className="text-sm text-blue-700">Leads This Week</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>Leads This Week</div>
                         <div className={`text-xs mt-1 ${(leadStats.weeklyGrowthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {(leadStats.weeklyGrowthRate || 0) >= 0 ? '↗' : '↘'} {Math.abs(leadStats.weeklyGrowthRate || 0)}% from last week
                         </div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-green-50 to-green-100'}`}>
                         <div className="text-2xl font-bold text-green-600">{leadStats.avgQualityScore || 0}%</div>
-                        <div className="text-sm text-green-700">Avg Quality Score</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>Avg Quality Score</div>
                         <div className="text-xs text-green-600 mt-1">↗ Based on high-quality leads</div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-purple-50 to-purple-100'}`}>
                         <div className="text-2xl font-bold text-purple-600">${leadStats.avgCostPerLead || 0}</div>
-                        <div className="text-sm text-purple-700">Avg Cost Per Lead</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-700'}`}>Avg Cost Per Lead</div>
                         <div className="text-xs text-green-600 mt-1">↗ From AI scraping</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
-                    <h4 className="text-lg font-bold text-teal-800 mb-4">📋 Quick Analytics Actions</h4>
+                  <div className={`rounded-xl p-6 border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-teal-50 to-teal-100 border-teal-200'}`}>
+                    <h4 className={`text-lg font-bold ${isDarkMode ? 'text-teal-400' : 'text-teal-800'} mb-4`}>📋 Quick Analytics Actions</h4>
                     <div className="flex flex-wrap gap-3">
                       <button 
                         onClick={handleExportAnalyticsReport}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📊 Export Report
                       </button>
                       <button 
                         onClick={handleViewTrends}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📈 View Trends
                       </button>
                       <button 
                         onClick={handleQualityAnalysis}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         🎯 Quality Analysis
                       </button>
                       <button 
                         onClick={handleScheduleReport}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📧 Schedule Report
                       </button>
@@ -4777,16 +4782,16 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               )}
             </div>
           )}
-          {activeSection === 'CRM & Pipeline' && <CRMPipeline />}
+          {activeSection === 'CRM & Pipeline' && <CRMPipeline isDarkMode={isDarkMode} />}
           {activeSection === 'Appointments' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+            <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               {/* APPOINTMENT BOOKING MODAL */}
               {(showAppointmentModal || forceShowModal.current) && (
                 <div 
                   className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
                   style={{zIndex: 1000}}
                 >
-                  <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl">
+                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-lg p-8 w-full max-w-md shadow-xl`}>
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-genie-teal">
                         {editingAppointment ? 'Reschedule Appointment' : 'Schedule Appointment'}
@@ -4796,7 +4801,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                           setShowAppointmentModal(false)
                           forceShowModal.current = false
                         }}
-                        className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-xl font-bold`}
                       >
                         ×
                       </button>
@@ -4950,33 +4955,33 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 </div>
               )}
 
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">Appointments</h2>
+              <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-8`}>Appointments</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="calendar" className="text-genie-teal text-3xl mb-2">📅</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.upcoming}
                   </div>
-                  <div className="text-gray-500">Upcoming</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Upcoming</div>
                 </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="booked" className="text-genie-teal text-3xl mb-2">✅</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.booked}
                   </div>
-                  <div className="text-gray-500">Booked</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Booked</div>
                 </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="cancelled" className="text-genie-teal text-3xl mb-2">❌</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.cancelled}
                   </div>
-                  <div className="text-gray-500">Cancelled</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cancelled</div>
                 </div>
               </div>
               {/* Calendar Integration */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Calendar Integration</h3>
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6 mb-8`}>
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-4`}>Calendar Integration</h3>
                 <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
                   <button 
                     onClick={() => handleCalendarConnection('google')}
@@ -5038,9 +5043,9 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
 
               {/* Booking Settings */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6 mb-8`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-genie-teal">⚙️ Booking Settings</h3>
+                  <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>⚙️ Booking Settings</h3>
                   <button
                     type="button"
                     onClick={() => setShowBookingSettings(!showBookingSettings)}
@@ -5055,10 +5060,10 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 </div>
                 
                 {!showBookingSettings ? (
-                  <div className="p-4 rounded-lg bg-blue-50">
+                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600' : 'bg-blue-50'}`}>
                     <div className="flex items-center text-sm">
                       <span className="mr-2">📅</span>
-                      <span className="text-blue-700">
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
                         Configure your booking preferences, available hours, and calendar settings for appointment scheduling.
                       </span>
                     </div>
@@ -5066,8 +5071,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 ) : (
                   <form onSubmit={handleBookingSettingsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Duration</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Meeting Duration</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>15 minutes</option>
                       <option>30 minutes</option>
                       <option>45 minutes</option>
@@ -5075,8 +5080,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Buffer Time</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Buffer Time</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>No buffer</option>
                       <option>5 minutes</option>
                       <option>10 minutes</option>
@@ -5084,24 +5089,24 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours Start</label>
-                    <input type="time" className="border p-3 rounded w-full" defaultValue="09:00" />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Hours Start</label>
+                    <input type="time" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue="09:00" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours End</label>
-                    <input type="time" className="border p-3 rounded w-full" defaultValue="17:00" />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Hours End</label>
+                    <input type="time" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue="17:00" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range Start</label>
-                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date().toISOString().split('T')[0]} />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Date Range Start</label>
+                    <input type="date" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue={new Date().toISOString().split('T')[0]} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range End</label>
-                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Date Range End</label>
+                    <input type="date" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Days</label>
-                    <select multiple className="border p-3 rounded w-full" size="3">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Days</label>
+                    <select multiple className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} size="3">
                       <option value="monday" selected>Monday</option>
                       <option value="tuesday" selected>Tuesday</option>
                       <option value="wednesday" selected>Wednesday</option>
@@ -5112,8 +5117,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Timezone</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>UTC-5 (Eastern Time)</option>
                       <option>UTC-6 (Central Time)</option>
                       <option>UTC-7 (Mountain Time)</option>
@@ -5126,11 +5131,11 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
 
               {/* Upcoming Appointments */}
-              <div className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Upcoming Appointments</h3>
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6`}>
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-4`}>Upcoming Appointments</h3>
                 <div className="space-y-4">
                   {appointments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <p>No appointments scheduled yet.</p>
                       <button 
                         onClick={handleBookMeeting}
@@ -5215,14 +5220,15 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
             </div>
           )}
-          {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard />}
-          {activeSection === 'Resources & Docs' && <ResourceDocumentationCenter />}
+          {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard isDarkMode={isDarkMode} />}
+          {activeSection === 'Resources & Docs' && <ResourceDocumentationCenter isDarkMode={isDarkMode} />}
           
           {activeSection === 'API Keys & Integrations' && (
             <APIKeysIntegrations 
               calendarConnections={calendarConnections}
               onCalendarConnect={handleCalendarConnection}
               saveCalendarConnections={saveCalendarConnections}
+              isDarkMode={isDarkMode}
             />
           )}
           {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && renderAdminPanel()}
@@ -5237,7 +5243,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
 
   function renderDashboard() {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <h2 className={`text-3xl font-bold text-genie-teal mb-8 ${isDarkMode ? 'text-genie-teal' : ''}`}>SuperGenie Dashboard</h2>
         
         {/* Financial Overview Matrix */}

@@ -27,10 +27,24 @@ const ResourceDocumentationCenter = () => {
     return isDarkMode ? dark : lightClasses
   }
   
-  // Check for dark mode preference
+  // Check for dark mode preference and listen for changes
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
+    const checkDarkMode = () => {
+      const saved = localStorage.getItem('marketGenieDarkMode');
+      const isDark = saved ? JSON.parse(saved) : false;
+      console.log('ResourceDocumentationCenter - Dark mode:', isDark, 'localStorage value:', saved); // Debug
+      setIsDarkMode(isDark);
+    };
+    
+    // Check initially
+    checkDarkMode();
+    
+    // Poll for changes every 100ms (simple but effective)
+    const interval = setInterval(checkDarkMode, 100);
+    
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // Documentation sections data
@@ -112,21 +126,21 @@ const ResourceDocumentationCenter = () => {
   // User Manual Content
   const UserManualContent = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-        <h2 className="text-2xl font-bold text-blue-800 mb-4">📖 Complete User Manual</h2>
-        <p className="text-blue-700 mb-4">Master every feature of Market Genie with our comprehensive user guide. Click any section below for detailed instructions.</p>
+      <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+        <h2 className="text-2xl font-bold mb-4" style={isDarkMode ? { color: '#38beba' } : { color: '#1f2937' }}>📖 Complete User Manual</h2>
+        <p className="mb-4" style={isDarkMode ? { color: '#38beba' } : { color: '#4b5563' }}>Master every feature of Market Genie with our comprehensive user guide. Click any section below for detailed instructions.</p>
       </div>
 
       <div className="space-y-6">
         {/* Getting Started */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={isDarkMode ? { color: '#38beba' } : { color: '#1f2937' }}>
             <span>🚀</span> Getting Started
           </h3>
           
           {expandedUserSection !== 'getting-started' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className="space-y-3" style={isDarkMode ? { color: '#38beba' } : { color: '#374151' }}>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <span>Account setup and first login</span>
@@ -312,14 +326,14 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Lead Generation */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={isDarkMode ? { color: '#38beba' } : { color: '#1f2937' }}>
             <span>🎯</span> Lead Generation
           </h3>
           
           {expandedUserSection !== 'lead-generation' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className="space-y-3" style={isDarkMode ? { color: '#38beba' } : { color: '#374151' }}>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <span>Lead scraper setup and configuration</span>
@@ -503,14 +517,14 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* AI Funnel Builder */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={isDarkMode ? { color: '#38beba' } : { color: '#1f2937' }}>
             <span>🤖</span> AI Funnel Builder
           </h3>
           
           {expandedUserSection !== 'ai-funnel-builder' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className="space-y-3" style={isDarkMode ? { color: '#38beba' } : { color: '#374151' }}>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <span>Creating your first AI-generated funnel</span>
@@ -713,14 +727,14 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Outreach Automation */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={isDarkMode ? { color: '#38beba' } : { color: '#1f2937' }}>
             <span>📧</span> Outreach Automation
           </h3>
           
           {expandedUserSection !== 'outreach-automation' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className="space-y-3" style={isDarkMode ? { color: '#38beba' } : { color: '#374151' }}>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <span>Email campaign creation and scheduling</span>
@@ -3486,14 +3500,14 @@ const ResourceDocumentationCenter = () => {
   };
 
   return (
-    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700' : 'bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100'}`}>
+    <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className={`text-4xl font-bold mb-4 ${isDarkMode ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600'}`}>
+          <h1 className="text-4xl font-bold mb-4" style={{ color: '#38beba' }}>
             📚 Resource & Documentation Center
           </h1>
-          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className="text-lg" style={{ color: '#38beba' }}>
             Your complete guide to Market Genie features, integrations, and support resources
           </p>
         </div>
@@ -3543,9 +3557,10 @@ const ResourceDocumentationCenter = () => {
                 onClick={() => setActiveSection(section.id)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                   activeSection === section.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    ? (isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-blue-600 text-white')
+                    : (isDarkMode ? 'bg-gray-600 hover:bg-gray-500 border border-gray-500' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200')
                 }`}
+                style={isDarkMode ? { color: '#38beba' } : {}}
               >
                 <span>{section.icon}</span>
                 <span>{section.title}</span>
@@ -3555,7 +3570,7 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Content Area */}
-        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <div className={`rounded-xl shadow-lg p-8 ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'}`}>
           {renderActiveContent()}
         </div>
       </div>

@@ -21,6 +21,28 @@ import { useCampaignHealth } from '../features/self-healing/useCampaignHealth'
 import { generateSampleFunnelData, calculateFunnelMetrics } from '../services/funnel3d'
 
 export default function Dashboard() {
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Check for dark mode preference and listen for changes
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const saved = localStorage.getItem('marketGenieDarkMode');
+      const isDark = saved ? JSON.parse(saved) : false;
+      setIsDarkMode(isDark);
+    };
+    
+    // Check initially
+    checkDarkMode();
+    
+    // Poll for changes every 100ms (reliable detection)
+    const interval = setInterval(checkDarkMode, 100);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   // Demo stats
   const stats = [
     { name: 'New Customers', value: 128, icon: Users },
@@ -40,25 +62,25 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
-      <h1 className="text-4xl font-bold text-genie-teal mb-8">Welcome to Market Genie</h1>
+    <div className="min-h-screen p-8">
+      <h1 className="text-4xl font-bold mb-8" style={{ color: '#38beba' }}>Welcome to Market Genie</h1>
       {/* Stat Boxes */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         {stats.map(stat => (
-          <div key={stat.name} className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+          <div key={stat.name} className={`shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
             <div className="bg-genie-teal/10 p-3 rounded-full">
               <stat.icon className="h-8 w-8 text-genie-teal" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-gray-500">{stat.name}</div>
+              <div className="text-2xl font-bold" style={isDarkMode ? { color: '#38beba' } : { color: '#111827' }}>{stat.value}</div>
+              <div style={isDarkMode ? { color: '#38beba' } : { color: '#6b7280' }}>{stat.name}</div>
             </div>
           </div>
         ))}
       </div>
       {/* Financial Graph */}
-      <div className="bg-white shadow-lg rounded-xl p-8 mb-10">
-        <h2 className="text-xl font-semibold text-genie-teal mb-4">Financial Growth</h2>
+      <div className={`shadow-lg rounded-xl p-8 mb-10 ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: '#38beba' }}>Financial Growth</h2>
         <div className="w-full h-64">
           {/* Simple SVG Line Chart */}
           <svg viewBox="0 0 400 200" className="w-full h-full">

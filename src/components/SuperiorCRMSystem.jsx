@@ -4,7 +4,7 @@ import { useTenant } from '../contexts/TenantContext';
 import FirebaseUserDataService from '../services/firebaseUserData';
 import toast from 'react-hot-toast';
 
-const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal, onDeleteDeal, onSaveDeals }) => {
+const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal, onDeleteDeal, onSaveDeals, isDarkMode = false }) => {
   const { user } = useAuth();
   const { tenant } = useTenant();
   // AI Assistant State
@@ -279,10 +279,10 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">
+    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-indigo-100'} rounded-xl shadow-lg p-6`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-2xl font-bold text-indigo-800 flex items-center gap-3">
+          <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-indigo-800'} flex items-center gap-3`}>
             <span className="text-3xl">👥</span>
             Superior CRM System
             <span className="ml-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-2 py-1 rounded-full">
@@ -308,9 +308,9 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
       </div>
 
       {/* AI Pipeline Assistant */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-6 border border-purple-200">
+      <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200'} rounded-xl p-4 mb-6`}>
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-lg font-semibold text-purple-800 flex items-center gap-2">
+          <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-teal-400' : 'text-purple-800'} flex items-center gap-2`}>
             🤖 AI Pipeline Assistant
           </h4>
           <button
@@ -342,9 +342,9 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
             </div>
             
             {aiResponse && (
-              <div className="bg-white rounded-lg p-3 border border-purple-200">
-                <div className="text-sm text-purple-800 font-medium mb-1">🤖 AI Recommendation:</div>
-                <div className="text-sm text-gray-700">{aiResponse}</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-purple-200'} rounded-lg p-3`}>
+                <div className={`text-sm ${isDarkMode ? 'text-teal-400' : 'text-purple-800'} font-medium mb-1`}>🤖 AI Recommendation:</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{aiResponse}</div>
               </div>
             )}
             
@@ -360,60 +360,60 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
 
       {/* CRM Stats Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200'} rounded-lg p-3`}>
           <div className="text-xs text-green-600 font-medium">CLOSED DEALS</div>
-          <div className="text-lg font-bold text-green-800">{pipelineStats.closedDeals}</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-green-400' : 'text-green-800'}`}>{pipelineStats.closedDeals}</div>
         </div>
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200'} rounded-lg p-3`}>
           <div className="text-xs text-blue-600 font-medium">ACTIVE DEALS</div>
-          <div className="text-lg font-bold text-blue-800">{pipelineStats.activeDeals}</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-800'}`}>{pipelineStats.activeDeals}</div>
         </div>
-        <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-3 border border-purple-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200'} rounded-lg p-3`}>
           <div className="text-xs text-purple-600 font-medium">CONVERSION</div>
-          <div className="text-lg font-bold text-purple-800">{pipelineStats.conversionRate}%</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-800'}`}>{pipelineStats.conversionRate}%</div>
         </div>
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200'} rounded-lg p-3`}>
           <div className="text-xs text-orange-600 font-medium">AVG DEAL</div>
-          <div className="text-lg font-bold text-orange-800">{pipelineStats.avgDealSize}</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-800'}`}>{pipelineStats.avgDealSize}</div>
         </div>
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-red-50 to-pink-50 border border-red-200'} rounded-lg p-3`}>
           <div className="text-xs text-red-600 font-medium">SALES CYCLE</div>
-          <div className="text-lg font-bold text-red-800">{pipelineStats.salesCycle}</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-red-400' : 'text-red-800'}`}>{pipelineStats.salesCycle}</div>
         </div>
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-3 border border-indigo-200">
+        <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200'} rounded-lg p-3`}>
           <div className="text-xs text-indigo-600 font-medium">AI INSIGHTS</div>
-          <div className="text-lg font-bold text-indigo-800">{pipelineStats.totalContactsAndDeals}</div>
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-indigo-400' : 'text-indigo-800'}`}>{pipelineStats.totalContactsAndDeals}</div>
         </div>
       </div>
 
       {/* Advanced Lead Management */}
       <div className="mb-8">
-        <h4 className="text-xl font-semibold text-gray-900 mb-4">High-Value Leads with AI Insights</h4>
+        <h4 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-4`}>High-Value Leads with AI Insights</h4>
         <div className="space-y-4">
           {leads.map(lead => (
-            <div key={lead.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+            <div key={lead.id} className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 hover:border-gray-500' : 'bg-white border border-gray-200 hover:border-indigo-300'} rounded-lg p-4 transition-colors`}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h5 className="font-semibold text-gray-900">{lead.name}</h5>
-                    <span className="text-gray-600">• {lead.company}</span>
+                    <h5 className={`font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{lead.name}</h5>
+                    <span className={`${isDarkMode ? 'text-teal-400' : 'text-gray-600'}`}>• {lead.company}</span>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(lead.score)}`}>
                       {lead.score} Score
                     </div>
                     <div className={`w-3 h-3 rounded-full ${getStageColor(lead.stage)}`}></div>
-                    <span className="text-xs font-medium">{lead.stage}</span>
+                    <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{lead.stage}</span>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <div className="text-gray-500">Contact Info</div>
-                      <div>{lead.email} • {lead.phone}</div>
-                      <div className="text-gray-500 mt-1">Source: {lead.source}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Contact Info</div>
+                      <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{lead.email} • {lead.phone}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Source: {lead.source}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Deal Info</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Deal Info</div>
                       <div className="font-medium text-green-600">{lead.value}</div>
-                      <div className="text-gray-500 mt-1">Last contact: {lead.lastContact}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Last contact: {lead.lastContact}</div>
                     </div>
                   </div>
                 </div>
@@ -448,15 +448,15 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
               </div>
 
               {/* AI Insights */}
-              <div className="bg-purple-50 rounded-lg p-3 mb-3 border border-purple-200">
-                <div className="text-xs font-medium text-purple-800 mb-1">🤖 AI INSIGHTS</div>
-                <div className="text-sm text-purple-700">{lead.aiInsights}</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-purple-50 border border-purple-200'} rounded-lg p-3 mb-3`}>
+                <div className={`text-xs font-medium ${isDarkMode ? 'text-purple-400' : 'text-purple-800'} mb-1`}>🤖 AI INSIGHTS</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-purple-700'}`}>{lead.aiInsights}</div>
               </div>
 
               {/* Social Activity */}
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <div className="text-xs font-medium text-blue-800 mb-1">📱 SOCIAL ACTIVITY</div>
-                <div className="text-sm text-blue-700">{lead.socialActivity}</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-blue-50 border border-blue-200'} rounded-lg p-3`}>
+                <div className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-800'} mb-1`}>📱 SOCIAL ACTIVITY</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>{lead.socialActivity}</div>
               </div>
             </div>
           ))}
@@ -465,16 +465,16 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
 
       {/* Automation Rules */}
       <div className="mb-6">
-        <h4 className="text-xl font-semibold text-gray-900 mb-4">AI-Powered Automation Rules</h4>
+        <h4 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-4`}>AI-Powered Automation Rules</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {automationRules.map((rule, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div key={index} className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'} rounded-lg p-4`}>
               <div className="flex items-start justify-between mb-2">
-                <h5 className="font-medium text-gray-900">{rule.name}</h5>
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">{rule.status}</span>
+                <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{rule.name}</h5>
+                <span className={`${isDarkMode ? 'bg-green-600 text-green-200' : 'bg-green-100 text-green-800'} text-xs px-2 py-1 rounded`}>{rule.status}</span>
               </div>
               
-              <div className="text-sm text-gray-600 mb-2">
+              <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
                 <div><strong>Trigger:</strong> {rule.trigger}</div>
                 <div><strong>Action:</strong> {rule.action}</div>
               </div>
@@ -542,177 +542,177 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
       </div>
 
       {/* Advanced Features */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-5 border border-indigo-200 mb-6">
-        <h4 className="font-semibold text-indigo-800 mb-3">🚀 Advanced CRM Features (Beyond HighLevel)</h4>
+      <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200'} rounded-lg p-5 mb-6`}>
+        <h4 className={`font-semibold ${isDarkMode ? 'text-teal-400' : 'text-indigo-800'} mb-3`}>🚀 Advanced CRM Features (Beyond HighLevel)</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">🤖</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">Predictive Lead Scoring</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Predictive Lead Scoring</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           This AI system analyzes 200+ data points including email behavior, website activity, social engagement, company size, industry, job title, and interaction patterns to predict which leads are most likely to close. It assigns probability scores and prioritizes your follow-up efforts automatically.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-indigo-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-indigo-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">🤖 Predictive Lead Scoring</h5>
-            <p className="text-sm text-gray-600">AI analyzes 200+ data points to predict closing probability</p>
-            <div className="text-xs text-indigo-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>🤖 Predictive Lead Scoring</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>AI analyzes 200+ data points to predict closing probability</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-indigo-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">📱</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">Social Media Intelligence</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Social Media Intelligence</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           Monitors LinkedIn, Twitter, Facebook, Instagram, and TikTok in real-time for mentions, interactions, and engagement with your prospects. Tracks when they view your profile, engage with content, or show buying signals on social platforms. Perfect for timing your outreach when prospects are most engaged.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-blue-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-blue-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">📱 Social Media Intelligence</h5>
-            <p className="text-sm text-gray-600">Real-time tracking of prospect activity across all platforms</p>
-            <div className="text-xs text-blue-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>📱 Social Media Intelligence</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Real-time tracking of prospect activity across all platforms</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-blue-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">💬</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">AI Conversation Analysis</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>AI Conversation Analysis</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           Uses natural language processing to analyze all conversations (emails, chats, calls) for sentiment, buying intent, urgency levels, and price sensitivity. Provides next-best-action recommendations like "Schedule demo within 24 hours" or "Send pricing information". Helps you respond with perfect timing and messaging.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-purple-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-purple-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">💬 AI Conversation Analysis</h5>
-            <p className="text-sm text-gray-600">Sentiment analysis and next-best-action recommendations</p>
-            <div className="text-xs text-purple-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>💬 AI Conversation Analysis</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Sentiment analysis and next-best-action recommendations</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-purple-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">⚡</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">Instant Personalization Engine</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Instant Personalization Engine</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           Automatically customizes email content, web pages, and messages based on each prospect's industry, company size, role, previous interactions, and behavioral data. Creates dynamic content that speaks directly to each person's specific needs and challenges. Increases engagement rates by up to 300%.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-green-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-green-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">⚡ Instant Personalization</h5>
-            <p className="text-sm text-gray-600">Dynamic content based on social data and behavior</p>
-            <div className="text-xs text-green-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>⚡ Instant Personalization</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Dynamic content based on social data and behavior</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-green-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">🎯</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">Cross-Platform Attribution</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Cross-Platform Attribution</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           Tracks the complete customer journey across email campaigns, social media, direct website visits, paid ads, and referrals. Shows which touchpoints contribute to conversions and how customers move between channels. Essential for understanding what marketing activities actually drive revenue.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-orange-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-orange-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">🎯 Cross-Platform Attribution</h5>
-            <p className="text-sm text-gray-600">Track customer journey across all touchpoints</p>
-            <div className="text-xs text-orange-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>🎯 Cross-Platform Attribution</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Track customer journey across all touchpoints</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-orange-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
           <div 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">🔮</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">Revenue Forecasting</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Revenue Forecasting</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           Uses machine learning to analyze your pipeline, deal velocity, win rates, seasonal patterns, and market conditions to predict future revenue with 95% accuracy. Helps you plan resources, set realistic targets, and identify potential shortfalls before they happen.
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
             }}
-            className="bg-white rounded-lg p-3 border border-red-200 cursor-pointer hover:shadow-md transition-shadow"
+            className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-red-200'} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
           >
-            <h5 className="font-medium text-gray-900 mb-2">🔮 Revenue Forecasting</h5>
-            <p className="text-sm text-gray-600">AI-powered revenue predictions with 95% accuracy</p>
-            <div className="text-xs text-red-600 mt-2 font-medium">Click for details →</div>
+            <h5 className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'} mb-2`}>🔮 Revenue Forecasting</h5>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>AI-powered revenue predictions with 95% accuracy</p>
+            <div className={`text-xs ${isDarkMode ? 'text-teal-400' : 'text-red-600'} mt-2 font-medium`}>Click for details →</div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-        <div className="text-sm text-gray-600">
+      <div className={`flex justify-between items-center pt-4 ${isDarkMode ? 'border-t border-gray-600' : 'border-t border-gray-200'}`}>
+        <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           {leads.length} high-value leads • {pipelineStats.totalValue} pipeline • {automationRules.length} automation rules active • {contacts.length} total contacts
         </div>
         <div className="flex gap-3">
@@ -725,13 +725,13 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
           <button 
             onClick={() => {
               toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-lg w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-lg w-full ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-lg pointer-events-auto flex ring-1 ${isDarkMode ? 'ring-gray-600' : 'ring-black'} ring-opacity-5`}>
                   <div className="flex-1 w-0 p-4">
                     <div className="flex items-start">
                       <div className="flex-shrink-0"><span className="text-2xl">🧠</span></div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">AI Pipeline Insights</p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>AI Pipeline Insights</p>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                           <strong>Key Insights:</strong><br/>
                           • Focus on leads with 85+ scores for highest conversion<br/>
                           • Your social engagement follow-up converts 23% better<br/>
@@ -746,8 +746,8 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
                       </div>
                     </div>
                   </div>
-                  <div className="flex border-l border-gray-200">
-                    <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none">✕</button>
+                  <div className={`flex border-l ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <button onClick={() => toast.dismiss(t.id)} className={`w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-500'} focus:outline-none`}>✕</button>
                   </div>
                 </div>
               ), { duration: Infinity, position: 'top-right' });
@@ -770,9 +770,9 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Delete Lead</h3>
-            <p className="text-gray-600 mb-6">
+          <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl p-6 w-full max-w-sm`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Delete Lead</h3>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>
               Are you sure you want to delete this lead? This action cannot be undone.
             </p>
             
@@ -797,9 +797,9 @@ const SuperiorCRMSystem = ({ contacts = [], deals = [], onAddDeal, onUpdateDeal,
       {/* Deal Modal */}
       {showAddDealModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 rounded-t-xl">
-              <h3 className="text-xl font-semibold text-genie-teal">
+          <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto`}>
+            <div className={`sticky top-0 ${isDarkMode ? 'bg-gray-700 border-b border-gray-600' : 'bg-white border-b border-gray-200'} p-6 rounded-t-xl`}>
+              <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>
                 {editingDeal ? 'Edit Deal' : 'Add New Deal'}
               </h3>
             </div>

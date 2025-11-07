@@ -25,24 +25,15 @@ const ArrowDown = () => (
   </svg>
 )
 
-const CRMPipeline = () => {
+const CRMPipeline = ({ isDarkMode = false }) => {
   const { user } = useAuth()
   const { tenant } = useTenant()
-  
-  // Dark mode state
-  const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Helper function to update classes with dark mode support
   const getDarkModeClasses = (lightClasses, darkClasses = '') => {
     const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
     return isDarkMode ? dark : lightClasses
   }
-  
-  // Check for dark mode preference
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
   
   const [contacts, setContacts] = useState([])
   const [deals, setDeals] = useState([])
@@ -884,36 +875,36 @@ const CRMPipeline = () => {
 
       {/* Statistics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
-        <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
           <span role="img" aria-label="contacts" className="text-genie-teal text-3xl mb-2">👥</span>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalContacts}</div>
-          <div className="text-gray-500">Total Contacts</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{stats.totalContacts}</div>
+          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Contacts</div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
           <span role="img" aria-label="deals" className="text-genie-teal text-3xl mb-2">📋</span>
-          <div className="text-2xl font-bold text-gray-900">{stats.activeDeals}</div>
-          <div className="text-gray-500">Active Deals</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{stats.activeDeals}</div>
+          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Deals</div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
           <span role="img" aria-label="funnels" className="text-genie-teal text-3xl mb-2">🚀</span>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalFunnels}</div>
-          <div className="text-gray-500">Active Funnels</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{stats.totalFunnels}</div>
+          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Funnels</div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
           <span role="img" aria-label="value" className="text-genie-teal text-3xl mb-2">💰</span>
-          <div className="text-2xl font-bold text-gray-900">${stats.totalValue.toLocaleString()}</div>
-          <div className="text-gray-500">Pipeline Value</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>${stats.totalValue.toLocaleString()}</div>
+          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Pipeline Value</div>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
           <span role="img" aria-label="win" className="text-genie-teal text-3xl mb-2">🏆</span>
-          <div className="text-2xl font-bold text-gray-900">{stats.winRate}%</div>
-          <div className="text-gray-500">Win Rate</div>
+          <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{stats.winRate}%</div>
+          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Win Rate</div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-xl shadow-lg mb-8">
-        <div className="flex border-b border-gray-200">
+      <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg mb-8`}>
+        <div className={`flex ${isDarkMode ? 'border-b border-gray-600' : 'border-b border-gray-200'}`}>
           {[
             { id: 'crm-insights', name: 'Sales Pipeline & CRM Intelligence', icon: '🧠' },
             { id: 'ai-funnels', name: 'AI Funnels', icon: '🧞‍♂️' },
@@ -924,8 +915,8 @@ const CRMPipeline = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center px-6 py-4 font-medium text-sm transition-all ${
                 activeTab === tab.id
-                  ? 'text-yellow-600 border-b-2 border-yellow-600 bg-yellow-50'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  ? (isDarkMode ? 'text-teal-400 border-b-2 border-teal-400 bg-gray-600' : 'text-yellow-600 border-b-2 border-yellow-600 bg-yellow-50')
+                  : (isDarkMode ? 'text-gray-300 hover:text-teal-400 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50')
               }`}
             >
               <span className="mr-2">{tab.icon}</span>
@@ -950,26 +941,26 @@ const CRMPipeline = () => {
       
       {activeTab === 'crm-insights' && (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
-            <h3 className="text-xl font-bold text-green-800 mb-3 flex items-center gap-2">
+          <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-gradient-to-r from-green-50 to-blue-50 border border-green-200'} rounded-xl p-6`}>
+            <h3 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-green-800'} mb-3 flex items-center gap-2`}>
               🧠 Sales Pipeline & CRM Intelligence System
             </h3>
-            <p className="text-green-700 mb-4">
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-green-700'} mb-4`}>
               Your complete sales management system with AI-powered lead scoring, social media intelligence, 
               automated deal tracking, and sophisticated pipeline management. This is where the real CRM magic happens!
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="bg-white rounded-lg p-3 border border-green-200">
-                <div className="font-semibold text-green-800">🤖 AI Lead Scoring</div>
-                <div className="text-green-600">Predictive analytics for lead quality</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-green-200'} rounded-lg p-3`}>
+                <div className={`font-semibold ${isDarkMode ? 'text-teal-400' : 'text-green-800'}`}>🤖 AI Lead Scoring</div>
+                <div className={`${isDarkMode ? 'text-gray-300' : 'text-green-600'}`}>Predictive analytics for lead quality</div>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-blue-200">
-                <div className="font-semibold text-blue-800">📱 Social Intelligence</div>
-                <div className="text-blue-600">Real-time social media activity tracking</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-blue-200'} rounded-lg p-3`}>
+                <div className={`font-semibold ${isDarkMode ? 'text-teal-400' : 'text-blue-800'}`}>📱 Social Intelligence</div>
+                <div className={`${isDarkMode ? 'text-gray-300' : 'text-blue-600'}`}>Real-time social media activity tracking</div>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-purple-200">
-                <div className="font-semibold text-purple-800">⚡ Automation Rules</div>
-                <div className="text-purple-600">Smart triggers and automated actions</div>
+              <div className={`${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-white border border-purple-200'} rounded-lg p-3`}>
+                <div className={`font-semibold ${isDarkMode ? 'text-teal-400' : 'text-purple-800'}`}>⚡ Automation Rules</div>
+                <div className={`${isDarkMode ? 'text-gray-300' : 'text-purple-600'}`}>Smart triggers and automated actions</div>
               </div>
             </div>
           </div>
@@ -980,6 +971,7 @@ const CRMPipeline = () => {
             onAddDeal={addDeal}
             onUpdateDeal={updateDealStage}
             onDeleteDeal={deleteDeal}
+            isDarkMode={isDarkMode}
           />
         </div>
       )}
@@ -1015,9 +1007,9 @@ const CRMPipeline = () => {
       {activeTab === 'contacts' && (
         <>
       {/* Enhanced Contact Manager */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6 mb-8`}>
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-genie-teal">Contact Management</h3>
+          <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>Contact Management</h3>
           <div className="flex gap-3">
             {selectedContactIds.length > 0 && (
               <button
@@ -1057,7 +1049,7 @@ const CRMPipeline = () => {
                 placeholder="🔍 Search contacts by name, email, company, status, tags, or country..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 p-3 pl-4 pr-12 rounded-lg focus:outline-none focus:ring-2 focus:ring-genie-teal focus:border-transparent"
+                className={`w-full border p-3 pl-4 pr-12 rounded-lg focus:outline-none focus:ring-2 focus:ring-genie-teal focus:border-transparent ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               {searchTerm && (
                 <button
@@ -1080,8 +1072,8 @@ const CRMPipeline = () => {
             
             {/* Quick Tip for Bounced Emails */}
             {!searchTerm && (
-              <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
-                💡 <strong>Tip:</strong> To find bounced emails, search for domain names or partial email addresses that bounced from your campaigns.
+              <div className={`text-xs p-2 rounded mt-2 ${isDarkMode ? 'bg-gray-600 border border-gray-500 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                💡 <strong>Pro Tip:</strong> To find bounced emails, search for domain names or partial email addresses that bounced from your campaigns.
               </div>
             )}
           </div>
@@ -1111,41 +1103,41 @@ const CRMPipeline = () => {
           <>
             {/* Contact Statistics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-blue-50'}`}>
                 <div className="text-2xl font-bold text-blue-600">
                   {searchTerm ? filteredAndSortedContacts.length : contacts.length}
                   {searchTerm && contacts.length !== filteredAndSortedContacts.length && (
-                    <span className="text-sm text-gray-500"> of {contacts.length}</span>
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}> of {contacts.length}</span>
                   )}
                 </div>
-                <div className="text-sm text-blue-600">
+                <div className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                   {searchTerm ? 'Filtered Contacts' : 'Total Contacts'}
                 </div>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-green-50'}`}>
                 <div className="text-2xl font-bold text-green-600">
                   {contacts.filter(c => c.status === 'qualified' || c.status === 'warm').length}
                 </div>
-                <div className="text-sm text-green-600">Qualified Leads</div>
+                <div className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>Qualified Leads</div>
               </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-purple-50'}`}>
                 <div className="text-2xl font-bold text-purple-600">
                   {contacts.filter(c => c.status === 'customer' || c.status === 'won').length}
                 </div>
-                <div className="text-sm text-purple-600">Customers</div>
+                <div className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>Customers</div>
               </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-orange-50'}`}>
                 <div className="text-2xl font-bold text-orange-600">
                   {[...new Set(contacts.map(c => c.company).filter(c => c))].length}
                 </div>
-                <div className="text-sm text-orange-600">Companies</div>
+                <div className={`text-sm ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>Companies</div>
               </div>
             </div>
 
             {/* Enhanced Contacts Table */}
             <div className="overflow-x-auto">
               <div className="mb-4 flex justify-between items-center">
-                <div className="text-sm text-gray-600">
+                <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   Showing {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
                   {selectedContactIds.length > 0 && (
                     <span className="ml-2 text-genie-teal font-medium">
@@ -1182,7 +1174,7 @@ const CRMPipeline = () => {
                           className="rounded border-gray-300 text-genie-teal focus:ring-genie-teal"
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         <SortDropdown 
                           column="Contact"
                           currentSort={sortBy}
@@ -1193,7 +1185,7 @@ const CRMPipeline = () => {
                           ]}
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         <SortDropdown 
                           column="Company"
                           currentSort={sortBy}
@@ -1203,7 +1195,7 @@ const CRMPipeline = () => {
                           ]}
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         <SortDropdown 
                           column="Status"
                           currentSort={sortBy}
@@ -1213,7 +1205,7 @@ const CRMPipeline = () => {
                           ]}
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         <SortDropdown 
                           column="Tags"
                           currentSort={sortBy}
@@ -1223,7 +1215,7 @@ const CRMPipeline = () => {
                           ]}
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         <SortDropdown 
                           column="Country"
                           currentSort={sortBy}
@@ -1233,12 +1225,12 @@ const CRMPipeline = () => {
                           ]}
                         />
                       </th>
-                      <th className="py-3 px-4 font-medium text-gray-700">Actions</th>
+                      <th className={`py-3 px-4 font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAndSortedContacts.map(contact => (
-                    <tr key={contact.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={contact.id} className={`border-b ${isDarkMode ? 'border-gray-600 hover:bg-gray-600' : 'border-gray-100 hover:bg-gray-50'}`}>
                       <td className="py-3 px-4 w-12">
                         <input
                           type="checkbox"
@@ -1248,18 +1240,18 @@ const CRMPipeline = () => {
                         />
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium text-gray-900">{contact.name}</div>
-                        <div className="text-sm text-gray-500">{contact.email}</div>
+                        <div className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{contact.name}</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-teal-400' : 'text-gray-500'}`}>{contact.email}</div>
                         {contact.phone && (
-                          <div className="text-sm text-gray-400">{contact.phone}</div>
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{contact.phone}</div>
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium text-gray-700">
+                        <div className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>
                           {contact.company || '-'}
                         </div>
                         {contact.position && (
-                          <div className="text-sm text-gray-500">{contact.position}</div>
+                          <div className={`text-sm ${isDarkMode ? 'text-teal-400' : 'text-gray-500'}`}>{contact.position}</div>
                         )}
                       </td>
                       <td className="py-3 px-4">

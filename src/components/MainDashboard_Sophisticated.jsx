@@ -6,6 +6,25 @@ function MainDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
 
+  // Check for dark mode preference and listen for changes (same as ResourceDocumentationCenter)
+  React.useEffect(() => {
+    const checkDarkMode = () => {
+      const saved = localStorage.getItem('marketGenieDarkMode');
+      const isDark = saved ? JSON.parse(saved) : false;
+      setIsDarkMode(isDark);
+    };
+    
+    // Check initially
+    checkDarkMode();
+    
+    // Poll for changes every 100ms (reliable detection)
+    const interval = setInterval(checkDarkMode, 100);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
     document.documentElement.classList.toggle('dark')
@@ -78,46 +97,46 @@ function MainDashboard() {
             <h1 className="text-4xl font-bold text-genie-teal mb-8">Welcome to Market Genie</h1>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
               {/* Stat Boxes */}
-              <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+              <div className={`shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
                 <div className="bg-genie-teal/10 p-3 rounded-full">
                   <span role="img" aria-label="users" className="text-genie-teal text-2xl">👥</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">128</div>
-                  <div className="text-gray-500">New Customers</div>
+                  <div className="text-2xl font-bold" style={isDarkMode ? { color: '#38beba' } : { color: '#111827' }}>128</div>
+                  <div style={isDarkMode ? { color: '#38beba' } : { color: '#6b7280' }}>New Customers</div>
                 </div>
               </div>
-              <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+              <div className={`shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
                 <div className="bg-genie-teal/10 p-3 rounded-full">
                   <span role="img" aria-label="revenue" className="text-genie-teal text-2xl">💰</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">$12,400</div>
-                  <div className="text-gray-500">Revenue</div>
+                  <div className="text-2xl font-bold" style={isDarkMode ? { color: '#38beba' } : { color: '#111827' }}>$12,400</div>
+                  <div style={isDarkMode ? { color: '#38beba' } : { color: '#6b7280' }}>Revenue</div>
                 </div>
               </div>
-              <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+              <div className={`shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
                 <div className="bg-genie-teal/10 p-3 rounded-full">
                   <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl">🚀</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">7</div>
-                  <div className="text-gray-500">Active Campaigns</div>
+                  <div className="text-2xl font-bold" style={isDarkMode ? { color: '#38beba' } : { color: '#111827' }}>7</div>
+                  <div style={isDarkMode ? { color: '#38beba' } : { color: '#6b7280' }}>Active Campaigns</div>
                 </div>
               </div>
-              <div className="bg-white shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform">
+              <div className={`shadow-lg rounded-xl p-6 flex items-center gap-4 hover:scale-105 transition-transform ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
                 <div className="bg-genie-teal/10 p-3 rounded-full">
                   <span role="img" aria-label="conversion" className="text-genie-teal text-2xl">📈</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">12%</div>
-                  <div className="text-gray-500">Conversion Rate</div>
+                  <div className="text-2xl font-bold" style={isDarkMode ? { color: '#38beba' } : { color: '#111827' }}>12%</div>
+                  <div style={isDarkMode ? { color: '#38beba' } : { color: '#6b7280' }}>Conversion Rate</div>
                 </div>
               </div>
             </div>
             {/* Financial Graph */}
-            <div className="bg-white shadow-lg rounded-xl p-8 mb-10">
-              <h2 className="text-xl font-semibold text-genie-teal mb-4">Financial Growth</h2>
+            <div className={`shadow-lg rounded-xl p-8 mb-10 ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'}`}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#38beba' }}>Financial Growth</h2>
               <div className="w-full h-64">
                 {/* Simple SVG Line Chart */}
                 <svg viewBox="0 0 400 200" className="w-full h-full">

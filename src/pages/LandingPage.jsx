@@ -352,17 +352,24 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex justify-center"
             >
-              <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
-                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-semibold text-lg mb-2">Watch Market Genie in Action</h3>
-                    <p className="text-gray-300 text-sm">See how AI transforms your marketing in under 3 minutes</p>
-                  </div>
+              <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-6xl w-full">
+                <div className="text-center mb-6">
+                  <h3 className="text-white font-semibold text-2xl mb-2">Watch Market Genie in Action</h3>
+                  <p className="text-gray-300 text-lg">See how AI transforms your marketing</p>
+                </div>
+                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden border border-gray-600">
+                  <video 
+                    className="w-full h-full object-cover rounded-lg" 
+                    controls 
+                    autoPlay
+                    loop
+                    muted
+                    preload="auto"
+                    poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2NzUiIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjc1IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfNzdfMjcpIi8+CjxjaXJjbGUgY3g9IjYwMCIgY3k9IjMzNy41IiByPSI4MCIgZmlsbD0iIzEwQjk4MSIvPgo8cGF0aCBkPSJNNTcwIDMwN1Y zNjhMNjMwIDMzNy41TDU3MCAzMDdaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzc3XzI3IiB4MT0iNjAwIiB5MT0iMCIgeDI9IjYwMCIgeTI9IjY3NSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMTExODI3Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFGMkEzNyIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo="
+                  >
+                    <source src="/Final quick for landing page.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               </div>
             </motion.div>

@@ -7,7 +7,7 @@ import { isFeatureEnabled } from '../services/planLimits';
 import stripePaymentService from '../services/StripePaymentService';
 import WhiteLabelFunnelBuilder from './WhiteLabelFunnelBuilder';
 
-const WhiteLabelDashboard = () => {
+const WhiteLabelDashboard = ({ isDarkMode = false }) => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   const [isPartner, setIsPartner] = useState(false);
@@ -36,6 +36,12 @@ const WhiteLabelDashboard = () => {
     enterprisePlan: { price: 197, name: 'Enterprise', features: ['Everything in Pro', 'White Label Rights', 'Unlimited Everything', 'Custom Integrations'] }
   });
   
+  // Helper function to update classes with dark mode support
+  const getDarkModeClasses = (lightClasses, darkClasses = '') => {
+    const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
+    return isDarkMode ? dark : lightClasses
+  }
+
   // Check if user has WhiteLabel access (Lifetime or Founder only)
   const hasWhiteLabelAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
   
@@ -799,10 +805,10 @@ const WhiteLabelDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8 flex items-center justify-center">
+      <div className={`min-h-screen p-8 flex items-center justify-center ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading WhiteLabel dashboard...</p>
+          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading WhiteLabel dashboard...</p>
         </div>
       </div>
     );
@@ -811,35 +817,35 @@ const WhiteLabelDashboard = () => {
   // Access denied for non-lifetime/founder users
   if (!hasWhiteLabelAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-8 rounded-xl text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">🚀 WhiteLabel SaaS Opportunity</h1>
             <p className="text-xl opacity-90">Exclusive to Lifetime & Founder Members</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-lg p-8 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">💰 Revenue Potential</h2>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>💰 Revenue Potential</h2>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span>50 customers @ $47/month:</span>
-                    <span className="font-bold">$2,350/month</span>
+                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>50 customers @ $47/month:</span>
+                    <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>$2,350/month</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Annual revenue potential:</span>
+                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Annual revenue potential:</span>
                     <span className="font-bold text-green-600">$28,200/year</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Your share (85%):</span>
+                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Your share (85%):</span>
                     <span className="font-bold text-blue-600">$23,970/year</span>
                   </div>
                 </div>
               </div>
               
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">🎯 What You Get</h2>
+                <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>🎯 What You Get</h2>
                 <ul className="space-y-2">
                   <li className="flex items-center"><span className="text-green-500 mr-2">✓</span> Custom branded SaaS platform</li>
                   <li className="flex items-center"><span className="text-green-500 mr-2">✓</span> Your logo, colors, domain</li>
@@ -865,7 +871,7 @@ const WhiteLabelDashboard = () => {
 
   // Main WhiteLabel Dashboard for eligible users
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
       <div className="max-w-7xl mx-auto">
         
         {/* Header */}
@@ -873,34 +879,34 @@ const WhiteLabelDashboard = () => {
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
             WhiteLabel SaaS Management
           </h1>
-          <p className="text-gray-600 text-lg">Build your branded SaaS empire with MarketGenie's WhiteLabel program</p>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Build your branded SaaS empire with MarketGenie's WhiteLabel program</p>
         </div>
 
         {/* Partner Status */}
         {!isPartner ? (
-          <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-lg p-8 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="text-center">
               <div className="text-6xl mb-4">🚀</div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">Become a WhiteLabel Partner</h2>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Become a WhiteLabel Partner</h2>
+              <p className={`mb-6 max-w-2xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Join our exclusive WhiteLabel program and start your own branded SaaS business. 
                 Pay $497 licensing fee and keep 85% of all revenue from your customers.
               </p>
               
               <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-purple-50 p-6 rounded-lg">
+                <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-50'}`}>
                   <div className="text-2xl font-bold text-purple-600">$497</div>
-                  <div className="text-gray-600">One-time licensing fee</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>One-time licensing fee</div>
                 </div>
                 
-                <div className="bg-green-50 p-6 rounded-lg">
+                <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50'}`}>
                   <div className="text-2xl font-bold text-green-600">85%</div>
-                  <div className="text-gray-600">Revenue share for you</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Revenue share for you</div>
                 </div>
                 
-                <div className="bg-blue-50 p-6 rounded-lg">
+                <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
                   <div className="text-2xl font-bold text-blue-600">15%</div>
-                  <div className="text-gray-600">Royalty to MarketGenie</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Royalty to MarketGenie</div>
                 </div>
               </div>
 

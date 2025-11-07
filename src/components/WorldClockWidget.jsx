@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 const WorldClockWidget = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userTimezone, setUserTimezone] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     // Detect user's timezone
@@ -15,6 +16,24 @@ const WorldClockWidget = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Dark mode detection
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const darkMode = localStorage.getItem('marketGenieDarkMode') === 'true';
+      if (darkMode !== isDarkMode) {
+        setIsDarkMode(darkMode);
+      }
+    };
+
+    // Initial check
+    checkDarkMode();
+
+    // Poll for changes
+    const interval = setInterval(checkDarkMode, 100);
+
+    return () => clearInterval(interval);
+  }, [isDarkMode]);
 
   const timeZones = [
     { name: 'Your Location', timezone: userTimezone, text: 'YOU' },
@@ -42,30 +61,30 @@ const WorldClockWidget = () => {
     return (
       <div className="text-center flex-1">
         <div className="flex items-center justify-center mb-2">
-          <span className={`text-sm font-bold ${isUserLocation ? 'text-blue-600' : 'text-gray-700'}`}>
+          <span className={`text-sm font-bold ${isUserLocation ? 'text-blue-600' : (isDarkMode ? 'text-teal-400' : 'text-gray-700')}`}>
             {text}
           </span>
         </div>
         <div className="flex items-center justify-center mb-3">
-          <span className={`text-sm font-medium ${isUserLocation ? 'text-blue-600' : 'text-gray-700'}`}>
+          <span className={`text-sm font-medium ${isUserLocation ? 'text-blue-600' : (isDarkMode ? 'text-teal-400' : 'text-gray-700')}`}>
             {label}
           </span>
         </div>
         
-        <div className="relative mx-auto w-28 h-28 bg-white border-2 border-gray-300 rounded-full shadow-lg mb-4">
+        <div className={`relative mx-auto w-28 h-28 ${isDarkMode ? 'bg-gray-800 border-2 border-gray-600' : 'bg-white border-2 border-gray-300'} rounded-full shadow-lg mb-4`}>
           {/* Clock face numbers - All 12 numbers positioned uniformly around the edge */}
-          <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-sm font-bold text-gray-700">12</div>
-          <div className="absolute top-2 right-6 transform -translate-x-1/2 text-sm font-bold text-gray-700">1</div>
-          <div className="absolute top-6 right-2 transform -translate-x-1/2 text-sm font-bold text-gray-700">2</div>
-          <div className="absolute right-1 top-1/2 transform -translate-y-1/2 text-sm font-bold text-gray-700">3</div>
-          <div className="absolute bottom-6 right-2 transform -translate-x-1/2 text-sm font-bold text-gray-700">4</div>
-          <div className="absolute bottom-2 right-6 transform -translate-x-1/2 text-sm font-bold text-gray-700">5</div>
-          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-sm font-bold text-gray-700">6</div>
-          <div className="absolute bottom-2 left-6 transform -translate-x-1/2 text-sm font-bold text-gray-700">7</div>
-          <div className="absolute bottom-6 left-2 transform -translate-x-1/2 text-sm font-bold text-gray-700">8</div>
-          <div className="absolute left-1 top-1/2 transform -translate-y-1/2 text-sm font-bold text-gray-700">9</div>
-          <div className="absolute top-6 left-2 transform -translate-x-1/2 text-sm font-bold text-gray-700">10</div>
-          <div className="absolute top-2 left-6 transform -translate-x-1/2 text-sm font-bold text-gray-700">11</div>
+          <div className={`absolute top-1 left-1/2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>12</div>
+          <div className={`absolute top-2 right-6 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>1</div>
+          <div className={`absolute top-6 right-2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>2</div>
+          <div className={`absolute right-1 top-1/2 transform -translate-y-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>3</div>
+          <div className={`absolute bottom-6 right-2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>4</div>
+          <div className={`absolute bottom-2 right-6 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>5</div>
+          <div className={`absolute bottom-1 left-1/2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>6</div>
+          <div className={`absolute bottom-2 left-6 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>7</div>
+          <div className={`absolute bottom-6 left-2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>8</div>
+          <div className={`absolute left-1 top-1/2 transform -translate-y-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>9</div>
+          <div className={`absolute top-6 left-2 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>10</div>
+          <div className={`absolute top-2 left-6 transform -translate-x-1/2 text-sm font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-700'}`}>11</div>
           
           {/* Hour markers */}
           <div className="absolute top-0.5 left-1/2 w-0.5 h-3 bg-gray-400 transform -translate-x-1/2"></div>
@@ -111,14 +130,14 @@ const WorldClockWidget = () => {
         </div>
         
         <div className="text-center">
-          <div className="text-sm font-mono text-gray-800 font-semibold">
+          <div className={`text-sm font-mono font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'}`}>
             {time.toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
               hour12: true 
             })}
           </div>
-          <div className={`text-xs mt-1 ${isBusinessHours ? 'text-green-600' : 'text-gray-400'}`}>
+          <div className={`text-xs mt-1 ${isBusinessHours ? 'text-green-600' : (isDarkMode ? 'text-gray-400' : 'text-gray-400')}`}>
             {isBusinessHours ? '💼 Business' : '🌙 After Hours'}
           </div>
         </div>
@@ -127,7 +146,7 @@ const WorldClockWidget = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
       <div className="flex justify-between items-start gap-6 mb-6">
         {timeZones.map((zone, index) => (
           <AnalogClock
@@ -140,12 +159,12 @@ const WorldClockWidget = () => {
         ))}
       </div>
       
-      <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+      <div className={`flex items-center justify-between ${isDarkMode ? 'border-t border-gray-600' : 'border-t border-gray-100'} pt-4`}>
+        <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} flex items-center gap-2`}>
           <span className="text-2xl">🌍</span>
           Global Business Clock
         </h3>
-        <div className="text-sm text-gray-500">
+        <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           {userTimezone ? `Your timezone: ${userTimezone.split('/').pop().replace('_', ' ')}` : 'Detecting location...'} • Perfect timing for global outreach! 🚀
         </div>
       </div>

@@ -576,15 +576,16 @@ const BulkProspeoScraper = () => {
               className="w-full bg-white/20 border border-white/30 rounded p-2 text-white"
               value={scrapeForm.targetType || 'smb'}
               onChange={(e) => setScrapeForm(prev => ({ ...prev, targetType: e.target.value }))}
+              style={{ color: 'white' }}
             >
-              <option value="smb">Small to Medium Businesses</option>
-              <option value="johnq">John Q Customer Business Owners</option>
-              <option value="support">Support Genie Prospects</option>
-              <option value="local">Local Service Businesses</option>
-              <option value="ecommerce">E-commerce Store Owners</option>
-              <option value="professional">Professional Services</option>
-              <option value="saas">SaaS Startups</option>
-              <option value="agencies">Marketing Agencies</option>
+              <option value="smb" style={{ color: 'black', backgroundColor: 'white' }}>Small to Medium Businesses</option>
+              <option value="johnq" style={{ color: 'black', backgroundColor: 'white' }}>John Q Customer Business Owners</option>
+              <option value="support" style={{ color: 'black', backgroundColor: 'white' }}>Support Genie Prospects</option>
+              <option value="local" style={{ color: 'black', backgroundColor: 'white' }}>Local Service Businesses</option>
+              <option value="ecommerce" style={{ color: 'black', backgroundColor: 'white' }}>E-commerce Store Owners</option>
+              <option value="professional" style={{ color: 'black', backgroundColor: 'white' }}>Professional Services</option>
+              <option value="saas" style={{ color: 'black', backgroundColor: 'white' }}>SaaS Startups</option>
+              <option value="agencies" style={{ color: 'black', backgroundColor: 'white' }}>Marketing Agencies</option>
             </select>
           </div>
         </div>

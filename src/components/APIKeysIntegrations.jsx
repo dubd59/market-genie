@@ -6,27 +6,18 @@ import FirebaseUserDataService from '../services/firebaseUserData';
 import CalendarService from '../services/calendarService';
 import toast from 'react-hot-toast';
 
-const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalendarConnections }) => {
+const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalendarConnections, isDarkMode = false }) => {
   const { tenant } = useTenant();
   const { user } = useAuth();
   
   // Tab management
   const [activeTab, setActiveTab] = useState('ai-services');
   
-  // Dark mode state
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  
   // Helper function to update classes with dark mode support
   const getDarkModeClasses = (lightClasses, darkClasses = '') => {
     const dark = darkClasses || lightClasses.replace('bg-white', 'bg-gray-800').replace('text-gray-900', 'text-white').replace('text-gray-700', 'text-gray-300')
     return isDarkMode ? dark : lightClasses
   }
-  
-  // Check for dark mode preference
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
   
   const [apiKeys, setApiKeys] = useState([]);
   const [loadingApiKeys, setLoadingApiKeys] = useState(true);
@@ -692,13 +683,13 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
   };
 
   const renderIntegrationCard = (integration) => (
-    <div key={integration.id} className="bg-white rounded-xl p-6 shadow-lg border hover:shadow-xl transition-all duration-200">
+    <div key={integration.id} className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border'} rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200`}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className="text-3xl">{integration.icon}</span>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{integration.name}</h3>
-            <p className="text-sm text-gray-500">{integration.type}</p>
+            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{integration.name}</h3>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{integration.type}</p>
           </div>
         </div>
         <div className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -710,9 +701,9 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
         </div>
       </div>
 
-      <p className="text-gray-600 text-sm mb-4">{integration.description}</p>
+      <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-4`}>{integration.description}</p>
 
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+      <div className={`flex items-center justify-between text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>
         <span>Account: {integration.account}</span>
         <span>Last sync: {integration.lastSync}</span>
       </div>
@@ -825,12 +816,12 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 max-w-md w-full m-4">
+        <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl p-6 max-w-md w-full m-4`}>
           <div className="flex items-center gap-3 mb-6">
             <span className="text-3xl">{selectedIntegration.icon}</span>
             <div>
-              <h3 className="text-xl font-semibold">Configure {selectedIntegration.name}</h3>
-              <p className="text-sm text-gray-600">{selectedIntegration.description}</p>
+              <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>Configure {selectedIntegration.name}</h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedIntegration.description}</p>
             </div>
           </div>
 
@@ -838,7 +829,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
             <div className="space-y-4 mb-6">
               {configFields.map((field) => (
                 <div key={field.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
                     {field.label}
                   </label>
                   <input
@@ -849,7 +840,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
                       [field.key]: e.target.value 
                     }))}
                     placeholder={field.placeholder}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                     required
                   />
                 </div>
@@ -1000,33 +991,33 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
             API Keys & Integrations
           </h1>
-          <p className="text-gray-600 text-lg">Manage your AI services and third-party integrations</p>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Manage your AI services and third-party integrations</p>
         </div>
 
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {tabs.map((tab) => (
-            <div key={tab.id} className="bg-white rounded-xl p-6 shadow-lg border">
+            <div key={tab.id} className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl p-6 shadow-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{tab.icon}</span>
-                <h3 className="text-lg font-semibold">{tab.label}</h3>
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{tab.label}</h3>
               </div>
               <div className="text-3xl font-bold text-blue-600">{tab.count}</div>
-              <div className="text-sm text-gray-500">Connected</div>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Connected</div>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-6">
-          <div className="border-b border-gray-200">
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-lg mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             <nav className="flex space-x-8 px-6">
               {tabs.map((tab) => (
                 <button
@@ -1035,7 +1026,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
                   className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : `border-transparent ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:border-gray-500' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`
                   }`}
                 >
                   <span className="mr-2">{tab.icon}</span>
@@ -1055,7 +1046,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
             {loadingStatuses ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="text-gray-500 mt-4">Checking integration statuses...</p>
+                <p className={`mt-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Checking integration statuses...</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1067,12 +1058,12 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
 
         {/* Advanced API Keys Management (Optional) */}
         <div className="mt-8">
-          <details className="bg-white rounded-xl shadow-lg border">
-            <summary className="p-6 cursor-pointer font-semibold text-gray-700 hover:text-blue-600 transition-colors">
+          <details className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border'} rounded-xl shadow-lg`}>
+            <summary className={`p-6 cursor-pointer font-semibold ${isDarkMode ? 'text-gray-300 hover:text-teal-400' : 'text-gray-700 hover:text-blue-600'} transition-colors`}>
               🔧 Advanced API Keys Management (Optional)
             </summary>
             <div className="px-6 pb-6">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
                 Most integrations handle their API keys automatically. Use this section only if you need to manage additional custom keys.
               </p>
               {renderApiKeysSection()}

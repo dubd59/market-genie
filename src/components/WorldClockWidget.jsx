@@ -94,7 +94,7 @@ const WorldClockWidget = () => {
           
           {/* Hour hand */}
           <div 
-            className="absolute left-1/2 top-1/2 origin-bottom bg-gray-800 rounded-full"
+            className={`absolute left-1/2 top-1/2 origin-bottom rounded-full ${isDarkMode ? 'bg-teal-400' : 'bg-gray-800'}`}
             style={{
               width: '3px',
               height: '28px',
@@ -105,7 +105,7 @@ const WorldClockWidget = () => {
           
           {/* Minute hand */}
           <div 
-            className="absolute left-1/2 top-1/2 origin-bottom bg-gray-600 rounded-full"
+            className={`absolute left-1/2 top-1/2 origin-bottom rounded-full ${isDarkMode ? 'bg-teal-400' : 'bg-gray-600'}`}
             style={{
               width: '2px',
               height: '38px',
@@ -126,7 +126,7 @@ const WorldClockWidget = () => {
           ></div>
           
           {/* Center dot */}
-          <div className="absolute left-1/2 top-1/2 w-2 h-2 bg-gray-800 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+          <div className={`absolute left-1/2 top-1/2 w-2 h-2 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${isDarkMode ? 'bg-teal-400' : 'bg-gray-800'}`}></div>
         </div>
         
         <div className="text-center">

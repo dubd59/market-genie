@@ -151,14 +151,26 @@ export function TenantProvider({ children }) {
               return await attemptLoad();
             } else {
               console.error('❌ Max retries reached for tenant loading');
-              toast.error('Connection issues detected. Refreshing in 3 seconds...', {
-                duration: 3000
-              });
-              // Auto-refresh after 3 seconds
-              setTimeout(() => {
-                window.location.reload();
-              }, 3000);
-              return;
+              
+              // One-time only auto-refresh per session
+              const hasRefreshed = sessionStorage.getItem('workspaceAutoRefreshed');
+              if (!hasRefreshed) {
+                sessionStorage.setItem('workspaceAutoRefreshed', 'true');
+                toast.error('Connection issues detected. Refreshing in 3 seconds...', {
+                  duration: 3000
+                });
+                setTimeout(() => {
+                  window.location.reload();
+                }, 3000);
+                return;
+              } else {
+                // Already refreshed once, don't refresh again
+                toast.error('Connection issues detected. Please check your internet connection.', {
+                  duration: 8000
+                });
+                setLoading(false);
+                return;
+              }
             }
           }
           
@@ -176,6 +188,10 @@ export function TenantProvider({ children }) {
 
         if (result.data) {
           console.log('✅ Tenant loaded successfully:', result.data.name || result.data.id)
+          
+          // Clear the auto-refresh flag on successful load
+          sessionStorage.removeItem('workspaceAutoRefreshed');
+          
           setTenant(result.data)
           
           // Initialize tenant collections if this is a new tenant

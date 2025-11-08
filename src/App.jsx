@@ -79,13 +79,6 @@ function ProtectedRoute({ children }) {
   
   // Show loading while auth or tenant is loading
   if (loading || tenantLoading) {
-    // Simple auto-refresh after 3 seconds of workspace loading
-    if (tenantLoading) {
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-    }
-    
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
         <div className="genie-enter">
@@ -4201,7 +4194,7 @@ END:VCALENDAR`;
                     <select
                       value={campaignFormData.aiSmartPrompt}
                       onChange={(e) => setCampaignFormData(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}
-                      className={`w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-purple-50' : 'bg-purple-50'}`}
+                      className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-purple-50 border-purple-300'}`}
                     >
                       {aiSmartPrompts.map(prompt => (
                         <option key={prompt.value} value={prompt.value}>
@@ -4219,7 +4212,7 @@ END:VCALENDAR`;
                       onChange={(e) => setCampaignFormData(prev => ({ ...prev, additionalPrompt: e.target.value }))}
                       placeholder="Add any additional instructions or customizations for your AI-generated email content..."
                       rows={3}
-                      className={`w-full border border-indigo-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-indigo-50' : 'bg-indigo-50'}`}
+                      className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-300' : 'bg-indigo-50 border-indigo-300'}`}
                     />
                   </div>
 
@@ -4234,7 +4227,7 @@ END:VCALENDAR`;
                           value={campaignFormData.callToActionText}
                           onChange={(e) => setCampaignFormData(prev => ({ ...prev, callToActionText: e.target.value }))}
                           placeholder="e.g., 'Schedule a Free Consultation', 'Download Our Guide'"
-                          className={`w-full border border-blue-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-blue-50' : 'bg-blue-50'}`}
+                          className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-300' : 'bg-blue-50 border-blue-300'}`}
                         />
                       </div>
                       <div>

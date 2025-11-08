@@ -976,28 +976,28 @@ const ResourceDocumentationCenter = () => {
   // White Label Guide Content
   const WhiteLabelGuideContent = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200">
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">🏷️ White Label SaaS Partner Guide</h2>
-        <p className="text-purple-700 mb-4">Everything you need to know about our white label partnership program and revenue sharing. Click any section for detailed instructions.</p>
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-700' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'}`}>
+        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-purple-300' : 'text-purple-800'}`}>🏷️ White Label SaaS Partner Guide</h2>
+        <p className={`mb-4 ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>Everything you need to know about our white label partnership program and revenue sharing. Click any section for detailed instructions.</p>
       </div>
 
       <div className="space-y-6">
         {/* Partnership Overview */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🤝</span> Partnership Overview
           </h3>
           
           {expandedWhiteLabelSection !== 'partnership-overview' ? (
             <>
-              <div className="space-y-4 text-gray-700">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-bold text-green-800">Revenue Sharing: 85% / 15%</h4>
-                  <p className="text-green-700 text-sm">You keep 85% of all subscription revenue from your referred customers</p>
+              <div className={`space-y-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-green-900/30 border-green-700' : 'bg-green-50 border-green-200'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>Revenue Sharing: 85% / 15%</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>You keep 85% of all subscription revenue from your referred customers</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-bold text-blue-800">One-time Setup Fee: $497</h4>
-                  <p className="text-blue-700 text-sm">Covers white label setup, custom branding, and dedicated partner dashboard</p>
+                <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>One-time Setup Fee: $497</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>Covers white label setup, custom branding, and dedicated partner dashboard</p>
                 </div>
               </div>
               <button 
@@ -1122,14 +1122,14 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Application Process */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>📝</span> Application Process
           </h3>
           
           {expandedWhiteLabelSection !== 'application-process' ? (
             <>
-              <ol className="space-y-3 text-gray-700">
+              <ol className={`space-y-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 <li className="flex items-start gap-2">
                   <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
                   <span>Submit partner application with business details</span>
@@ -1247,33 +1247,33 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Tools & Resources */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🛠️</span> Partner Tools
           </h3>
           
           {expandedWhiteLabelSection !== 'partner-tools' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className={`space-y-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <div>
                     <span className="font-semibold">Signup link generator with tracking</span>
-                    <p className="text-sm text-gray-600 mt-1">Create unique referral links with real-time analytics, conversion tracking, and commission calculations for all your marketing campaigns</p>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Create unique referral links with real-time analytics, conversion tracking, and commission calculations for all your marketing campaigns</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <div>
                     <span className="font-semibold">Custom pricing manager for special offers</span>
-                    <p className="text-sm text-gray-600 mt-1">Build personalized pricing proposals with flexible discounts, bundle options, and professional branded quotes for enterprise clients</p>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Build personalized pricing proposals with flexible discounts, bundle options, and professional branded quotes for enterprise clients</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-500 mt-1">✓</span>
                   <div>
                     <span className="font-semibold">Marketing materials and sales deck</span>
-                    <p className="text-sm text-gray-600 mt-1">Access professionally designed presentations, brochures, case studies, and white papers customized with your company branding</p>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Access professionally designed presentations, brochures, case studies, and white papers customized with your company branding</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
@@ -1423,14 +1423,14 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Success Tips */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🎯</span> Success Strategies
           </h3>
           
           {expandedWhiteLabelSection !== 'success-strategies' ? (
             <>
-              <ul className="space-y-3 text-gray-700">
+              <ul className={`space-y-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 <li className="flex items-start gap-2">
                   <span className="text-orange-500 mt-1">💡</span>
                   <span>Focus on your existing customer base first</span>
@@ -1524,24 +1524,24 @@ const ResourceDocumentationCenter = () => {
   // API Integration Guide Content
   const APIIntegrationContent = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border border-green-200">
-        <h2 className="text-2xl font-bold text-green-800 mb-4">🔗 API Keys & Integration Setup</h2>
-        <p className="text-green-700 mb-4">Configure all third-party services and API integrations for optimal performance. Click any service for detailed setup instructions.</p>
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-gradient-to-r from-green-900/30 to-teal-900/30 border-green-700' : 'bg-gradient-to-r from-green-50 to-teal-50 border-green-200'}`}>
+        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>🔗 API Keys & Integration Setup</h2>
+        <p className={`mb-4 ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>Configure all third-party services and API integrations for optimal performance. Click any service for detailed setup instructions.</p>
       </div>
 
       <div className="space-y-6">
         {/* Prospeo API */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🔍</span> Prospeo API Setup
           </h3>
           
           {expandedAPISection !== 'prospeo' ? (
             <>
-              <div className="space-y-4 text-gray-700">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-blue-800">Purpose:</h4>
-                  <p className="text-blue-700 text-sm">Email finder and verification for lead generation</p>
+              <div className={`space-y-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>Purpose:</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>Email finder and verification for lead generation</p>
                 </div>
                 <ol className="space-y-2 text-sm">
                   <li>1. Visit <a href="https://prospeo.io" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">prospeo.io</a> and create account</li>
@@ -1676,17 +1676,17 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* OpenAI API */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🤖</span> OpenAI API Setup
           </h3>
           
           {expandedAPISection !== 'openai' ? (
             <>
-              <div className="space-y-4 text-gray-700">
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-purple-800">Purpose:</h4>
-                  <p className="text-purple-700 text-sm">AI-powered content generation and funnel building</p>
+              <div className={`space-y-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-50'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-purple-300' : 'text-purple-800'}`}>Purpose:</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>AI-powered content generation and funnel building</p>
                 </div>
                 <ol className="space-y-2 text-sm">
                   <li>1. Create account at <a href="https://platform.openai.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">platform.openai.com</a> - Register for OpenAI's developer platform to access their powerful GPT models for content generation and AI-powered marketing automation.</li>
@@ -1821,17 +1821,17 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Microsoft OAuth */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>🔒</span> Microsoft OAuth Setup
           </h3>
           
           {expandedAPISection !== 'microsoft' ? (
             <>
-              <div className="space-y-4 text-gray-700">
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-orange-800">Purpose:</h4>
-                  <p className="text-orange-700 text-sm">Secure authentication and Office 365 integration</p>
+              <div className={`space-y-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-orange-900/30 border border-orange-700' : 'bg-orange-50'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-orange-300' : 'text-orange-800'}`}>Purpose:</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-orange-200' : 'text-orange-700'}`}>Secure authentication and Office 365 integration</p>
                 </div>
                 <ol className="space-y-2 text-sm">
                   <li>1. Access Azure Portal app registrations - Navigate to portal.azure.com and sign in with your Microsoft business account to access the Azure Active Directory application management console.</li>
@@ -1852,19 +1852,19 @@ const ResourceDocumentationCenter = () => {
             <div className="space-y-6">
               <button 
                 onClick={() => setExpandedAPISection(null)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                className={`px-4 py-2 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 ← Back to Overview
               </button>
               
               <div className="space-y-6">
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-orange-800 mb-3">🏢 Azure Portal Setup</h4>
-                  <div className="space-y-3 text-sm text-orange-700">
-                    <div className="border-l-4 border-orange-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-orange-900/30 border border-orange-700' : 'bg-orange-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-orange-300' : 'text-orange-800'}`}>🏢 Azure Portal Setup</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-orange-200' : 'text-orange-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-orange-400' : 'border-orange-500'}`}>
                       <p className="font-semibold">Step 1: Access Azure Portal</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Visit <a href="https://portal.azure.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">portal.azure.com</a> and sign in</li>
+                        <li>Visit <a href="https://portal.azure.com" className={`underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`} target="_blank" rel="noopener noreferrer">portal.azure.com</a> and sign in</li>
                         <li>Navigate to "Azure Active Directory"</li>
                         <li>Click on "App registrations" in the left sidebar</li>
                         <li>Select "New registration" button</li>
@@ -1872,7 +1872,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-orange-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-orange-400' : 'border-orange-500'}`}>
                       <p className="font-semibold">Step 2: Create App Registration</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Name: "Market Genie Integration"</li>
@@ -1883,7 +1883,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
 
-                    <div className="border-l-4 border-orange-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-orange-400' : 'border-orange-500'}`}>
                       <p className="font-semibold">Step 3: Configure Permissions</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Go to "API permissions" tab</li>
@@ -1896,10 +1896,10 @@ const ResourceDocumentationCenter = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-blue-800 mb-3">🔑 Client Secret Configuration</h4>
-                  <div className="space-y-3 text-sm text-blue-700">
-                    <div className="border-l-4 border-blue-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>🔑 Client Secret Configuration</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Creating Client Secret</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Navigate to "Certificates & secrets" tab</li>
@@ -1910,7 +1910,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-blue-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Security Best Practices</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Store client secret in secure password manager</li>
@@ -1921,7 +1921,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
 
-                    <div className="border-l-4 border-blue-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Integration in Market Genie</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Go to "API Keys & Integrations" in Market Genie</li>
@@ -1934,10 +1934,10 @@ const ResourceDocumentationCenter = () => {
                   </div>
                 </div>
 
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-green-800 mb-3">✅ Testing & Validation</h4>
-                  <div className="space-y-3 text-sm text-green-700">
-                    <div className="border-l-4 border-green-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>✅ Testing & Validation</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-green-400' : 'border-green-500'}`}>
                       <p className="font-semibold">OAuth Flow Testing</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Use Market Genie's built-in OAuth test feature</li>
@@ -1948,7 +1948,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-green-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-green-400' : 'border-green-500'}`}>
                       <p className="font-semibold">Common Issues & Solutions</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li><strong>Invalid Redirect URI:</strong> Check exact URL in Azure config</li>
@@ -1966,17 +1966,17 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* ConvertKit */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             <span>📧</span> ConvertKit Integration
           </h3>
           
           {expandedAPISection !== 'convertkit' ? (
             <>
-              <div className="space-y-4 text-gray-700">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-green-800">Purpose:</h4>
-                  <p className="text-green-700 text-sm">Email marketing automation and list management</p>
+              <div className={`space-y-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50'}`}>
+                  <h4 className={`font-bold ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>Purpose:</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>Email marketing automation and list management</p>
                 </div>
                 <ol className="space-y-2 text-sm">
                   <li>1. Sign up at <a href="https://convertkit.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">convertkit.com</a> - Create your ConvertKit account with their creator-focused email marketing platform designed for scaling your business communications.</li>
@@ -1997,19 +1997,19 @@ const ResourceDocumentationCenter = () => {
             <div className="space-y-6">
               <button 
                 onClick={() => setExpandedAPISection(null)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                className={`px-4 py-2 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 ← Back to Overview
               </button>
               
               <div className="space-y-6">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-green-800 mb-3">📝 Account Setup & API Access</h4>
-                  <div className="space-y-3 text-sm text-green-700">
-                    <div className="border-l-4 border-green-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>📝 Account Setup & API Access</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-green-400' : 'border-green-500'}`}>
                       <p className="font-semibold">Step 1: ConvertKit Account Creation</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
-                        <li>Visit <a href="https://convertkit.com" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">convertkit.com</a> and start free trial</li>
+                        <li>Visit <a href="https://convertkit.com" className={`underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`} target="_blank" rel="noopener noreferrer">convertkit.com</a> and start free trial</li>
                         <li>Complete business information and email verification</li>
                         <li>Choose appropriate plan based on subscriber count</li>
                         <li>Set up your sender profile and domain authentication</li>
@@ -2017,7 +2017,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-green-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-green-400' : 'border-green-500'}`}>
                       <p className="font-semibold">Step 2: API Key Configuration</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Navigate to "Settings" → "Advanced" → "API"</li>
@@ -2028,7 +2028,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
 
-                    <div className="border-l-4 border-green-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-green-400' : 'border-green-500'}`}>
                       <p className="font-semibold">Step 3: Domain Authentication</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Add your business domain in ConvertKit settings</li>
@@ -2041,10 +2041,10 @@ const ResourceDocumentationCenter = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-blue-800 mb-3">📋 Forms & Sequences Setup</h4>
-                  <div className="space-y-3 text-sm text-blue-700">
-                    <div className="border-l-4 border-blue-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>📋 Forms & Sequences Setup</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Creating Lead Capture Forms</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Go to "Grow" → "Landing Pages & Forms"</li>
@@ -2055,7 +2055,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-blue-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Email Sequence Development</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Navigate to "Automate" → "Sequences"</li>
@@ -2066,7 +2066,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
 
-                    <div className="border-l-4 border-blue-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-blue-400' : 'border-blue-500'}`}>
                       <p className="font-semibold">Tagging & Segmentation</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Create tags for lead sources (Market Genie, Website, etc.)</li>
@@ -2079,10 +2079,10 @@ const ResourceDocumentationCenter = () => {
                   </div>
                 </div>
 
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-purple-800 mb-3">🔗 Market Genie Integration</h4>
-                  <div className="space-y-3 text-sm text-purple-700">
-                    <div className="border-l-4 border-purple-500 pl-4">
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-50'}`}>
+                  <h4 className={`font-bold mb-3 ${isDarkMode ? 'text-purple-300' : 'text-purple-800'}`}>🔗 Market Genie Integration</h4>
+                  <div className={`space-y-3 text-sm ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-purple-400' : 'border-purple-500'}`}>
                       <p className="font-semibold">API Configuration in Market Genie</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Go to "API Keys & Integrations" → "ConvertKit"</li>
@@ -2093,7 +2093,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
                     
-                    <div className="border-l-4 border-purple-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-purple-400' : 'border-purple-500'}`}>
                       <p className="font-semibold">Webhook Configuration</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Set up webhook URLs in ConvertKit settings</li>
@@ -2104,7 +2104,7 @@ const ResourceDocumentationCenter = () => {
                       </ul>
                     </div>
 
-                    <div className="border-l-4 border-purple-500 pl-4">
+                    <div className={`border-l-4 pl-4 ${isDarkMode ? 'border-purple-400' : 'border-purple-500'}`}>
                       <p className="font-semibold">Lead Sync & Automation</p>
                       <ul className="mt-2 space-y-1 list-disc ml-4">
                         <li>Enable automatic lead sync from Market Genie to ConvertKit</li>
@@ -2122,9 +2122,9 @@ const ResourceDocumentationCenter = () => {
         </div>
       </div>
 
-      <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-        <h3 className="text-lg font-bold text-red-800 mb-2">🔐 Security Best Practices</h3>
-        <ul className="space-y-2 text-red-700">
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-200'}`}>
+        <h3 className={`text-lg font-bold mb-2 ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>🔐 Security Best Practices</h3>
+        <ul className={`space-y-2 ${isDarkMode ? 'text-red-200' : 'text-red-700'}`}>
           <li>• Never share API keys in public repositories or documentation</li>
           <li>• Set usage limits and monitoring alerts for all services</li>
           <li>• Regularly rotate API keys for enhanced security</li>
@@ -2140,21 +2140,21 @@ const ResourceDocumentationCenter = () => {
   // Privacy Policy Content
   const PrivacyPolicyContent = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-        <h2 className="text-3xl font-bold text-blue-800 mb-4">🔒 Privacy Policy for Market Genie</h2>
-        <p className="text-blue-700 mb-2"><strong>Last Updated:</strong> November 5, 2025</p>
-        <p className="text-blue-700">This Privacy Policy describes how Market Genie collects, uses, and protects your information when you use our services.</p>
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-blue-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
+        <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>🔒 Privacy Policy for Market Genie</h2>
+        <p className={`mb-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}><strong>Last Updated:</strong> November 5, 2025</p>
+        <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>This Privacy Policy describes how Market Genie collects, uses, and protects your information when you use our services.</p>
       </div>
 
       <div className="grid gap-6">
         {/* Section 1: Information We Collect */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">1. Information We Collect</h3>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>1. Information We Collect</h3>
           
           <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h4 className="text-lg font-bold text-blue-800 mb-3">1.1 Customer Data You Provide</h4>
-              <ul className="space-y-2 text-blue-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+              <h4 className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>1.1 Customer Data You Provide</h4>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>
                 <li>• Account information (name, email, business details)</li>
                 <li>• Customer support tickets, emails, and chat conversations</li>
                 <li>• Payment information processed through our third-party payment processors</li>
@@ -2162,9 +2162,9 @@ const ResourceDocumentationCenter = () => {
               </ul>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h4 className="text-lg font-bold text-green-800 mb-3">1.2 Data We Collect Automatically</h4>
-              <ul className="space-y-2 text-green-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-green-900/30 border-green-700' : 'bg-green-50 border-green-200'}`}>
+              <h4 className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>1.2 Data We Collect Automatically</h4>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>
                 <li>• Usage data and analytics</li>
                 <li>• Log data (IP addresses, browser type, pages visited)</li>
                 <li>• Cookies and similar tracking technologies</li>
@@ -2172,9 +2172,9 @@ const ResourceDocumentationCenter = () => {
               </ul>
             </div>
 
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <h4 className="text-lg font-bold text-purple-800 mb-3">1.3 AI Training Data</h4>
-              <ul className="space-y-2 text-purple-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-purple-900/30 border-purple-700' : 'bg-purple-50 border-purple-200'}`}>
+              <h4 className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-purple-300' : 'text-purple-800'}`}>1.3 AI Training Data</h4>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>
                 <li>• Anonymized conversation data may be used to improve our AI models</li>
                 <li>• Personal identifiers are removed before training</li>
                 <li>• You may opt-out of data use for AI training</li>
@@ -2184,10 +2184,10 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 2: How We Use Your Information */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">2. How We Use Your Information</h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <ul className="space-y-2 text-gray-700">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>2. How We Use Your Information</h3>
+          <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <ul className={`space-y-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <li>• Provide and maintain Market Genie services</li>
               <li>• Process transactions and send related information</li>
               <li>• Personalize and improve our AI responses</li>
@@ -2199,57 +2199,57 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 3: Data Sharing */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">3. Data Sharing and Disclosure</h3>
-          <div className="bg-red-50 p-4 rounded-lg border border-red-200 mb-4">
-            <p className="text-red-800 font-bold text-lg">We do not sell your personal data.</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>3. Data Sharing and Disclosure</h3>
+          <div className={`p-4 rounded-lg border mb-4 ${isDarkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-200'}`}>
+            <p className={`font-bold text-lg ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>We do not sell your personal data.</p>
           </div>
-          <p className="text-gray-700 mb-3">We may share information with:</p>
+          <p className={`mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>We may share information with:</p>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <span className="text-blue-500 font-bold">•</span>
+              <span className={`font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`}>•</span>
               <div>
-                <p className="font-semibold text-gray-800">Service Providers:</p>
-                <p className="text-gray-600 text-sm">Payment processors, hosting providers, analytics services</p>
+                <p className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Service Providers:</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Payment processors, hosting providers, analytics services</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-blue-500 font-bold">•</span>
+              <span className={`font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`}>•</span>
               <div>
-                <p className="font-semibold text-gray-800">Legal Requirements:</p>
-                <p className="text-gray-600 text-sm">When required by law or to protect our rights</p>
+                <p className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Legal Requirements:</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>When required by law or to protect our rights</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-blue-500 font-bold">•</span>
+              <span className={`font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`}>•</span>
               <div>
-                <p className="font-semibold text-gray-800">Business Transfers:</p>
-                <p className="text-gray-600 text-sm">In connection with merger, acquisition, or asset sale</p>
+                <p className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Business Transfers:</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>In connection with merger, acquisition, or asset sale</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-blue-500 font-bold">•</span>
+              <span className={`font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`}>•</span>
               <div>
-                <p className="font-semibold text-gray-800">With Your Consent:</p>
-                <p className="text-gray-600 text-sm">When you direct us to share with third parties</p>
+                <p className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>With Your Consent:</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>When you direct us to share with third parties</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Section 4: Data Security */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">4. Data Security</h3>
-          <p className="text-gray-700 mb-4">We implement industry-standard security measures including:</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>4. Data Security</h3>
+          <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>We implement industry-standard security measures including:</p>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <ul className="space-y-2 text-green-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-green-900/30 border-green-700' : 'bg-green-50 border-green-200'}`}>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>
                 <li>• Encryption of data in transit and at rest</li>
                 <li>• Regular security assessments and monitoring</li>
               </ul>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <ul className="space-y-2 text-blue-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>
                 <li>• Access controls and authentication procedures</li>
                 <li>• Secure data backup and disaster recovery procedures</li>
               </ul>
@@ -2258,11 +2258,11 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 5: Data Retention */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">5. Data Retention</h3>
-          <p className="text-gray-700 mb-3">We retain personal data only as long as necessary for:</p>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <ul className="space-y-2 text-gray-700">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>5. Data Retention</h3>
+          <p className={`mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>We retain personal data only as long as necessary for:</p>
+          <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <ul className={`space-y-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <li>• Providing services to you</li>
               <li>• Compliance with legal obligations</li>
               <li>• Resolving disputes and enforcing agreements</li>
@@ -2272,19 +2272,19 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 6: Your Rights */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">6. Your Rights</h3>
-          <p className="text-gray-700 mb-3">You have the right to:</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>6. Your Rights</h3>
+          <p className={`mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>You have the right to:</p>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <ul className="space-y-2 text-blue-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-blue-200' : 'text-blue-700'}`}>
                 <li>• Access and receive copies of your personal data</li>
                 <li>• Correct inaccurate or incomplete data</li>
                 <li>• Delete your personal data</li>
               </ul>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <ul className="space-y-2 text-purple-700">
+            <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-purple-900/30 border-purple-700' : 'bg-purple-50 border-purple-200'}`}>
+              <ul className={`space-y-2 ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>
                 <li>• Restrict or object to processing</li>
                 <li>• Data portability</li>
                 <li>• Withdraw consent where processing is based on consent</li>
@@ -2294,11 +2294,11 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 7: International Data Transfers */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">7. International Data Transfers</h3>
-          <p className="text-gray-700 mb-3">Data may be transferred to and processed in countries outside your residence. We ensure appropriate safeguards through:</p>
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <ul className="space-y-2 text-yellow-800">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>7. International Data Transfers</h3>
+          <p className={`mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Data may be transferred to and processed in countries outside your residence. We ensure appropriate safeguards through:</p>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-yellow-900/30 border-yellow-700' : 'bg-yellow-50 border-yellow-200'}`}>
+            <ul className={`space-y-2 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
               <li>• Standard Contractual Clauses</li>
               <li>• Privacy Shield certification (where applicable)</li>
               <li>• Binding corporate rules</li>
@@ -2307,39 +2307,39 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 8: Children's Privacy */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">8. Children's Privacy</h3>
-          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-            <p className="text-red-800">Our services are not directed to individuals under 16. We do not knowingly collect personal information from children under 16.</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>8. Children's Privacy</h3>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-200'}`}>
+            <p className={`${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>Our services are not directed to individuals under 16. We do not knowingly collect personal information from children under 16.</p>
           </div>
         </div>
 
         {/* Section 9: Changes to Policy */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">9. Changes to This Policy</h3>
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <p className="text-blue-800">We may update this policy and will notify you of material changes via email or through our services.</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>9. Changes to This Policy</h3>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+            <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>We may update this policy and will notify you of material changes via email or through our services.</p>
           </div>
         </div>
 
         {/* Section 10: Contact Us */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">10. Contact Us</h3>
-          <p className="text-gray-700 mb-4">For privacy-related questions or to exercise your rights, contact us at:</p>
-          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>10. Contact Us</h3>
+          <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>For privacy-related questions or to exercise your rights, contact us at:</p>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-gradient-to-r from-indigo-900/30 to-blue-900/30 border-indigo-700' : 'bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-200'}`}>
             <div className="space-y-2">
-              <p className="text-indigo-800">
-                <strong>Email:</strong> <a href="mailto:Help@dubdproducts.com" className="text-indigo-600 hover:text-indigo-800 underline">Help@dubdproducts.com</a>
+              <p className={`${isDarkMode ? 'text-indigo-300' : 'text-indigo-800'}`}>
+                <strong>Email:</strong> <a href="mailto:Help@dubdproducts.com" className={`underline ${isDarkMode ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-800'}`}>Help@dubdproducts.com</a>
               </p>
-              <p className="text-indigo-800">
+              <p className={`${isDarkMode ? 'text-indigo-300' : 'text-indigo-800'}`}>
                 <strong>Address:</strong> Colorado Springs, CO, USA
               </p>
-              <p className="text-indigo-800">
+              <p className={`${isDarkMode ? 'text-indigo-300' : 'text-indigo-800'}`}>
                 <strong>AI Support Portal:</strong> <a 
                   href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-indigo-600 hover:text-indigo-800 underline"
+                  className={`underline ${isDarkMode ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-800'}`}
                 >
                   Support Genie Help Center
                 </a>
@@ -2354,27 +2354,27 @@ const ResourceDocumentationCenter = () => {
   // Terms of Service Content
   const TermsOfServiceContent = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200">
-        <h2 className="text-3xl font-bold text-purple-800 mb-4">📋 Terms of Service for Market Genie</h2>
-        <p className="text-purple-700 mb-2"><strong>Last Updated:</strong> November 5, 2025</p>
-        <p className="text-purple-700">These Terms of Service govern your use of Market Genie services. Please read them carefully.</p>
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border-purple-700' : 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200'}`}>
+        <h2 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-purple-300' : 'text-purple-800'}`}>📋 Terms of Service for Market Genie</h2>
+        <p className={`mb-2 ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}><strong>Last Updated:</strong> November 5, 2025</p>
+        <p className={`${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>These Terms of Service govern your use of Market Genie services. Please read them carefully.</p>
       </div>
 
       <div className="grid gap-6">
         {/* Section 1: Agreement to Terms */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">1. Agreement to Terms</h3>
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <p className="text-blue-800">By accessing or using Market Genie, you agree to be bound by these Terms. If you disagree with any part, you may not access our services.</p>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>1. Agreement to Terms</h3>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+            <p className={`${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>By accessing or using Market Genie, you agree to be bound by these Terms. If you disagree with any part, you may not access our services.</p>
           </div>
         </div>
 
         {/* Section 2: Eligibility */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">2. Eligibility</h3>
-          <p className="text-gray-700 mb-3">You must be:</p>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <ul className="space-y-2 text-gray-700">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>2. Eligibility</h3>
+          <p className={`mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>You must be:</p>
+          <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <ul className={`space-y-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <li>• At least 18 years old</li>
               <li>• Able to form a binding contract</li>
               <li>• Not barred from receiving services under applicable laws</li>
@@ -2383,10 +2383,10 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 3: Account Registration */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">3. Account Registration</h3>
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <ul className="space-y-2 text-yellow-800">
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>3. Account Registration</h3>
+          <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-yellow-900/30 border-yellow-700' : 'bg-yellow-50 border-yellow-200'}`}>
+            <ul className={`space-y-2 ${isDarkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
               <li>• You must provide accurate and complete information</li>
               <li>• You are responsible for maintaining account security</li>
               <li>• You are responsible for all activities under your account</li>
@@ -2396,8 +2396,8 @@ const ResourceDocumentationCenter = () => {
         </div>
 
         {/* Section 4: Services Description */}
-        <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">4. Services Description</h3>
+        <div className={`rounded-lg p-6 shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>4. Services Description</h3>
           <p className="text-gray-700 mb-3">Market Genie provides AI-powered marketing automation including:</p>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">

@@ -151,11 +151,13 @@ export function TenantProvider({ children }) {
               return await attemptLoad();
             } else {
               console.error('❌ Max retries reached for tenant loading');
-              toast.error('Connection issues detected. Please refresh the page to try again.', {
-                duration: 8000
+              toast.error('Connection issues detected. Refreshing in 3 seconds...', {
+                duration: 3000
               });
-              // Force loading to false to prevent infinite loading
-              setLoading(false);
+              // Auto-refresh after 3 seconds
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
               return;
             }
           }

@@ -79,6 +79,13 @@ function ProtectedRoute({ children }) {
   
   // Show loading while auth or tenant is loading
   if (loading || tenantLoading) {
+    // Simple auto-refresh after 3 seconds of workspace loading
+    if (tenantLoading) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-light)]">
         <div className="genie-enter">

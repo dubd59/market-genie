@@ -2684,7 +2684,13 @@ END:VCALENDAR`;
   return (
     <GenieProvider contacts={contacts}>
       <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
-        <Sidebar activeSection={activeSection} onSelect={setSecureActiveSection} />
+        <Sidebar 
+          activeSection={activeSection} 
+          onSelect={setSecureActiveSection}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+          onLogout={async () => await logout()}
+        />
         
         {/* Main Content Area - Dynamic margin responds to sidebar collapse */}
         <div className="min-h-screen transition-all duration-300 ease-in-out" style={{marginLeft: 'var(--sidebar-width, 240px)'}}>
@@ -2715,15 +2721,7 @@ END:VCALENDAR`;
               )}
             </div>
             <div className="flex items-center gap-4">
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'} hover:bg-opacity-80 transition-colors`}
-              >
-                {isDarkMode ? '☀️' : '🌙'}
-              </button>
-              
-              {/* Account Menu */}
+              {/* Settings Menu */}
               <div className="relative">
                 <button
                   onClick={() => setShowAccountMenu(!showAccountMenu)}
@@ -2739,49 +2737,38 @@ END:VCALENDAR`;
                         onClick={() => {setSecureActiveSection('Account Settings'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Account Settings
+                        ⚙️ Account Settings
                       </button>
                       <button 
                         onClick={() => {setSecureActiveSection('Profile'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Profile
+                        👤 Profile
                       </button>
                       <button 
                         onClick={() => {setSecureActiveSection('Billing'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Billing
+                        💳 Billing
                       </button>
-                      <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                       {/* Admin Panel - FOUNDER ONLY ACCESS */}
                       {user?.email === 'dubdproducts@gmail.com' && (
                         <>
+                          <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                           <button 
                             onClick={() => {setSecureActiveSection('Admin Panel'); setShowAccountMenu(false)}}
                             className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
                           >
                             🛡️ Admin Panel
                           </button>
-                          <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+                          <button 
+                            onClick={() => {setSecureActiveSection('Emergency Migration'); setShowAccountMenu(false)}}
+                            className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-purple-400 hover:bg-gray-700' : 'text-purple-600 hover:bg-gray-100'}`}
+                          >
+                            🚚 Emergency Migration
+                          </button>
                         </>
                       )}
-                      {/* Emergency Migration - Quick Access */}
-                      <button 
-                        onClick={() => {setSecureActiveSection('Emergency Migration'); setShowAccountMenu(false)}}
-                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-purple-400 hover:bg-gray-700' : 'text-purple-600 hover:bg-gray-100'}`}
-                      >
-                        🚚 Migrate Leads (Emergency)
-                      </button>
-                      <button 
-                        onClick={async () => {
-                          await logout()
-                          setShowAccountMenu(false)
-                        }}
-                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-100'}`}
-                      >
-                        Sign Out
-                      </button>
                     </div>
                   </div>
                 )}

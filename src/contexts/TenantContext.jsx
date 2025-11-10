@@ -114,6 +114,38 @@ export function TenantProvider({ children }) {
           setTimeout(() => reject(new Error('Tenant loading timeout')), loadTimeout)
         );
         
+        // 🎯 ADMIN BYPASS: Special handling for founder account
+        if (user.email === 'dubdproducts@gmail.com' && jwtTenantId === 'founder-tenant') {
+          console.log('👑 Admin account detected - creating founder tenant');
+          const founderTenant = {
+            id: 'founder-tenant',
+            name: 'Market Genie - Admin Account',
+            role: 'founder',
+            ownerId: user.uid,
+            ownerEmail: user.email,
+            isFounderAccount: true,
+            isMasterTenant: true,
+            settings: {
+              timezone: 'America/New_York',
+              currency: 'USD',
+              features: { allFeatures: true, adminPanel: true }
+            },
+            subscription: {
+              plan: 'founder',
+              status: 'lifetime',
+              features: ['all']
+            },
+            permissions: { superAdmin: true },
+            initialized: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          console.log('✅ Founder tenant created:', founderTenant);
+          setTenant(founderTenant);
+          setLoading(false);
+          return;
+        }
+
         // Use JWT tenant ID if available, otherwise fall back to user-based tenant
         const loadPromise = jwtTenantId 
           ? TenantService.getTenantById(jwtTenantId)

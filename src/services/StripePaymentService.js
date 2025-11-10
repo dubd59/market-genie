@@ -42,7 +42,7 @@ class StripePaymentService {
     this.storePaymentContext(planType, userContext);
     
     // Create success URL with payment completion parameters - LIVE FIREBASE URLs
-    const liveBaseUrl = 'https://market-genie-f2d41.web.app';
+    const liveBaseUrl = 'https://marketgenie.tech';
     let successUrl, cancelUrl;
     
     // Route to appropriate signup page based on plan type

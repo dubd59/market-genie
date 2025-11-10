@@ -53,7 +53,35 @@ class CORSBypass {
   async loadTenantFallback(userId, email) {
     console.log('🚨 Using CORS fallback for tenant loading');
     
-    // Return a basic tenant structure with founder privileges
+    // Special handling for admin account
+    if (email === 'dubdproducts@gmail.com') {
+      console.log('👑 Admin account detected - using founder tenant fallback');
+      return {
+        id: 'founder-tenant',
+        ownerId: userId,
+        ownerEmail: email,
+        name: 'Market Genie - Admin Account (Offline)',
+        role: 'founder',
+        isFounderAccount: true,
+        isMasterTenant: true,
+        plan: 'founder',
+        subscription: {
+          plan: 'founder',
+          status: 'lifetime',
+          features: ['all']
+        },
+        permissions: { superAdmin: true },
+        createdAt: new Date(),
+        isOfflineMode: true,
+        settings: {
+          whiteLabel: true,
+          multiTenant: true,
+          features: { allFeatures: true, adminPanel: true }
+        }
+      };
+    }
+    
+    // Return a basic tenant structure for regular users
     return {
       id: `offline-${userId}`,
       ownerId: userId,

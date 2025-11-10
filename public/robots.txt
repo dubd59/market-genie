@@ -1,4 +1,28 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://your-domain.com/sitemap.xml
+# Allow social media crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# SEO-optimized robots.txt for Market Genie
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /temp/
+Disallow: /test/
+
+# Allow important pages
+Allow: /
+Allow: /pricing
+Allow: /features
+Allow: /about
+Allow: /contact
+
+Sitemap: https://marketgenie.tech/sitemap.xml

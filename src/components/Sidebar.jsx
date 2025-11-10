@@ -12,7 +12,8 @@ import {
   SparklesIcon,
   KeyIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 
 const sections = [
@@ -26,7 +27,7 @@ const sections = [
   { name: 'White-Label SaaS', icon: BuildingStorefrontIcon }
 ];
 
-export default function Sidebar({ activeSection, onSelect }) {
+export default function Sidebar({ activeSection, onSelect, isDarkMode, toggleDarkMode, onLogout }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleSidebar = () => {
@@ -54,6 +55,7 @@ export default function Sidebar({ activeSection, onSelect }) {
         border-r border-gray-700 
         shadow-xl
         transition-all duration-300 ease-in-out
+        flex flex-col
       `}>
         {/* Sidebar Header with Hamburger */}
         <div className="p-4 border-b border-gray-700 flex items-center justify-between">
@@ -79,7 +81,7 @@ export default function Sidebar({ activeSection, onSelect }) {
         </div>
         
         {/* Navigation */}
-        <nav className="p-4 h-full overflow-y-auto pb-20">
+        <nav className="p-4 flex-1 overflow-y-auto">
           <ul className="space-y-2">
             {sections.map(section => {
               const Icon = section.icon;
@@ -106,6 +108,39 @@ export default function Sidebar({ activeSection, onSelect }) {
             })}
           </ul>
         </nav>
+
+        {/* Bottom Controls */}
+        <div className="p-4 border-t border-gray-700 mt-auto">
+          <div className="space-y-2">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-800 text-gray-300 hover:text-white group"
+              title={isCollapsed ? (isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode') : ''}
+            >
+              <span className="w-5 h-5 flex-shrink-0 text-lg group-hover:text-teal-400">
+                {isDarkMode ? '☀️' : '🌙'}
+              </span>
+              {!isCollapsed && (
+                <span className="font-medium group-hover:text-white">
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </span>
+              )}
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 hover:bg-red-800 text-gray-300 hover:text-white group"
+              title={isCollapsed ? 'Logout' : ''}
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5 flex-shrink-0 text-gray-400 group-hover:text-red-400" />
+              {!isCollapsed && (
+                <span className="font-medium group-hover:text-white">Logout</span>
+              )}
+            </button>
+          </div>
+        </div>
       </aside>
     </>
   );

@@ -290,7 +290,7 @@ export class UnsubscribeService {
         </p>
         
         <p style="margin: 5px 0; font-size: 10px; color: #d1d5db;">
-          Powered by <a href="https://market-genie-f2d41.web.app" style="color: #14b8a6; text-decoration: none;">MarketGenie</a> - AI Marketing Platform
+          Powered by <a href="https://marketgenie.tech" style="color: #14b8a6; text-decoration: none;">MarketGenie</a> - AI Marketing Platform
         </p>
       </div>
     `;

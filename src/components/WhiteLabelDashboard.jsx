@@ -876,7 +876,7 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
         
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
+          <h1 className="text-4xl font-bold mb-4" style={{ color: '#38beba' }}>
             WhiteLabel SaaS Management
           </h1>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Build your branded SaaS empire with MarketGenie's WhiteLabel program</p>
@@ -932,41 +932,41 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
             
             {/* Partner Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white shadow-lg rounded-xl p-6 text-center">
+              <div className={`shadow-lg rounded-xl p-6 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
                 <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-gray-900">{partnerData?.metrics?.totalCustomers || 0}</div>
-                <div className="text-gray-500">Total Customers</div>
+                <div className={`text-2xl font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{partnerData?.metrics?.totalCustomers || 0}</div>
+                <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Customers</div>
               </div>
               
-              <div className="bg-white shadow-lg rounded-xl p-6 text-center">
+              <div className={`shadow-lg rounded-xl p-6 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
                 <div className="text-3xl mb-2">💰</div>
                 <div className="text-2xl font-bold text-green-600">${partnerData?.metrics?.monthlyRevenue?.toFixed(2) || '0.00'}</div>
-                <div className="text-gray-500">Monthly Revenue</div>
+                <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Monthly Revenue</div>
               </div>
               
-              <div className="bg-white shadow-lg rounded-xl p-6 text-center">
+              <div className={`shadow-lg rounded-xl p-6 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
                 <div className="text-3xl mb-2">🏦</div>
                 <div className="text-2xl font-bold text-blue-600">${(partnerData?.metrics?.monthlyRevenue * 0.85)?.toFixed(2) || '0.00'}</div>
-                <div className="text-gray-500">Your Share (85%)</div>
+                <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your Share (85%)</div>
               </div>
               
-              <div className="bg-white shadow-lg rounded-xl p-6 text-center">
+              <div className={`shadow-lg rounded-xl p-6 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
                 <div className="text-3xl mb-2">📊</div>
                 <div className="text-2xl font-bold text-purple-600">${partnerData?.metrics?.royaltyOwed?.toFixed(2) || '0.00'}</div>
-                <div className="text-gray-500">Royalty Due (15%)</div>
+                <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Royalty Due (15%)</div>
               </div>
             </div>
 
             {/* Plan Status - Show current plan instead of upgrade options for White Label users */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-lg p-6">
+            <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700' : 'bg-gradient-to-r from-green-50 to-emerald-50'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">🎉 Active White Label License</h3>
-                  <p className="text-gray-600">You have full access to all White Label features and revenue opportunities</p>
+                  <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>🎉 Active White Label License</h3>
+                  <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>You have full access to all White Label features and revenue opportunities</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600 mb-1">LIFETIME</div>
-                  <div className="text-sm text-gray-500">+ White Label Rights</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>+ White Label Rights</div>
                 </div>
               </div>
             </div>
@@ -974,9 +974,9 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
             {/* Partner Controls */}
             <div className="grid md:grid-cols-2 gap-8">
               {/* Partner Sales Center - Expanded */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">💼 Partner Sales Center</h3>
-                <p className="text-gray-600 mb-6">Create custom pricing and signup links for your customers</p>
+              <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
+                <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>💼 Partner Sales Center</h3>
+                <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Create custom pricing and signup links for your customers</p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <button 
                     onClick={handleGenerateSignupLinks}
@@ -1000,19 +1000,19 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
               </div>
 
               {/* Quick Stats Summary */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Quick Overview</h3>
+              <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
+                <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>📊 Quick Overview</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                    <span className="text-gray-700">Total Customers</span>
+                  <div className={`flex justify-between items-center p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total Customers</span>
                     <span className="font-bold text-blue-600">{partnerData?.metrics?.totalCustomers || 0}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span className="text-gray-700">Monthly Revenue</span>
+                  <div className={`flex justify-between items-center p-3 rounded-lg ${isDarkMode ? 'bg-green-900/30 border border-green-700' : 'bg-green-50'}`}>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Monthly Revenue</span>
                     <span className="font-bold text-green-600">${partnerData?.metrics?.monthlyRevenue?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                    <span className="text-gray-700">Your Share (85%)</span>
+                  <div className={`flex justify-between items-center p-3 rounded-lg ${isDarkMode ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-50'}`}>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Your Share (85%)</span>
                     <span className="font-bold text-purple-600">${((partnerData?.metrics?.monthlyRevenue || 0) * 0.85).toFixed(2)}</span>
                   </div>
                 </div>
@@ -1020,37 +1020,37 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
             </div>
 
             {/* Marketing Resources */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Partner Marketing Center</h3>
+            <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
+              <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>📈 Partner Marketing Center</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-semibold text-gray-700 mb-3">🎯 Sales Materials</h4>
+                  <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>🎯 Sales Materials</h4>
                   <div className="space-y-2">
                     <button 
                       onClick={downloadSalesDeck}
-                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                      className={`w-full text-left p-3 rounded-lg transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-50 hover:bg-gray-100'}`}
                     >
                       📄 Download Sales Deck
                     </button>
                     <button 
                       onClick={downloadMarketingGraphics}
-                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                      className={`w-full text-left p-3 rounded-lg transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-50 hover:bg-gray-100'}`}
                     >
                       🎨 Marketing Graphics
                     </button>
                     <button 
                       onClick={downloadEmailTemplates}
-                      className="w-full text-left bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-all"
+                      className={`w-full text-left p-3 rounded-lg transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-50 hover:bg-gray-100'}`}
                     >
                       📧 Email Templates
                     </button>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-700 mb-3">🔗 Referral Tools</h4>
+                  <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>🔗 Referral Tools</h4>
                   <div className="space-y-2">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <div className="text-sm text-gray-600">Your Partner Code:</div>
+                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50'}`}>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Your Partner Code:</div>
                       <div className="font-mono text-blue-600 font-bold">WL_{partnerData?.partnerId?.slice(-8) || 'XXXXXXXX'}</div>
                     </div>
                     <button 
@@ -1065,17 +1065,17 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
             </div>
 
             {/* Revenue Timeline */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">💳 Revenue & Payments</h3>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
+              <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>💳 Revenue & Payments</h3>
+              <div className={`border rounded-lg p-4 mb-4 ${isDarkMode ? 'bg-green-900/30 border-green-700' : 'bg-green-50 border-green-200'}`}>
                 <div className="flex justify-between items-center">
-                  <span className="text-green-800">Next royalty payment due:</span>
+                  <span className={`${isDarkMode ? 'text-green-200' : 'text-green-800'}`}>Next royalty payment due:</span>
                   <span className="font-bold text-green-600">
                     ${partnerData?.metrics?.royaltyOwed?.toFixed(2) || '0.00'} on {partnerData?.metrics?.nextPaymentDate?.toLocaleDateString() || 'TBD'}
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Royalty payments are automatically deducted from your Stripe account monthly via Stripe Connect.
               </p>
             </div>
@@ -1085,13 +1085,13 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
         {/* Application Form Modal */}
         {showApplicationForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white'}`}>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">WhiteLabel Partnership Application</h2>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>WhiteLabel Partnership Application</h2>
                   <button 
                     onClick={() => setShowApplicationForm(false)}
-                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                    className={`text-2xl ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     ×
                   </button>

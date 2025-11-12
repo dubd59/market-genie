@@ -194,6 +194,38 @@ function SophisticatedDashboard() {
     }
   }, [tenant]);
 
+  // 🚀 NEW: Listen for emergency lead sync completions and trigger aggressive refresh
+  useEffect(() => {
+    const handleForceLoadLeads = async (event) => {
+      console.log('🔥 EMERGENCY SYNC COMPLETED: Triggering aggressive refresh sequence...', event.detail);
+      
+      // Immediate refresh
+      await loadLeadData();
+      
+      // Secondary refresh after 1 second
+      setTimeout(async () => {
+        console.log('🔄 Secondary refresh (1s delay)...');
+        await loadLeadData();
+      }, 1000);
+      
+      // Final refresh after 3 seconds to catch any Firebase lag
+      setTimeout(async () => {
+        console.log('🔄 Final refresh (3s delay)...');
+        await loadLeadData();
+      }, 3000);
+      
+      if (event.detail?.savedCount > 0) {
+        toast.success(`🚀 ${event.detail.savedCount} leads now visible in Recent Leads!`);
+      }
+    };
+
+    window.addEventListener('forceLoadLeadsFromDatabase', handleForceLoadLeads);
+    
+    return () => {
+      window.removeEventListener('forceLoadLeadsFromDatabase', handleForceLoadLeads);
+    };
+  }, [tenant]);
+
   // Connection Health State
   const [connectionHealthy, setConnectionHealthy] = useState(true)
   const [lastHealthCheck, setLastHealthCheck] = useState(Date.now())
@@ -1487,7 +1519,24 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           if (result.success && result.synced > 0) {
             console.log(`✅ Fast sync completed: ${result.synced} leads moved to database`)
             setEmergencySyncStatus({ syncing: false, count: 0 })
-            await loadLeadData() // Refresh leads
+            
+            // 🔥 AGGRESSIVE REFRESH: Multiple refresh attempts to ensure leads appear
+            console.log('🔄 Starting aggressive refresh sequence...')
+            await loadLeadData() // Immediate refresh
+            
+            // Second refresh after short delay
+            setTimeout(async () => {
+              console.log('🔄 Secondary refresh (1s delay)...')
+              await loadLeadData()
+            }, 1000)
+            
+            // Third refresh after longer delay to catch any Firebase lag
+            setTimeout(async () => {
+              console.log('🔄 Final refresh (3s delay)...')
+              await loadLeadData()
+            }, 3000)
+            
+            toast.success(`✅ ${result.synced} emergency leads synced and refreshed!`)
           }
         }
       }
@@ -2029,6 +2078,34 @@ Enter number (1-4):`);
       loadLeadData()
     }
   }, [tenant, activeLeadTab])
+
+  // 🚀 NEW: Auto-refresh Recent Leads when tab is active to catch emergency sync completions
+  React.useEffect(() => {
+    let refreshInterval;
+    
+    if (tenant?.id && activeLeadTab === 'recent') {
+      console.log('🔄 Starting auto-refresh for Recent Leads tab (every 5 seconds)...');
+      
+      // Refresh every 5 seconds when Recent Leads tab is active
+      refreshInterval = setInterval(async () => {
+        const emergencyStorage = window.emergencyLeadStorage;
+        const pendingCount = emergencyStorage ? emergencyStorage.getEmergencyLeadCount() : 0;
+        
+        if (pendingCount > 0) {
+          console.log(`⚡ Auto-refresh: ${pendingCount} emergency leads pending sync...`);
+        }
+        
+        await loadLeadData(); // Refresh to show newly synced leads
+      }, 5000);
+    }
+
+    return () => {
+      if (refreshInterval) {
+        console.log('🛑 Stopping auto-refresh for Recent Leads tab');
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [tenant, activeLeadTab]);
 
   // URL synchronization - update section when URL changes
   React.useEffect(() => {

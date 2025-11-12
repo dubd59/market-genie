@@ -7,6 +7,9 @@ import { isFeatureEnabled } from '../services/planLimits';
 import stripePaymentService from '../services/StripePaymentService';
 import WhiteLabelFunnelBuilder from './WhiteLabelFunnelBuilder';
 
+// FOUNDER ACCESS: dubdproducts@gmail.com always has full WhiteLabel access
+// regardless of tenant plan or other restrictions
+
 const WhiteLabelDashboard = ({ isDarkMode = false }) => {
   const { tenant } = useTenant();
   const { user } = useAuth();
@@ -42,12 +45,19 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
     return isDarkMode ? dark : lightClasses
   }
 
-  // Check if user has WhiteLabel access (Lifetime or Founder only)
-  const hasWhiteLabelAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
+  // Check if user has WhiteLabel access (Lifetime, Founder, or Admin bypass)
+  const isFounderUser = user?.email === 'dubdproducts@gmail.com';
+  const isFounderPlan = tenant?.plan === 'founder';
+  const hasFeatureAccess = isFeatureEnabled(tenant?.plan || 'free', 'whiteLabel');
+  const hasWhiteLabelAccess = isFounderUser || isFounderPlan || hasFeatureAccess;
   
   // Debug logging
   console.log('🔍 WhiteLabel Access Check:', {
+    userEmail: user?.email,
+    isFounderUser,
     tenantPlan: tenant?.plan,
+    isFounderPlan,
+    hasFeatureAccess,
     hasWhiteLabelAccess,
     tenantId: tenant?.id,
     userUid: user?.uid,
@@ -57,7 +67,7 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
   // Load partner data on component mount
   useEffect(() => {
     const loadPartnerData = async () => {
-      if (!user?.uid || !hasWhiteLabelAccess) {
+      if (!user?.uid || (!hasWhiteLabelAccess && user?.email !== 'dubdproducts@gmail.com')) {
         setIsLoading(false);
         return;
       }
@@ -76,19 +86,19 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
           
           // Load partner metrics
           await loadPartnerMetrics(user.uid);
-        } else if (tenant?.hasWhiteLabel || tenant?.plan === 'lifetime_with_whitelabel') {
+        } else if (tenant?.hasWhiteLabel || tenant?.plan === 'lifetime_with_whitelabel' || user?.email === 'dubdproducts@gmail.com' || tenant?.plan === 'founder') {
           // Auto-create partner record if tenant has White Label but no partner record exists
-          console.log('🔧 Auto-creating missing partner record for White Label tenant...');
-          console.log('🔍 Tenant data:', { hasWhiteLabel: tenant.hasWhiteLabel, plan: tenant.plan });
+          console.log('🔧 Auto-creating missing partner record for White Label tenant or founder...');
+          console.log('🔍 Tenant data:', { hasWhiteLabel: tenant.hasWhiteLabel, plan: tenant.plan, isFounder: user?.email === 'dubdproducts@gmail.com' });
           
           const partnerData = {
             userId: user.uid,
             tenantId: tenant.id,
             contactEmail: user.email,
-            companyName: tenant.name || 'White Label Partner',
+            companyName: user?.email === 'dubdproducts@gmail.com' ? 'Market Genie Founder' : (tenant.name || 'White Label Partner'),
             status: 'active',
             activatedAt: new Date(),
-            licenseType: 'whiteLabel',
+            licenseType: user?.email === 'dubdproducts@gmail.com' ? 'founder' : 'whiteLabel',
             revenueShare: 0.85,
             nextPaymentDate: null,
             customerCount: 0,
@@ -814,8 +824,8 @@ const WhiteLabelDashboard = ({ isDarkMode = false }) => {
     );
   }
 
-  // Access denied for non-lifetime/founder users
-  if (!hasWhiteLabelAccess) {
+  // Access denied for non-lifetime/founder users - but ALWAYS allow founder email
+  if (!hasWhiteLabelAccess && user?.email !== 'dubdproducts@gmail.com') {
     return (
       <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <div className="max-w-4xl mx-auto">

@@ -201,6 +201,7 @@ function SophisticatedDashboard() {
   // Lead Generation State
   const [leads, setLeads] = useState([])
   const [leadStats, setLeadStats] = useState({})
+  const [emergencySyncStatus, setEmergencySyncStatus] = useState({ syncing: false, count: 0 })
   
   // Real Dashboard Metrics State
   const [dashboardMetrics, setDashboardMetrics] = useState({
@@ -1440,6 +1441,17 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
     
     try {
+      // 🚀 Check emergency storage status before loading
+      try {
+        const emergencyStorage = window.emergencyLeadStorage
+        if (emergencyStorage) {
+          const pendingCount = emergencyStorage.getEmergencyLeadCount()
+          setEmergencySyncStatus(prev => ({ ...prev, count: pendingCount }))
+        }
+      } catch (emergencyError) {
+        console.log('No emergency storage found:', emergencyError.message)
+      }
+      
       console.log('Fetching leads for tenant:', tenant.id)
       const [leadsResult, statsResult] = await Promise.all([
         LeadService.getLeads(tenant.id, 500),
@@ -1458,6 +1470,66 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
     } catch (error) {
       console.error('Error loading lead data:', error)
+    }
+  }
+
+  // 🚀 NEW: Emergency sync functions for Recent Leads tab
+  const triggerEmergencySync = async () => {
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        setEmergencySyncStatus({ syncing: pendingCount > 0, count: pendingCount })
+        
+        if (pendingCount > 0) {
+          console.log(`🚀 RECENT LEADS: Triggering fast sync for ${pendingCount} emergency leads...`)
+          const result = await emergencyStorage.triggerImmediateSync()
+          if (result.success && result.synced > 0) {
+            console.log(`✅ Fast sync completed: ${result.synced} leads moved to database`)
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+            await loadLeadData() // Refresh leads
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Emergency sync trigger failed:', error.message)
+      setEmergencySyncStatus({ syncing: false, count: 0 })
+    }
+  }
+
+  const handleForceSync = async () => {
+    setEmergencySyncStatus(prev => ({ ...prev, syncing: true }))
+    
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        if (pendingCount > 0) {
+          console.log(`🚀 FORCE SYNC: User requested manual sync of ${pendingCount} emergency leads`)
+          toast.loading(`Syncing ${pendingCount} emergency leads...`, { duration: 3000 })
+          
+          const result = await emergencyStorage.triggerImmediateSync()
+          
+          if (result.success) {
+            toast.success(`✅ Successfully synced ${result.synced} leads to database!`)
+            await loadLeadData() // Refresh the leads list
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+          } else {
+            toast.error('❌ Sync failed: ' + (result.error || 'Unknown error'))
+            setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+          }
+        } else {
+          toast.success('✅ No emergency leads to sync - all caught up!')
+          setEmergencySyncStatus({ syncing: false, count: 0 })
+        }
+      } else {
+        toast.error('Emergency storage not available')
+        setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+      }
+    } catch (error) {
+      console.error('Force sync error:', error)
+      toast.error('❌ Force sync failed: ' + error.message)
+      setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
     }
   }
 
@@ -1950,9 +2022,13 @@ Enter number (1-4):`);
   // Load lead data when tenant is available
   React.useEffect(() => {
     if (tenant?.id) {
+      // 🚀 Trigger emergency sync when Recent Leads tab is accessed
+      if (activeLeadTab === 'recent') {
+        triggerEmergencySync()
+      }
       loadLeadData()
     }
-  }, [tenant])
+  }, [tenant, activeLeadTab])
 
   // URL synchronization - update section when URL changes
   React.useEffect(() => {
@@ -3540,6 +3616,33 @@ END:VCALENDAR`;
                   <div className="text-center mb-8">
                     <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>👥 Recent Leads Management</h3>
                     <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Manage and organize all your leads in one place</p>
+                    
+                    {/* 🚀 Emergency Sync Status Indicator */}
+                    {emergencySyncStatus.syncing && (
+                      <div className="mt-4 flex items-center justify-center px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                        <span className="text-yellow-800 text-sm font-medium">
+                          🔄 Syncing {emergencySyncStatus.count} emergency leads to database...
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Emergency lead count and force sync button */}
+                    {emergencySyncStatus.count > 0 && !emergencySyncStatus.syncing && (
+                      <div className="mt-4 flex items-center justify-center">
+                        <div className="flex items-center space-x-4 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <span className="text-orange-800 text-sm font-medium">
+                            ⚠️ {emergencySyncStatus.count} leads waiting to sync to database
+                          </span>
+                          <button
+                            onClick={handleForceSync}
+                            className="px-3 py-1 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
+                          >
+                            🚀 Force Sync Now
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Filters/Search */}
@@ -3552,6 +3655,12 @@ END:VCALENDAR`;
                       <option>Event</option>
                     </select>
                     <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Filter</button>
+                    <button 
+                      onClick={() => loadLeadData()}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      🔄 Refresh
+                    </button>
                     <button 
                       onClick={handleRemoveDuplicates}
                       className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"

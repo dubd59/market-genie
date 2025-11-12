@@ -214,24 +214,121 @@ class EmergencyLeadStorage {
   }
 
   /**
+   * 🚀 NEW: Batch sync method to process leads in smaller chunks for better performance
+   */
+  async syncEmergencyLeadsBatch(batchSize = 5) {
+    const emergencyLeads = this.getEmergencyLeads().filter(lead => lead.needsFirebaseSync);
+    
+    if (emergencyLeads.length === 0) {
+      console.log('✅ No emergency leads to sync');
+      return [];
+    }
+
+    // Take only the first 'batchSize' leads for processing
+    const batchToProcess = emergencyLeads.slice(0, batchSize);
+    console.log(`🚀 BATCH SYNC: Processing ${batchToProcess.length} leads out of ${emergencyLeads.length} total`);
+
+    const results = [];
+    const allLeads = this.getEmergencyLeads(); // Get all leads for updating
+    
+    for (let i = 0; i < batchToProcess.length; i++) {
+      const lead = batchToProcess[i];
+      try {
+        // Remove emergency metadata before syncing
+        const cleanLead = { ...lead };
+        delete cleanLead.emergencyId;
+        delete cleanLead.emergencyTimestamp;
+        delete cleanLead.needsFirebaseSync;
+
+        // Try to save to Firebase database
+        const { createLead } = await import('../services/leadService.js');
+        
+        const correctTenantId = this.getCorrectTenantId();
+        
+        const firebaseResult = await createLead(cleanLead, { 
+          bulkMode: true,
+          forceDatabase: true,
+          tenantId: correctTenantId
+        });
+        
+        if (firebaseResult && firebaseResult.success) {
+          // Find and mark this lead as synced in the full leads array
+          const leadIndex = allLeads.findIndex(l => l.emergencyId === lead.emergencyId);
+          if (leadIndex !== -1) {
+            allLeads[leadIndex] = {
+              ...lead,
+              needsFirebaseSync: false,
+              firebaseSyncTimestamp: new Date().toISOString(),
+              firebaseId: firebaseResult.id,
+              savedToDatabase: true,
+              syncedSuccessfully: true
+            };
+          }
+          
+          results.push({ success: true, lead: lead.email, firebaseId: firebaseResult.id });
+          console.log(`✅ BATCH: Saved ${lead.email} to database (${i+1}/${batchToProcess.length})`);
+        } else {
+          throw new Error('Firebase save returned false/null');
+        }
+        
+        // 🚀 PERFORMANCE: Small delay between saves to avoid overwhelming Firebase
+        if (i < batchToProcess.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 250)); // 250ms between saves
+        }
+        
+      } catch (error) {
+        console.error(`❌ BATCH: Failed to sync ${lead.email}:`, error.message);
+        results.push({ success: false, lead: lead.email, error: error.message });
+      }
+    }
+
+    // Save the updated leads array back to localStorage
+    localStorage.setItem(this.storageKey, JSON.stringify(allLeads));
+    
+    const successCount = results.filter(r => r.success).length;
+    console.log(`🚀 BATCH COMPLETE: ${successCount}/${batchToProcess.length} leads saved to Firebase database`);
+    
+    return results;
+  }
+
+  /**
    * Start background sync that keeps trying until all leads are saved to database
    */
   startBackgroundDatabaseSync() {
     console.log('🔄 Starting background database sync for emergency leads...');
     
-    const syncInterval = setInterval(async () => {
+    // 🚀 PERFORMANCE FIX: Use adaptive timing - faster when we have leads, slower when empty
+    let currentSyncInterval = 15000; // Start with 15 seconds instead of 30
+    let consecutiveEmptyChecks = 0;
+    
+    const performSync = async () => {
       const pendingLeads = this.getEmergencyLeads().filter(lead => lead.needsFirebaseSync);
       
       if (pendingLeads.length === 0) {
-        console.log('✅ All emergency leads synced to database - stopping background sync');
-        clearInterval(syncInterval);
+        consecutiveEmptyChecks++;
+        
+        // 🚀 ADAPTIVE TIMING: If no leads for multiple checks, slow down the sync attempts
+        if (consecutiveEmptyChecks >= 3) {
+          console.log('✅ All emergency leads synced to database - stopping background sync');
+          clearInterval(this.syncInterval);
+          return;
+        }
+        
+        console.log(`⏳ No emergency leads to sync (check ${consecutiveEmptyChecks}/3)`);
         return;
       }
+      
+      // Reset consecutive empty checks when we have leads
+      consecutiveEmptyChecks = 0;
       
       console.log(`🔄 Background sync: Attempting to save ${pendingLeads.length} emergency leads to database...`);
       
       try {
-        const results = await this.syncEmergencyLeads();
+        // 🚀 BATCH PROCESSING: Limit concurrent saves to avoid overwhelming Firebase
+        const batchSize = Math.min(pendingLeads.length, 5); // Process max 5 leads at once
+        console.log(`📦 Processing batch of ${batchSize} leads out of ${pendingLeads.length} total`);
+        
+        const results = await this.syncEmergencyLeadsBatch(batchSize);
         const successCount = results.filter(r => r.success).length;
         
         if (successCount > 0) {
@@ -240,10 +337,10 @@ class EmergencyLeadStorage {
             window.toast.success(`✅ Saved ${successCount} emergency leads to database permanently!`);
           }
           
-          // � CRITICAL FIX: Clear synced leads from localStorage to prevent infinite loop
+          // 🛑 CRITICAL FIX: Clear synced leads from localStorage to prevent infinite loop
           this.clearSyncedLeads();
           
-          // �🔄 FORCE REFRESH of Recent Leads UI to show database leads
+          // 🔄 FORCE REFRESH of Recent Leads UI to show database leads
           console.log('🔄 Triggering Recent Leads refresh to load database leads...');
           
           // Dispatch custom event to force Recent Leads to reload from database
@@ -253,16 +350,75 @@ class EmergencyLeadStorage {
               savedCount: successCount 
             }
           }));
+          
+          // 🚀 PERFORMANCE: If we successfully saved leads, check again sooner
+          currentSyncInterval = 10000; // Speed up to 10 seconds when actively syncing
+        } else {
+          // 🚀 PERFORMANCE: If sync failed, slow down a bit to avoid hammering Firebase
+          currentSyncInterval = Math.min(currentSyncInterval + 5000, 45000); // Max 45 seconds
         }
         
       } catch (error) {
-        console.log('⏳ Background sync failed, will retry in 30 seconds:', error.message);
+        console.log(`⏳ Background sync failed, will retry in ${currentSyncInterval/1000} seconds:`, error.message);
+        
+        // 🚀 PERFORMANCE: Back off more aggressively on errors
+        currentSyncInterval = Math.min(currentSyncInterval * 1.5, 60000); // Max 60 seconds
       }
-    }, 30000); // Try every 30 seconds
+    };
     
-    // Store interval ID for cleanup
-    this.syncInterval = syncInterval;
-    return syncInterval;
+    // Initial sync attempt
+    performSync();
+    
+    // 🚀 PERFORMANCE: Use adaptive timing instead of fixed 30-second intervals  
+    this.syncInterval = setInterval(performSync, currentSyncInterval);
+    return this.syncInterval;
+  }
+
+  /**
+   * 🚀 NEW: Trigger immediate sync when user switches to Recent Leads tab
+   */
+  async triggerImmediateSync() {
+    const pendingCount = this.getEmergencyLeadCount();
+    if (pendingCount === 0) {
+      console.log('✅ No emergency leads to sync');
+      return { success: true, synced: 0, message: 'No leads to sync' };
+    }
+
+    console.log(`🚀 IMMEDIATE SYNC: User requested sync of ${pendingCount} emergency leads`);
+    
+    try {
+      // Use batch sync for better performance
+      const results = await this.syncEmergencyLeadsBatch(10); // Larger batch for manual sync
+      const successCount = results.filter(r => r.success).length;
+      
+      if (successCount > 0) {
+        this.clearSyncedLeads();
+        
+        // Force refresh Recent Leads UI
+        window.dispatchEvent(new CustomEvent('forceLoadLeadsFromDatabase', {
+          detail: { 
+            message: `Manual sync: ${successCount} leads saved to database`,
+            savedCount: successCount 
+          }
+        }));
+        
+        // Show success notification
+        if (window.toast) {
+          window.toast.success(`🚀 Fast sync: Saved ${successCount} leads to database!`);
+        }
+      }
+      
+      return { 
+        success: true, 
+        synced: successCount, 
+        failed: results.length - successCount,
+        message: `Synced ${successCount} out of ${results.length} leads` 
+      };
+      
+    } catch (error) {
+      console.error('❌ Immediate sync failed:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   /**
@@ -329,6 +485,13 @@ class EmergencyLeadStorage {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
       console.log('🛑 Stopped background database sync');
+    }
+    
+    // 🚀 SAFETY: Also clear any stuck intervals
+    if (this.syncIntervalId) {
+      clearInterval(this.syncIntervalId);
+      this.syncIntervalId = null;
+      console.log('🛑 Cleared backup sync interval');
     }
   }
 

@@ -585,6 +585,60 @@ const CRMPipeline = ({ isDarkMode = false }) => {
     reader.readAsText(file)
   }
 
+  // 🧹 NEW: Remove duplicate contacts based on email addresses
+  const removeContactDuplicates = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Create a map to track unique emails and keep the most recent contact
+      const emailMap = new Map()
+      const duplicateIds = []
+      
+      contacts.forEach(contact => {
+        const email = contact.email?.toLowerCase()
+        if (!email) return // Skip contacts without email
+        
+        if (emailMap.has(email)) {
+          // Compare dates to keep the most recent
+          const existing = emailMap.get(email)
+          const existingDate = new Date(existing.createdAt || existing.lastContact || 0)
+          const currentDate = new Date(contact.createdAt || contact.lastContact || 0)
+          
+          if (currentDate > existingDate) {
+            // Current contact is newer, mark existing as duplicate
+            duplicateIds.push(existing.id)
+            emailMap.set(email, contact)
+          } else {
+            // Existing contact is newer, mark current as duplicate
+            duplicateIds.push(contact.id)
+          }
+        } else {
+          emailMap.set(email, contact)
+        }
+      })
+      
+      if (duplicateIds.length === 0) {
+        toast.info('No duplicate contacts found!')
+        return
+      }
+      
+      // Remove duplicates from contacts array
+      const uniqueContacts = contacts.filter(contact => !duplicateIds.includes(contact.id))
+      console.log(`🧹 Removing ${duplicateIds.length} duplicate contacts...`)
+      
+      // Save the cleaned contacts list
+      await saveContacts(uniqueContacts)
+      
+      toast.success(`🧹 Removed ${duplicateIds.length} duplicate contacts based on email addresses!`)
+      
+    } catch (error) {
+      console.error('Error removing contact duplicates:', error)
+      toast.error('Failed to remove duplicates: ' + error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const importContacts = async () => {
     if (!csvFile) return
 
@@ -1019,6 +1073,13 @@ const CRMPipeline = ({ isDarkMode = false }) => {
                 🗑️ Delete Selected ({selectedContactIds.length})
               </button>
             )}
+            <button 
+              onClick={removeContactDuplicates}
+              disabled={isLoading}
+              className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              🧹 Remove Duplicates
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"

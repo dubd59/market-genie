@@ -340,10 +340,11 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           };
         }
         if (integration.id === 'google-calendar') {
+          const googleEmail = localStorage.getItem('google_user_email') || 'google.user@example.com';
           return {
             ...integration,
             status: calendarConnections.google ? 'connected' : 'disconnected',
-            account: calendarConnections.google ? 'google.user@example.com' : 'Not connected',
+            account: calendarConnections.google ? googleEmail : 'Not connected',
             lastSync: calendarConnections.google ? new Date().toLocaleString() : 'Never'
           };
         }
@@ -512,12 +513,39 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           toast.error(result?.error || 'Failed to connect Outlook Calendar');
         }
       } else if (integration.id === 'google-calendar') {
-        if (onCalendarConnect) {
-          await onCalendarConnect('google');
-          toast.success('Google Calendar connected successfully!');
+        const loadingToast = toast.loading('Connecting to Google Calendar...');
+        
+        let result = await CalendarService.showGoogleCalendarConnectionDialog();
+        console.log('🔗 Google Calendar service result:', result);
+        
+        if (result && result.success) {
+          if (result.cancelled) {
+            toast('Connection cancelled');
+            return;
+          }
+          
+          toast.success(result.message || 'Google Calendar connected successfully!');
+          
+          // Use parent component's connection handler if available
+          if (onCalendarConnect) {
+            console.log('🔗 Calling parent onCalendarConnect with "google"');
+            await onCalendarConnect('google');
+          } else {
+            console.log('🔗 No parent handler, using local update');
+            // Fallback to local update
+            updateIntegrationStatus('google-calendar', 'connected', {
+              email: result.email || 'google.user@example.com',
+              lastSync: new Date().toLocaleString()
+            });
+          }
         } else {
-          toast('Google Calendar integration coming soon!', { icon: 'ℹ️' });
+          console.log('🔗 Google Calendar connection failed or cancelled:', result);
+          if (!result?.cancelled) {
+            toast.error(result?.error || 'Failed to connect Google Calendar');
+          }
         }
+        
+        toast.dismiss(loadingToast);
       } else if (integration.id === 'calendly') {
         toast('Calendly integration coming soon!', { icon: 'ℹ️' });
       }
@@ -625,6 +653,12 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
         }
         
         if (integration.id === 'google-calendar' && onCalendarConnect) {
+          // Clear Google calendar data
+          localStorage.removeItem('google_calendar_token');
+          localStorage.removeItem('google_connected');
+          localStorage.removeItem('google_user_email');
+          localStorage.removeItem('google_connection_method');
+          
           // Disconnect google by setting it to false
           const newConnections = {
             google: false,

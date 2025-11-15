@@ -64,7 +64,7 @@ export function doc(db, collectionPath, docId, ...pathSegments) {
 
 /**
  * 🛡️ SECURE ADD DOCUMENT
- * Adds document with collection validation
+ * Adds document with collection validation - clean Firebase operation
  */
 export async function addDoc(collectionRef, data) {
   // Validate the collection reference
@@ -83,6 +83,7 @@ export async function addDoc(collectionRef, data) {
     _createdAt: new Date().toISOString()
   };
   
+  // Direct Firebase operation - let Firebase handle its own connections
   return firebaseAddDoc(collectionRef, secureData);
 }
 

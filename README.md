@@ -240,10 +240,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 **Support**
 
-- **Documentation**: [docs.marketgenie.ai](https://docs.marketgenie.ai)
+- **AI Support Portal (24/7)**: [Support Genie Help Center](https://supportgenie.help/customer?tenant=supportgenie-tenant)
+- **Email Support**: Help@dubdproducts.com
 - **Issues**: [GitHub Issues](https://github.com/yourusername/market-genie/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/market-genie/discussions)
-- **Email**: support@marketgenie.ai
 
 ---
 

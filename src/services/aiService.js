@@ -193,7 +193,7 @@ export class AIService {
 
   // Main function to generate email content with AI
   static async generateEmailContent(userId, campaignData, preferredProvider = null, tenantId = null, recipientEmail = null, businessInfo = {}, senderInfo = {}) {
-    const { name, type, targetAudience, subject, additionalPrompt } = campaignData;
+    const { name, type, targetAudience, subject, additionalPrompt, callToActionText, callToActionUrl } = campaignData;
     
     const prompt = `
 You are a PREMIUM email marketing copywriter who creates VISUALLY STUNNING, professionally formatted emails. 
@@ -205,6 +205,18 @@ Subject Line: ${subject}
 
 ${additionalPrompt ? `CRITICAL ADDITIONAL REQUIREMENTS (MUST FOLLOW):
 ${additionalPrompt}
+
+` : ''}${callToActionText && callToActionUrl ? `🎯 CALL-TO-ACTION REQUIREMENTS (MANDATORY):
+- Your email MUST end with a button-style link for: "${callToActionText}"
+- Create a final paragraph with compelling text leading to the button
+- The button link MUST be formatted exactly like this:
+  <p style="margin-bottom: 16px; margin-top: 20px; text-align: center;"><a href="${callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${callToActionText}</a></p>
+- Do NOT show the URL as text - only show "${callToActionText}" as the button text
+- Make the preceding paragraph compelling and action-oriented
+- Example format:
+  "Ready to transform your business? Take action now!"
+  
+  [BUTTON LINK HERE using the exact format above]
 
 ` : ''}VISUAL EXCELLENCE REQUIREMENTS (MANDATORY):
 1. Create a compelling story flow with proper narrative structure
@@ -229,20 +241,36 @@ CONTENT STRUCTURE REQUIREMENTS:
 2. Story/context paragraph with <strong>highlighted key points</strong>
 3. Benefits section with bullet points and bold highlights
 4. Social proof or urgency element with emphasis
-5. Clear call-to-action paragraph
-6. Closing with personality
+5. POWERFUL CALL-TO-ACTION as the ABSOLUTE FINAL paragraph - this MUST be the last content before email ends
+
+🚨 CRITICAL CTA PLACEMENT RULES (MANDATORY):
+- The call-to-action MUST be the very last paragraph of your main email body content
+- The CTA appears in the email body BEFORE any system-generated footer/signature
+- NO TEXT, NO CLOSING, NO "BEST REGARDS" after the CTA in your content
+- Use strong, action-oriented language like "Ready to get started?", "Don't miss out!", "Take action now!"
+- Make the CTA paragraph stand out with <strong>bold formatting</strong>
+- End your email content with the CTA paragraph - the system will add footer separately
+- STOP WRITING after the CTA - no additional sentences or closing statements
+
+EXAMPLE OF CORRECT ENDING:
+"...your key benefits here.
+
+<p style="margin-bottom: 16px;"><strong>Ready to transform your business? Let's make it happen today!</strong></p>"
+
+❌ WRONG: CTA followed by "Best regards, John" or any closing
+✅ CORRECT: CTA as final paragraph, then system adds footer
+
+ABSOLUTELY FORBIDDEN IN YOUR CONTENT:
+- Do NOT add signatures, names, or sign-offs after the CTA
+- Do NOT add "Best regards", "Sincerely", "Thanks", or any closing
+- Do NOT add unsubscribe links or footer content in your content
+- Do NOT add contact information in your content
+- The system automatically adds professional signature and footer below your content
 
 NEVER CREATE BUTTONS OR INVENT URLS - Focus on compelling copy with strategic formatting.
 EXCEPTION: If the user specifically provides a URL or link in their prompt, you MAY include it exactly as provided.
 
-SIGNATURE AND FOOTER REQUIREMENTS:
-- Do NOT include any signatures, contact information, or closing statements
-- Do NOT include unsubscribe links or footer content
-- End the email with the main content only
-- Do NOT add "Best regards", "Sincerely", names, or sign-offs
-- The system will automatically add professional signature and footer
-
-Write a professional email based on the campaign details above. Focus on clear, well-spaced content without adding any signatures, closings, buttons, links, or footer content unless specifically requested by the user.
+Write a professional email based on the campaign details above. Your content should end with a compelling call-to-action paragraph. Do NOT add any signatures, closings, "Best regards", names, or footer content after the CTA. The system will automatically add the professional footer and unsubscribe links below your content.
     `;
 
     const apiKeys = await this.getStoredAPIKeys(userId);
@@ -302,9 +330,11 @@ Write a professional email based on the campaign details above. Focus on clear, 
       .replace(/\n\s+/g, '\n')  // Remove leading whitespace on lines
       .trim();
 
-    // Add unsubscribe footer with business info (includes signature)
+    // Add clear visual separation before footer to preserve CTA prominence
     if (tenantId && recipientEmail) {
       const campaignId = `campaign_${Date.now()}`;
+      // Add visual break to separate main content (with CTA) from footer
+      generatedContent += `\n\n<div style="margin: 40px 0; border-top: 2px solid #e5e7eb; opacity: 0.3;"></div>\n`;
       const unsubscribeFooter = UnsubscribeService.generateUnsubscribeFooter(
         tenantId, 
         recipientEmail, 
@@ -313,7 +343,8 @@ Write a professional email based on the campaign details above. Focus on clear, 
       );
       generatedContent += unsubscribeFooter;
     } else if (Object.keys(senderInfo).length > 0) {
-      // Only add simple signature if no business footer
+      // Add visual break before signature
+      generatedContent += `\n\n<div style="margin: 40px 0; border-top: 2px solid #e5e7eb; opacity: 0.3;"></div>\n`;
       const signature = UnsubscribeService.generateEmailSignature(senderInfo);
       generatedContent += signature;
     }

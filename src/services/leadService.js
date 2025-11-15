@@ -1,5 +1,5 @@
 import { FirebaseAPI } from '../FirebaseAPI.js'
-import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc } from '../security/SecureFirebase.js'
+import { collection, addDoc, getDocs, query, where, orderBy, limit, doc, updateDoc, deleteDoc, setDoc } from '../security/SecureFirebase.js'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import IntegrationService from './integrationService.js'
@@ -32,13 +32,18 @@ class LeadService {
   }
 
   // Create a new lead (with duplicate checking)
-  async createLead(tenantId, leadData) {
+  async createLead(tenantId, leadData, options = {}) {
     try {
-      // Check if lead with this email already exists
-      const existingLead = await this.findLeadByEmail(tenantId, leadData.email)
-      if (existingLead) {
-        console.log(`Skipping duplicate lead: ${leadData.email}`)
-        return { success: false, error: 'Lead already exists', duplicate: true }
+      // Skip duplicate check for bulk operations
+      if (options.bulkMode || options.skipDuplicateCheck) {
+        console.log(`🚀 BULK MODE: Skipping all validation checks for ${leadData.email}`);
+      } else {
+        // Check for existing lead
+        const existingLead = await this.findLeadByEmail(tenantId, leadData.email);
+        if (existingLead) {
+          console.log(`Skipping duplicate lead: ${leadData.email}`)
+          return { success: false, error: 'Lead already exists', duplicate: true }
+        }
       }
 
       const enrichedLead = {
@@ -49,20 +54,72 @@ class LeadService {
         lastContact: null,
         score: leadData.score || Math.floor(Math.random() * 40) + 60,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        // Mark if this is an emergency lead being synced
+        ...(options.forceDatabase && { 
+          emergencySync: true,
+          emergencySyncTimestamp: new Date().toISOString() 
+        })
       }
 
       const leadsCollection = this.getLeadsCollection(tenantId)
-      const docRef = await addDoc(leadsCollection, enrichedLead)
       
-      if (docRef.id) {
-        await this.updateTenantUsage(tenantId, 'leads', 1)
-        return { success: true, data: { id: docRef.id, ...enrichedLead } }
+      // FORCE DATABASE PERSISTENCE - Multiple attempts if needed
+      let docRef;
+      let attempts = 0;
+      const maxAttempts = options.forceDatabase ? 5 : 1;
+      
+      while (attempts < maxAttempts) {
+        try {
+          docRef = await addDoc(leadsCollection, enrichedLead);
+          
+          // VERIFY the lead was actually saved to database
+          if (options.forceDatabase) {
+            const verifyDoc = await doc(db, 'MarketGenie_tenants', tenantId, 'leads', docRef.id);
+            console.log(`✅ VERIFIED DATABASE SAVE: ${leadData.email} with ID: ${docRef.id} (attempt ${attempts + 1})`);
+          } else {
+            console.log(`✅ Successfully saved ${leadData.email} with ID: ${docRef.id}`);
+          }
+          
+          break; // Success, exit retry loop
+          
+        } catch (saveError) {
+          attempts++;
+          console.error(`❌ Database save attempt ${attempts} failed for ${leadData.email}:`, saveError);
+          
+          if (attempts >= maxAttempts) {
+            throw saveError; // Re-throw after max attempts
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
       }
+      
+      // Update usage tracking (non-blocking)
+      this.updateTenantUsage(tenantId, 'leads', 1).catch(usageError => {
+        console.warn(`⚠️ Failed to update tenant usage: ${usageError.message}`);
+      });
+      
+      return { 
+        success: true, 
+        id: docRef.id,
+        data: { id: docRef.id, ...enrichedLead },
+        databaseVerified: options.forceDatabase || false
+      };
 
-      return { success: false, error: 'Failed to create lead' }
     } catch (error) {
-      console.error('Error creating lead:', error)
+      console.error(`❌ Failed to create lead for ${leadData.email}:`, error);
+      
+      // If this was a forced database save and it failed, provide specific error
+      if (options.forceDatabase) {
+        return { 
+          success: false, 
+          error: `Database persistence failed: ${error.message}`,
+          criticalFailure: true
+        };
+      }
+      
       return { success: false, error: error.message }
     }
   }
@@ -289,6 +346,59 @@ class LeadService {
             // Digital Product & Content Platforms
             'etsy.com', 'gumroad.com', 'selz.com', 'payhip.com', 'fastspring.com',
             'paddle.com', 'lemonsqueezy.com', 'selly.gg', 'gumlet.com', 'sellfy.com',
+            
+            // Construction & Home Services SMBs
+            'buildertrend.com', 'procore.com', 'contractorplus.com', 'jobber.com', 'servicetitan.com',
+            'housecallpro.com', 'fieldedge.com', 'successware.com', 'improveitusa.com', 'workiz.com',
+            'mhelpdesk.com', 'razorsync.com', 'workwave.com', 'servicefusion.com', 'localroofer.com',
+            'angi.com', 'thumbtack.com', 'homeadvisor.com', 'taskrabbit.com', 'fixr.com',
+            
+            // Healthcare & Medical SMBs
+            'practicesuite.com', 'advancedmd.com', 'athenahealth.com', 'drchrono.com', 'kareo.com',
+            'nextgen.com', 'eclinicalworks.com', 'greenway.com', 'allscripts.com', 'epic.com',
+            'cerner.com', 'meditech.com', 'chartlogic.com', 'practicemax.com', 'officepracticum.com',
+            'dentrix.com', 'eaglesoft.com', 'softdent.com', 'opendental.com', 'curve.com',
+            
+            // Legal Services SMBs
+            'clio.com', 'mycase.com', 'lawgro.com', 'filevine.com', 'smokeball.com',
+            'practicepoint.com', 'zola.com', 'litify.com', 'centerbase.com', 'tabs3.com',
+            'abacuslaw.com', 'needles.com', 'aderant.com', 'Thomson-reuters.com', 'lexisnexis.com',
+            
+            // Restaurant & Food Service SMBs
+            'toast.com', 'square.com', 'resy.com', 'opentable.com', 'yelp.com',
+            'grubhub.com', 'doordash.com', 'ubereats.com', 'postmates.com', 'seamless.com',
+            'menufy.com', 'chownow.com', 'slice.com', 'beyond.menu', 'ordernova.com',
+            'touchbistro.com', 'lightspeed.com', 'upserve.com', 'breadcrumb.com', 'revel.com',
+            
+            // Retail & E-commerce SMBs
+            'loyverse.com', 'vend.com', 'shopkeep.com', 'clover.com', 'lightspeed.com',
+            'shopify.com', 'bigcommerce.com', 'woocommerce.com', 'magento.com', 'prestashop.com',
+            'opencart.com', 'zen-cart.com', 'oscommerce.com', 'x-cart.com', 'cs-cart.com',
+            
+            // Manufacturing & Distribution SMBs
+            'fishbowlinventory.com', 'cin7.com', 'tradegecko.com', 'orderhive.com', 'katana.com',
+            'mrpeasy.com', 'infor.com', 'epicor.com', 'syspro.com', 'iqms.com',
+            'plex.com', 'globalturnover.com', 'e2-shop.com', 'deacom.com', 'priority-software.com',
+            
+            // Automotive Services SMBs
+            'shopmonkey.io', 'tekmetric.com', 'alldata.com', 'mitchellrepair.com', 'cccis.com',
+            'repairpal.com', 'autotrader.com', 'cars.com', 'carmax.com', 'cargurus.com',
+            'dealertrack.com', 'reynolds.com', 'cdk.com', 'autosoft.com', 'dealersocket.com',
+            
+            // Real Estate SMBs
+            'mls.com', 'realtor.com', 'zillow.com', 'redfin.com', 'compass.com',
+            'coldwellbanker.com', 'century21.com', 'remax.com', 'kw.com', 'sothebys.com',
+            'chime.me', 'dotloop.com', 'docusign.com', 'skyslope.com', 'propertibase.com',
+            
+            // Fitness & Wellness SMBs
+            'mindbodyonline.com', 'glofox.com', 'vagaro.com', 'zenplanner.com', 'clubready.com',
+            'myfitnesspal.com', 'trainerroad.com', 'strava.com', 'classpass.com', 'fitbit.com',
+            'myzone.com', 'polar.com', 'garmin.com', 'suunto.com', 'coros.com',
+            
+            // Professional Services SMBs
+            'quickbooks.com', 'xero.com', 'freshbooks.com', 'wave.com', 'zoho.com',
+            'sage.com', 'intuit.com', 'peachtree.com', 'kashoo.com', 'freeagent.com',
+            'billy.dk', 'harvest.com', 'toggl.com', 'clockify.me', 'rescuetime.com',
             
             // Email Marketing SMBs
             'convertkit.com', 'mailerlite.com', 'constant-contact.com', 'aweber.com', 'getresponse.com',
@@ -666,11 +776,11 @@ class LeadService {
   async searchDomainMultiProvider(tenantId, domain, limit = 5) {
     console.log(`🔍 Multi-provider search for domain: ${domain}`)
     
-    // Define available providers with connection status check
+    // Define available providers with connection status check (Prospeo first with direct API)
     const potentialProviders = [
-      { name: 'prospeo-io', backendName: 'prospeo', method: 'findEmailWithProvider' },
-      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' },
-      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' }
+      { name: 'prospeo-io', backendName: 'prospeo-io', method: 'searchDomainProspeo' },
+      { name: 'hunter-io', backendName: 'hunter-io', method: 'searchDomain' },
+      { name: 'voila-norbert', backendName: 'voilanorbert', method: 'findEmailWithProvider' }
     ]
     
     // Check which providers are actually connected and available
@@ -718,26 +828,33 @@ class LeadService {
           result = { success: false, error: 'VoilaNorbert requires specific person names, not domain searches' };
           continue;
         } else if (provider.name === 'prospeo-io') {
-          // Use Firebase proxy for Prospeo domain search - pass null names to trigger domain search
-          result = await IntegrationService.findEmailWithProvider(tenantId, provider.backendName, domain, null, null, domain)
-          if (result.success && result.data) {
-            // Handle both single contact and multiple contacts format
-            if (result.data.contacts) {
-              // Domain search returns multiple contacts
-              result.data = result.data.contacts
-            } else if (result.data.email) {
-              // Single email result - convert to array format
-              result.data = [result.data]
-            }
+          // Use direct Prospeo API (75 free credits available!)
+          result = await IntegrationService.searchDomainProspeo(tenantId, domain, limit)
+          if (result.success && result.data && result.data.contacts) {
+            // Prospeo returns contacts array in result.data.contacts
+            console.log(`🎯 Prospeo returned ${result.data.contacts.length} leads`)
+          } else if (result.error?.includes('insufficient credits')) {
+            console.log(`⚠️ ${provider.name} out of credits - skipping`)
+            continue
           }
         }
         
-        if (result && result.success && result.data && result.data.length > 0) {
-          console.log(`✅ ${provider.name} found ${result.data.length} contacts for ${domain}`)
+        // Handle different response structures
+        let contacts = [];
+        if (result && result.success && result.data) {
+          if (provider.name === 'prospeo-io' && result.data.contacts) {
+            contacts = result.data.contacts;
+          } else if (Array.isArray(result.data)) {
+            contacts = result.data;
+          }
+        }
+        
+        if (contacts.length > 0) {
+          console.log(`✅ ${provider.name} found ${contacts.length} contacts for ${domain}`)
           successfulProviders.push(provider.name)
           
           // Add provider info to each result
-          const enrichedResults = result.data.map(contact => ({
+          const enrichedResults = contacts.map(contact => ({
             ...contact,
             source: contact.source || provider.name,
             provider: provider.name
@@ -785,9 +902,9 @@ class LeadService {
     console.log(`🔍 Multi-provider person search: ${firstName} ${lastName} at ${domain}`)
     
     const providers = [
+      { name: 'prospeo-io', method: 'findEmailProspeo' },
       { name: 'hunter-io', method: 'findEmails' },
-      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' },
-      { name: 'rocketreach', method: 'findPersonRocketReach' }
+      { name: 'voila-norbert', method: 'findEmailVoilaNorbert' }
     ]
     
     for (const provider of providers) {
@@ -795,12 +912,12 @@ class LeadService {
         console.log(`🎯 Trying ${provider.name} for ${firstName} ${lastName}`)
         
         let result
-        if (provider.name === 'hunter-io') {
+        if (provider.name === 'prospeo-io') {
+          result = await IntegrationService.findEmailProspeo(tenantId, domain, firstName, lastName, domain)
+        } else if (provider.name === 'hunter-io') {
           result = await IntegrationService.findEmails(tenantId, domain, firstName, lastName)
         } else if (provider.name === 'voila-norbert') {
           result = await IntegrationService.findEmailVoilaNorbert(tenantId, domain, firstName, lastName)
-        } else if (provider.name === 'rocketreach') {
-          result = await IntegrationService.findPersonRocketReach(tenantId, domain, firstName, lastName)
         }
         
         if (result && result.success && result.data && result.data.email) {
@@ -829,3 +946,40 @@ class LeadService {
 }
 
 export default new LeadService()
+
+// Export specific functions for easy import
+export const createLead = async (leadData, options = {}) => {
+  // Get current tenant from localStorage, sessionStorage, or DOM
+  let tenantId = 'default-tenant';
+  
+  try {
+    // Method 1: Try marketgenie_current_tenant from localStorage
+    const savedTenant = localStorage.getItem('marketgenie_current_tenant');
+    if (savedTenant) {
+      const tenant = JSON.parse(savedTenant);
+      tenantId = tenant.id || 'default-tenant';
+      console.log(`📍 Using tenant from localStorage: ${tenantId}`);
+    } else {
+      // Method 2: Try to get from App component's context via window
+      if (window.currentMarketGenieTenant) {
+        tenantId = window.currentMarketGenieTenant.id || 'default-tenant';
+        console.log(`📍 Using tenant from window: ${tenantId}`);
+      } else {
+        // Method 3: Look for tenant in sessionStorage  
+        const sessionTenant = sessionStorage.getItem('marketgenie_tenant');
+        if (sessionTenant) {
+          const tenant = JSON.parse(sessionTenant);
+          tenantId = tenant.id || 'default-tenant';
+          console.log(`📍 Using tenant from sessionStorage: ${tenantId}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Could not retrieve tenant, using default:', error.message);
+  }
+  
+  console.log(`🎯 Creating lead for tenant: ${tenantId}, lead: ${leadData.email}`);
+  
+  const leadService = new LeadService();
+  return leadService.createLead(tenantId, leadData, options);
+};

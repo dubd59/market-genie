@@ -1,7 +1,7 @@
 // StripePaymentService.js - Handle Stripe payment links and processing
 class StripePaymentService {
   constructor() {
-    this.isTestMode = true; // Toggle this for production
+    this.isTestMode = false; // LIVE MODE - Production payments enabled
     
     // Test mode payment links
     this.testPaymentLinks = {
@@ -10,11 +10,11 @@ class StripePaymentService {
       whiteLabel: 'https://buy.stripe.com/test_8x2bJ16vfaHOcKoby5aVa07'
     };
     
-    // Production payment links (to be updated when going live)
+    // Production payment links (LIVE)
     this.livePaymentLinks = {
-      pro: '', // Will be populated when going live
-      lifetime: '',
-      whiteLabel: ''
+      pro: 'https://buy.stripe.com/4gM00j7zj17eeSwdGdaVa0v',
+      lifetime: 'https://buy.stripe.com/5kQeVd4n74jq39O1XvaVa0u',
+      whiteLabel: 'https://buy.stripe.com/4gM00jcTD5nucKogSpaVa0t'
     };
     
     this.prices = {
@@ -42,7 +42,7 @@ class StripePaymentService {
     this.storePaymentContext(planType, userContext);
     
     // Create success URL with payment completion parameters - LIVE FIREBASE URLs
-    const liveBaseUrl = 'https://market-genie-f2d41.web.app';
+    const liveBaseUrl = 'https://marketgenie.tech';
     let successUrl, cancelUrl;
     
     // Route to appropriate signup page based on plan type

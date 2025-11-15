@@ -1261,9 +1261,9 @@ For production:
 4. Templates are already personalized with your branding!
 
 ### Support
-- Questions? Email: ${data.email || 'support@marketgenie.com'}
-- Need help? ${data.phone ? `Call: ${data.phone}` : 'Book a call: [CALENDAR LINK]'}
-- Join our community: [FACEBOOK GROUP]
+- AI Support Portal (24/7): https://supportgenie.help/customer?tenant=supportgenie-tenant
+- Questions? Email: Help@dubdproducts.com
+- Need help? Start a chat at our support portal above
 
 ### Pro Tips
 🚀 A/B test headlines and button colors

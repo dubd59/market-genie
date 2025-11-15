@@ -1,4 +1,7 @@
-const functions = require('firebase-functions');
+const {onRequest} = require('firebase-functions/v2/https');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const functions = require('firebase-functions'); // Keep for backward compatibility
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
@@ -10,9 +13,261 @@ const { leadGenProxy } = require('./leadGenProxy');
 // Export lead generation proxy
 exports.leadGenProxy = leadGenProxy;
 
+// Function to create founder tenant document
+exports.createFounderTenant = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Creating founder tenant document...');
+    
+    // Create the founder-tenant document
+    const founderTenantData = {
+      id: 'founder-tenant',
+      tenantId: 'founder-tenant',
+      name: 'Market Genie Founder',
+      ownerId: 'U9vez3sI36Ti5JqoWi5gJUMq2nX2',
+      ownerEmail: 'dubdproducts@gmail.com',
+      type: 'founder',
+      status: 'active',
+      initialized: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      plan: 'unlimited',
+      features: {
+        maxLeads: -1,
+        maxUsers: -1,
+        maxIntegrations: -1,
+        advancedFeatures: true
+      }
+    };
+    
+    // Write the document
+    await db.collection('MarketGenie_tenants').doc('founder-tenant').set(founderTenantData);
+    
+    console.log('Founder tenant document created successfully');
+    
+    // Verify it was created
+    const createdDoc = await db.collection('MarketGenie_tenants').doc('founder-tenant').get();
+    
+    if (createdDoc.exists) {
+      console.log('Verification successful:', createdDoc.data());
+      
+      res.status(200).json({
+        success: true,
+        message: 'Founder tenant document created successfully',
+        data: createdDoc.data()
+      });
+    } else {
+      throw new Error('Document was not created properly');
+    }
+    
+  } catch (error) {
+    console.error('Error creating founder tenant:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Function to copy integrations from old tenant to founder tenant
+exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Copying integrations from old tenant to founder tenant...');
+    
+    const oldTenantId = 'U9vez3sI36Ti5JqoWi5gJUMq2nX2';
+    const newTenantId = 'founder-tenant';
+    
+    // Get all integrations from old tenant
+    const integrationsRef = db.collection('MarketGenie_tenants').doc(oldTenantId).collection('integrations');
+    const integrationsSnapshot = await integrationsRef.get();
+    
+    let copiedCount = 0;
+    const copiedIntegrations = [];
+    
+    if (!integrationsSnapshot.empty) {
+      console.log(`Found ${integrationsSnapshot.size} integrations to copy`);
+      
+      // Copy each integration
+      for (const doc of integrationsSnapshot.docs) {
+        const integrationData = doc.data();
+        const integrationId = doc.id;
+        
+        console.log(`Copying integration: ${integrationId}`);
+        
+        // Write to new tenant
+        await db.collection('MarketGenie_tenants')
+          .doc(newTenantId)
+          .collection('integrations')
+          .doc(integrationId)
+          .set(integrationData);
+        
+        copiedCount++;
+        copiedIntegrations.push({
+          id: integrationId,
+          name: integrationData.name || integrationId,
+          status: integrationData.status || 'active'
+        });
+      }
+    }
+    
+    console.log(`Successfully copied ${copiedCount} integrations`);
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully copied ${copiedCount} integrations to founder tenant`,
+      copiedCount,
+      integrations: copiedIntegrations
+    });
+    
+  } catch (error) {
+    console.error('Error copying integrations:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
+
+// 🎯 CRITICAL: Set tenant custom claims for new users
+exports.setUserTenantClaims = onCall(async (request) => {
+  // Verify the user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { uid, tenantId } = request.data;
+  const callerUid = request.auth.uid;
+
+  // Users can only set claims for themselves
+  if (uid !== callerUid) {
+    throw new HttpsError('permission-denied', 'Can only set claims for yourself');
+  }
+
+  try {
+    console.log(`Setting tenant claims for user ${uid}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(uid, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Successfully set tenant claims for user ${uid}`);
+    
+    return {
+      success: true,
+      message: 'Tenant claims set successfully',
+      tenantId: tenantId
+    };
+    
+  } catch (error) {
+    console.error('Error setting tenant claims:', error);
+    throw new HttpsError('internal', `Failed to set tenant claims: ${error.message}`);
+  }
+});
+
+// 🎯 CRITICAL: Auto-set tenant claims when user creates tenant
+exports.onTenantCreated = onDocumentCreated('MarketGenie_tenants/{tenantId}', async (event) => {
+  try {
+    const tenantData = event.data.data();
+    const tenantId = event.params.tenantId;
+    const ownerId = tenantData.ownerId;
+
+      if (!ownerId) {
+        console.log('No ownerId found in tenant data, skipping claims setup');
+        return;
+      }
+
+      console.log(`Auto-setting tenant claims for owner ${ownerId} of tenant ${tenantId}`);
+      
+      // Set custom claims for the tenant owner
+      await admin.auth().setCustomUserClaims(ownerId, {
+        tenantId: tenantId,
+        role: 'owner',
+        updatedAt: Date.now()
+      });
+
+      console.log(`✅ Auto-set tenant claims for user ${ownerId}`);
+      
+    } catch (error) {
+      console.error('Error auto-setting tenant claims:', error);
+    }
+  });
+
+// 🛠️ ADMIN: Fix existing user claims (call manually)
+exports.fixUserClaims = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { userId, tenantId } = req.body;
+    
+    if (!userId || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and tenantId are required'
+      });
+    }
+
+    console.log(`Fixing claims for user ${userId}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(userId, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Fixed claims for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'User claims fixed successfully',
+      userId: userId,
+      tenantId: tenantId
+    });
+    
+  } catch (error) {
+    console.error('Error fixing user claims:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // Create transporter with user's SMTP credentials
 const createTransporter = (smtpConfig) => {
@@ -1569,5 +1824,102 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         </body>
       </html>
     `);
+  }
+});
+
+// ===================================
+// EMERGENCY LEAD SAVE FUNCTION
+// ===================================
+
+// Emergency lead save function - bypasses client Firebase connection issues
+exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
+  console.log('🚨 EMERGENCY SAVE: Function called');
+  // Safe logging to avoid circular reference errors
+  console.log('Data received:', {
+    tenantId: data?.tenantId,
+    leadEmail: data?.leadData?.email,
+    leadCompany: data?.leadData?.company
+  });
+  
+  try {
+    // Validate input
+    if (!data || !data.tenantId || !data.leadData) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: tenantId, leadData');
+    }
+
+    const { tenantId, leadData } = data;
+    
+    // Validate lead data
+    if (!leadData.email) {
+      throw new functions.https.HttpsError('invalid-argument', 'Lead email is required');
+    }
+
+    console.log(`🚨 Emergency saving lead: ${leadData.email} for tenant: ${tenantId}`);
+
+    // Create enhanced lead document
+    const enrichedLead = {
+      email: leadData.email,
+      firstName: leadData.firstName || '',
+      lastName: leadData.lastName || '',
+      company: leadData.company || '',
+      title: leadData.title || '',
+      domain: leadData.domain || '',
+      source: leadData.source || 'emergency-save',
+      score: leadData.score || 75,
+      status: leadData.status || 'new',
+      tags: Array.isArray(leadData.tags) ? leadData.tags : ['emergency-saved'],
+      notes: leadData.notes || `Emergency saved via Firebase Function at ${new Date().toISOString()}`,
+      
+      // Timestamps
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      
+      // Emergency save metadata
+      _emergencySave: true,
+      _savedVia: 'firebase-function',
+      _transportErrorBypass: true,
+      
+      // Security
+      _tenantId: tenantId,
+      _marketGenieApp: true,
+      _securityValidated: true
+    };
+
+    // Save to database using Firebase Admin SDK (server-side)
+    const leadsCollection = db.collection('MarketGenie_tenants').doc(tenantId).collection('leads');
+    const docRef = await leadsCollection.add(enrichedLead);
+
+    console.log(`✅ Emergency save successful: ${leadData.email} with ID: ${docRef.id}`);
+
+    // Update tenant usage tracking
+    try {
+      const tenantUsageRef = db.collection('MarketGenie_tenants').doc(tenantId).collection('usage').doc('current');
+      await tenantUsageRef.set({
+        leads: admin.firestore.FieldValue.increment(1),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      
+      console.log('✅ Tenant usage updated');
+    } catch (usageError) {
+      console.warn('⚠️ Failed to update tenant usage:', usageError.message);
+      // Don't fail the whole operation for usage tracking
+    }
+
+    return {
+      success: true,
+      leadId: docRef.id,
+      email: leadData.email,
+      message: 'Lead saved successfully via emergency function',
+      savedAt: new Date().toISOString()
+    };
+
+  } catch (error) {
+    console.error('❌ Emergency save function error:', error);
+    
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    throw new functions.https.HttpsError('internal', `Emergency save failed: ${error.message}`);
   }
 });

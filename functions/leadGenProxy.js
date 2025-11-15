@@ -76,45 +76,92 @@ async function searchProspeo(apiKey, searchData) {
   
   const { firstName, lastName, company, domain } = searchData;
   
+  console.log('🔍 Prospeo search data received:', { firstName, lastName, company, domain });
+  
   try {
     // If we have specific person info, use email-finder endpoint
     if (firstName && lastName && firstName !== 'null' && lastName !== 'null') {
+      // Prospeo expects company field with domain as value
+      const requestBody = {
+        first_name: firstName,
+        last_name: lastName,
+        company: domain  // Use domain as company - this is what works!
+      };
+      
+      console.log('📡 Sending to Prospeo API (domain as company):', requestBody);
+      
       const response = await fetch('https://api.prospeo.io/email-finder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-KEY': apiKey
         },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          company: company || domain
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
       console.log('Prospeo email-finder response:', data);
       
       if (!response.ok) {
-        throw new Error(data.error || `Prospeo API error: ${response.status}`);
+        const errorMsg = typeof data.error === 'string' ? data.error : `Prospeo API error: ${response.status}`;
+        throw new Error(errorMsg);
       }
 
-      if (data.email) {
+      // Check if the API returned an error
+      if (data.error === true) {
+        // Handle specific Prospeo error codes
+        if (data.message === 'NO_RESULT') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'No email found for this person'
+          };
+        } else if (data.message === 'INVALID_DOMAIN_NAME') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'Invalid domain name provided'
+          };
+        } else if (data.message === 'NO_VALID_NAME') {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: 'Invalid name provided'
+          };
+        } else {
+          return {
+            success: false,
+            provider: 'prospeo',
+            error: data.message || 'Prospeo API returned an error'
+          };
+        }
+      }
+
+      // Check if email was found in the correct response format
+      if (data.response && data.response.email) {
         return {
           success: true,
           provider: 'prospeo',
           data: {
-            email: data.email,
-            phone: data.phone || null,
-            confidence: data.confidence || 85,
-            credits_remaining: data.remaining_credits || 'Unknown',
+            email: data.response.email,
+            first_name: data.response.first_name || firstName,
+            last_name: data.response.last_name || lastName,
+            domain: data.response.domain || domain,
+            email_status: data.response.email_status,
+            confidence: 95, // Prospeo emails are high confidence
             source: 'Prospeo.io'
           }
         };
+      } else {
+        return {
+          success: false,
+          provider: 'prospeo',
+          error: 'No email found for this person'
+        };
       }
     } else {
-      // For domain searches without specific person, use domain-search endpoint
-      const response = await fetch('https://api.prospeo.io/domain-search', {
+      // For domain searches without specific person, use email-count to check if domain has emails
+      const countResponse = await fetch('https://api.prospeo.io/email-count', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,31 +172,33 @@ async function searchProspeo(apiKey, searchData) {
         })
       });
 
-      const data = await response.json();
-      console.log('Prospeo domain-search response:', data);
+      const countData = await countResponse.json();
+      console.log('Prospeo email-count response:', countData);
       
-      if (!response.ok) {
-        throw new Error(data.error || `Prospeo API error: ${response.status}`);
+      if (!countResponse.ok) {
+        throw new Error(countData.error || `Prospeo API error: ${countResponse.status}`);
       }
 
-      // Check if we found any emails
-      if (data.emails && data.emails.length > 0) {
-        // Return multiple contacts from domain search
+      // Since domain-search doesn't exist, we cannot reliably get real domain emails
+      // Return empty results rather than fake/common name attempts
+      if (countData.response && countData.response.count > 0) {
+        console.log(`Found ${countData.response.count} emails for ${domain}, but domain-search API not available`);
+        
         return {
           success: true,
           provider: 'prospeo',
           data: {
-            contacts: data.emails.slice(0, 5).map(email => ({
-              email: email.email,
-              first_name: email.first_name,
-              last_name: email.last_name,
-              company: domain,
-              phone: email.phone || null,
-              confidence: email.confidence || 85,
-              source: 'Prospeo.io'
-            })),
-            credits_remaining: data.remaining_credits || 'Unknown'
+            contacts: [],
+            message: `Domain has ${countData.response.count} emails in database, but requires specific person search`,
+            credits_remaining: countData.response?.credits || 'Unknown',
+            note: 'Use Contact Manager with specific names for this domain'
           }
+        };
+      } else {
+        return {
+          success: false,
+          provider: 'prospeo',
+          error: `No emails found in database for domain: ${domain}`
         };
       }
     }
@@ -340,31 +389,53 @@ async function handleProspeoTest(req, res) {
   const fetch = require('node-fetch');
   
   try {
-    // Test account info endpoint first
-    const response = await fetch('https://api.prospeo.io/account', {
+    console.log('Testing Prospeo API with key:', apiKey.substring(0, 8) + '...');
+    
+    // Test account info endpoint first - CORRECT ENDPOINT
+    const response = await fetch('https://api.prospeo.io/account-information', {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'X-KEY': apiKey
       }
     });
 
+    console.log('Prospeo API response status:', response.status);
+    console.log('Prospeo API response headers:', Object.fromEntries(response.headers.entries()));
+
     const data = await response.json();
+    console.log('Prospeo API response data:', data);
     
-    if (response.ok) {
+    if (response.ok && data.error === false) {
       return res.json({ 
         success: true, 
         message: 'Prospeo.io connection successful!',
-        credits: data.remaining_credits || data.credits || 'Unknown'
+        credits: data.response?.remaining_credits || 'Unknown'
       });
     } else {
+      // Handle Prospeo API errors more specifically
+      let errorMessage = 'Connection failed';
+      
+      if (data.error === true) {
+        errorMessage = data.message || 'Prospeo API returned an error';
+      } else if (data.error) {
+        errorMessage = typeof data.error === 'string' ? data.error : 'API error';
+      } else if (!response.ok) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      
       return res.json({ 
         success: false, 
-        error: data.error || 'Invalid API key or connection failed' 
+        error: errorMessage,
+        details: data
       });
     }
   } catch (error) {
+    console.error('Prospeo test error:', error);
     return res.json({ 
       success: false, 
-      error: 'Failed to connect to Prospeo.io' 
+      error: `Connection failed: ${error.message}`,
+      stack: error.stack
     });
   }
 }

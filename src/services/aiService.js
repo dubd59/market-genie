@@ -207,11 +207,16 @@ ${additionalPrompt ? `CRITICAL ADDITIONAL REQUIREMENTS (MUST FOLLOW):
 ${additionalPrompt}
 
 ` : ''}${callToActionText && callToActionUrl ? `🎯 CALL-TO-ACTION REQUIREMENTS (MANDATORY):
-- Your email MUST end with a compelling call-to-action that includes: "${callToActionText}"
-- The CTA should direct readers to: ${callToActionUrl}
-- Make the final paragraph engaging and action-oriented around this CTA
-- Do NOT create buttons or HTML - just compelling copy that encourages the action
-- Example: "Ready to ${callToActionText.toLowerCase()}? Don't wait - take action today!"
+- Your email MUST end with a button-style link for: "${callToActionText}"
+- Create a final paragraph with compelling text leading to the button
+- The button link MUST be formatted exactly like this:
+  <p style="margin-bottom: 16px; margin-top: 20px; text-align: center;"><a href="${callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${callToActionText}</a></p>
+- Do NOT show the URL as text - only show "${callToActionText}" as the button text
+- Make the preceding paragraph compelling and action-oriented
+- Example format:
+  "Ready to transform your business? Take action now!"
+  
+  [BUTTON LINK HERE using the exact format above]
 
 ` : ''}VISUAL EXCELLENCE REQUIREMENTS (MANDATORY):
 1. Create a compelling story flow with proper narrative structure

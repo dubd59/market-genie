@@ -2230,36 +2230,7 @@ Enter number (1-4):`);
         finalEmailContent = aiGeneratedContent
       }
       
-      // Add call-to-action as the final paragraph of email content (NOT in footer)
-      if (campaignFormData.callToActionText && campaignFormData.callToActionUrl) {
-        const callToActionHtml = `\n\n<p style="margin-top: 20px; margin-bottom: 16px;"><strong><a href="${campaignFormData.callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${campaignFormData.callToActionText}</a></strong></p>`
-        
-        // Enhanced CTA placement logic: insert as final content paragraph
-        const trimmedContent = finalEmailContent.trim();
-        
-        // Look for common patterns that might indicate signature/footer content to avoid
-        const signaturePatterns = [
-          'Best regards,', 'Sincerely,', 'Thank you,', 'Thanks,', 
-          '<p>Best regards', '<p>Sincerely', '<p>Thank you', '<p>Thanks',
-          'Best,', 'Cheers,', 'Warm regards,'
-        ];
-        
-        let insertionMade = false;
-        
-        // Try to insert before any signature patterns
-        for (const pattern of signaturePatterns) {
-          if (trimmedContent.includes(pattern)) {
-            finalEmailContent = trimmedContent.replace(pattern, callToActionHtml + '\n\n' + pattern);
-            insertionMade = true;
-            break;
-          }
-        }
-        
-        // If no signature patterns found, add CTA as the final content paragraph
-        if (!insertionMade) {
-          finalEmailContent = trimmedContent + callToActionHtml;
-        }
-      }
+      // CTA is now handled entirely by the AI service - no manual insertion needed
       
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {

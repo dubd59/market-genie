@@ -229,8 +229,14 @@ CONTENT STRUCTURE REQUIREMENTS:
 2. Story/context paragraph with <strong>highlighted key points</strong>
 3. Benefits section with bullet points and bold highlights
 4. Social proof or urgency element with emphasis
-5. Clear call-to-action paragraph
-6. Closing with personality
+5. POWERFUL CALL-TO-ACTION as the FINAL paragraph of the email - make this compelling and action-oriented
+6. End with your strongest CTA statement - this should be the last line readers see
+
+CRITICAL CTA PLACEMENT:
+- The call-to-action MUST be the final element of your email content
+- Use strong, action-oriented language like "Ready to get started?", "Don't miss out!", "Take action now!"
+- Make the CTA paragraph stand out with <strong>bold formatting</strong>
+- End the email with the CTA - no additional closing needed
 
 NEVER CREATE BUTTONS OR INVENT URLS - Focus on compelling copy with strategic formatting.
 EXCEPTION: If the user specifically provides a URL or link in their prompt, you MAY include it exactly as provided.
@@ -302,9 +308,11 @@ Write a professional email based on the campaign details above. Focus on clear, 
       .replace(/\n\s+/g, '\n')  // Remove leading whitespace on lines
       .trim();
 
-    // Add unsubscribe footer with business info (includes signature)
+    // Add clear visual separation before footer to preserve CTA prominence
     if (tenantId && recipientEmail) {
       const campaignId = `campaign_${Date.now()}`;
+      // Add visual break to separate main content (with CTA) from footer
+      generatedContent += `\n\n<div style="margin: 40px 0; border-top: 2px solid #e5e7eb; opacity: 0.3;"></div>\n`;
       const unsubscribeFooter = UnsubscribeService.generateUnsubscribeFooter(
         tenantId, 
         recipientEmail, 
@@ -313,7 +321,8 @@ Write a professional email based on the campaign details above. Focus on clear, 
       );
       generatedContent += unsubscribeFooter;
     } else if (Object.keys(senderInfo).length > 0) {
-      // Only add simple signature if no business footer
+      // Add visual break before signature
+      generatedContent += `\n\n<div style="margin: 40px 0; border-top: 2px solid #e5e7eb; opacity: 0.3;"></div>\n`;
       const signature = UnsubscribeService.generateEmailSignature(senderInfo);
       generatedContent += signature;
     }

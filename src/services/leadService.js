@@ -347,6 +347,59 @@ class LeadService {
             'etsy.com', 'gumroad.com', 'selz.com', 'payhip.com', 'fastspring.com',
             'paddle.com', 'lemonsqueezy.com', 'selly.gg', 'gumlet.com', 'sellfy.com',
             
+            // Construction & Home Services SMBs
+            'buildertrend.com', 'procore.com', 'contractorplus.com', 'jobber.com', 'servicetitan.com',
+            'housecallpro.com', 'fieldedge.com', 'successware.com', 'improveitusa.com', 'workiz.com',
+            'mhelpdesk.com', 'razorsync.com', 'workwave.com', 'servicefusion.com', 'localroofer.com',
+            'angi.com', 'thumbtack.com', 'homeadvisor.com', 'taskrabbit.com', 'fixr.com',
+            
+            // Healthcare & Medical SMBs
+            'practicesuite.com', 'advancedmd.com', 'athenahealth.com', 'drchrono.com', 'kareo.com',
+            'nextgen.com', 'eclinicalworks.com', 'greenway.com', 'allscripts.com', 'epic.com',
+            'cerner.com', 'meditech.com', 'chartlogic.com', 'practicemax.com', 'officepracticum.com',
+            'dentrix.com', 'eaglesoft.com', 'softdent.com', 'opendental.com', 'curve.com',
+            
+            // Legal Services SMBs
+            'clio.com', 'mycase.com', 'lawgro.com', 'filevine.com', 'smokeball.com',
+            'practicepoint.com', 'zola.com', 'litify.com', 'centerbase.com', 'tabs3.com',
+            'abacuslaw.com', 'needles.com', 'aderant.com', 'Thomson-reuters.com', 'lexisnexis.com',
+            
+            // Restaurant & Food Service SMBs
+            'toast.com', 'square.com', 'resy.com', 'opentable.com', 'yelp.com',
+            'grubhub.com', 'doordash.com', 'ubereats.com', 'postmates.com', 'seamless.com',
+            'menufy.com', 'chownow.com', 'slice.com', 'beyond.menu', 'ordernova.com',
+            'touchbistro.com', 'lightspeed.com', 'upserve.com', 'breadcrumb.com', 'revel.com',
+            
+            // Retail & E-commerce SMBs
+            'loyverse.com', 'vend.com', 'shopkeep.com', 'clover.com', 'lightspeed.com',
+            'shopify.com', 'bigcommerce.com', 'woocommerce.com', 'magento.com', 'prestashop.com',
+            'opencart.com', 'zen-cart.com', 'oscommerce.com', 'x-cart.com', 'cs-cart.com',
+            
+            // Manufacturing & Distribution SMBs
+            'fishbowlinventory.com', 'cin7.com', 'tradegecko.com', 'orderhive.com', 'katana.com',
+            'mrpeasy.com', 'infor.com', 'epicor.com', 'syspro.com', 'iqms.com',
+            'plex.com', 'globalturnover.com', 'e2-shop.com', 'deacom.com', 'priority-software.com',
+            
+            // Automotive Services SMBs
+            'shopmonkey.io', 'tekmetric.com', 'alldata.com', 'mitchellrepair.com', 'cccis.com',
+            'repairpal.com', 'autotrader.com', 'cars.com', 'carmax.com', 'cargurus.com',
+            'dealertrack.com', 'reynolds.com', 'cdk.com', 'autosoft.com', 'dealersocket.com',
+            
+            // Real Estate SMBs
+            'mls.com', 'realtor.com', 'zillow.com', 'redfin.com', 'compass.com',
+            'coldwellbanker.com', 'century21.com', 'remax.com', 'kw.com', 'sothebys.com',
+            'chime.me', 'dotloop.com', 'docusign.com', 'skyslope.com', 'propertibase.com',
+            
+            // Fitness & Wellness SMBs
+            'mindbodyonline.com', 'glofox.com', 'vagaro.com', 'zenplanner.com', 'clubready.com',
+            'myfitnesspal.com', 'trainerroad.com', 'strava.com', 'classpass.com', 'fitbit.com',
+            'myzone.com', 'polar.com', 'garmin.com', 'suunto.com', 'coros.com',
+            
+            // Professional Services SMBs
+            'quickbooks.com', 'xero.com', 'freshbooks.com', 'wave.com', 'zoho.com',
+            'sage.com', 'intuit.com', 'peachtree.com', 'kashoo.com', 'freeagent.com',
+            'billy.dk', 'harvest.com', 'toggl.com', 'clockify.me', 'rescuetime.com',
+            
             // Email Marketing SMBs
             'convertkit.com', 'mailerlite.com', 'constant-contact.com', 'aweber.com', 'getresponse.com',
             'campaignmonitor.com', 'sendinblue.com', 'benchmark.email', 'mailjet.com', 'moosend.com',

@@ -269,7 +269,7 @@ export class UnsubscribeService {
     } = businessInfo;
     
     return `
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center; font-family: Arial, sans-serif;">
+      <div style="margin-top: 20px; padding: 20px; background-color: #f8fafc; border-top: 3px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center; font-family: Arial, sans-serif; border-radius: 0 0 8px 8px;">
         <div style="margin-bottom: 15px;">
           <p style="margin: 5px 0; font-weight: bold; color: #374151;">${companyName}</p>
           <p style="margin: 5px 0;">${address}</p>
@@ -309,7 +309,7 @@ export class UnsubscribeService {
     } = senderInfo;
 
     return `
-      <div style="margin-top: 30px; margin-bottom: 20px; padding: 20px; border-left: 4px solid #14b8a6; background-color: #f0fdfa; font-family: Arial, sans-serif;">
+      <div style="margin-top: 20px; margin-bottom: 20px; padding: 20px; border-left: 4px solid #14b8a6; background-color: #f0fdfa; font-family: Arial, sans-serif; border-radius: 8px;">
         <p style="margin: 5px 0; font-weight: bold; font-size: 16px; color: #374151;">${senderName}</p>
         <p style="margin: 5px 0; color: #6b7280; font-style: italic;">${senderTitle}</p>
         <p style="margin: 5px 0; font-weight: bold; color: #14b8a6;">${companyName}</p>

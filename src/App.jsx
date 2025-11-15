@@ -699,12 +699,21 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   // AI Smart Prompt Options
   const aiSmartPrompts = [
     { value: '', label: 'Select AI Smart Prompt...' },
+    // 🔥 COLD OUTREACH SEQUENCES - TOP PRIORITY
+    { value: 'cold_outreach_intro', label: '❄️💼 Cold outreach: Professional introduction sequence' },
+    { value: 'cold_outreach_value', label: '❄️🎯 Cold outreach: Value-first approach with case study' },
+    { value: 'cold_outreach_social_proof', label: '❄️⭐ Cold outreach: Social proof and testimonials focus' },
+    { value: 'cold_outreach_problem_solver', label: '❄️🔧 Cold outreach: Problem identification and solution' },
+    { value: 'cold_outreach_curiosity', label: '❄️🧠 Cold outreach: Curiosity-driven conversation starter' },
+    { value: 'cold_outreach_multi_touch', label: '❄️📧 Cold outreach: Multi-touch follow-up sequence' },
+    // WARM OUTREACH & FOLLOW-UPS
+    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
+    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
+    // CUSTOMER LIFECYCLE
     { value: 'welcome_new_customer', label: '👋 Welcome email for new customers' },
     { value: 'welcome_vip', label: '🌟 Welcome email for VIP customers with exclusive offers' },
     { value: 'product_launch', label: '🚀 Product launch announcement with early bird pricing' },
     { value: 'product_launch_vip', label: '⭐ Product launch exclusive access for VIP customers' },
-    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
-    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
     { value: 'reengagement_inactive', label: '💤 Re-engagement email for inactive users with special offer' },
     { value: 'reengagement_win_back', label: '❤️ Win-back email for churned customers' },
     { value: 'educational_tips', label: '💡 Educational email with industry tips and insights' },

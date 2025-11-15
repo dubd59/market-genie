@@ -87,6 +87,8 @@ const OutreachAutomation = () => {
 
   useEffect(() => {
     console.log('OutreachAutomation mounted, tenant:', tenant?.id);
+    console.log('AI Smart Prompts loaded:', aiSmartPrompts.length, 'options');
+    console.log('First few prompts:', aiSmartPrompts.slice(0, 5));
     if (tenant?.id) {
       loadCampaigns();
       checkBusinessProfile();
@@ -330,6 +332,9 @@ const OutreachAutomation = () => {
             {/* AI Smart Prompt Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">🤖 AI Smart Prompt</label>
+              <div className="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+                DEBUG: {aiSmartPrompts.length} prompts loaded. First: "{aiSmartPrompts[1]?.label || 'none'}"
+              </div>
               <select
                 value={campaignForm.aiSmartPrompt}
                 onChange={(e) => setCampaignForm(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}

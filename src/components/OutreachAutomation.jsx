@@ -33,7 +33,9 @@ const OutreachAutomation = () => {
     audience: '',
     description: '',
     aiSmartPrompt: '',
-    additionalPrompt: ''
+    additionalPrompt: '',
+    callToActionText: '',
+    callToActionUrl: ''
   });
 
   // AI Smart Prompt Options - Cold Outreach at the top!
@@ -155,7 +157,9 @@ const OutreachAutomation = () => {
       audience: '', 
       description: '', 
       aiSmartPrompt: '', 
-      additionalPrompt: '' 
+      additionalPrompt: '',
+      callToActionText: '',
+      callToActionUrl: ''
     });
     setShowCampaignForm(false);
     toast.success('Campaign created successfully!');
@@ -364,6 +368,36 @@ Examples:
                 className="w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
                 rows="4"
               />
+            </div>
+
+            {/* Call-to-Action Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">🎯 Call-to-Action (End of Email Body)</h3>
+              <p className="text-sm text-gray-600 mb-4">This CTA will appear as the final paragraph of your email content, before the footer.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Call-to-Action Text</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Ready to get started? Book your free consultation!"
+                    value={campaignForm.callToActionText}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, callToActionText: e.target.value }))}
+                    className="w-full border border-green-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Call-to-Action URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://your-landing-page.com"
+                    value={campaignForm.callToActionUrl}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, callToActionUrl: e.target.value }))}
+                    className="w-full border border-green-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                  />
+                </div>
+              </div>
             </div>
             
             <button

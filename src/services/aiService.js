@@ -229,26 +229,36 @@ CONTENT STRUCTURE REQUIREMENTS:
 2. Story/context paragraph with <strong>highlighted key points</strong>
 3. Benefits section with bullet points and bold highlights
 4. Social proof or urgency element with emphasis
-5. POWERFUL CALL-TO-ACTION as the FINAL paragraph of the email - make this compelling and action-oriented
-6. End with your strongest CTA statement - this should be the last line readers see
+5. POWERFUL CALL-TO-ACTION as the ABSOLUTE FINAL paragraph - this MUST be the last content before email ends
 
-CRITICAL CTA PLACEMENT:
-- The call-to-action MUST be the final element of your email content
+🚨 CRITICAL CTA PLACEMENT RULES (MANDATORY):
+- The call-to-action MUST be the very last paragraph of your main email body content
+- The CTA appears in the email body BEFORE any system-generated footer/signature
+- NO TEXT, NO CLOSING, NO "BEST REGARDS" after the CTA in your content
 - Use strong, action-oriented language like "Ready to get started?", "Don't miss out!", "Take action now!"
 - Make the CTA paragraph stand out with <strong>bold formatting</strong>
-- End the email with the CTA - no additional closing needed
+- End your email content with the CTA paragraph - the system will add footer separately
+- STOP WRITING after the CTA - no additional sentences or closing statements
+
+EXAMPLE OF CORRECT ENDING:
+"...your key benefits here.
+
+<p style="margin-bottom: 16px;"><strong>Ready to transform your business? Let's make it happen today!</strong></p>"
+
+❌ WRONG: CTA followed by "Best regards, John" or any closing
+✅ CORRECT: CTA as final paragraph, then system adds footer
+
+ABSOLUTELY FORBIDDEN IN YOUR CONTENT:
+- Do NOT add signatures, names, or sign-offs after the CTA
+- Do NOT add "Best regards", "Sincerely", "Thanks", or any closing
+- Do NOT add unsubscribe links or footer content in your content
+- Do NOT add contact information in your content
+- The system automatically adds professional signature and footer below your content
 
 NEVER CREATE BUTTONS OR INVENT URLS - Focus on compelling copy with strategic formatting.
 EXCEPTION: If the user specifically provides a URL or link in their prompt, you MAY include it exactly as provided.
 
-SIGNATURE AND FOOTER REQUIREMENTS:
-- Do NOT include any signatures, contact information, or closing statements
-- Do NOT include unsubscribe links or footer content
-- End the email with the main content only
-- Do NOT add "Best regards", "Sincerely", names, or sign-offs
-- The system will automatically add professional signature and footer
-
-Write a professional email based on the campaign details above. Focus on clear, well-spaced content without adding any signatures, closings, buttons, links, or footer content unless specifically requested by the user.
+Write a professional email based on the campaign details above. Your content should end with a compelling call-to-action paragraph. Do NOT add any signatures, closings, "Best regards", names, or footer content after the CTA. The system will automatically add the professional footer and unsubscribe links below your content.
     `;
 
     const apiKeys = await this.getStoredAPIKeys(userId);

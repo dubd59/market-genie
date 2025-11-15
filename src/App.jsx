@@ -2230,18 +2230,34 @@ Enter number (1-4):`);
         finalEmailContent = aiGeneratedContent
       }
       
-      // Add call-to-action if provided (insert before footer/signature)
+      // Add call-to-action as the final paragraph of email content (NOT in footer)
       if (campaignFormData.callToActionText && campaignFormData.callToActionUrl) {
-        const callToActionHtml = `\n\n<p style="margin-top: 20px; text-align: center;"><a href="${campaignFormData.callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${campaignFormData.callToActionText}</a></p>\n`
+        const callToActionHtml = `\n\n<p style="margin-top: 20px; margin-bottom: 16px;"><strong><a href="${campaignFormData.callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${campaignFormData.callToActionText}</a></strong></p>`
         
-        // Insert CTA before "Best regards," or any footer signature
-        if (finalEmailContent.includes('Best regards,')) {
-          finalEmailContent = finalEmailContent.replace('Best regards,', callToActionHtml + 'Best regards,')
-        } else if (finalEmailContent.includes('<p>Best regards')) {
-          finalEmailContent = finalEmailContent.replace('<p>Best regards', callToActionHtml + '<p>Best regards')
-        } else {
-          // If no signature found, add CTA at the end
-          finalEmailContent += callToActionHtml
+        // Enhanced CTA placement logic: insert as final content paragraph
+        const trimmedContent = finalEmailContent.trim();
+        
+        // Look for common patterns that might indicate signature/footer content to avoid
+        const signaturePatterns = [
+          'Best regards,', 'Sincerely,', 'Thank you,', 'Thanks,', 
+          '<p>Best regards', '<p>Sincerely', '<p>Thank you', '<p>Thanks',
+          'Best,', 'Cheers,', 'Warm regards,'
+        ];
+        
+        let insertionMade = false;
+        
+        // Try to insert before any signature patterns
+        for (const pattern of signaturePatterns) {
+          if (trimmedContent.includes(pattern)) {
+            finalEmailContent = trimmedContent.replace(pattern, callToActionHtml + '\n\n' + pattern);
+            insertionMade = true;
+            break;
+          }
+        }
+        
+        // If no signature patterns found, add CTA as the final content paragraph
+        if (!insertionMade) {
+          finalEmailContent = trimmedContent + callToActionHtml;
         }
       }
       

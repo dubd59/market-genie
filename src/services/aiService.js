@@ -193,7 +193,7 @@ export class AIService {
 
   // Main function to generate email content with AI
   static async generateEmailContent(userId, campaignData, preferredProvider = null, tenantId = null, recipientEmail = null, businessInfo = {}, senderInfo = {}) {
-    const { name, type, targetAudience, subject, additionalPrompt } = campaignData;
+    const { name, type, targetAudience, subject, additionalPrompt, callToActionText, callToActionUrl } = campaignData;
     
     const prompt = `
 You are a PREMIUM email marketing copywriter who creates VISUALLY STUNNING, professionally formatted emails. 
@@ -205,6 +205,13 @@ Subject Line: ${subject}
 
 ${additionalPrompt ? `CRITICAL ADDITIONAL REQUIREMENTS (MUST FOLLOW):
 ${additionalPrompt}
+
+` : ''}${callToActionText && callToActionUrl ? `🎯 CALL-TO-ACTION REQUIREMENTS (MANDATORY):
+- Your email MUST end with a compelling call-to-action that includes: "${callToActionText}"
+- The CTA should direct readers to: ${callToActionUrl}
+- Make the final paragraph engaging and action-oriented around this CTA
+- Do NOT create buttons or HTML - just compelling copy that encourages the action
+- Example: "Ready to ${callToActionText.toLowerCase()}? Don't wait - take action today!"
 
 ` : ''}VISUAL EXCELLENCE REQUIREMENTS (MANDATORY):
 1. Create a compelling story flow with proper narrative structure

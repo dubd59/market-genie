@@ -271,8 +271,13 @@ exports.fixUserClaims = onRequest(async (req, res) => {
 
 // Create transporter with user's SMTP credentials
 const createTransporter = (smtpConfig) => {
-  return nodemailer.createTransport({
-    host: smtpConfig.smtpHost || 'smtp.zoho.com',
+  console.log('Creating transporter for:', smtpConfig.smtpEmail);
+  console.log('Using host:', smtpConfig.smtpHost || 'smtp.gmail.com');
+  console.log('Using port:', parseInt(smtpConfig.smtpPort) || 587);
+  
+  // Enhanced configuration for Google Workspace and Gmail
+  const transportConfig = {
+    host: smtpConfig.smtpHost || 'smtp.gmail.com',
     port: parseInt(smtpConfig.smtpPort) || 587,
     secure: (smtpConfig.smtpPort === '465'), // true for 465, false for other ports
     auth: {
@@ -280,9 +285,28 @@ const createTransporter = (smtpConfig) => {
       pass: smtpConfig.smtpPassword
     },
     tls: {
-      rejectUnauthorized: false
-    }
-  });
+      rejectUnauthorized: false,
+      ciphers: 'SSLv3'
+    },
+    // Additional options for Google Workspace
+    requireTLS: true,
+    connectionTimeout: 60000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
+    debug: true, // Enable debug logging
+    logger: console // Use console for logging
+  };
+  
+  // Special handling for Google Workspace domains
+  if (smtpConfig.smtpEmail && !smtpConfig.smtpEmail.endsWith('@gmail.com')) {
+    console.log('Detected potential Google Workspace account');
+    // Use Gmail SMTP for Google Workspace
+    transportConfig.host = 'smtp.gmail.com';
+    transportConfig.port = 587;
+    transportConfig.secure = false;
+  }
+  
+  return nodemailer.createTransport(transportConfig);
 };
 
 // Simple test function
@@ -1447,7 +1471,7 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     const credentials = credentialsDoc.data();
     console.log('Gmail SMTP credentials found for:', credentials.email);
     
-    // Prepare Gmail SMTP configuration
+    // Prepare Gmail/Google Workspace SMTP configuration
     const smtpConfig = {
       smtpHost: 'smtp.gmail.com',
       smtpPort: '587',
@@ -1458,9 +1482,15 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
       return res.status(400).json({
         success: false,
-        error: 'Gmail credentials missing. Please add your Gmail email and app password.',
-        setup: 'Generate app password at: myaccount.google.com/apppasswords'
+        error: 'Gmail/Google Workspace credentials missing. Please add your email and app password.',
+        setup: 'For Google Workspace: 1) Enable 2FA, 2) Generate app password at myaccount.google.com/apppasswords, 3) Use your full workspace email'
       });
+    }
+    
+    // Validate Google Workspace setup
+    if (!smtpConfig.smtpEmail.endsWith('@gmail.com')) {
+      console.log('Google Workspace account detected:', smtpConfig.smtpEmail);
+      console.log('Ensure 2FA is enabled and app password is correctly generated');
     }
     
     console.log('Creating SMTP transporter for:', smtpConfig.smtpEmail);
@@ -1501,6 +1531,35 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     };
     
     console.log('Sending email via SMTP...');
+    console.log('Mail options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    // Test connection first
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('SMTP connection verification failed:', verifyError);
+      
+      // Provide specific error messages for common issues
+      let errorMessage = 'SMTP connection failed: ' + verifyError.message;
+      let helpMessage = '';
+      
+      if (verifyError.code === 'EAUTH' || verifyError.responseCode === 535) {
+        errorMessage = 'Gmail/Google Workspace authentication failed';
+        helpMessage = 'Please check: 1) 2-Factor Authentication is enabled, 2) App Password is correctly generated at myaccount.google.com/apppasswords, 3) Using your full workspace email address';
+      }
+      
+      return res.status(400).json({
+        success: false,
+        error: errorMessage,
+        help: helpMessage,
+        details: verifyError.message
+      });
+    }
     
     // Send email
     const result = await transporter.sendMail(mailOptions);

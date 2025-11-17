@@ -73,6 +73,7 @@ import ContactManager from './components/ContactManager'
 import BulkProspeoScraper from './components/BulkProspeoScraper'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
+import BounceDetectionService from './services/bounceDetectionService'
 import AuthNavigator from './components/AuthNavigator'
 
 function ProtectedRoute({ children }) {
@@ -335,17 +336,30 @@ function SophisticatedDashboard() {
   // Available CRM tags for custom segments
   const [availableTags, setAvailableTags] = useState([])
   
+  // Format date to US format (MM-DD-YYYY)
+  const formatDateUS = (dateString) => {
+    if (!dateString) return 'Not set'
+    try {
+      const date = new Date(dateString)
+      // Handle invalid dates
+      if (isNaN(date.getTime())) return dateString
+      
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+      const year = date.getFullYear()
+      return `${month}-${day}-${year}`
+    } catch (error) {
+      return dateString || 'Not set'
+    }
+  }
+  
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
   
-  // Bounce Management
-  const [showBounceManager, setShowBounceManager] = useState(false)
-  const [bounceEmails, setBounceEmails] = useState('')
-  const [processingBounces, setProcessingBounces] = useState(false)
-  const [bounceMethod, setBounceMethod] = useState('paste') // 'paste' or 'upload' or 'manual'
+  // Legacy bounce management removed - now using automated bounce detection
   
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
@@ -1305,6 +1319,19 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     description: ''
   })
 
+  // Bounce Detection State
+  const [bounceDetectionActive, setBounceDetectionActive] = useState(false)
+  const [bounceStats, setBounceStats] = useState({
+    totalScans: 0,
+    totalBounces: 0,
+    totalProcessed: 0,
+    bounceRate: 0,
+    lastScan: null
+  })
+  const [showBounceModal, setShowBounceModal] = useState(false)
+  const [pastedBounceText, setPastedBounceText] = useState('')
+  const [bounceProcessing, setBounceProcessing] = useState(false)
+
   const handleSelectLead = (leadId) => {
     setSelectedLeads(prev => 
       prev.includes(leadId) 
@@ -1475,6 +1502,174 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       toast.error('Failed to update lead: ' + error.message)
     }
   }
+
+  // ==================== BOUNCE DETECTION FUNCTIONS ====================
+  
+  // Load bounce statistics
+  const loadBounceStats = async () => {
+    if (!tenant?.id) return
+    
+    try {
+      const statsResult = await BounceDetectionService.getBounceStats(tenant.id)
+      if (statsResult.success) {
+        setBounceStats(statsResult.data)
+      }
+    } catch (error) {
+      console.error('Error loading bounce stats:', error)
+    }
+  }
+
+  // Start automated bounce monitoring
+  const startBounceMonitoring = async () => {
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required for bounce monitoring')
+      return
+    }
+
+    try {
+      setBounceDetectionActive(true)
+      console.log('🤖 Starting automated bounce detection...')
+      toast('🤖 Starting automated bounce detection...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.startAutomatedMonitoring(
+        tenant.id, 
+        user.uid, 
+        30 // Check every 30 minutes
+      )
+      
+      if (result.success) {
+        toast.success('✅ Automated bounce monitoring started!')
+        console.log('🤖 Bounce monitoring active:', result.message)
+        
+        // Load initial stats
+        await loadBounceStats()
+      } else {
+        setBounceDetectionActive(false)
+        toast.error('Failed to start bounce monitoring: ' + result.error)
+      }
+    } catch (error) {
+      setBounceDetectionActive(false)
+      console.error('Error starting bounce monitoring:', error)
+      toast.error('Failed to start bounce monitoring')
+    }
+  }
+
+  // Stop automated bounce monitoring
+  const stopBounceMonitoring = () => {
+    try {
+      const stopped = BounceDetectionService.stopAutomatedMonitoring()
+      if (stopped) {
+        setBounceDetectionActive(false)
+        toast.success('🛑 Bounce monitoring stopped')
+      }
+    } catch (error) {
+      console.error('Error stopping bounce monitoring:', error)
+    }
+  }
+
+  // Manual bounce processing
+  const processPastedBounces = async () => {
+    if (!pastedBounceText.trim()) {
+      toast.error('Please paste bounce email content')
+      return
+    }
+
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      setBounceProcessing(true)
+      
+      const result = await BounceDetectionService.processPastedBounces(
+        pastedBounceText,
+        tenant.id,
+        user.uid
+      )
+      
+      if (result.success) {
+        toast.success(`✅ Processed ${result.processed} bounced emails`)
+        console.log('Bounce processing results:', result.results)
+        
+        // Refresh bounce stats and contacts
+        await loadBounceStats()
+        await loadContactData()
+        
+        // Clear the form
+        setPastedBounceText('')
+        setShowBounceModal(false)
+      } else {
+        toast.error('Bounce processing failed: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error processing bounces:', error)
+      toast.error('Error processing bounces')
+    } finally {
+      setBounceProcessing(false)
+    }
+  }
+
+  // Run manual bounce scan
+  const runBounceMonitoring = async () => {
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      console.log('🔍 Scanning Gmail for bounces...')
+      toast('🔍 Scanning Gmail for bounces...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.monitorGmailBounces(tenant.id, user.uid)
+      
+      if (result.success) {
+        if (result.processed > 0) {
+          toast.success(`🧹 Found and processed ${result.processed} bounced emails`)
+        } else {
+          toast('✅ No bounces found - all good!', { 
+            icon: '✅',
+            duration: 3000
+          })
+        }
+        
+        // Refresh stats and contacts
+        await loadBounceStats()
+        // Refresh contacts by reloading from Firestore
+        try {
+          const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+          if (contactsResult.success && contactsResult.data) {
+            let contactsArray = []
+            if (Array.isArray(contactsResult.data)) {
+              contactsArray = contactsResult.data
+            } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
+              contactsArray = contactsResult.data.contacts
+            }
+            setContacts(contactsArray)
+            console.log('✅ Refreshed contacts after bounce processing')
+          }
+        } catch (error) {
+          console.error('Error refreshing contacts:', error)
+        }
+        
+        console.log('Manual bounce scan results:', result)
+      } else {
+        toast.error('Bounce scan failed: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error running bounce monitoring:', error)
+      toast.error('Error scanning for bounces')
+    }
+  }
+
+  // Load bounce stats on component mount
+  useEffect(() => {
+    if (tenant?.id) {
+      loadBounceStats()
+    }
+  }, [tenant?.id])
+
+  // ==================== END BOUNCE DETECTION FUNCTIONS ====================
 
   const loadLeadData = async () => {
     console.log('loadLeadData called, tenant:', tenant)
@@ -2247,7 +2442,7 @@ Enter number (1-4):`);
         responseRate: 0, // No responses until emails are sent
         emailsBounced: 0, // No bounces until emails are sent
         unsubscribed: 0, // No unsubscribes until emails are sent
-        createdDate: new Date().toISOString().split('T')[0],
+        createdDate: formatDateUS(new Date()),
         subject: campaignFormData.subject,
         template: campaignFormData.template,
         emailContent: finalEmailContent,
@@ -2485,7 +2680,6 @@ ${companyName}</p>
 
       toast.success(`🧹 Bounce cleanup complete! Removed ${removedCount} bounced emails from ${originalCount} contacts`)
       setBounceEmails('')
-      setShowBounceManager(false)
       
     } catch (error) {
       console.error('Error processing bounces:', error)
@@ -4065,6 +4259,82 @@ END:VCALENDAR`;
                 </div>
               )}
 
+              {/* Bounce Processing Modal */}
+              {showBounceModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} flex items-center`}>
+                        <span className="mr-2">📧</span>
+                        Process Bounced Emails
+                      </h3>
+                      <button 
+                        onClick={() => setShowBounceModal(false)}
+                        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-2xl font-bold`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                      <div className="flex items-start">
+                        <span className="mr-3 text-xl">💡</span>
+                        <div>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-800'} mb-2`}>
+                            <strong>How to use:</strong>
+                          </p>
+                          <ol className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} space-y-1`}>
+                            <li>1. Copy bounce email content from your Gmail</li>
+                            <li>2. Paste it in the text area below</li>
+                            <li>3. Click "Process Bounces" to automatically remove bounced emails from your contacts</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Paste Bounce Email Content:
+                      </label>
+                      <textarea
+                        value={pastedBounceText}
+                        onChange={(e) => setPastedBounceText(e.target.value)}
+                        className={`w-full h-40 border p-3 rounded-lg font-mono text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 placeholder-gray-500'
+                        }`}
+                        placeholder="Paste your bounce email content here..."
+                      />
+                    </div>
+                    
+                    <div className="flex gap-4 justify-end">
+                      <button
+                        onClick={() => setShowBounceModal(false)}
+                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                          isDarkMode 
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={processPastedBounces}
+                        disabled={bounceProcessing || !pastedBounceText.trim()}
+                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                          bounceProcessing || !pastedBounceText.trim()
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-orange-500 text-white hover:bg-orange-600'
+                        }`}
+                      >
+                        {bounceProcessing ? '🔄 Processing...' : '🧹 Process Bounces'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeLeadTab === 'analytics' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
@@ -4238,7 +4508,7 @@ END:VCALENDAR`;
               <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
               {/* Campaign Stats - Real Data Only */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 max-w-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
@@ -4248,6 +4518,93 @@ END:VCALENDAR`;
                   <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
                   <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="bounces" className="text-orange-500 text-3xl mb-2">🚫</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{bounceStats.totalBounces || 0}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Bounces Detected</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} text-center mt-1`}>
+                    {bounceStats.totalProcessed || 0} processed
+                  </div>
+                </div>
+              </div>
+
+              {/* Automated Bounce Detection */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+                    <span className="mr-2">🤖</span>
+                    Enhanced Bounce Detection
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                      bounceDetectionActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full mr-2 ${
+                        bounceDetectionActive ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                      {bounceDetectionActive ? 'Active' : 'Inactive'}
+                    </div>
+                    <button
+                      onClick={bounceDetectionActive ? stopBounceMonitoring : startBounceMonitoring}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        bounceDetectionActive
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-genie-teal text-white hover:bg-genie-teal-dark'
+                      }`}
+                    >
+                      {bounceDetectionActive ? '🛑 Stop' : '🤖 Start Auto-Detection'}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                  <div className="flex items-start">
+                    <span className="mr-3 text-2xl">🧹</span>
+                    <div>
+                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-blue-900'} mb-2`}>
+                        Automated Bounce Management
+                      </h4>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} mb-3`}>
+                        Automatically monitors your Gmail for bounce notifications and removes bounced emails from your contact list. 
+                        Hard bounces are removed immediately, soft bounces are tracked and removed after 3 attempts.
+                      </p>
+                      
+                      {bounceStats.lastScan && (
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-blue-600'}`}>
+                          Last scan: {new Date(bounceStats.lastScan.seconds * 1000).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <button
+                    onClick={runBounceMonitoring}
+                    className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">🔍</span>
+                    Scan Now
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowBounceModal(true)}
+                    className="bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">📋</span>
+                    Process Pasted Bounces
+                  </button>
+                  
+                  <button
+                    onClick={loadBounceStats}
+                    className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">📊</span>
+                    Refresh Stats
+                  </button>
                 </div>
               </div>
 
@@ -4597,12 +4954,6 @@ END:VCALENDAR`;
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className={`text-xl font-semibold text-genie-teal`}>Active Campaigns</h3>
-                  <button
-                    onClick={() => setShowBounceManager(true)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
-                  >
-                    🧹 Manage Bounces
-                  </button>
                 </div>
                 <div className="space-y-4">
                   {campaigns.length === 0 ? (
@@ -4618,19 +4969,16 @@ END:VCALENDAR`;
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {(() => {
                                 const calculatedContacts = calculateTargetContacts(campaign).length;
-                                console.log('CAMPAIGN DISPLAY DEBUG:', {
-                                  campaignName: campaign.name,
-                                  emailsSent: campaign.emailsSent,
-                                  calculatedContacts: calculatedContacts,
-                                  totalContacts: campaign.totalContacts,
-                                  displayText: `${campaign.emailsSent} of ${calculatedContacts} contacts`
-                                });
-                                return `${campaign.type} • ${campaign.emailsSent} of ${calculatedContacts} contacts • Created: ${campaign.createdDate}`;
+                                const createdDate = formatDateUS(campaign.createdDate);
+                                const scheduledDate = campaign.sendDate ? formatDateUS(campaign.sendDate) : null;
+                                
+                                let dateInfo = `Created: ${createdDate}`;
+                                if (scheduledDate && scheduledDate !== 'Not set') {
+                                  dateInfo += ` • 📅 Scheduled: ${scheduledDate}`;
+                                }
+                                
+                                return `${campaign.type} • ${campaign.emailsSent} of ${calculatedContacts} contacts • ${dateInfo}`;
                               })()}
-                              {/* Debug info */}
-                              <span className="text-xs text-blue-500 ml-2">
-                                [DEBUG: totalContacts:{campaign.totalContacts}, calculated:{calculateTargetContacts(campaign).length}, audience:{campaign.targetAudience}]
-                              </span>
                               {campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0 && (
                                 <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegments.join(', ')}</span>
                               )}

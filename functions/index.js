@@ -10,8 +10,15 @@ const { Resend } = require('resend');
 // Import lead generation proxy
 const { leadGenProxy } = require('./leadGenProxy');
 
+// Import Gmail bounce detection functions
+const { scanGmailBounces, processBounces } = require('./gmailBounceDetection');
+
 // Export lead generation proxy
 exports.leadGenProxy = leadGenProxy;
+
+// Export Gmail bounce detection functions
+exports.scanGmailBounces = scanGmailBounces;
+exports.processBounces = processBounces;
 
 // Function to create founder tenant document
 exports.createFounderTenant = onRequest(async (req, res) => {

@@ -327,7 +327,7 @@ function SophisticatedDashboard() {
     sendDate: '',
     aiSmartPrompt: '',
     additionalPrompt: '',
-    customSegment: '',
+    customSegments: [],
     callToActionText: '',
     callToActionUrl: ''
   })
@@ -1019,7 +1019,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Filter contacts based on campaign targeting
       console.log('Campaign targeting:', {
         targetAudience: campaign.targetAudience,
-        customSegment: campaign.customSegment
+        customSegments: campaign.customSegments || []
       })
       console.log('Total contacts available:', contacts.length)
       
@@ -1027,29 +1027,31 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         if (!campaign.targetAudience || campaign.targetAudience === 'All Leads' || campaign.targetAudience === 'All Contacts') {
           return true
         }
-        if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
-          // Check if contact matches the selected custom segment
-          const segment = campaign.customSegment
-          
-          // Check tags (handle both exact match and common variations)
-          if (contact.tags && (
-            contact.tags.includes(segment) ||
-            (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-            (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-            (segment === 'New prospects' && contact.tags.includes('New'))
-          )) {
-            return true
-          }
-          
-          // Check company
-          if (contact.company && segment.startsWith('Company: ') && contact.company === segment.replace('Company: ', '')) {
-            return true
-          }
-          
-          // Check status
-          if (contact.status && segment.startsWith('Status: ') && contact.status === segment.replace('Status: ', '')) {
-            return true
-          }
+        if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0) {
+          // Check if contact matches ANY of the selected custom segments
+          return campaign.customSegments.some(segment => {
+            // Check tags (handle both exact match and common variations)
+            if (contact.tags && (
+              contact.tags.includes(segment) ||
+              (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+              (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+              (segment === 'New prospects' && contact.tags.includes('New'))
+            )) {
+              return true
+            }
+            
+            // Check company
+            if (contact.company && segment.startsWith('Company: ') && contact.company === segment.replace('Company: ', '')) {
+              return true
+            }
+            
+            // Check status
+            if (contact.status && segment.startsWith('Status: ') && contact.status === segment.replace('Status: ', '')) {
+              return true
+            }
+            
+            return false
+          })
         }
         return false
       })
@@ -2157,32 +2159,34 @@ Enter number (1-4):`);
       if (campaign.targetAudience === 'Warm Prospects') {
         return contact.status === 'qualified' || contact.status === 'warm'
       }
-      if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
-        const segment = campaign.customSegment
-        
-        // Check tags (handle both exact match and common variations)
-        if (contact.tags && (
-          contact.tags.includes(segment) ||
-          (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-          (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-          (segment === 'New prospects' && contact.tags.includes('New'))
-        )) {
-          return true
-        }
-        
-        // Check company segments (format: "Company: CompanyName")
-        if (segment.startsWith('Company: ')) {
-          const companyName = segment.replace('Company: ', '')
-          return contact.company === companyName
-        }
-        
-        // Check status segments (format: "Status: StatusName")
-        if (segment.startsWith('Status: ')) {
-          const statusName = segment.replace('Status: ', '')
-          return contact.status === statusName
-        }
-        
-        return false
+      if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0) {
+        // Check if contact matches ANY of the selected custom segments
+        return campaign.customSegments.some(segment => {
+          
+          // Check tags (handle both exact match and common variations)
+          if (contact.tags && (
+            contact.tags.includes(segment) ||
+            (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+            (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+            (segment === 'New prospects' && contact.tags.includes('New'))
+          )) {
+            return true
+          }
+          
+          // Check company segments (format: "Company: CompanyName")
+          if (segment.startsWith('Company: ')) {
+            const companyName = segment.replace('Company: ', '')
+            return contact.company === companyName
+          }
+          
+          // Check status segments (format: "Status: StatusName")
+          if (segment.startsWith('Status: ')) {
+            const statusName = segment.replace('Status: ', '')
+            return contact.status === statusName
+          }
+          
+          return false
+        })
       }
       return false
     })
@@ -2248,7 +2252,7 @@ Enter number (1-4):`);
         template: campaignFormData.template,
         emailContent: finalEmailContent,
         targetAudience: campaignFormData.targetAudience,
-        customSegment: campaignFormData.customSegment,
+        customSegments: campaignFormData.customSegments,
         sendDate: campaignFormData.sendDate,
         callToActionText: campaignFormData.callToActionText,
         callToActionUrl: campaignFormData.callToActionUrl,
@@ -2263,33 +2267,33 @@ Enter number (1-4):`);
           if (campaignFormData.targetAudience === 'Warm Prospects') {
             return contact.status === 'qualified' || contact.status === 'warm'
           }
-          if (campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegment) {
-            // Check if contact matches the selected custom segment
-            const segment = campaignFormData.customSegment
-            
-            // Check tags (handle both exact match and common variations)
-            if (contact.tags && (
-              contact.tags.includes(segment) ||
-              (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-              (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-              (segment === 'New prospects' && contact.tags.includes('New'))
-            )) {
-              return true
-            }
-            
-            // Check company segments (format: "Company: CompanyName")
-            if (segment.startsWith('Company: ')) {
-              const companyName = segment.replace('Company: ', '')
-              return contact.company === companyName
-            }
-            
-            // Check status segments (format: "Status: StatusName")
-            if (segment.startsWith('Status: ')) {
-              const statusName = segment.replace('Status: ', '')
-              return contact.status === statusName
-            }
-            
-            return false
+          if (campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegments && campaignFormData.customSegments.length > 0) {
+            // Check if contact matches ANY of the selected custom segments
+            return campaignFormData.customSegments.some(segment => {
+              // Check tags (handle both exact match and common variations)
+              if (contact.tags && (
+                contact.tags.includes(segment) ||
+                (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+                (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+                (segment === 'New prospects' && contact.tags.includes('New'))
+              )) {
+                return true
+              }
+              
+              // Check company segments (format: "Company: CompanyName")
+              if (segment.startsWith('Company: ')) {
+                const companyName = segment.replace('Company: ', '')
+                return contact.company === companyName
+              }
+              
+              // Check status segments (format: "Status: StatusName")
+              if (segment.startsWith('Status: ')) {
+                const statusName = segment.replace('Status: ', '')
+                return contact.status === statusName
+              }
+              
+              return false
+            })
           }
           return false
         }).length
@@ -2313,7 +2317,7 @@ Enter number (1-4):`);
         sendDate: '',
         aiSmartPrompt: '',
         additionalPrompt: '',
-        customSegment: '',
+        customSegments: [],
         callToActionText: '',
         callToActionUrl: ''
       })
@@ -4330,7 +4334,7 @@ END:VCALENDAR`;
                       <select 
                         value={campaignFormData.targetAudience}
                         onChange={(e) => {
-                          setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegment: '' }))
+                          setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegments: [] }))
                         }}
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       >
@@ -4368,7 +4372,7 @@ END:VCALENDAR`;
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <div className="flex justify-between items-center mb-1">
-                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segments</label>
                           <button
                             type="button"
                             onClick={async () => {
@@ -4426,11 +4430,14 @@ END:VCALENDAR`;
                           </button>
                         </div>
                         <select 
-                          value={campaignFormData.customSegment}
-                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, customSegment: e.target.value }))}
-                          className={`w-full border border-orange-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-orange-50' : 'bg-orange-50'}`}
+                          multiple
+                          value={campaignFormData.customSegments}
+                          onChange={(e) => {
+                            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                            setCampaignFormData(prev => ({ ...prev, customSegments: selectedOptions }))
+                          }}
+                          className={`w-full border border-orange-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-orange-50' : 'bg-orange-50'} min-h-[120px]`}
                         >
-                          <option value="">Choose a tagged segment...</option>
                           {availableTags.map(tag => (
                             <option key={tag} value={tag}>
                               🏷️ {tag}
@@ -4444,19 +4451,20 @@ END:VCALENDAR`;
                           </div>
                         )}
                         {availableTags.length > 0 && (
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                            Found {availableTags.length} tag(s): {availableTags.join(', ')}
-                          </p>
+                          <div className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            <p>Found {availableTags.length} tag(s): {availableTags.join(', ')}</p>
+                            <p className={`mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>💡 Hold Ctrl/Cmd to select multiple segments</p>
+                          </div>
                         )}
                         
-                        {/* Contact Count Display for Custom Segment */}
-                        {campaignFormData.customSegment && (
+                        {/* Contact Count Display for Custom Segments */}
+                        {campaignFormData.customSegments && campaignFormData.customSegments.length > 0 && (
                           <div className={`mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-orange-50 text-orange-700'}`}>
                             <div className="flex items-center text-sm">
                               <span className="mr-2">🏷️</span>
                               <span>
                                 Campaign will send to <strong>{calculateTargetContacts(campaignFormData).length}</strong> contacts 
-                                with "{campaignFormData.customSegment}" tag
+                                with {campaignFormData.customSegments.length === 1 ? 'tag' : 'tags'}: <strong>{campaignFormData.customSegments.join(', ')}</strong>
                               </span>
                             </div>
                           </div>
@@ -4623,8 +4631,8 @@ END:VCALENDAR`;
                               <span className="text-xs text-blue-500 ml-2">
                                 [DEBUG: totalContacts:{campaign.totalContacts}, calculated:{calculateTargetContacts(campaign).length}, audience:{campaign.targetAudience}]
                               </span>
-                              {campaign.targetAudience === 'Custom Segment' && campaign.customSegment && (
-                                <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegment}</span>
+                              {campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0 && (
+                                <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegments.join(', ')}</span>
                               )}
                             </p>
                             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
@@ -4778,7 +4786,7 @@ END:VCALENDAR`;
                         {editingCampaign.targetAudience === 'Custom Segment' && (
                           <div className="mt-3">
                             <div className="flex justify-between items-center mb-1">
-                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segments</label>
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -4819,11 +4827,14 @@ END:VCALENDAR`;
                               </button>
                             </div>
                             <select 
-                              value={editingCampaign.customSegment || ''}
-                              onChange={(e) => setEditingCampaign({...editingCampaign, customSegment: e.target.value})}
-                              className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                              multiple
+                              value={editingCampaign.customSegments || []}
+                              onChange={(e) => {
+                                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                                setEditingCampaign({...editingCampaign, customSegments: selectedOptions})
+                              }}
+                              className={`w-full border p-3 rounded min-h-[120px] ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                             >
-                              <option value="">Choose a tagged segment...</option>
                               {availableTags.map(tag => (
                                 <option key={tag} value={tag}>
                                   🏷️ {tag}
@@ -4837,9 +4848,10 @@ END:VCALENDAR`;
                               </div>
                             )}
                             {availableTags.length > 0 && (
-                              <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                Found {availableTags.length} tag(s): {availableTags.join(', ')}
-                              </p>
+                              <div className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                <p>Found {availableTags.length} tag(s): {availableTags.join(', ')}</p>
+                                <p className={`mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>💡 Hold Ctrl/Cmd to select multiple segments</p>
+                              </div>
                             )}
                           </div>
                         )}

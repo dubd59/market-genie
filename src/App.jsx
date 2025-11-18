@@ -29,6 +29,7 @@ import ProPlanPage from './pages/ProPlanPage'
 import LifetimePlanPage from './pages/LifetimePlanPage'
 import OAuthCallback from './pages/OAuthCallback'
 import MicrosoftOAuthCallback from './pages/MicrosoftOAuthCallback'
+import GmailOAuthCallback from './pages/GmailOAuthCallback'
 import GiftRedemption from './components/GiftRedemption'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
@@ -359,7 +360,10 @@ function SophisticatedDashboard() {
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
   
-  // Legacy bounce management removed - now using automated bounce detection
+  // Legacy bounce management - minimal state for compatibility
+  const [bounceEmails, setBounceEmails] = useState('')
+  const [processingBounces, setProcessingBounces] = useState(false)
+  const [bounceMethod, setBounceMethod] = useState('paste')
   
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
@@ -1659,6 +1663,79 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     } catch (error) {
       console.error('Error running bounce monitoring:', error)
       toast.error('Error scanning for bounces')
+    }
+  }
+
+  // Reset bounce statistics to zero
+  const resetBounceStatistics = async () => {
+    if (!tenant?.id) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      console.log('🔄 Resetting bounce statistics...')
+      toast('🔄 Resetting bounce statistics...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.resetBounceStats(tenant.id)
+      
+      if (result.success) {
+        toast.success('✅ Bounce statistics reset to zero')
+        await loadBounceStats() // Refresh the display
+      } else {
+        toast.error('Failed to reset statistics: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error resetting bounce statistics:', error)
+      toast.error('Error resetting statistics')
+    }
+  }
+
+  // Setup Gmail OAuth for live bounce detection
+  const setupGmailOAuth = async () => {
+    try {
+      toast('🔗 Setting up Gmail OAuth connection...', { duration: 3000 })
+      
+      // Gmail OAuth configuration - Your actual credentials
+      const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com'
+      const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback'
+      const SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
+      
+      // Build OAuth URL
+      const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${CLIENT_ID}&` +
+        `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+        `scope=${encodeURIComponent(SCOPE)}&` +
+        `response_type=code&` +
+        `access_type=offline&` +
+        `prompt=consent&` +
+        `state=${tenant?.id || 'default'}`
+      
+      console.log('🔗 Opening Gmail OAuth window...')
+      console.log('OAuth URL:', oauthURL)
+      
+      // Open OAuth window
+      const popup = window.open(oauthURL, 'gmail-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes')
+      
+      if (!popup) {
+        toast.error('Popup blocked! Please allow popups and try again.')
+        return
+      }
+      
+      // Listen for OAuth completion
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          toast('OAuth window closed - please try again if not completed')
+        }
+      }, 1000)
+      
+      console.log('📧 Gmail OAuth setup initiated')
+      toast('📧 Complete Gmail authorization in the popup window')
+      
+    } catch (error) {
+      console.error('Error setting up Gmail OAuth:', error)
+      toast.error('Error setting up Gmail connection')
     }
   }
 
@@ -4581,7 +4658,7 @@ END:VCALENDAR`;
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <button
                     onClick={runBounceMonitoring}
                     className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
@@ -4591,11 +4668,19 @@ END:VCALENDAR`;
                   </button>
                   
                   <button
-                    onClick={() => setShowBounceModal(true)}
-                    className="bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center"
+                    onClick={setupGmailOAuth}
+                    className="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
                   >
-                    <span className="mr-2">📋</span>
-                    Process Pasted Bounces
+                    <span className="mr-2">🔗</span>
+                    Connect Gmail
+                  </button>
+                  
+                  <button
+                    onClick={resetBounceStatistics}
+                    className="bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">🔄</span>
+                    Reset Stats
                   </button>
                   
                   <button
@@ -5284,14 +5369,14 @@ END:VCALENDAR`;
                 </div>
               )}
 
-              {/* Bounce Management Modal */}
-              {showBounceManager && (
+              {/* Bounce Management Modal - DISABLED */}
+              {false && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                   <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
                     <div className="flex justify-between items-center mb-6">
                       <h3 className={`text-xl font-semibold text-genie-teal`}>🧹 Bulk Bounce Management</h3>
                       <button
-                        onClick={() => setShowBounceManager(false)}
+                        onClick={() => {}}
                         className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'} text-2xl`}
                       >
                         ×
@@ -5436,7 +5521,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                         {processingBounces ? '🔄 Processing...' : '🧹 Remove Bounced Emails'}
                       </button>
                       <button
-                        onClick={() => setShowBounceManager(false)}
+                        onClick={() => {}}
                         className={`px-6 py-3 rounded-lg border transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
@@ -7486,6 +7571,7 @@ function App() {
             {/* OAuth Callback Routes - Public */}
             <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />
             <Route path="/oauth/microsoft/callback" element={<MicrosoftOAuthCallback />} />
+            <Route path="/oauth/gmail/callback" element={<GmailOAuthCallback />} />
             
             {/* Dashboard - Protected User workspace */}
             <Route path="/dashboard" element={

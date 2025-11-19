@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "market-genie-f2d41"
+    "default": "market-genie-f2d41",
+    "staging": "market-genie-f2d41"
   },
   "targets": {
     "market-genie-f2d41": {

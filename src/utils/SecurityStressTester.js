@@ -202,7 +202,7 @@ class SecurityStressTester {
 
       // Test allowed URLs (should work)
       const allowedUrls = [
-        'https://market-genie-app.web.app',
+        'https://marketgenie.tech',
         'https://firebase.googleapis.com'
       ];
 

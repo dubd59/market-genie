@@ -63,6 +63,33 @@ export function TenantProvider({ children }) {
         setLoading(true)
         setError(null)
 
+        // 🚨 EMERGENCY TENANT FIX: Check for forced tenant override
+        const emergencyTenantFix = localStorage.getItem('emergency_tenant_fix');
+        const forcedTenant = localStorage.getItem('tenant_override') || localStorage.getItem('correct_tenant_forced');
+        
+        if (emergencyTenantFix === 'applied' && forcedTenant) {
+          console.log('🚨 EMERGENCY FIX DETECTED - Using forced tenant:', forcedTenant);
+          
+          // Create emergency tenant object
+          const emergencyTenant = {
+            id: forcedTenant,
+            tenantId: forcedTenant,
+            name: 'Market Genie (Emergency Fixed)',
+            status: 'active',
+            initialized: true,
+            _emergencyFixed: true,
+            _fixedAt: new Date().toISOString()
+          };
+          
+          setTenant(emergencyTenant);
+          setLoading(false);
+          
+          console.log('✅ Emergency tenant fix applied successfully');
+          console.log('📊 Using tenant:', forcedTenant);
+          
+          return;
+        }
+
         console.log('🏢 Loading tenant for user:', user?.email)
         
         // Double-check we still have a valid user before proceeding
@@ -72,12 +99,57 @@ export function TenantProvider({ children }) {
           return
         }
         
+        // 🎯 FIX: Check JWT token for tenantId first
+        let jwtTenantId = null;
+        try {
+          const idTokenResult = await user.getIdTokenResult(true);
+          jwtTenantId = idTokenResult.claims.tenantId;
+          console.log('🎫 JWT Token tenant ID:', jwtTenantId);
+        } catch (jwtError) {
+          console.log('⚠️ Could not get JWT tenant ID:', jwtError.message);
+        }
+        
         // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Tenant loading timeout')), loadTimeout)
         );
         
-        const loadPromise = TenantService.getCurrentUserTenant();
+        // 🎯 FOUNDER FIX: Always use actual user ID as tenant ID
+        if (user.email === 'dubdproducts@gmail.com') {
+          console.log('👑 Founder account detected - using user ID as tenant:', user.uid);
+          const founderTenant = {
+            id: user.uid, // Use actual user ID, not 'founder-tenant'
+            name: 'Market Genie - Founder Account',
+            role: 'founder',
+            ownerId: user.uid,
+            ownerEmail: user.email,
+            isFounderAccount: true,
+            isMasterTenant: true,
+            settings: {
+              timezone: 'America/New_York',
+              currency: 'USD',
+              features: { allFeatures: true, adminPanel: true }
+            },
+            subscription: {
+              plan: 'founder',
+              status: 'lifetime',
+              features: ['all']
+            },
+            permissions: { superAdmin: true },
+            initialized: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          console.log('✅ Founder tenant created with user ID:', founderTenant);
+          setTenant(founderTenant);
+          setLoading(false);
+          return;
+        }
+
+        // Use JWT tenant ID if available, otherwise fall back to user-based tenant
+        const loadPromise = jwtTenantId 
+          ? TenantService.getTenantById(jwtTenantId)
+          : TenantService.getCurrentUserTenant();
         
         const result = await Promise.race([loadPromise, timeoutPromise]);
         
@@ -111,12 +183,26 @@ export function TenantProvider({ children }) {
               return await attemptLoad();
             } else {
               console.error('❌ Max retries reached for tenant loading');
-              toast.error('Connection issues detected. Please refresh the page to try again.', {
-                duration: 8000
-              });
-              // Force loading to false to prevent infinite loading
-              setLoading(false);
-              return;
+              
+              // One-time only auto-refresh per session
+              const hasRefreshed = sessionStorage.getItem('workspaceAutoRefreshed');
+              if (!hasRefreshed) {
+                sessionStorage.setItem('workspaceAutoRefreshed', 'true');
+                toast.error('Connection issues detected. Refreshing in 3 seconds...', {
+                  duration: 3000
+                });
+                setTimeout(() => {
+                  window.location.reload();
+                }, 3000);
+                return;
+              } else {
+                // Already refreshed once, don't refresh again
+                toast.error('Connection issues detected. Please check your internet connection.', {
+                  duration: 8000
+                });
+                setLoading(false);
+                return;
+              }
             }
           }
           
@@ -134,6 +220,10 @@ export function TenantProvider({ children }) {
 
         if (result.data) {
           console.log('✅ Tenant loaded successfully:', result.data.name || result.data.id)
+          
+          // Clear the auto-refresh flag on successful load
+          sessionStorage.removeItem('workspaceAutoRefreshed');
+          
           setTenant(result.data)
           
           // Initialize tenant collections if this is a new tenant

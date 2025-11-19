@@ -31,11 +31,64 @@ const OutreachAutomation = () => {
     name: '',
     type: '',
     audience: '',
-    description: ''
+    description: '',
+    aiSmartPrompt: '',
+    additionalPrompt: '',
+    callToActionText: '',
+    callToActionUrl: ''
   });
+
+  // AI Smart Prompt Options - Cold Outreach at the top!
+  const aiSmartPrompts = [
+    { value: '', label: 'Select AI Smart Prompt...' },
+    // 🔥 COLD OUTREACH SEQUENCES - TOP PRIORITY
+    { value: 'cold_outreach_intro', label: '❄️💼 Cold outreach: Professional introduction sequence' },
+    { value: 'cold_outreach_value', label: '❄️🎯 Cold outreach: Value-first approach with case study' },
+    { value: 'cold_outreach_social_proof', label: '❄️⭐ Cold outreach: Social proof and testimonials focus' },
+    { value: 'cold_outreach_problem_solver', label: '❄️🔧 Cold outreach: Problem identification and solution' },
+    { value: 'cold_outreach_curiosity', label: '❄️🧠 Cold outreach: Curiosity-driven conversation starter' },
+    { value: 'cold_outreach_multi_touch', label: '❄️📧 Cold outreach: Multi-touch follow-up sequence' },
+    // WARM OUTREACH & FOLLOW-UPS
+    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
+    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
+    // CUSTOMER LIFECYCLE
+    { value: 'welcome_new_customer', label: '👋 Welcome email for new customers' },
+    { value: 'welcome_vip', label: '🌟 Welcome email for VIP customers with exclusive offers' },
+    { value: 'onboarding_step1', label: '📚 Onboarding email step 1: Getting started guide' },
+    { value: 'onboarding_step2', label: '🎯 Onboarding email step 2: Key features walkthrough' },
+    { value: 'onboarding_step3', label: '🚀 Onboarding email step 3: Advanced tips and tricks' },
+    // MARKETING & PROMOTIONS
+    { value: 'product_launch', label: '🚀 Product launch announcement with early bird pricing' },
+    { value: 'product_launch_vip', label: '⭐ Product launch exclusive access for VIP customers' },
+    { value: 'seasonal_promotion', label: '🌟 Seasonal promotion with limited-time offers' },
+    { value: 'cart_abandonment', label: '🛒 Cart abandonment reminder with discount incentive' },
+    // RE-ENGAGEMENT
+    { value: 'reengagement_inactive', label: '💤 Re-engagement email for inactive users with special offer' },
+    { value: 'reengagement_win_back', label: '❤️ Win-back email for churned customers' },
+    // CONTENT & EDUCATION
+    { value: 'educational_tips', label: '💡 Educational email with industry tips and insights' },
+    { value: 'case_study', label: '📊 Case study email showing customer success story' },
+    { value: 'webinar_invite', label: '🎥 Webinar invitation with registration link' },
+    { value: 'event_invitation', label: '🎪 Event invitation with exclusive attendee benefits' },
+    // FEEDBACK & ENGAGEMENT
+    { value: 'survey_feedback', label: '📝 Customer feedback survey with incentive' },
+    { value: 'testimonial_request', label: '⭐ Testimonial request with easy submission process' },
+    { value: 'referral_program', label: '👥 Referral program invitation with rewards' },
+    // SPECIAL OCCASIONS
+    { value: 'birthday_special', label: '🎂 Birthday special offer for customers' },
+    { value: 'anniversary_celebration', label: '🎉 Company anniversary celebration with customer appreciation' },
+    // TRANSACTIONAL
+    { value: 'thank_you_purchase', label: '🙏 Thank you email after purchase with what\'s next' },
+    { value: 'renewal_reminder', label: '🔄 Subscription renewal reminder with upgrade options' },
+    // ANNOUNCEMENTS
+    { value: 'feature_announcement', label: '✨ New feature announcement with tutorial links' },
+    { value: 'maintenance_notice', label: '🔧 Maintenance notice with minimal disruption messaging' }
+  ];
 
   useEffect(() => {
     console.log('OutreachAutomation mounted, tenant:', tenant?.id);
+    console.log('AI Smart Prompts loaded:', aiSmartPrompts.length, 'options');
+    console.log('First few prompts:', aiSmartPrompts.slice(0, 5));
     if (tenant?.id) {
       loadCampaigns();
       checkBusinessProfile();
@@ -100,7 +153,16 @@ const OutreachAutomation = () => {
     };
 
     setCampaigns(prev => [...prev, newCampaign]);
-    setCampaignForm({ name: '', type: '', audience: '', description: '' });
+    setCampaignForm({ 
+      name: '', 
+      type: '', 
+      audience: '', 
+      description: '', 
+      aiSmartPrompt: '', 
+      additionalPrompt: '',
+      callToActionText: '',
+      callToActionUrl: ''
+    });
     setShowCampaignForm(false);
     toast.success('Campaign created successfully!');
   };
@@ -266,6 +328,25 @@ const OutreachAutomation = () => {
               onChange={(e) => setCampaignForm(prev => ({ ...prev, audience: e.target.value }))}
               className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* AI Smart Prompt Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">🤖 AI Smart Prompt</label>
+              <div className="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+                DEBUG: {aiSmartPrompts.length} prompts loaded. First: "{aiSmartPrompts[1]?.label || 'none'}"
+              </div>
+              <select
+                value={campaignForm.aiSmartPrompt}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}
+                className="w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
+              >
+                {aiSmartPrompts.map(prompt => (
+                  <option key={prompt.value} value={prompt.value}>
+                    {prompt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             
             <textarea
               placeholder="Campaign Description"
@@ -274,6 +355,55 @@ const OutreachAutomation = () => {
               className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
             />
+
+            {/* Additional Prompting/Customized */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">✨ Additional Prompting/Customized</label>
+              <textarea
+                placeholder="Add specific details to customize your AI-generated email...
+
+Examples:
+• 'Include a 20% discount code for first-time buyers'
+• 'Mention our new mobile app launch'
+• 'Use a friendly, conversational tone'
+• 'Add a customer success story from tech industry'
+• 'Include social proof and testimonials'"
+                value={campaignForm.additionalPrompt}
+                onChange={(e) => setCampaignForm(prev => ({ ...prev, additionalPrompt: e.target.value }))}
+                className="w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                rows="4"
+              />
+            </div>
+
+            {/* Call-to-Action Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">🎯 Call-to-Action (End of Email Body)</h3>
+              <p className="text-sm text-gray-600 mb-4">This CTA will appear as the final paragraph of your email content, before the footer.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Call-to-Action Text</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Ready to get started? Book your free consultation!"
+                    value={campaignForm.callToActionText}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, callToActionText: e.target.value }))}
+                    className="w-full border border-green-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Call-to-Action URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://your-landing-page.com"
+                    value={campaignForm.callToActionUrl}
+                    onChange={(e) => setCampaignForm(prev => ({ ...prev, callToActionUrl: e.target.value }))}
+                    className="w-full border border-green-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                  />
+                </div>
+              </div>
+            </div>
             
             <button
               type="submit"

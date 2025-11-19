@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTenant } from '../contexts/TenantContext'
 import LeadService from '../services/leadService'
+import ProspeoLeadSearch from './ProspeoLeadSearch'
 import toast from 'react-hot-toast'
 
 const LiveLeadGeneration = () => {
@@ -28,6 +29,7 @@ const LiveLeadGeneration = () => {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState([])
+  const [emergencySyncStatus, setEmergencySyncStatus] = useState({ syncing: false, count: 0 })
 
   const [newLead, setNewLead] = useState({
     firstName: '',
@@ -42,23 +44,133 @@ const LiveLeadGeneration = () => {
 
   useEffect(() => {
     if (tenant?.id) {
+      // 🚀 PERFORMANCE FIX: Trigger immediate sync when user opens Recent Leads tab
+      triggerEmergencySync()
+      
       loadLeadData()
+      
+      // Set up automatic refresh every 10 seconds to catch new scraped leads
+      const refreshInterval = setInterval(() => {
+        console.log('🔄 Auto-refreshing Recent Leads (checking database + emergency storage)...')
+        loadLeadData()
+      }, 10000) // 10 seconds
+      
+      // Listen for emergency lead storage events
+      const handleForceRefresh = (event) => {
+        console.log('🚨 Emergency lead storage triggered refresh:', event.detail)
+        loadLeadData()
+      }
+      
+      window.addEventListener('forceLoadLeadsFromDatabase', handleForceRefresh)
+      window.addEventListener('refreshRecentLeads', handleForceRefresh)
+      window.addEventListener('emergencyLeadsSync', handleForceRefresh) // 🚨 CRITICAL: Listen for emergency sync events
+      
+      return () => {
+        clearInterval(refreshInterval)
+        window.removeEventListener('forceLoadLeadsFromDatabase', handleForceRefresh)
+        window.removeEventListener('refreshRecentLeads', handleForceRefresh)
+        window.removeEventListener('emergencyLeadsSync', handleForceRefresh) // 🚨 CRITICAL: Cleanup
+      }
     }
   }, [tenant])
+
+  // 🚀 NEW: Manual force sync function when user clicks button
+  const handleForceSync = async () => {
+    setEmergencySyncStatus(prev => ({ ...prev, syncing: true }))
+    
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        if (pendingCount > 0) {
+          console.log(`🚀 FORCE SYNC: User requested manual sync of ${pendingCount} emergency leads`)
+          toast.loading(`Syncing ${pendingCount} emergency leads...`, { duration: 3000 })
+          
+          const result = await emergencyStorage.triggerImmediateSync()
+          
+          if (result.success) {
+            toast.success(`✅ Successfully synced ${result.synced} leads to database!`)
+            await loadLeadData() // Refresh the leads list
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+          } else {
+            toast.error('❌ Sync failed: ' + (result.error || 'Unknown error'))
+            setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+          }
+        } else {
+          toast.success('✅ No emergency leads to sync - all caught up!')
+          setEmergencySyncStatus({ syncing: false, count: 0 })
+        }
+      } else {
+        toast.error('Emergency storage not available')
+        setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+      }
+    } catch (error) {
+      console.error('Force sync error:', error)
+      toast.error('❌ Force sync failed: ' + error.message)
+      setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+    }
+  }
+
+  // 🚀 NEW: Trigger immediate emergency sync when user switches to Recent Leads
+  const triggerEmergencySync = async () => {
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        setEmergencySyncStatus({ syncing: pendingCount > 0, count: pendingCount })
+        
+        if (pendingCount > 0) {
+          console.log(`🚀 RECENT LEADS: Triggering fast sync for ${pendingCount} emergency leads...`)
+          const result = await emergencyStorage.triggerImmediateSync()
+          if (result.success && result.synced > 0) {
+            console.log(`✅ Fast sync completed: ${result.synced} leads moved to database`)
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Emergency sync trigger failed:', error.message)
+      setEmergencySyncStatus({ syncing: false, count: 0 })
+    }
+  }
 
   const loadLeadData = async () => {
     try {
       setLoading(true)
       
-      // Load leads and stats
+      // Load leads and stats from Firebase database
       const [leadsResult, statsResult] = await Promise.all([
         LeadService.getLeads(tenant.id),
         LeadService.getLeadStats(tenant.id)
       ])
 
+      let allLeads = []
+      
       if (leadsResult.data) {
-        setLeads(leadsResult.data)
+        allLeads = [...leadsResult.data]
       }
+
+      // 🚨 CRITICAL: Also include emergency storage leads that haven't been synced yet
+      try {
+        const emergencyLeadStorage = window.emergencyLeadStorage || window.EmergencyLeadStorage
+        if (emergencyLeadStorage) {
+          const emergencyLeads = emergencyLeadStorage.getAllLeads()
+          if (emergencyLeads && emergencyLeads.length > 0) {
+            console.log(`📱 Including ${emergencyLeads.length} emergency storage leads in Recent Leads display`)
+            
+            // Add emergency leads to the display, avoiding duplicates
+            const existingEmails = new Set(allLeads.map(lead => lead.email))
+            const newEmergencyLeads = emergencyLeads.filter(lead => !existingEmails.has(lead.email))
+            
+            allLeads = [...allLeads, ...newEmergencyLeads]
+            console.log(`📊 Total leads displayed: ${allLeads.length} (${leadsResult.data?.length || 0} from database + ${newEmergencyLeads.length} from emergency storage)`)
+          }
+        }
+      } catch (emergencyError) {
+        console.log('No emergency storage found or error accessing it:', emergencyError.message)
+      }
+
+      setLeads(allLeads)
 
       if (statsResult.data) {
         setLeadStats(statsResult.data)
@@ -258,10 +370,27 @@ const LiveLeadGeneration = () => {
           <div>
             <h1 className="text-4xl font-bold text-genie-teal mb-2">🚀 Lead Generation Center</h1>
             <p className="text-gray-600">AI-powered lead discovery and management system</p>
+            
+            {/* 🚀 Emergency Sync Status Indicator */}
+            {emergencySyncStatus.syncing && (
+              <div className="mt-2 flex items-center px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                <span className="text-yellow-800 text-sm font-medium">
+                  🔄 Syncing {emergencySyncStatus.count} emergency leads to database...
+                </span>
+              </div>
+            )}
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-gray-900">{leadStats.total || 0}</div>
             <div className="text-sm text-gray-500">Total Leads</div>
+            
+            {/* Emergency sync count if any */}
+            {emergencySyncStatus.count > 0 && !emergencySyncStatus.syncing && (
+              <div className="mt-1 text-xs text-yellow-600">
+                {emergencySyncStatus.count} pending sync
+              </div>
+            )}
           </div>
         </div>
 
@@ -403,13 +532,49 @@ const LiveLeadGeneration = () => {
                 </button>
               </form>
             </div>
+
+            {/* Prospeo Lead Search */}
+            <div className="mt-6">
+              <ProspeoLeadSearch />
+            </div>
           </div>
 
           {/* Leads List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg border">
               <div className="p-6 border-b">
-                <h3 className="text-xl font-semibold text-gray-900">Recent Leads</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-gray-900">Recent Leads</h3>
+                  
+                  {/* 🚀 Force Sync Button */}
+                  <div className="flex items-center space-x-3">
+                    {emergencySyncStatus.count > 0 && (
+                      <button
+                        onClick={handleForceSync}
+                        disabled={emergencySyncStatus.syncing}
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        {emergencySyncStatus.syncing ? (
+                          <>
+                            <div className="inline-flex items-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Syncing...
+                            </div>
+                          </>
+                        ) : (
+                          `🚀 Force Sync (${emergencySyncStatus.count})`
+                        )}
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => loadLeadData()}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      🔄 Refresh
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <div className="overflow-hidden">

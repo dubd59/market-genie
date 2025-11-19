@@ -33,11 +33,8 @@ export const auth = getAuth(app);
   }
 })();
 
-// Initialize Firestore with standard configuration (CORS-safe)
-export const db = initializeFirestore(app, {
-  ignoreUndefinedProperties: true,
-  cacheSizeBytes: 40000000, // 40MB cache
-});
+// Initialize Firestore with minimal configuration to avoid transport issues
+export const db = getFirestore(app);
 
 // Other Firebase services
 export const storage = getStorage(app);

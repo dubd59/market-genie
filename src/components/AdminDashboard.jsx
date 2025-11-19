@@ -1,8 +1,35 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import SecurityStatus from '../components/SecurityStatus'
+import dataInvestigationService from '../services/dataInvestigationService'
+import { toast } from 'react-hot-toast'
 
 function AdminDashboard() {
+  const [investigating, setInvestigating] = useState(false);
+
+  const handleDataInvestigation = async () => {
+    setInvestigating(true);
+    toast.loading('🔍 Investigating all data locations...');
+    
+    try {
+      const results = await dataInvestigationService.recoverMissingCampaigns();
+      if (results.success) {
+        toast.dismiss();
+        toast.success(`Found ${results.campaigns.length} campaigns!`);
+        console.log('📊 Investigation Results:', results);
+      } else {
+        toast.dismiss();
+        toast.error(results.message || 'No campaigns found');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Investigation failed: ' + error.message);
+      console.error('Investigation error:', error);
+    } finally {
+      setInvestigating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-white shadow">
@@ -69,6 +96,34 @@ function AdminDashboard() {
                   <p className="text-sm text-gray-500">View system performance metrics</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Data Investigation */}
+          <div className="bg-white overflow-hidden shadow rounded-lg border-2 border-red-200">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold">🔍</span>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-gray-900">Data Investigation</h3>
+                  <p className="text-sm text-gray-500">Find missing campaigns (170 & 140 emails)</p>
+                </div>
+              </div>
+              <button
+                onClick={handleDataInvestigation}
+                disabled={investigating}
+                className={`w-full px-4 py-2 text-sm font-medium rounded-md ${
+                  investigating
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                } transition-colors duration-200`}
+              >
+                {investigating ? '🔍 Investigating...' : '🔍 Find Missing Campaigns'}
+              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,7 @@
-const functions = require('firebase-functions');
+const {onRequest} = require('firebase-functions/v2/https');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const functions = require('firebase-functions'); // Keep for backward compatibility
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
@@ -7,17 +10,379 @@ const { Resend } = require('resend');
 // Import lead generation proxy
 const { leadGenProxy } = require('./leadGenProxy');
 
+// Import Gmail bounce detection functions
+const { scanGmailBounces, processBounces } = require('./gmailBounceDetection');
+
 // Export lead generation proxy
 exports.leadGenProxy = leadGenProxy;
+
+// Export Gmail bounce detection functions
+exports.scanGmailBounces = scanGmailBounces;
+exports.processBounces = processBounces;
+
+// Function to create founder tenant document
+exports.createFounderTenant = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Creating founder tenant document...');
+    
+    // Create the founder-tenant document
+    const founderTenantData = {
+      id: 'founder-tenant',
+      tenantId: 'founder-tenant',
+      name: 'Market Genie Founder',
+      ownerId: 'U9vez3sI36Ti5JqoWi5gJUMq2nX2',
+      ownerEmail: 'dubdproducts@gmail.com',
+      type: 'founder',
+      status: 'active',
+      initialized: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      plan: 'unlimited',
+      features: {
+        maxLeads: -1,
+        maxUsers: -1,
+        maxIntegrations: -1,
+        advancedFeatures: true
+      }
+    };
+    
+    // Write the document
+    await db.collection('MarketGenie_tenants').doc('founder-tenant').set(founderTenantData);
+    
+    console.log('Founder tenant document created successfully');
+    
+    // Verify it was created
+    const createdDoc = await db.collection('MarketGenie_tenants').doc('founder-tenant').get();
+    
+    if (createdDoc.exists) {
+      console.log('Verification successful:', createdDoc.data());
+      
+      res.status(200).json({
+        success: true,
+        message: 'Founder tenant document created successfully',
+        data: createdDoc.data()
+      });
+    } else {
+      throw new Error('Document was not created properly');
+    }
+    
+  } catch (error) {
+    console.error('Error creating founder tenant:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Function to copy integrations from old tenant to founder tenant
+exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    console.log('Copying integrations from old tenant to founder tenant...');
+    
+    const oldTenantId = 'U9vez3sI36Ti5JqoWi5gJUMq2nX2';
+    const newTenantId = 'founder-tenant';
+    
+    // Get all integrations from old tenant
+    const integrationsRef = db.collection('MarketGenie_tenants').doc(oldTenantId).collection('integrations');
+    const integrationsSnapshot = await integrationsRef.get();
+    
+    let copiedCount = 0;
+    const copiedIntegrations = [];
+    
+    if (!integrationsSnapshot.empty) {
+      console.log(`Found ${integrationsSnapshot.size} integrations to copy`);
+      
+      // Copy each integration
+      for (const doc of integrationsSnapshot.docs) {
+        const integrationData = doc.data();
+        const integrationId = doc.id;
+        
+        console.log(`Copying integration: ${integrationId}`);
+        
+        // Write to new tenant
+        await db.collection('MarketGenie_tenants')
+          .doc(newTenantId)
+          .collection('integrations')
+          .doc(integrationId)
+          .set(integrationData);
+        
+        copiedCount++;
+        copiedIntegrations.push({
+          id: integrationId,
+          name: integrationData.name || integrationId,
+          status: integrationData.status || 'active'
+        });
+      }
+    }
+    
+    console.log(`Successfully copied ${copiedCount} integrations`);
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully copied ${copiedCount} integrations to founder tenant`,
+      copiedCount,
+      integrations: copiedIntegrations
+    });
+    
+  } catch (error) {
+    console.error('Error copying integrations:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
 
+// Admin notification transporter for new user signups
+const adminNotificationTransporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: 'dubdproducts@gmail.com',
+    pass: 'laab vwmb aopx hujh' // App password for Market Genie Send emails
+  }
+});
+
+// HTTP function to send new user signup notifications to admin (called from client)
+exports.sendNewUserNotification = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { userEmail, userName, userId, emailVerified } = req.body;
+    
+    if (!userEmail || !userId) {
+      res.status(400).json({ error: 'Missing required user information' });
+      return;
+    }
+
+    console.log('Sending admin notification for new user:', userEmail);
+    
+    const signupTime = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">🔔 New Market Genie User Signup</h2>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1e293b;">User Details:</h3>
+          <p><strong>Email:</strong> ${userEmail}</p>
+          <p><strong>Name:</strong> ${userName || 'Not provided'}</p>
+          <p><strong>User ID:</strong> ${userId}</p>
+          <p><strong>Signup Time:</strong> ${signupTime}</p>
+          <p><strong>Email Verified:</strong> ${emailVerified ? 'Yes' : 'No'}</p>
+          <p><strong>Account Type:</strong> Free Trial (default)</p>
+        </div>
+
+        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+          <p style="margin: 0;"><strong>Quick Actions:</strong></p>
+          <p style="margin: 5px 0 0 0;">
+            <a href="https://console.firebase.google.com/project/market-genie-f2d41/authentication/users" 
+               style="color: #2563eb; text-decoration: none;">View in Firebase Console →</a>
+          </p>
+        </div>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
+        
+        <p style="color: #64748b; font-size: 14px; margin: 0;">
+          This notification was automatically sent by Market Genie when a new user created an account.
+        </p>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: 'dubdproducts@gmail.com',
+      to: 'ddub@dubdproducts.com',
+      subject: `🔔 New Market Genie User: ${userEmail}`,
+      html: emailContent
+    };
+
+    await adminNotificationTransporter.sendMail(mailOptions);
+    console.log('Admin notification sent successfully for user:', userEmail);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Admin notification sent successfully' 
+    });
+    
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to send admin notification',
+      details: error.message 
+    });
+  }
+});
+
+// 🎯 CRITICAL: Set tenant custom claims for new users
+exports.setUserTenantClaims = onCall(async (request) => {
+  // Verify the user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { uid, tenantId } = request.data;
+  const callerUid = request.auth.uid;
+
+  // Users can only set claims for themselves
+  if (uid !== callerUid) {
+    throw new HttpsError('permission-denied', 'Can only set claims for yourself');
+  }
+
+  try {
+    console.log(`Setting tenant claims for user ${uid}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(uid, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Successfully set tenant claims for user ${uid}`);
+    
+    return {
+      success: true,
+      message: 'Tenant claims set successfully',
+      tenantId: tenantId
+    };
+    
+  } catch (error) {
+    console.error('Error setting tenant claims:', error);
+    throw new HttpsError('internal', `Failed to set tenant claims: ${error.message}`);
+  }
+});
+
+// 🎯 CRITICAL: Auto-set tenant claims when user creates tenant
+exports.onTenantCreated = onDocumentCreated('MarketGenie_tenants/{tenantId}', async (event) => {
+  try {
+    const tenantData = event.data.data();
+    const tenantId = event.params.tenantId;
+    const ownerId = tenantData.ownerId;
+
+      if (!ownerId) {
+        console.log('No ownerId found in tenant data, skipping claims setup');
+        return;
+      }
+
+      console.log(`Auto-setting tenant claims for owner ${ownerId} of tenant ${tenantId}`);
+      
+      // Set custom claims for the tenant owner
+      await admin.auth().setCustomUserClaims(ownerId, {
+        tenantId: tenantId,
+        role: 'owner',
+        updatedAt: Date.now()
+      });
+
+      console.log(`✅ Auto-set tenant claims for user ${ownerId}`);
+      
+    } catch (error) {
+      console.error('Error auto-setting tenant claims:', error);
+    }
+  });
+
+// 🛠️ ADMIN: Fix existing user claims (call manually)
+exports.fixUserClaims = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { userId, tenantId } = req.body;
+    
+    if (!userId || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and tenantId are required'
+      });
+    }
+
+    console.log(`Fixing claims for user ${userId}: tenantId=${tenantId}`);
+    
+    // Set custom claims
+    await admin.auth().setCustomUserClaims(userId, {
+      tenantId: tenantId,
+      role: 'user',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Fixed claims for user ${userId}`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'User claims fixed successfully',
+      userId: userId,
+      tenantId: tenantId
+    });
+    
+  } catch (error) {
+    console.error('Error fixing user claims:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Create transporter with user's SMTP credentials
 const createTransporter = (smtpConfig) => {
-  return nodemailer.createTransport({
-    host: smtpConfig.smtpHost || 'smtp.zoho.com',
+  console.log('Creating transporter for:', smtpConfig.smtpEmail);
+  console.log('Using host:', smtpConfig.smtpHost || 'smtp.gmail.com');
+  console.log('Using port:', parseInt(smtpConfig.smtpPort) || 587);
+  
+  // Enhanced configuration for Google Workspace and Gmail
+  const transportConfig = {
+    host: smtpConfig.smtpHost || 'smtp.gmail.com',
     port: parseInt(smtpConfig.smtpPort) || 587,
     secure: (smtpConfig.smtpPort === '465'), // true for 465, false for other ports
     auth: {
@@ -25,9 +390,28 @@ const createTransporter = (smtpConfig) => {
       pass: smtpConfig.smtpPassword
     },
     tls: {
-      rejectUnauthorized: false
-    }
-  });
+      rejectUnauthorized: false,
+      ciphers: 'SSLv3'
+    },
+    // Additional options for Google Workspace
+    requireTLS: true,
+    connectionTimeout: 60000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
+    debug: true, // Enable debug logging
+    logger: console // Use console for logging
+  };
+  
+  // Special handling for Google Workspace domains
+  if (smtpConfig.smtpEmail && !smtpConfig.smtpEmail.endsWith('@gmail.com')) {
+    console.log('Detected potential Google Workspace account');
+    // Use Gmail SMTP for Google Workspace
+    transportConfig.host = 'smtp.gmail.com';
+    transportConfig.port = 587;
+    transportConfig.secure = false;
+  }
+  
+  return nodemailer.createTransport(transportConfig);
 };
 
 // Simple test function
@@ -1192,7 +1576,7 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     const credentials = credentialsDoc.data();
     console.log('Gmail SMTP credentials found for:', credentials.email);
     
-    // Prepare Gmail SMTP configuration
+    // Prepare Gmail/Google Workspace SMTP configuration
     const smtpConfig = {
       smtpHost: 'smtp.gmail.com',
       smtpPort: '587',
@@ -1203,9 +1587,15 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
       return res.status(400).json({
         success: false,
-        error: 'Gmail credentials missing. Please add your Gmail email and app password.',
-        setup: 'Generate app password at: myaccount.google.com/apppasswords'
+        error: 'Gmail/Google Workspace credentials missing. Please add your email and app password.',
+        setup: 'For Google Workspace: 1) Enable 2FA, 2) Generate app password at myaccount.google.com/apppasswords, 3) Use your full workspace email'
       });
+    }
+    
+    // Validate Google Workspace setup
+    if (!smtpConfig.smtpEmail.endsWith('@gmail.com')) {
+      console.log('Google Workspace account detected:', smtpConfig.smtpEmail);
+      console.log('Ensure 2FA is enabled and app password is correctly generated');
     }
     
     console.log('Creating SMTP transporter for:', smtpConfig.smtpEmail);
@@ -1246,6 +1636,35 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     };
     
     console.log('Sending email via SMTP...');
+    console.log('Mail options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    // Test connection first
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('SMTP connection verification failed:', verifyError);
+      
+      // Provide specific error messages for common issues
+      let errorMessage = 'SMTP connection failed: ' + verifyError.message;
+      let helpMessage = '';
+      
+      if (verifyError.code === 'EAUTH' || verifyError.responseCode === 535) {
+        errorMessage = 'Gmail/Google Workspace authentication failed';
+        helpMessage = 'Please check: 1) 2-Factor Authentication is enabled, 2) App Password is correctly generated at myaccount.google.com/apppasswords, 3) Using your full workspace email address';
+      }
+      
+      return res.status(400).json({
+        success: false,
+        error: errorMessage,
+        help: helpMessage,
+        details: verifyError.message
+      });
+    }
     
     // Send email
     const result = await transporter.sendMail(mailOptions);
@@ -1569,5 +1988,102 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         </body>
       </html>
     `);
+  }
+});
+
+// ===================================
+// EMERGENCY LEAD SAVE FUNCTION
+// ===================================
+
+// Emergency lead save function - bypasses client Firebase connection issues
+exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
+  console.log('🚨 EMERGENCY SAVE: Function called');
+  // Safe logging to avoid circular reference errors
+  console.log('Data received:', {
+    tenantId: data?.tenantId,
+    leadEmail: data?.leadData?.email,
+    leadCompany: data?.leadData?.company
+  });
+  
+  try {
+    // Validate input
+    if (!data || !data.tenantId || !data.leadData) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: tenantId, leadData');
+    }
+
+    const { tenantId, leadData } = data;
+    
+    // Validate lead data
+    if (!leadData.email) {
+      throw new functions.https.HttpsError('invalid-argument', 'Lead email is required');
+    }
+
+    console.log(`🚨 Emergency saving lead: ${leadData.email} for tenant: ${tenantId}`);
+
+    // Create enhanced lead document
+    const enrichedLead = {
+      email: leadData.email,
+      firstName: leadData.firstName || '',
+      lastName: leadData.lastName || '',
+      company: leadData.company || '',
+      title: leadData.title || '',
+      domain: leadData.domain || '',
+      source: leadData.source || 'emergency-save',
+      score: leadData.score || 75,
+      status: leadData.status || 'new',
+      tags: Array.isArray(leadData.tags) ? leadData.tags : ['emergency-saved'],
+      notes: leadData.notes || `Emergency saved via Firebase Function at ${new Date().toISOString()}`,
+      
+      // Timestamps
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      
+      // Emergency save metadata
+      _emergencySave: true,
+      _savedVia: 'firebase-function',
+      _transportErrorBypass: true,
+      
+      // Security
+      _tenantId: tenantId,
+      _marketGenieApp: true,
+      _securityValidated: true
+    };
+
+    // Save to database using Firebase Admin SDK (server-side)
+    const leadsCollection = db.collection('MarketGenie_tenants').doc(tenantId).collection('leads');
+    const docRef = await leadsCollection.add(enrichedLead);
+
+    console.log(`✅ Emergency save successful: ${leadData.email} with ID: ${docRef.id}`);
+
+    // Update tenant usage tracking
+    try {
+      const tenantUsageRef = db.collection('MarketGenie_tenants').doc(tenantId).collection('usage').doc('current');
+      await tenantUsageRef.set({
+        leads: admin.firestore.FieldValue.increment(1),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      
+      console.log('✅ Tenant usage updated');
+    } catch (usageError) {
+      console.warn('⚠️ Failed to update tenant usage:', usageError.message);
+      // Don't fail the whole operation for usage tracking
+    }
+
+    return {
+      success: true,
+      leadId: docRef.id,
+      email: leadData.email,
+      message: 'Lead saved successfully via emergency function',
+      savedAt: new Date().toISOString()
+    };
+
+  } catch (error) {
+    console.error('❌ Emergency save function error:', error);
+    
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    throw new functions.https.HttpsError('internal', `Emergency save failed: ${error.message}`);
   }
 });

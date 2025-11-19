@@ -72,6 +72,41 @@ export class TenantService {
       return { success: false, error: { message: errorMessage, code: error.code } }
     }
   }
+  
+  // Get tenant by specific ID (e.g., from JWT token)
+  static async getTenantById(tenantId) {
+    if (!auth.currentUser) {
+      return { data: null, error: { message: 'No authenticated user' } }
+    }
+
+    try {
+      console.log('🎯 Getting tenant by ID:', tenantId)
+      
+      const tenantResult = await connectionService.executeWithRetry(
+        () => FirebaseService.getById('MarketGenie_tenants', tenantId),
+        `Get tenant by ID: ${tenantId}`
+      )
+
+      if (tenantResult.success && tenantResult.data.data) {
+        console.log('✅ Found tenant by ID:', tenantId);
+        return { data: tenantResult.data.data, error: null };
+      } else {
+        console.log('❌ Tenant not found:', tenantId);
+        return { data: null, error: { message: `Tenant not found: ${tenantId}` } };
+      }
+
+    } catch (error) {
+      console.error('getTenantById error:', error)
+      
+      // Check if this is a connection error
+      if (connectionService.isCORSError(error) || connectionService.isNetworkError(error)) {
+        return { data: null, error: { message: 'Database connection issue. Please refresh the page.' } }
+      }
+      
+      return { data: null, error: { message: error.message } }
+    }
+  }
+  
   // Get current user's tenant
   static async getCurrentUserTenant() {
     if (!auth.currentUser) {
@@ -79,30 +114,24 @@ export class TenantService {
     }
 
     try {
-      console.log('Searching for tenant for user:', auth.currentUser.uid, auth.currentUser.email)
+      console.log('🎯 PROPER TENANT LOGIC: Looking for tenant for user:', auth.currentUser.uid, auth.currentUser.email)
       
-      // Use connection service to handle potential CORS/network issues
-      const result = await connectionService.executeWithRetry(
-        () => FirebaseService.query('MarketGenie_tenants', [
-          { field: 'ownerId', operator: '==', value: auth.currentUser.uid }
-        ]),
-        'Query user tenant'
+      // 🎯 PROPER LOGIC: Each user gets their OWN tenant with their UID as the tenant ID
+      const userTenantId = auth.currentUser.uid;
+      
+      // First, try to get the user's own tenant
+      const userTenantResult = await connectionService.executeWithRetry(
+        () => FirebaseService.getById('MarketGenie_tenants', userTenantId),
+        'Get user tenant by ID'
       )
 
-      if (!result.success) {
-        console.error('Failed to query tenant:', result.error)
-        return { data: null, error: result.error }
+      if (userTenantResult.success && userTenantResult.data.data) {
+        console.log('✅ Found user\'s own tenant:', userTenantId);
+        return { data: userTenantResult.data.data, error: null };
       }
 
-      console.log('Tenant query result:', result.data)
-
-      if (result.data.data && result.data.data.length > 0) {
-        console.log('Found existing tenant:', result.data.data[0])
-        return { data: result.data.data[0], error: null }
-      }
-
-      // If no tenant exists, create one automatically
-      console.log('No tenant found, creating new tenant for user')
+      // If no tenant exists, create one automatically for this user
+      console.log('🏗️ No tenant found for user, creating new tenant with ID:', userTenantId)
       const createResult = await connectionService.executeWithRetry(
         () => this.createTenantForUser(auth.currentUser),
         'Create new tenant'

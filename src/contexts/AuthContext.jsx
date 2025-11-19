@@ -142,6 +142,26 @@ export function AuthProvider({ children }) {
         result.planType = metadata.plan
       }
       
+      // Send admin notification for new user signup
+      try {
+        await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendNewUserNotification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userEmail: result.user.email,
+            userName: result.user.displayName || metadata.displayName,
+            userId: result.user.uid,
+            emailVerified: result.user.emailVerified
+          })
+        })
+        console.log('✅ Admin notification sent for new user:', result.user.email)
+      } catch (notificationError) {
+        console.warn('⚠️ Admin notification failed (non-critical):', notificationError)
+        // Don't fail the signup if notification fails
+      }
+      
       return { data: result, error: null }
     } catch (error) {
       return { data: null, error }

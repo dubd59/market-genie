@@ -43,12 +43,12 @@ export default function LandingPage() {
         window.location.href = '/free-signup'
         break
       case 'pro':
-        // Pro plan - direct to Stripe
-        window.location.href = 'https://buy.stripe.com/test_cNibJ16vfdU08u89pXaVa05'
+        // Pro plan - direct to Stripe LIVE
+        window.location.href = 'https://buy.stripe.com/4gM00j7zj17eeSwdGdaVa0v'
         break
       case 'lifetime':
-        // Lifetime plan - direct to Stripe  
-        window.location.href = 'https://buy.stripe.com/test_aFa14n7zj6rybGkeKhaVa06'
+        // Lifetime plan - direct to Stripe LIVE
+        window.location.href = 'https://buy.stripe.com/5kQeVd4n74jq39O1XvaVa0u'
         break
       default:
         window.location.href = '/register'
@@ -69,7 +69,7 @@ export default function LandingPage() {
     {
       icon: Mail,
       title: "Multi-Channel Campaigns",
-      description: "Email, SMS, social media, and voice campaigns from one platform"
+      description: "Email, social media, and voice campaigns from one platform"
     },
     {
       icon: Brain,
@@ -79,7 +79,7 @@ export default function LandingPage() {
     {
       icon: Workflow,
       title: "Visual Funnel Builder",
-      description: "Drag-and-drop interface with 3D analytics visualization"
+      description: "Generates stunning landing page funnels from your requests"
     },
     {
       icon: Calendar,
@@ -93,8 +93,8 @@ export default function LandingPage() {
     },
     {
       icon: Shield,
-      title: "Self-Healing Campaigns",
-      description: "Automatic optimization and performance monitoring"
+      title: "Smart Campaign Analytics",
+      description: "AI-powered performance monitoring and optimization insights"
     }
   ]
 
@@ -126,7 +126,6 @@ export default function LandingPage() {
       features: [
         '10,000 contacts',
         '50,000 emails/month',
-        '5,000 SMS/month',
         'Advanced AI automation',
         'Multi-channel campaigns',
         'Lead scoring & enrichment',
@@ -148,7 +147,6 @@ export default function LandingPage() {
       features: [
         'Unlimited contacts',
         'Unlimited emails',
-        'Unlimited SMS',
         'White-label solution',
         'Multi-tenant management',
         'Custom AI training',
@@ -248,49 +246,15 @@ export default function LandingPage() {
               className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
               <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
+              <br />
+              <span className="text-yellow-400 text-lg mt-2 block font-semibold">(Compare ingredients to HighLevel and Click Funnels)</span>
             </motion.p>
             
-            {/* Hero Image */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mb-8 flex justify-center"
-            >
-              <img 
-                src="/marketG.png" 
-                alt="Market Genie Platform" 
-                className="max-w-32 w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
-              />
-            </motion.div>
-
-            {/* Video Player Placeholder */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mb-8 flex justify-center"
-            >
-              <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
-                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                    <h3 className="text-white font-semibold text-lg mb-2">Watch Market Genie in Action</h3>
-                    <p className="text-gray-300 text-sm">See how AI transforms your marketing in under 3 minutes</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
             {/* AI Features Grid */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8"
             >
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
@@ -299,7 +263,7 @@ export default function LandingPage() {
                 </h3>
                 <ul className="text-gray-300 space-y-2 text-left">
                   <li><strong className="text-white">Natural Language Commands</strong> - "Find me more leads like my top customers"</li>
-                  <li><strong className="text-white">Self-Healing Campaigns</strong> - Automatically fixes underperforming sequences</li>
+                  <li><strong className="text-white">Smart Analytics</strong> - AI-powered performance monitoring</li>
                   <li><strong className="text-white">Voice-Activated Control</strong> - Hands-free marketing management</li>
                   <li><strong className="text-white">Predictive Analytics</strong> - Know which leads will convert before you contact them</li>
                 </ul>
@@ -322,7 +286,7 @@ export default function LandingPage() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
               className="bg-white/8 backdrop-blur-lg rounded-xl p-6 border border-white/12 max-w-2xl mx-auto mb-8"
             >
               <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ See The Magic In Action</h3>
@@ -335,8 +299,8 @@ export default function LandingPage() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex justify-center"
             >
               <button 
                 onClick={scrollToPricing}
@@ -345,15 +309,12 @@ export default function LandingPage() {
                 🧞‍♂️ Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </button>
-              <button className="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
-                Watch 3-Min Demo →
-              </button>
             </motion.div>
 
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="mt-12 flex items-center justify-center space-x-8 text-gray-200"
             >
               <div className="flex items-center space-x-2">
@@ -367,6 +328,49 @@ export default function LandingPage() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
                 <span>Cancel anytime</span>
+              </div>
+            </motion.div>
+
+            {/* Hero Image - Moved above video section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="mt-8 mb-8 flex justify-center"
+            >
+              <img 
+                src="/marketG.png" 
+                alt="Market Genie Platform" 
+                className="max-w-32 w-full h-auto rounded-lg shadow-2xl border border-gray-700/50"
+              />
+            </motion.div>
+
+            {/* Video Player Placeholder - Moved to bottom of hero */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="flex justify-center"
+            >
+              <div className="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-6xl w-full">
+                <div className="text-center mb-6">
+                  <h3 className="text-white font-semibold text-2xl mb-2">Watch Market Genie in Action</h3>
+                  <p className="text-gray-300 text-lg">See how AI transforms your marketing</p>
+                </div>
+                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden border border-gray-600">
+                  <video 
+                    className="w-full h-full object-cover rounded-lg" 
+                    controls 
+                    autoPlay
+                    loop
+                    muted
+                    preload="auto"
+                    poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2NzUiIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjc1IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfNzdfMjcpIi8+CjxjaXJjbGUgY3g9IjYwMCIgY3k9IjMzNy41IiByPSI4MCIgZmlsbD0iIzEwQjk4MSIvPgo8cGF0aCBkPSJNNTcwIDMwN1Y zNjhMNjMwIDMzNy41TDU3MCAzMDdaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzc3XzI3IiB4MT0iNjAwIiB5MT0iMCIgeDI9IjYwMCIgeTI9IjY3NSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMTExODI3Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFGMkEzNyIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo="
+                  >
+                    <source src="/Final quick for landing page.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -551,17 +555,6 @@ export default function LandingPage() {
                 AI-powered marketing automation that learns, optimizes, and fixes itself. 
                 Transform your business with intelligent campaigns that grow with you.
               </p>
-              <div className="flex space-x-4">
-                <a href="https://twitter.com/marketgenie" className="text-gray-400 hover:text-white transition-colors">
-                  <MessageSquare className="w-5 h-5" />
-                </a>
-                <a href="https://facebook.com/marketgenie" className="text-gray-400 hover:text-white transition-colors">
-                  <Globe className="w-5 h-5" />
-                </a>
-                <a href="https://linkedin.com/company/marketgenie" className="text-gray-400 hover:text-white transition-colors">
-                  <Users className="w-5 h-5" />
-                </a>
-              </div>
             </div>
 
             {/* Product Links */}
@@ -571,9 +564,6 @@ export default function LandingPage() {
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
-                <li><a href="/integrations" className="hover:text-white transition-colors">Integrations</a></li>
-                <li><a href="/api" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="/security" className="hover:text-white transition-colors">Security</a></li>
               </ul>
             </div>
 
@@ -581,25 +571,18 @@ export default function LandingPage() {
             <div>
               <h3 className="text-white font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="https://help.marketgenie.app" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="/documentation" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="/tutorials" className="hover:text-white transition-colors">Video Tutorials</a></li>
-                <li><a href="/community" className="hover:text-white transition-colors">Community</a></li>
-                <li><a href="/status" className="hover:text-white transition-colors">System Status</a></li>
-                <li><a href="/contact" className="hover:text-white transition-colors">Contact Support</a></li>
+                <li><a href="https://supportgenie.help/customer?tenant=supportgenie-tenant" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><Link to="/documentation" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><a href="mailto:Help@dubdproducts.com" className="hover:text-white transition-colors">Contact Support</a></li>
               </ul>
             </div>
 
-            {/* Company Links */}
+            {/* Legal Links */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
+              <h3 className="text-white font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="/careers" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="/press" className="hover:text-white transition-colors">Press Kit</a></li>
-                <li><a href="/partners" className="hover:text-white transition-colors">Partners</a></li>
-                <li><a href="/affiliates" className="hover:text-white transition-colors">Affiliate Program</a></li>
+                <li><a href="/privacy-policy.html" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms-of-service.html" className="hover:text-white transition-colors">Terms of Service</a></li>
               </ul>
             </div>
           </div>
@@ -608,19 +591,33 @@ export default function LandingPage() {
           <div className="border-t border-white/10 mt-12 pt-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center md:text-left">
-                <h4 className="text-white font-semibold mb-2">📧 Email Support</h4>
-                <p className="text-gray-300">support@marketgenie.app</p>
-                <p className="text-gray-300">sales@marketgenie.app</p>
+                <h4 className="text-white font-semibold mb-2">🤖 AI Support Portal</h4>
+                <a 
+                  href="https://supportgenie.help/customer?tenant=supportgenie-tenant" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors block"
+                >
+                  Support Genie Help Center
+                </a>
+                <p className="text-gray-300 text-sm">Available 24/7</p>
               </div>
               <div className="text-center">
-                <h4 className="text-white font-semibold mb-2">💬 Live Chat</h4>
-                <p className="text-gray-300">Available 24/7</p>
-                <a href="https://help.marketgenie.app/chat" className="text-yellow-400 hover:text-yellow-300 transition-colors">Start Chat</a>
+                <h4 className="text-white font-semibold mb-2">📅 Free Consultation</h4>
+                <a 
+                  href="https://calendar.app.google/jPFfeHPMgzMwoCTu8" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors block"
+                >
+                  Book Your Free Consultation Call
+                </a>
+                <p className="text-gray-300 text-sm">15-Min Strategy Session</p>
               </div>
               <div className="text-center md:text-right">
-                <h4 className="text-white font-semibold mb-2">📞 Phone Support</h4>
-                <p className="text-gray-300">1-800-MKTGENIE</p>
-                <p className="text-gray-300">Mon-Fri 9AM-6PM EST</p>
+                <h4 className="text-white font-semibold mb-2">📧 Email Support</h4>
+                <a href="mailto:Help@dubdproducts.com" className="text-yellow-400 hover:text-yellow-300 transition-colors">Help@dubdproducts.com</a>
+                <p className="text-gray-300 text-sm">24/7 Response</p>
               </div>
             </div>
           </div>
@@ -631,10 +628,8 @@ export default function LandingPage() {
               © 2025 Market Genie. All rights reserved.
             </div>
             <div className="flex space-x-6 text-gray-400">
-              <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="/cookies" className="hover:text-white transition-colors">Cookie Policy</a>
-              <a href="/gdpr" className="hover:text-white transition-colors">GDPR</a>
+              <a href="/privacy-policy.html" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms-of-service.html" className="hover:text-white transition-colors">Terms of Service</a>
             </div>
           </div>
         </div>

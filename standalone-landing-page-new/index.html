@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Genie - AI-Powered Marketing Automation & Lead Generation Platform</title>
+    
+    <!-- SEO META TAGS -->
+    <meta name="description" content="Market Genie: The ultimate AI-powered marketing automation platform. Generate qualified leads, build AI funnels, automate email campaigns, and scale your business with predictive analytics. Replace 10+ marketing tools with one intelligent solution." />
+    <meta name="keywords" content="AI marketing automation, lead generation, sales funnel builder, email marketing, CRM automation, predictive analytics, marketing software, business growth, lead scoring, campaign automation" />
+    <meta name="author" content="Market Genie" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- OPEN GRAPH META TAGS -->
+    <meta property="og:title" content="Market Genie - AI-Powered Marketing Automation & Lead Generation Platform" />
+    <meta property="og:description" content="Transform your business with Market Genie's AI-powered marketing automation. Generate qualified leads, build conversion funnels, and automate your entire sales process. Get started free!" />
+    <meta property="og:image" content="./assets/MarketHead.png" />
+    <meta property="og:url" content="https://marketgenie.tech" />
+    <meta property="og:type" content="website" />
+    
+    <!-- TWITTER CARD META TAGS -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Market Genie - AI-Powered Marketing Automation Platform" />
+    <meta name="twitter:description" content="🚀 Generate qualified leads with AI • Build high-converting funnels • Automate email campaigns • Scale your business intelligently. Try Market Genie free!" />
+    <meta name="twitter:image" content="./assets/MarketHead.png" />
+    
+    <!-- FAVICON -->
+    <link rel="icon" type="image/png" href="./assets/marketgeniefavacon.png" />
+    
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- TAILWIND CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LUCIDE ICONS -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- CUSTOM CSS -->
+    <link rel="stylesheet" href="./css/styles.css">
+    
+    <!-- ANIMATE ON SCROLL -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- TAILWIND CONFIG -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'genie-teal': '#20B2AA',
+                        'genie-yellow': '#FFD700',
+                        'genie-purple': '#9370DB'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-inter bg-gradient-to-br from-slate-500 via-emerald-600 to-slate-500">
+    
+    <!-- Navigation -->
+    <nav class="relative z-50 bg-black/35 backdrop-blur-lg border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 border border-white/40 rounded-lg flex items-center justify-center">
+                        <span class="text-white text-xl">✨</span>
+                    </div>
+                    <span class="text-2xl font-bold text-white">Market Genie</span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-200 hover:text-white transition-colors">Features</a>
+                    <a href="#pricing" class="text-gray-200 hover:text-white transition-colors">Pricing</a>
+                    <a href="#testimonials" class="text-gray-200 hover:text-white transition-colors">Reviews</a>
+                    <a href="https://market-genie-f2d41.web.app/" class="text-gray-200 hover:text-white transition-colors">Sign In</a>
+                    <button onclick="scrollToPricing()" class="border border-white/40 text-white px-6 py-2 rounded-lg hover:bg-white/10 transition-all duration-200 transform hover:scale-105">
+                        Start Free Trial
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden pt-20 pb-32">
+        <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-yellow-500/20 blur-3xl"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-6" 
+                    style="text-shadow: 2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3); filter: brightness(1.1) saturate(1.2);">
+                    Stop Chasing Leads.<br/>Start Attracting Customers.
+                </h1>
+                
+                <h2 class="text-2xl md:text-3xl font-bold mb-8 text-gray-200">
+                    The Only Platform That Automates, Optimizes & Even Fixes Itself
+                </h2>
+                
+                <p class="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto">
+                    <strong class="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
+                </p>
+                
+                <!-- Hero Image -->
+                <div class="mb-8 flex justify-center">
+                    <img src="./assets/marketG.png" alt="Market Genie Platform" 
+                         class="max-w-32 w-full h-auto rounded-lg shadow-2xl border border-gray-700/50" />
+                </div>
+
+                <!-- Video Player Placeholder -->
+                <div class="mb-8 flex justify-center">
+                    <div class="bg-black/25 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-2xl w-full">
+                        <div class="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center border border-gray-600">
+                            <div class="text-center">
+                                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                                    <span class="text-white text-2xl">▶</span>
+                                </div>
+                                <p class="text-white text-lg font-semibold">Watch Market Genie in Action</p>
+                                <p class="text-gray-300 text-sm">3-minute demo video</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
+                    <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                        <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center">
+                            🧠 AI That Actually Works For You
+                        </h3>
+                        <ul class="text-gray-300 space-y-2 text-left">
+                            <li><strong class="text-white">Natural Language Commands</strong> - "Find me more leads like my top customers"</li>
+                            <li><strong class="text-white">Self-Healing Campaigns</strong> - Automatically fixes underperforming sequences</li>
+                            <li><strong class="text-white">Voice-Activated Control</strong> - Hands-free marketing management</li>
+                            <li><strong class="text-white">Predictive Analytics</strong> - Know which leads will convert before you contact them</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                        <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center">
+                            🚀 Everything You Need. Nothing You Don't.
+                        </h3>
+                        <div class="text-gray-300 text-left">
+                            <div class="text-lg font-semibold text-white mb-2">
+                                Generate Leads → Automate Campaigns → Close Deals → Analyze Results
+                            </div>
+                            <p class="italic text-yellow-200">All in one unified platform that replaces 10+ tools</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial -->
+                <div class="bg-white/8 backdrop-blur-lg rounded-xl p-6 border border-white/12 max-w-2xl mx-auto mb-8">
+                    <h3 class="text-xl font-bold text-yellow-300 mb-3">✨ See The Magic In Action</h3>
+                    <blockquote class="text-lg text-gray-300 italic mb-3">
+                        "Setup our entire lead generation system in one afternoon - something that used to take weeks"
+                    </blockquote>
+                    <p class="text-sm text-gray-400">- E-commerce Brand Director</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="https://market-genie-f2d41.web.app/" 
+                       class="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200 transform hover:scale-105 flex items-center justify-center">
+                        🧞‍♂️ Start Your Free Trial
+                        <span class="ml-2">→</span>
+                    </a>
+                    <button class="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200">
+                        Watch 3-Min Demo →
+                    </button>
+                </div>
+
+                <div class="mt-12 flex items-center justify-center space-x-8 text-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 text-green-400">✓</span>
+                        <span>Free version available</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 text-green-400">✓</span>
+                        <span>No credit card required</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-5 h-5 text-green-400">✓</span>
+                        <span>Cancel anytime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-black/8 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" 
+                    style="text-shadow: 2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3); filter: brightness(1.1) saturate(1.2);">
+                    Why Market Genie Dominates The Competition
+                </h2>
+                <p class="text-xl text-gray-200 max-w-3xl mx-auto">
+                    While others offer basic automation, we deliver intelligent AI that actually thinks and optimizes for you
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" id="features-grid">
+                <!-- Features will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 bg-black/5 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" 
+                    style="text-shadow: 2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3); filter: brightness(1.1) saturate(1.2);">
+                    Simple, Transparent Pricing
+                </h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Choose the plan that fits your business. All plans include our core AI features.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="pricing-grid">
+                <!-- Pricing plans will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 bg-black/8 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" 
+                    style="text-shadow: 2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3); filter: brightness(1.1) saturate(1.2);">
+                    Loved by Marketers Worldwide
+                </h2>
+                <p class="text-xl text-gray-300">
+                    See why thousands of businesses choose Market Genie
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="testimonials-grid">
+                <!-- Testimonials will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-black/5 backdrop-blur-sm">
+        <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <div class="bg-gradient-to-r from-emerald-500/20 to-yellow-500/20 rounded-2xl p-12 border border-white/10">
+                <h2 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" 
+                    style="text-shadow: 2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3); filter: brightness(1.1) saturate(1.2);">
+                    Ready to Transform Your Marketing?
+                </h2>
+                <p class="text-xl text-gray-300 mb-8">
+                    Join thousands of businesses already using Market Genie to automate their success
+                </p>
+                <a href="https://market-genie-f2d41.web.app/" 
+                   class="border border-white/40 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all duration-200 transform hover:scale-105 inline-flex items-center">
+                    Start Your Free Trial Now
+                    <span class="ml-2">→</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 py-16 bg-black/8 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+                
+                <!-- Company Info -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-10 h-10 border border-white/40 rounded-lg flex items-center justify-center">
+                            <span class="text-white text-xl">✨</span>
+                        </div>
+                        <span class="text-2xl font-bold text-white">Market Genie</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        AI-powered marketing automation that works while you sleep. 
+                        Transform your business with intelligent lead generation and campaign optimization.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://twitter.com/marketgenie" class="text-gray-400 hover:text-white transition-colors">
+                            <span class="sr-only">Twitter</span>
+                            <span>📱</span>
+                        </a>
+                        <a href="https://facebook.com/marketgenie" class="text-gray-400 hover:text-white transition-colors">
+                            <span class="sr-only">Facebook</span>
+                            <span>📘</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-semibold text-white mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+                        <li><a href="/dashboard" class="hover:text-white transition-colors">Dashboard</a></li>
+                        <li><a href="/integrations" class="hover:text-white transition-colors">Integrations</a></li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h4 class="font-semibold text-white mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/help" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="./assets/privacy-policy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="./assets/terms-of-service.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact -->
+                <div>
+                    <h4 class="font-semibold text-white mb-4">Contact</h4>
+                    <div class="space-y-2 text-gray-400">
+                        <p>support@market-genie.com</p>
+                        <p>1-800-GENIE-AI</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/10 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Market Genie. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="./js/main.js"></script>
+    <script>
+        // Initialize AOS animations
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // Scroll to pricing function
+        function scrollToPricing() {
+            document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

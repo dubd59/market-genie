@@ -14,13 +14,17 @@ export default function AuthNavigator() {
     // Handle user authentication state changes
     if (user) {
       // User is authenticated - redirect to dashboard if on login/register page
-      if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') {
+      // BUT allow /signup with partner parameters to show (for partner attribution)
+      const hasPartnerParams = location.search.includes('partner=')
+      const isSignupWithPartner = location.pathname === '/signup' && hasPartnerParams
+      
+      if ((location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') && !isSignupWithPartner) {
         console.log('🎯 User authenticated, navigating to dashboard')
         navigate('/dashboard', { replace: true })
       }
     } else {
       // User is not authenticated - redirect to login if on protected page
-      const publicPaths = ['/login', '/register', '/', '/unsubscribe', '/free-signup', '/pro', '/lifetime', '/pro-signup', '/lifetime-signup', '/whitelabel-setup']
+      const publicPaths = ['/login', '/register', '/signup', '/', '/unsubscribe', '/free-signup', '/pro', '/lifetime', '/pro-signup', '/lifetime-signup', '/whitelabel-setup']
       const isPublicPath = publicPaths.includes(location.pathname) || 
                           location.pathname.startsWith('/funnel/') ||
                           location.pathname.startsWith('/oauth/')

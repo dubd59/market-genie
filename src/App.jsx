@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { TenantProvider } from './contexts/TenantContext'
 import { GenieProvider } from './contexts/GenieContext'
@@ -8,9 +8,19 @@ import Dashboard from './pages/Dashboard'
 // import CampaignBuilder from './pages/CampaignBuilder'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+
+// 🚀 CRITICAL FIX: Import Firebase v8 compatibility bridge for diagnostics
+import './utils/firebaseV8Bridge.js'
+// 🧪 DATABASE TESTS: Load database write tests for debugging
+import './utils/databaseWriteTest.js'
+// 🔐 SECURITY DIAGNOSTIC: Load Firebase security rules diagnostic
+import './utils/firebaseSecurityDiagnostic.js'
 import Register from './pages/RegisterSimple'
 import FreeSignup from './pages/FreeSignup'
+import Signup from './pages/Signup'
 import LandingPage from './pages/LandingPage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 import UnsubscribePage from './pages/UnsubscribePage'
 import WhiteLabelPartnerSetup from './pages/WhiteLabelPartnerSetup'
 import ProPlanSignup from './pages/ProPlanSignup'
@@ -19,6 +29,8 @@ import ProPlanPage from './pages/ProPlanPage'
 import LifetimePlanPage from './pages/LifetimePlanPage'
 import OAuthCallback from './pages/OAuthCallback'
 import MicrosoftOAuthCallback from './pages/MicrosoftOAuthCallback'
+import GmailOAuthCallback from './pages/GmailOAuthCallback'
+import GiftRedemption from './components/GiftRedemption'
 import AIAgentHelper from './components/AIAgentHelper'
 import { useTenant } from './contexts/TenantContext'
 import LeadService from './services/leadService'
@@ -27,8 +39,9 @@ import stabilityMonitor from './services/stabilityMonitor'
 import { multiTenantDB } from './services/multiTenantDatabase'
 import DatabaseInitializer from './services/databaseInitializer'
 import toast, { Toaster } from 'react-hot-toast'
-import { functions, auth } from './firebase'
+import { functions, auth, db } from './firebase'
 import { httpsCallable } from 'firebase/functions'
+import { collection, doc, setDoc, getDocs } from 'firebase/firestore'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
 import Sidebar from './components/Sidebar'
@@ -47,8 +60,7 @@ import IntegrationService from './services/integrationService'
 import FirebaseUserDataService from './services/firebaseUserData'
 import AppointmentService from './services/appointmentService'
 import CalendarService from './services/calendarService'
-import AISwarmDashboard from './components/AISwarmDashboard'
-import CostControlsDashboard from './components/CostControlsDashboard'
+import ResourceDocumentationCenter from './components/ResourceDocumentationCenter'
 import WhiteLabelDashboard from './components/WhiteLabelDashboard'
 import SocialMediaScrapingAgents from './components/SocialMediaScrapingAgents'
 import LeadGenerationWorkflows from './components/LeadGenerationWorkflows'
@@ -59,8 +71,11 @@ import MultiChannelAutomationHub from './components/MultiChannelAutomationHub'
 import CRMPipeline from './components/CRMPipeline'
 import BusinessProfileSettings from './components/BusinessProfileSettings'
 import ContactManager from './components/ContactManager'
+import BulkProspeoScraper from './components/BulkProspeoScraper'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
+import BounceDetectionService from './services/bounceDetectionService'
+import DataMigrationService from './services/dataMigrationService'
 import AuthNavigator from './components/AuthNavigator'
 
 function ProtectedRoute({ children }) {
@@ -129,8 +144,7 @@ function SophisticatedDashboard() {
     if (path.includes('appointments') || path.includes('appointment-booking')) return 'Appointments'
     if (path.includes('crm-pipeline')) return 'CRM & Pipeline'
     if (path.includes('contact-manager')) return 'Contact Manager'
-    if (path.includes('ai-swarm')) return 'AI Swarm'
-    if (path.includes('cost-controls')) return 'Cost Controls'
+    if (path.includes('resources-docs')) return 'Resources & Docs'
     if (path.includes('white-label-saas')) return 'White-Label SaaS'
     if (path.includes('api-keys')) return 'API Keys & Integrations'
     if (path.includes('admin-panel')) return 'Admin Panel'
@@ -138,12 +152,82 @@ function SophisticatedDashboard() {
   }
 
   const [activeSection, setActiveSection] = useState(getSectionFromURL())
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('marketGenieDarkMode')
+    return saved ? JSON.parse(saved) : false
+  })
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [showAIAssistant, setShowAIAssistant] = useState(false)
   const { user, logout, checkAuthHealth, refreshAuthToken } = useAuth()
   const { tenant, loading: tenantLoading } = useTenant()
+
+  // Emergency Migration State
+  const [migrationInProgress, setMigrationInProgress] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+
+  // Admin Panel State
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    monthlyRevenue: 0,
+    openTickets: 0,
+    systemUptime: 0,
+    isLoading: true
+  });
+  const [adminView, setAdminView] = useState('dashboard'); // dashboard, users, analytics, logs, config
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [systemConfig, setSystemConfig] = useState({});
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  // Store current user and tenant in window for debugging and emergency services
+  useEffect(() => {
+    if (user) {
+      window.currentUser = user;
+      console.log(`👤 Current user stored in window: ${user.email}`);
+    }
+  }, [user]);
+
+  // Store current tenant in window for emergency services to access
+  useEffect(() => {
+    if (tenant?.id) {
+      window.currentMarketGenieTenant = tenant;
+      console.log(`📍 Current tenant stored in window: ${tenant.id}`);
+    }
+  }, [tenant]);
+
+  // 🚀 NEW: Listen for emergency lead sync completions and trigger aggressive refresh
+  useEffect(() => {
+    const handleForceLoadLeads = async (event) => {
+      console.log('🔥 EMERGENCY SYNC COMPLETED: Triggering aggressive refresh sequence...', event.detail);
+      
+      // Immediate refresh
+      await loadLeadData();
+      
+      // Secondary refresh after 1 second
+      setTimeout(async () => {
+        console.log('🔄 Secondary refresh (1s delay)...');
+        await loadLeadData();
+      }, 1000);
+      
+      // Final refresh after 3 seconds to catch any Firebase lag
+      setTimeout(async () => {
+        console.log('🔄 Final refresh (3s delay)...');
+        await loadLeadData();
+      }, 3000);
+      
+      if (event.detail?.savedCount > 0) {
+        toast.success(`🚀 ${event.detail.savedCount} leads now visible in Recent Leads!`);
+      }
+    };
+
+    window.addEventListener('forceLoadLeadsFromDatabase', handleForceLoadLeads);
+    
+    return () => {
+      window.removeEventListener('forceLoadLeadsFromDatabase', handleForceLoadLeads);
+    };
+  }, [tenant]);
 
   // Connection Health State
   const [connectionHealthy, setConnectionHealthy] = useState(true)
@@ -152,6 +236,7 @@ function SophisticatedDashboard() {
   // Lead Generation State
   const [leads, setLeads] = useState([])
   const [leadStats, setLeadStats] = useState({})
+  const [emergencySyncStatus, setEmergencySyncStatus] = useState({ syncing: false, count: 0 })
   
   // Real Dashboard Metrics State
   const [dashboardMetrics, setDashboardMetrics] = useState({
@@ -163,6 +248,72 @@ function SophisticatedDashboard() {
     isLoading: true,
     lastUpdated: null
   })
+
+  // Data Migration State
+  const [migrationStatus, setMigrationStatus] = useState({
+    inProgress: false,
+    completed: false,
+    needsCheck: true
+  })
+
+  // 🔧 EMERGENCY DATA MIGRATION FUNCTION
+  const runDataMigration = async () => {
+    if (!user?.uid) {
+      toast.error('User authentication required for migration')
+      return
+    }
+
+    try {
+      setMigrationStatus(prev => ({ ...prev, inProgress: true }))
+      console.log('🚀 Starting emergency data migration for user:', user.uid)
+      
+      const result = await DataMigrationService.migrateFounderTenantData(user.uid)
+      
+      if (result.success) {
+        console.log('✅ Migration completed:', result)
+        setMigrationStatus(prev => ({ ...prev, completed: true, inProgress: false }))
+        
+        // Force reload all data after migration
+        setTimeout(async () => {
+          console.log('🔄 Reloading data after migration...')
+          await loadLeadData()
+          await loadBounceStats()
+        }, 1000)
+        
+      } else {
+        console.error('❌ Migration failed:', result)
+        setMigrationStatus(prev => ({ ...prev, inProgress: false }))
+      }
+      
+    } catch (error) {
+      console.error('❌ Migration error:', error)
+      setMigrationStatus(prev => ({ ...prev, inProgress: false }))
+      toast.error('Migration failed: ' + error.message)
+    }
+  }
+
+  // Check if migration is needed on component mount
+  useEffect(() => {
+    const checkMigrationNeeds = async () => {
+      if (user?.uid && user.email === 'dubdproducts@gmail.com' && migrationStatus.needsCheck) {
+        try {
+          const check = await DataMigrationService.checkForMigrationNeeds(user.uid)
+          if (check.needsMigration) {
+            console.log('📊 Migration recommended:', check)
+            toast('🔧 Data migration available to fix tenant issues', {
+              duration: 5000,
+              icon: '🔧'
+            })
+          }
+          setMigrationStatus(prev => ({ ...prev, needsCheck: false }))
+        } catch (error) {
+          console.error('Error checking migration needs:', error)
+        }
+      }
+    }
+
+    checkMigrationNeeds()
+  }, [user, migrationStatus.needsCheck])
   const [leadFormData, setLeadFormData] = useState({
     name: '',
     email: '',
@@ -225,16 +376,16 @@ function SophisticatedDashboard() {
     return () => clearInterval(refreshInterval);
   }, [activeSection, tenant?.id]); // Re-run when section changes or tenant is loaded
 
+  // 🧹 Clean Firebase operations - no interference with native connection management
+  useEffect(() => {
+    console.log('🚀 Firebase initialized with clean operations...');
+  }, []);
+
   // Campaign State
   const [campaigns, setCampaigns] = useState([])
   const [campaignStats, setCampaignStats] = useState({
-    totalCampaigns: 12,
-    totalEmailsSent: 2430,
-    averageOpenRate: 68,
-    averageResponseRate: 24,
-    totalEmailsOpened: 1654,
-    totalEmailsBounced: 73,
-    totalUnsubscribed: 18
+    totalCampaigns: 0,
+    totalEmailsSent: 0
   })
   const [campaignFormData, setCampaignFormData] = useState({
     name: '',
@@ -245,7 +396,7 @@ function SophisticatedDashboard() {
     sendDate: '',
     aiSmartPrompt: '',
     additionalPrompt: '',
-    customSegment: '',
+    customSegments: [],
     callToActionText: '',
     callToActionUrl: ''
   })
@@ -253,17 +404,33 @@ function SophisticatedDashboard() {
   // Available CRM tags for custom segments
   const [availableTags, setAvailableTags] = useState([])
   
+  // Format date to US format (MM-DD-YYYY)
+  const formatDateUS = (dateString) => {
+    if (!dateString) return 'Not set'
+    try {
+      const date = new Date(dateString)
+      // Handle invalid dates
+      if (isNaN(date.getTime())) return dateString
+      
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+      const year = date.getFullYear()
+      return `${month}-${day}-${year}`
+    } catch (error) {
+      return dateString || 'Not set'
+    }
+  }
+  
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
   
-  // Bounce Management
-  const [showBounceManager, setShowBounceManager] = useState(false)
+  // Legacy bounce management - minimal state for compatibility
   const [bounceEmails, setBounceEmails] = useState('')
   const [processingBounces, setProcessingBounces] = useState(false)
-  const [bounceMethod, setBounceMethod] = useState('paste') // 'paste' or 'upload' or 'manual'
+  const [bounceMethod, setBounceMethod] = useState('paste')
   
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
@@ -350,6 +517,97 @@ function SophisticatedDashboard() {
     const interval = setInterval(loadDashboardMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [tenant?.id]);
+
+  // 🚨 Emergency Leads Listener - Add emergency leads to Recent Leads UI
+  useEffect(() => {
+    const handleEmergencyLeadsSync = (event) => {
+      const emergencyLeads = event.detail.leads;
+      console.log(`📱 Received ${emergencyLeads.length} emergency leads for UI display`);
+      
+      // Add emergency leads to the existing leads array
+      setLeads(prevLeads => {
+        // Remove any existing emergency leads with the same IDs to avoid duplicates
+        const existingEmergencyIds = new Set(emergencyLeads.map(lead => lead.id));
+        const nonDuplicateLeads = prevLeads.filter(lead => 
+          !lead.isEmergency || !existingEmergencyIds.has(lead.id)
+        );
+        
+        // Add new emergency leads
+        const updatedLeads = [...nonDuplicateLeads, ...emergencyLeads];
+        
+        console.log(`📊 Updated leads list: ${updatedLeads.length} total leads (${emergencyLeads.length} new emergency)`);
+        return updatedLeads;
+      });
+      
+      // Update lead stats to include emergency leads
+      setLeadStats(prevStats => ({
+        ...prevStats,
+        totalLeads: (prevStats.totalLeads || 0) + emergencyLeads.length,
+        emergencyLeads: emergencyLeads.length
+      }));
+    };
+
+    const handleRefreshRecentLeads = () => {
+      console.log('🔄 Refreshing Recent Leads section...');
+      // Force re-render of Recent Leads - call the proper load function
+      if (typeof loadLeadData === 'function') {
+        loadLeadData();
+      } else {
+        console.log('📊 No loadLeadData function available, using simple refresh');
+        // Just trigger a re-render
+        setLeads(prevLeads => [...prevLeads]);
+      }
+    };
+
+    const handleForceLoadFromDatabase = (event) => {
+      console.log('🔄 FORCE DATABASE REFRESH: Emergency leads saved to database, reloading Recent Leads...');
+      console.log('📊 Event details:', event.detail);
+      
+      // Force immediate reload from database
+      if (typeof loadLeadData === 'function') {
+        loadLeadData();
+        console.log('✅ Recent Leads reloaded from database');
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('emergencyLeadsSync', handleEmergencyLeadsSync);
+    window.addEventListener('refreshRecentLeads', handleRefreshRecentLeads);
+    window.addEventListener('forceLoadLeadsFromDatabase', handleForceLoadFromDatabase);
+
+    // 🔄 START BACKGROUND DATABASE SYNC for emergency leads
+    const initializeBackgroundSync = async () => {
+      try {
+        const { default: EmergencyLeadStorage } = await import('./services/EmergencyLeadStorage.js');
+        const emergencyStorage = new EmergencyLeadStorage();
+        
+        // Start background sync that keeps trying until all leads are saved to database
+        emergencyStorage.startBackgroundDatabaseSync();
+        
+        // Store reference for cleanup
+        window.emergencyStorageSync = emergencyStorage;
+        
+        console.log('🔄 Background database sync started for emergency leads');
+      } catch (error) {
+        console.error('❌ Failed to start background database sync:', error);
+      }
+    };
+    
+    initializeBackgroundSync();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('emergencyLeadsSync', handleEmergencyLeadsSync);
+      window.removeEventListener('refreshRecentLeads', handleRefreshRecentLeads);
+      window.removeEventListener('forceLoadLeadsFromDatabase', handleForceLoadFromDatabase);
+      
+      // Stop background sync
+      if (window.emergencyStorageSync) {
+        window.emergencyStorageSync.stopBackgroundDatabaseSync();
+        window.emergencyStorageSync = null;
+      }
+    };
+  }, []); // Only run once on mount
 
   // Load appointments data
   useEffect(() => {
@@ -526,12 +784,21 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   // AI Smart Prompt Options
   const aiSmartPrompts = [
     { value: '', label: 'Select AI Smart Prompt...' },
+    // 🔥 COLD OUTREACH SEQUENCES - TOP PRIORITY
+    { value: 'cold_outreach_intro', label: '❄️💼 Cold outreach: Professional introduction sequence' },
+    { value: 'cold_outreach_value', label: '❄️🎯 Cold outreach: Value-first approach with case study' },
+    { value: 'cold_outreach_social_proof', label: '❄️⭐ Cold outreach: Social proof and testimonials focus' },
+    { value: 'cold_outreach_problem_solver', label: '❄️🔧 Cold outreach: Problem identification and solution' },
+    { value: 'cold_outreach_curiosity', label: '❄️🧠 Cold outreach: Curiosity-driven conversation starter' },
+    { value: 'cold_outreach_multi_touch', label: '❄️📧 Cold outreach: Multi-touch follow-up sequence' },
+    // WARM OUTREACH & FOLLOW-UPS
+    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
+    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
+    // CUSTOMER LIFECYCLE
     { value: 'welcome_new_customer', label: '👋 Welcome email for new customers' },
     { value: 'welcome_vip', label: '🌟 Welcome email for VIP customers with exclusive offers' },
     { value: 'product_launch', label: '🚀 Product launch announcement with early bird pricing' },
     { value: 'product_launch_vip', label: '⭐ Product launch exclusive access for VIP customers' },
-    { value: 'follow_up_demo', label: '📞 Follow-up email after demo call with next steps' },
-    { value: 'follow_up_meeting', label: '🤝 Follow-up email after meeting with action items' },
     { value: 'reengagement_inactive', label: '💤 Re-engagement email for inactive users with special offer' },
     { value: 'reengagement_win_back', label: '❤️ Win-back email for churned customers' },
     { value: 'educational_tips', label: '💡 Educational email with industry tips and insights' },
@@ -626,55 +893,224 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     loadCRMTags()
   }, [user, tenant?.id])
 
-  // Load campaigns from Firebase
+  // Load campaigns from Firebase - Updated to check both legacy and tenant-based storage
   useEffect(() => {
     const loadCampaigns = async () => {
       if (!user?.uid || !tenant?.id) return
       
       try {
-        console.log('Loading campaigns for user:', user.uid)
-        const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
-        console.log('Campaigns loaded:', campaignsResult)
-        console.log('Campaign data type:', typeof campaignsResult.data)
-        console.log('Campaign data is array:', Array.isArray(campaignsResult.data))
-        console.log('Campaign data content:', campaignsResult.data)
+        console.log('🚀 Loading campaigns for user:', user.uid, 'tenant:', tenant.id)
         
-        if (campaignsResult.success && campaignsResult.data) {
-          let loadedCampaigns = []
+        // Try multiple data sources to find campaigns:
+        let loadedCampaigns = []
+        
+        // 1. Try tenant-based collection first (NEW FORMAT)
+        try {
+          console.log('📂 Checking tenant collection: tenants/' + tenant.id + '/campaigns')
+          const tenantCampaignsRef = collection(db, 'tenants', tenant.id, 'campaigns')
+          const tenantSnapshot = await getDocs(tenantCampaignsRef)
           
-          // Handle different data structures
-          if (Array.isArray(campaignsResult.data)) {
-            loadedCampaigns = campaignsResult.data
-          } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
-            // If it's an object, extract campaigns (filter out metadata like updatedAt)
-            if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
-              loadedCampaigns = campaignsResult.data.campaigns
-            } else {
-              // Filter object values to only include valid campaign objects
-              loadedCampaigns = Object.values(campaignsResult.data).filter(item => 
-                item && 
-                typeof item === 'object' && 
-                item.id && 
-                item.name && 
-                typeof item.name === 'string' &&
-                (typeof item.id === 'number' || (typeof item.id === 'string' && !isNaN(item.id))) // Valid campaign ID
-              )
-            }
+          if (!tenantSnapshot.empty) {
+            loadedCampaigns = tenantSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            console.log('✅ Found campaigns in tenant collection:', loadedCampaigns.length)
           }
-          
-          console.log('Final loaded campaigns:', loadedCampaigns)
-          setCampaigns(loadedCampaigns)
-        } else {
-          console.log('No campaigns data found, setting empty array')
-          setCampaigns([])
+        } catch (tenantError) {
+          console.log('⚠️ Tenant collection check failed:', tenantError.message)
         }
+        
+        // 2. If no campaigns found, try legacy user-based storage
+        if (loadedCampaigns.length === 0) {
+          console.log('📂 Checking legacy user storage...')
+          const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
+          console.log('Legacy campaigns result:', campaignsResult)
+          
+          if (campaignsResult.success && campaignsResult.data) {
+            // Handle different data structures
+            if (Array.isArray(campaignsResult.data)) {
+              loadedCampaigns = campaignsResult.data
+            } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
+              // If it's an object, extract campaigns (filter out metadata like updatedAt)
+              if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
+                loadedCampaigns = campaignsResult.data.campaigns
+              } else {
+                // Filter object values to only include valid campaign objects
+                loadedCampaigns = Object.values(campaignsResult.data).filter(item => 
+                  item && 
+                  typeof item === 'object' && 
+                  item.id && 
+                  item.name && 
+                  typeof item.name === 'string' &&
+                  (typeof item.id === 'number' || (typeof item.id === 'string' && !isNaN(item.id))) // Valid campaign ID
+                )
+              }
+            }
+            console.log('✅ Found campaigns in legacy storage:', loadedCampaigns.length)
+          }
+        }
+        
+        // 3. If still no campaigns, try direct campaigns collection
+        if (loadedCampaigns.length === 0) {
+          try {
+            console.log('📂 Checking direct campaigns collection...')
+            const directCampaignsRef = collection(db, 'campaigns')
+            const directSnapshot = await getDocs(directCampaignsRef)
+            
+            // Filter campaigns for current user
+            const userCampaigns = directSnapshot.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(campaign => campaign.userId === user.uid || campaign.createdBy === user.uid)
+            
+            if (userCampaigns.length > 0) {
+              loadedCampaigns = userCampaigns
+              console.log('✅ Found campaigns in direct collection:', loadedCampaigns.length)
+            }
+          } catch (directError) {
+            console.log('⚠️ Direct collection check failed:', directError.message)
+          }
+        }
+        
+        console.log('📊 Final loaded campaigns:', loadedCampaigns.length, 'campaigns')
+        console.log('Campaign details:', loadedCampaigns)
+        setCampaigns(loadedCampaigns)
+        
+        if (loadedCampaigns.length > 0) {
+          toast.success(`✅ Loaded ${loadedCampaigns.length} campaigns`)
+        }
+        
       } catch (error) {
-        console.error('Error loading campaigns:', error)
+        console.error('❌ Error loading campaigns:', error)
+        toast.error('Failed to load campaigns: ' + error.message)
       }
     }
-    
+
     loadCampaigns()
   }, [user?.uid, tenant?.id])
+
+  // Admin Panel Data Loading Functions
+  const loadAdminStats = async () => {
+    if (user?.email !== 'dubdproducts@gmail.com') return;
+    
+    try {
+      setAdminStats(prev => ({ ...prev, isLoading: true }));
+      
+      // Get all users from MarketGenie_tenants collection, filter for real Firebase Auth UIDs only
+      const usersSnapshot = await getDocs(collection(db, 'MarketGenie_tenants'));
+      let totalUsers = 0;
+      usersSnapshot.forEach(doc => {
+        // Only count documents with 28-character IDs (Firebase Auth UIDs)
+        if (doc.id.length === 28) {
+          totalUsers++;
+        }
+      });
+      
+      // Calculate revenue (placeholder - would need payment data)
+      const monthlyRevenue = totalUsers * 50; // Estimate based on user count
+      
+      // Get system metrics
+      const systemUptime = 99.8; // Would come from monitoring service
+      const openTickets = Math.floor(Math.random() * 30); // Would come from support system
+      
+      setAdminStats({
+        totalUsers,
+        monthlyRevenue,
+        openTickets,
+        systemUptime,
+        isLoading: false
+      });
+    } catch (error) {
+      console.error('Error loading admin stats:', error);
+      setAdminStats(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const loadAllUsers = async () => {
+    if (user?.email !== 'dubdproducts@gmail.com') return;
+    
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'MarketGenie_tenants'));
+      const users = [];
+      usersSnapshot.forEach(doc => {
+        // Only include documents with 28-character IDs (Firebase Auth UIDs)
+        if (doc.id.length === 28) {
+          const userData = doc.data();
+          users.push({
+            id: doc.id,
+            ...userData,
+            createdAt: userData.createdAt?.toDate?.() || new Date(userData.createdAt),
+            lastLogin: userData.lastLogin?.toDate?.() || null
+          });
+        }
+      });
+      
+      // Sort by creation date (newest first)
+      users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setAllUsers(users);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error('Failed to load users');
+    }
+  };
+
+  const updateUserPlan = async (userId, newPlan) => {
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        plan: newPlan,
+        planType: newPlan,
+        updatedAt: new Date()
+      }, { merge: true });
+      
+      toast.success(`User plan updated to ${newPlan}`);
+      loadAllUsers(); // Refresh user list
+    } catch (error) {
+      console.error('Error updating user plan:', error);
+      toast.error('Failed to update user plan');
+    }
+  };
+
+  const suspendUser = async (userId) => {
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        suspended: true,
+        suspendedAt: new Date()
+      }, { merge: true });
+      
+      toast.success('User suspended successfully');
+      loadAllUsers(); // Refresh user list
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      toast.error('Failed to suspend user');
+    }
+  };
+
+  const createNewUser = async (userData) => {
+    try {
+      const newUserRef = doc(collection(db, 'users'));
+      await setDoc(newUserRef, {
+        ...userData,
+        createdAt: new Date(),
+        plan: userData.plan || 'free',
+        planType: userData.planType || 'free'
+      });
+      
+      toast.success('User created successfully');
+      loadAllUsers(); // Refresh user list
+      setAdminView('users'); // Switch to user view
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user');
+    }
+  };
+
+  // Load admin data when accessing admin panel
+  useEffect(() => {
+    if (activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com') {
+      loadAdminStats();
+      loadAllUsers(); // Always load users when admin panel opens
+    }
+  }, [activeSection, user?.email]);
 
   // Save campaigns to Firebase whenever campaigns change
   const saveCampaignsToFirebase = async (campaignsData) => {
@@ -714,7 +1150,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Filter contacts based on campaign targeting
       console.log('Campaign targeting:', {
         targetAudience: campaign.targetAudience,
-        customSegment: campaign.customSegment
+        customSegments: campaign.customSegments || []
       })
       console.log('Total contacts available:', contacts.length)
       
@@ -722,29 +1158,31 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         if (!campaign.targetAudience || campaign.targetAudience === 'All Leads' || campaign.targetAudience === 'All Contacts') {
           return true
         }
-        if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
-          // Check if contact matches the selected custom segment
-          const segment = campaign.customSegment
-          
-          // Check tags (handle both exact match and common variations)
-          if (contact.tags && (
-            contact.tags.includes(segment) ||
-            (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-            (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-            (segment === 'New prospects' && contact.tags.includes('New'))
-          )) {
-            return true
-          }
-          
-          // Check company
-          if (contact.company && segment.startsWith('Company: ') && contact.company === segment.replace('Company: ', '')) {
-            return true
-          }
-          
-          // Check status
-          if (contact.status && segment.startsWith('Status: ') && contact.status === segment.replace('Status: ', '')) {
-            return true
-          }
+        if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0) {
+          // Check if contact matches ANY of the selected custom segments
+          return campaign.customSegments.some(segment => {
+            // Check tags (handle both exact match and common variations)
+            if (contact.tags && (
+              contact.tags.includes(segment) ||
+              (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+              (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+              (segment === 'New prospects' && contact.tags.includes('New'))
+            )) {
+              return true
+            }
+            
+            // Check company
+            if (contact.company && segment.startsWith('Company: ') && contact.company === segment.replace('Company: ', '')) {
+              return true
+            }
+            
+            // Check status
+            if (contact.status && segment.startsWith('Status: ') && contact.status === segment.replace('Status: ', '')) {
+              return true
+            }
+            
+            return false
+          })
         }
         return false
       })
@@ -960,7 +1398,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
+    const newDarkMode = !isDarkMode
+    setIsDarkMode(newDarkMode)
+    localStorage.setItem('marketGenieDarkMode', JSON.stringify(newDarkMode))
     document.documentElement.classList.toggle('dark')
   }
 
@@ -995,6 +1435,19 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     source: '',
     description: ''
   })
+
+  // Bounce Detection State
+  const [bounceDetectionActive, setBounceDetectionActive] = useState(false)
+  const [bounceStats, setBounceStats] = useState({
+    totalScans: 0,
+    totalBounces: 0,
+    totalProcessed: 0,
+    bounceRate: 0,
+    lastScan: null
+  })
+  const [showBounceModal, setShowBounceModal] = useState(false)
+  const [pastedBounceText, setPastedBounceText] = useState('')
+  const [bounceProcessing, setBounceProcessing] = useState(false)
 
   const handleSelectLead = (leadId) => {
     setSelectedLeads(prev => 
@@ -1039,18 +1492,35 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   }
 
   const handleRemoveDuplicates = async () => {
-    if (!confirm('This will remove duplicate leads (keeping the newest copy of each email). Continue?')) {
+    if (!confirm('This will remove duplicate leads from Firebase (keeping the newest copy of each email). Emergency leads will be preserved. Continue?')) {
       return
     }
 
     toast.loading('Removing duplicate leads...', { duration: 5000 })
 
     try {
+      // Save emergency leads before removing duplicates
+      const emergencyLeads = leads.filter(lead => lead.isEmergency);
+      
       const result = await LeadService.removeDuplicateLeads(tenant.id)
       
       if (result.success) {
         toast.success(result.message || 'Duplicates removed successfully')
-        await loadLeadData() // Refresh the lead list
+        
+        // Refresh Firebase leads but preserve emergency leads
+        await loadLeadData()
+        
+        // Re-add emergency leads after refresh
+        if (emergencyLeads.length > 0) {
+          setLeads(prevLeads => {
+            // Remove any existing emergency leads to avoid duplicates
+            const nonEmergencyLeads = prevLeads.filter(lead => !lead.isEmergency);
+            // Add back the saved emergency leads
+            return [...nonEmergencyLeads, ...emergencyLeads];
+          });
+          
+          toast.success(`Preserved ${emergencyLeads.length} emergency leads`, { duration: 3000 });
+        }
       } else {
         toast.error(result.error || 'Failed to remove duplicates')
       }
@@ -1150,6 +1620,247 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
+  // ==================== BOUNCE DETECTION FUNCTIONS ====================
+  
+  // Load bounce statistics
+  const loadBounceStats = async () => {
+    if (!tenant?.id) return
+    
+    try {
+      const statsResult = await BounceDetectionService.getBounceStats(tenant.id)
+      if (statsResult.success) {
+        setBounceStats(statsResult.data)
+      }
+    } catch (error) {
+      console.error('Error loading bounce stats:', error)
+    }
+  }
+
+  // Start automated bounce monitoring
+  const startBounceMonitoring = async () => {
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required for bounce monitoring')
+      return
+    }
+
+    try {
+      setBounceDetectionActive(true)
+      console.log('🤖 Starting automated bounce detection...')
+      toast('🤖 Starting automated bounce detection...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.startAutomatedMonitoring(
+        tenant.id, 
+        user.uid, 
+        30 // Check every 30 minutes
+      )
+      
+      if (result.success) {
+        toast.success('✅ Automated bounce monitoring started!')
+        console.log('🤖 Bounce monitoring active:', result.message)
+        
+        // Load initial stats
+        await loadBounceStats()
+      } else {
+        setBounceDetectionActive(false)
+        toast.error('Failed to start bounce monitoring: ' + result.error)
+      }
+    } catch (error) {
+      setBounceDetectionActive(false)
+      console.error('Error starting bounce monitoring:', error)
+      toast.error('Failed to start bounce monitoring')
+    }
+  }
+
+  // Stop automated bounce monitoring
+  const stopBounceMonitoring = () => {
+    try {
+      const stopped = BounceDetectionService.stopAutomatedMonitoring()
+      if (stopped) {
+        setBounceDetectionActive(false)
+        toast.success('🛑 Bounce monitoring stopped')
+      }
+    } catch (error) {
+      console.error('Error stopping bounce monitoring:', error)
+    }
+  }
+
+  // Manual bounce processing
+  const processPastedBounces = async () => {
+    if (!pastedBounceText.trim()) {
+      toast.error('Please paste bounce email content')
+      return
+    }
+
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      setBounceProcessing(true)
+      
+      const result = await BounceDetectionService.processPastedBounces(
+        pastedBounceText,
+        tenant.id,
+        user.uid
+      )
+      
+      if (result.success) {
+        toast.success(`✅ Processed ${result.processed} bounced emails`)
+        console.log('Bounce processing results:', result.results)
+        
+        // Refresh bounce stats and contacts
+        await loadBounceStats()
+        await loadContactData()
+        
+        // Clear the form
+        setPastedBounceText('')
+        setShowBounceModal(false)
+      } else {
+        toast.error('Bounce processing failed: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error processing bounces:', error)
+      toast.error('Error processing bounces')
+    } finally {
+      setBounceProcessing(false)
+    }
+  }
+
+  // Run manual bounce scan
+  const runBounceMonitoring = async () => {
+    if (!tenant?.id || !user?.uid) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      console.log('🔍 Scanning Gmail for bounces...')
+      toast('🔍 Scanning Gmail for bounces...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.monitorGmailBounces(tenant.id, user.uid)
+      
+      if (result.success) {
+        if (result.processed > 0) {
+          toast.success(`🧹 Found and processed ${result.processed} bounced emails`)
+        } else {
+          toast('✅ No bounces found - all good!', { 
+            icon: '✅',
+            duration: 3000
+          })
+        }
+        
+        // Refresh stats and contacts
+        await loadBounceStats()
+        // Refresh contacts by reloading from Firestore
+        try {
+          const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
+          if (contactsResult.success && contactsResult.data) {
+            let contactsArray = []
+            if (Array.isArray(contactsResult.data)) {
+              contactsArray = contactsResult.data
+            } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
+              contactsArray = contactsResult.data.contacts
+            }
+            setContacts(contactsArray)
+            console.log('✅ Refreshed contacts after bounce processing')
+          }
+        } catch (error) {
+          console.error('Error refreshing contacts:', error)
+        }
+        
+        console.log('Manual bounce scan results:', result)
+      } else {
+        toast.error('Bounce scan failed: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error running bounce monitoring:', error)
+      toast.error('Error scanning for bounces')
+    }
+  }
+
+  // Reset bounce statistics to zero
+  const resetBounceStatistics = async () => {
+    if (!tenant?.id) {
+      toast.error('Authentication required')
+      return
+    }
+
+    try {
+      console.log('🔄 Resetting bounce statistics...')
+      toast('🔄 Resetting bounce statistics...', { duration: 2000 })
+      
+      const result = await BounceDetectionService.resetBounceStats(tenant.id)
+      
+      if (result.success) {
+        toast.success('✅ Bounce statistics reset to zero')
+        await loadBounceStats() // Refresh the display
+      } else {
+        toast.error('Failed to reset statistics: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error resetting bounce statistics:', error)
+      toast.error('Error resetting statistics')
+    }
+  }
+
+  // Setup Gmail OAuth for live bounce detection
+  const setupGmailOAuth = async () => {
+    try {
+      toast('🔗 Setting up Gmail OAuth connection...', { duration: 3000 })
+      
+      // Gmail OAuth configuration - Your actual credentials
+      const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com'
+      const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback'
+      const SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
+      
+      // Build OAuth URL
+      const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${CLIENT_ID}&` +
+        `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+        `scope=${encodeURIComponent(SCOPE)}&` +
+        `response_type=code&` +
+        `access_type=offline&` +
+        `prompt=consent&` +
+        `state=${tenant?.id || 'default'}`
+      
+      console.log('🔗 Opening Gmail OAuth window...')
+      console.log('OAuth URL:', oauthURL)
+      
+      // Open OAuth window
+      const popup = window.open(oauthURL, 'gmail-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes')
+      
+      if (!popup) {
+        toast.error('Popup blocked! Please allow popups and try again.')
+        return
+      }
+      
+      // Listen for OAuth completion
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          toast('OAuth window closed - please try again if not completed')
+        }
+      }, 1000)
+      
+      console.log('📧 Gmail OAuth setup initiated')
+      toast('📧 Complete Gmail authorization in the popup window')
+      
+    } catch (error) {
+      console.error('Error setting up Gmail OAuth:', error)
+      toast.error('Error setting up Gmail connection')
+    }
+  }
+
+  // Load bounce stats on component mount
+  useEffect(() => {
+    if (tenant?.id) {
+      loadBounceStats()
+    }
+  }, [tenant?.id])
+
+  // ==================== END BOUNCE DETECTION FUNCTIONS ====================
+
   const loadLeadData = async () => {
     console.log('loadLeadData called, tenant:', tenant)
     if (!tenant?.id) {
@@ -1158,6 +1869,17 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
     
     try {
+      // 🚀 Check emergency storage status before loading
+      try {
+        const emergencyStorage = window.emergencyLeadStorage
+        if (emergencyStorage) {
+          const pendingCount = emergencyStorage.getEmergencyLeadCount()
+          setEmergencySyncStatus(prev => ({ ...prev, count: pendingCount }))
+        }
+      } catch (emergencyError) {
+        console.log('No emergency storage found:', emergencyError.message)
+      }
+      
       console.log('Fetching leads for tenant:', tenant.id)
       const [leadsResult, statsResult] = await Promise.all([
         LeadService.getLeads(tenant.id, 500),
@@ -1176,6 +1898,83 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
     } catch (error) {
       console.error('Error loading lead data:', error)
+    }
+  }
+
+  // 🚀 NEW: Emergency sync functions for Recent Leads tab
+  const triggerEmergencySync = async () => {
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        setEmergencySyncStatus({ syncing: pendingCount > 0, count: pendingCount })
+        
+        if (pendingCount > 0) {
+          console.log(`🚀 RECENT LEADS: Triggering fast sync for ${pendingCount} emergency leads...`)
+          const result = await emergencyStorage.triggerImmediateSync()
+          if (result.success && result.synced > 0) {
+            console.log(`✅ Fast sync completed: ${result.synced} leads moved to database`)
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+            
+            // 🔥 AGGRESSIVE REFRESH: Multiple refresh attempts to ensure leads appear
+            console.log('🔄 Starting aggressive refresh sequence...')
+            await loadLeadData() // Immediate refresh
+            
+            // Second refresh after short delay
+            setTimeout(async () => {
+              console.log('🔄 Secondary refresh (1s delay)...')
+              await loadLeadData()
+            }, 1000)
+            
+            // Third refresh after longer delay to catch any Firebase lag
+            setTimeout(async () => {
+              console.log('🔄 Final refresh (3s delay)...')
+              await loadLeadData()
+            }, 3000)
+            
+            toast.success(`✅ ${result.synced} emergency leads synced and refreshed!`)
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Emergency sync trigger failed:', error.message)
+      setEmergencySyncStatus({ syncing: false, count: 0 })
+    }
+  }
+
+  const handleForceSync = async () => {
+    setEmergencySyncStatus(prev => ({ ...prev, syncing: true }))
+    
+    try {
+      const emergencyStorage = window.emergencyLeadStorage
+      if (emergencyStorage) {
+        const pendingCount = emergencyStorage.getEmergencyLeadCount()
+        if (pendingCount > 0) {
+          console.log(`🚀 FORCE SYNC: User requested manual sync of ${pendingCount} emergency leads`)
+          toast.loading(`Syncing ${pendingCount} emergency leads...`, { duration: 3000 })
+          
+          const result = await emergencyStorage.triggerImmediateSync()
+          
+          if (result.success) {
+            toast.success(`✅ Successfully synced ${result.synced} leads to database!`)
+            await loadLeadData() // Refresh the leads list
+            setEmergencySyncStatus({ syncing: false, count: 0 })
+          } else {
+            toast.error('❌ Sync failed: ' + (result.error || 'Unknown error'))
+            setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+          }
+        } else {
+          toast.success('✅ No emergency leads to sync - all caught up!')
+          setEmergencySyncStatus({ syncing: false, count: 0 })
+        }
+      } else {
+        toast.error('Emergency storage not available')
+        setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
+      }
+    } catch (error) {
+      console.error('Force sync error:', error)
+      toast.error('❌ Force sync failed: ' + error.message)
+      setEmergencySyncStatus(prev => ({ ...prev, syncing: false }))
     }
   }
 
@@ -1668,9 +2467,41 @@ Enter number (1-4):`);
   // Load lead data when tenant is available
   React.useEffect(() => {
     if (tenant?.id) {
+      // 🚀 Trigger emergency sync when Recent Leads tab is accessed
+      if (activeLeadTab === 'recent') {
+        triggerEmergencySync()
+      }
       loadLeadData()
     }
-  }, [tenant])
+  }, [tenant, activeLeadTab])
+
+  // 🚀 NEW: Auto-refresh Recent Leads when tab is active to catch emergency sync completions
+  React.useEffect(() => {
+    let refreshInterval;
+    
+    if (tenant?.id && activeLeadTab === 'recent') {
+      console.log('🔄 Starting auto-refresh for Recent Leads tab (every 5 seconds)...');
+      
+      // Refresh every 5 seconds when Recent Leads tab is active
+      refreshInterval = setInterval(async () => {
+        const emergencyStorage = window.emergencyLeadStorage;
+        const pendingCount = emergencyStorage ? emergencyStorage.getEmergencyLeadCount() : 0;
+        
+        if (pendingCount > 0) {
+          console.log(`⚡ Auto-refresh: ${pendingCount} emergency leads pending sync...`);
+        }
+        
+        await loadLeadData(); // Refresh to show newly synced leads
+      }, 5000);
+    }
+
+    return () => {
+      if (refreshInterval) {
+        console.log('🛑 Stopping auto-refresh for Recent Leads tab');
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [tenant, activeLeadTab]);
 
   // URL synchronization - update section when URL changes
   React.useEffect(() => {
@@ -1684,26 +2515,10 @@ Enter number (1-4):`);
   const updateCampaignStats = () => {
     const activeCampaigns = campaigns.filter(c => c.status === 'Active')
     const totalEmailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.emailsSent || 0), 0)
-    const avgOpenRate = campaigns.length > 0 
-      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.openRate || 0), 0) / campaigns.length)
-      : 0
-    const avgResponseRate = campaigns.length > 0 
-      ? Math.round(campaigns.reduce((sum, campaign) => sum + (campaign.responseRate || 0), 0) / campaigns.length)
-      : 0
-
-    // Calculate new metrics
-    const totalEmailsOpened = Math.round(totalEmailsSent * (avgOpenRate / 100))
-    const totalEmailsBounced = campaigns.reduce((sum, campaign) => sum + (campaign.emailsBounced || 0), 0)
-    const totalUnsubscribed = campaigns.reduce((sum, campaign) => sum + (campaign.unsubscribed || 0), 0)
 
     setCampaignStats({
       totalCampaigns: activeCampaigns.length,
-      totalEmailsSent: totalEmailsSent,
-      averageOpenRate: avgOpenRate,
-      averageResponseRate: avgResponseRate,
-      totalEmailsOpened: totalEmailsOpened,
-      totalEmailsBounced: totalEmailsBounced,
-      totalUnsubscribed: totalUnsubscribed
+      totalEmailsSent: totalEmailsSent
     })
   }
 
@@ -1729,32 +2544,34 @@ Enter number (1-4):`);
       if (campaign.targetAudience === 'Warm Prospects') {
         return contact.status === 'qualified' || contact.status === 'warm'
       }
-      if (campaign.targetAudience === 'Custom Segment' && campaign.customSegment) {
-        const segment = campaign.customSegment
-        
-        // Check tags (handle both exact match and common variations)
-        if (contact.tags && (
-          contact.tags.includes(segment) ||
-          (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-          (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-          (segment === 'New prospects' && contact.tags.includes('New'))
-        )) {
-          return true
-        }
-        
-        // Check company segments (format: "Company: CompanyName")
-        if (segment.startsWith('Company: ')) {
-          const companyName = segment.replace('Company: ', '')
-          return contact.company === companyName
-        }
-        
-        // Check status segments (format: "Status: StatusName")
-        if (segment.startsWith('Status: ')) {
-          const statusName = segment.replace('Status: ', '')
-          return contact.status === statusName
-        }
-        
-        return false
+      if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0) {
+        // Check if contact matches ANY of the selected custom segments
+        return campaign.customSegments.some(segment => {
+          
+          // Check tags (handle both exact match and common variations)
+          if (contact.tags && (
+            contact.tags.includes(segment) ||
+            (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+            (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+            (segment === 'New prospects' && contact.tags.includes('New'))
+          )) {
+            return true
+          }
+          
+          // Check company segments (format: "Company: CompanyName")
+          if (segment.startsWith('Company: ')) {
+            const companyName = segment.replace('Company: ', '')
+            return contact.company === companyName
+          }
+          
+          // Check status segments (format: "Status: StatusName")
+          if (segment.startsWith('Status: ')) {
+            const statusName = segment.replace('Status: ', '')
+            return contact.status === statusName
+          }
+          
+          return false
+        })
       }
       return false
     })
@@ -1802,20 +2619,7 @@ Enter number (1-4):`);
         finalEmailContent = aiGeneratedContent
       }
       
-      // Add call-to-action if provided (insert before footer/signature)
-      if (campaignFormData.callToActionText && campaignFormData.callToActionUrl) {
-        const callToActionHtml = `\n\n<p style="margin-top: 20px; text-align: center;"><a href="${campaignFormData.callToActionUrl}" style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${campaignFormData.callToActionText}</a></p>\n`
-        
-        // Insert CTA before "Best regards," or any footer signature
-        if (finalEmailContent.includes('Best regards,')) {
-          finalEmailContent = finalEmailContent.replace('Best regards,', callToActionHtml + 'Best regards,')
-        } else if (finalEmailContent.includes('<p>Best regards')) {
-          finalEmailContent = finalEmailContent.replace('<p>Best regards', callToActionHtml + '<p>Best regards')
-        } else {
-          // If no signature found, add CTA at the end
-          finalEmailContent += callToActionHtml
-        }
-      }
+      // CTA is now handled entirely by the AI service - no manual insertion needed
       
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
@@ -1828,12 +2632,12 @@ Enter number (1-4):`);
         responseRate: 0, // No responses until emails are sent
         emailsBounced: 0, // No bounces until emails are sent
         unsubscribed: 0, // No unsubscribes until emails are sent
-        createdDate: new Date().toISOString().split('T')[0],
+        createdDate: formatDateUS(new Date()),
         subject: campaignFormData.subject,
         template: campaignFormData.template,
         emailContent: finalEmailContent,
         targetAudience: campaignFormData.targetAudience,
-        customSegment: campaignFormData.customSegment,
+        customSegments: campaignFormData.customSegments,
         sendDate: campaignFormData.sendDate,
         callToActionText: campaignFormData.callToActionText,
         callToActionUrl: campaignFormData.callToActionUrl,
@@ -1848,33 +2652,33 @@ Enter number (1-4):`);
           if (campaignFormData.targetAudience === 'Warm Prospects') {
             return contact.status === 'qualified' || contact.status === 'warm'
           }
-          if (campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegment) {
-            // Check if contact matches the selected custom segment
-            const segment = campaignFormData.customSegment
-            
-            // Check tags (handle both exact match and common variations)
-            if (contact.tags && (
-              contact.tags.includes(segment) ||
-              (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
-              (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
-              (segment === 'New prospects' && contact.tags.includes('New'))
-            )) {
-              return true
-            }
-            
-            // Check company segments (format: "Company: CompanyName")
-            if (segment.startsWith('Company: ')) {
-              const companyName = segment.replace('Company: ', '')
-              return contact.company === companyName
-            }
-            
-            // Check status segments (format: "Status: StatusName")
-            if (segment.startsWith('Status: ')) {
-              const statusName = segment.replace('Status: ', '')
-              return contact.status === statusName
-            }
-            
-            return false
+          if (campaignFormData.targetAudience === 'Custom Segment' && campaignFormData.customSegments && campaignFormData.customSegments.length > 0) {
+            // Check if contact matches ANY of the selected custom segments
+            return campaignFormData.customSegments.some(segment => {
+              // Check tags (handle both exact match and common variations)
+              if (contact.tags && (
+                contact.tags.includes(segment) ||
+                (segment === 'VIP customers' && contact.tags.includes('VIP')) ||
+                (segment === 'Email subscribers' && contact.tags.includes('Email')) ||
+                (segment === 'New prospects' && contact.tags.includes('New'))
+              )) {
+                return true
+              }
+              
+              // Check company segments (format: "Company: CompanyName")
+              if (segment.startsWith('Company: ')) {
+                const companyName = segment.replace('Company: ', '')
+                return contact.company === companyName
+              }
+              
+              // Check status segments (format: "Status: StatusName")
+              if (segment.startsWith('Status: ')) {
+                const statusName = segment.replace('Status: ', '')
+                return contact.status === statusName
+              }
+              
+              return false
+            })
           }
           return false
         }).length
@@ -1898,7 +2702,7 @@ Enter number (1-4):`);
         sendDate: '',
         aiSmartPrompt: '',
         additionalPrompt: '',
-        customSegment: '',
+        customSegments: [],
         callToActionText: '',
         callToActionUrl: ''
       })
@@ -2066,7 +2870,6 @@ ${companyName}</p>
 
       toast.success(`🧹 Bounce cleanup complete! Removed ${removedCount} bounced emails from ${originalCount} contacts`)
       setBounceEmails('')
-      setShowBounceManager(false)
       
     } catch (error) {
       console.error('Error processing bounces:', error)
@@ -2526,8 +3329,7 @@ END:VCALENDAR`;
         'CRM & Pipeline': '/dashboard/crm-pipeline',
         'Contact Manager': '/dashboard/contact-manager',
         'Pipeline View': '/dashboard/crm-pipeline',
-        'AI Swarm': '/dashboard/ai-swarm',
-        'Cost Controls': '/dashboard/cost-controls',
+        'Resources & Docs': '/dashboard/resources-docs',
         'White-Label SaaS': '/dashboard/white-label-saas',
         'API Keys & Integrations': '/dashboard/api-keys',
         'Admin Panel': '/dashboard/admin-panel'
@@ -2559,7 +3361,13 @@ END:VCALENDAR`;
   return (
     <GenieProvider contacts={contacts}>
       <div className={`app-container min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
-        <Sidebar activeSection={activeSection} onSelect={setSecureActiveSection} />
+        <Sidebar 
+          activeSection={activeSection} 
+          onSelect={setSecureActiveSection}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+          onLogout={async () => await logout()}
+        />
         
         {/* Main Content Area - Dynamic margin responds to sidebar collapse */}
         <div className="min-h-screen transition-all duration-300 ease-in-out" style={{marginLeft: 'var(--sidebar-width, 240px)'}}>
@@ -2590,15 +3398,7 @@ END:VCALENDAR`;
               )}
             </div>
             <div className="flex items-center gap-4">
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-100 text-gray-600'} hover:bg-opacity-80 transition-colors`}
-              >
-                {isDarkMode ? '☀️' : '🌙'}
-              </button>
-              
-              {/* Account Menu */}
+              {/* Settings Menu */}
               <div className="relative">
                 <button
                   onClick={() => setShowAccountMenu(!showAccountMenu)}
@@ -2614,42 +3414,38 @@ END:VCALENDAR`;
                         onClick={() => {setSecureActiveSection('Account Settings'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Account Settings
+                        ⚙️ Account Settings
                       </button>
                       <button 
                         onClick={() => {setSecureActiveSection('Profile'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Profile
+                        👤 Profile
                       </button>
                       <button 
                         onClick={() => {setSecureActiveSection('Billing'); setShowAccountMenu(false)}}
                         className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
                       >
-                        Billing
+                        💳 Billing
                       </button>
-                      <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                       {/* Admin Panel - FOUNDER ONLY ACCESS */}
-                      {user?.email === 'dubdproducts@gmail.com' && tenant?.role === 'founder' && (
+                      {user?.email === 'dubdproducts@gmail.com' && (
                         <>
+                          <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
                           <button 
                             onClick={() => {setSecureActiveSection('Admin Panel'); setShowAccountMenu(false)}}
                             className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
                           >
                             🛡️ Admin Panel
                           </button>
-                          <hr className={`my-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+                          <button 
+                            onClick={() => {setSecureActiveSection('Emergency Migration'); setShowAccountMenu(false)}}
+                            className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-purple-400 hover:bg-gray-700' : 'text-purple-600 hover:bg-gray-100'}`}
+                          >
+                            🚚 Emergency Migration
+                          </button>
                         </>
                       )}
-                      <button 
-                        onClick={async () => {
-                          await logout()
-                          setShowAccountMenu(false)
-                        }}
-                        className={`w-full text-left block px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-100'}`}
-                      >
-                        Sign Out
-                      </button>
                     </div>
                   </div>
                 )}
@@ -2661,11 +3457,11 @@ END:VCALENDAR`;
           <main className={`flex-1 p-4 lg:p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} overflow-auto`}>
           {/* Section content rendering */}
           {activeSection === 'SuperGenie Dashboard' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-4 lg:p-8">
+            <div className={`min-h-screen p-4 lg:p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               <div className="flex items-center justify-between mb-6 lg:mb-8">
                 <h1 className="text-2xl lg:text-4xl font-bold text-genie-teal">Welcome to Market Genie</h1>
                 {dashboardMetrics.lastUpdated && (
-                  <div className="text-sm text-gray-500">
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Last updated: {new Date(dashboardMetrics.lastUpdated).toLocaleTimeString()}
                   </div>
                 )}
@@ -2675,48 +3471,48 @@ END:VCALENDAR`;
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
                 <button 
                   onClick={() => setActiveSection('Lead Generation')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-teal-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-teal-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-teal-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="users" className="text-teal-600 text-xl lg:text-2xl">👥</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : dashboardMetrics.leadCount}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Total Leads</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Total Leads</div>
                     <div className="text-xs text-teal-600 font-medium">📈 Real Data</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('CRM & Pipeline')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-green-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-green-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-green-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="revenue" className="text-green-600 text-xl lg:text-2xl">💰</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : MetricsService.formatCurrency(dashboardMetrics.pipelineValue)}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Pipeline Value</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Pipeline Value</div>
                     <div className="text-xs text-green-600 font-medium">💎 Live CRM</div>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => setActiveSection('Outreach Automation')}
-                  className="bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full"
+                  className={getDarkModeClasses("bg-white shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full", "bg-gray-800 shadow-lg rounded-xl p-4 lg:p-6 flex items-center gap-3 lg:gap-4 hover:scale-105 transition-transform hover:shadow-xl cursor-pointer text-left w-full border border-gray-700")}
                 >
-                  <div className="bg-purple-100 p-2 lg:p-3 rounded-full flex-shrink-0">
+                  <div className={getDarkModeClasses("bg-purple-100 p-2 lg:p-3 rounded-full flex-shrink-0", "bg-purple-900 p-2 lg:p-3 rounded-full flex-shrink-0")}>
                     <span role="img" aria-label="campaigns" className="text-purple-600 text-xl lg:text-2xl">⚡</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <div className={getDarkModeClasses("text-xl lg:text-2xl font-bold text-gray-900", "text-xl lg:text-2xl font-bold text-white")}>
                       {dashboardMetrics.isLoading ? '...' : dashboardMetrics.activeCampaigns}
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base">Active Campaigns</div>
+                    <div className={getDarkModeClasses("text-gray-500 text-sm lg:text-base", "text-gray-300 text-sm lg:text-base")}>Active Campaigns</div>
                     <div className="text-xs text-purple-600 font-medium">🚀 Running Now</div>
                   </div>
                 </button>
@@ -2752,15 +3548,6 @@ END:VCALENDAR`;
                 </button>
                 
                 <button 
-                  onClick={() => setSecureActiveSection('AI Swarm')} 
-                  className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl p-6 flex flex-col items-center hover:from-purple-200 hover:to-blue-200 transition group"
-                >
-                  <span role="img" aria-label="ai-swarm" className="text-purple-600 text-3xl mb-2 group-hover:scale-110 transition-transform">🧠</span>
-                  <span className="font-semibold text-purple-600">AI Swarm</span>
-                  <span className="text-sm text-gray-600 mt-1">Multiple AI agents working</span>
-                </button>
-                
-                <button 
                   onClick={() => setShowAIAssistant(!showAIAssistant)} 
                   className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-xl p-6 flex flex-col items-center hover:from-teal-200 hover:to-cyan-200 transition group"
                 >
@@ -2772,14 +3559,14 @@ END:VCALENDAR`;
             </div>
           )}
           {activeSection === 'Lead Generation' && (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+            <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-4xl font-bold text-genie-teal flex items-center gap-3">
                   <span className="text-5xl animate-pulse">🚀</span>
                   Ultimate Lead Generation Hub
                 </h2>
                 <div className="text-right">
-                  <div className="text-sm text-gray-600">System Status</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>System Status</div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-green-600 font-semibold">ACTIVE</span>
@@ -2788,8 +3575,8 @@ END:VCALENDAR`;
               </div>
 
               {/* Tab Navigation */}
-              <div className="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
-                <div className="flex border-b border-gray-200">
+              <div className={getDarkModeClasses("bg-white rounded-xl shadow-lg mb-8 overflow-hidden", "bg-gray-800 rounded-xl shadow-lg mb-8 overflow-hidden border border-gray-700")}>
+                <div className={getDarkModeClasses("flex border-b border-gray-200", "flex border-b border-gray-600")}>
                   {leadTabs.map((tab) => (
                     <button
                       key={tab.id}
@@ -2797,7 +3584,7 @@ END:VCALENDAR`;
                       className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 font-medium transition-all duration-300 ${
                         activeLeadTab === tab.id
                           ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg'
-                          : 'text-gray-600 hover:text-teal-600 hover:bg-teal-50'
+                          : isDarkMode ? 'text-gray-300 hover:text-teal-400 hover:bg-gray-700' : 'text-gray-600 hover:text-teal-600 hover:bg-teal-50'
                       }`}
                     >
                       <span className="text-xl">{tab.icon}</span>
@@ -2808,7 +3595,7 @@ END:VCALENDAR`;
               </div>
 
               {/* Tab Content - Overview Tab (existing content) */}
-              <div className="bg-white rounded-xl shadow-lg p-8">
+              <div className={getDarkModeClasses("bg-white rounded-xl shadow-lg p-8", "bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700")}>
                 {activeLeadTab === 'overview' && (
                   <div className="space-y-8">
 
@@ -2870,14 +3657,24 @@ END:VCALENDAR`;
               {activeLeadTab === 'scraping' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">🤖 AI-Powered Lead Scraping Agents</h3>
-                    <p className="text-gray-600">Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>🤖 AI-Powered Lead Scraping Agents</h3>
+                    <div className="bg-amber-100 border border-amber-400 rounded-lg p-3 mb-4 inline-block">
+                      <p className="text-amber-800 font-bold text-lg">
+                        ⚠️ Please use web browser, this feature will not work properly in handheld devices
+                      </p>
+                    </div>
+                    <p className={`${isDarkMode ? 'text-teal-400' : 'text-gray-600'}`}>Deploy intelligent agents to automatically discover and qualify leads from multiple sources</p>
+                  </div>
+
+                  {/* Bulk Prospeo Scraper - TOP PRIORITY */}
+                  <div className="mb-8">
+                    <BulkProspeoScraper />
                   </div>
 
                   {/* Enhanced Scraping Agents */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-blue-200">
+                  <div className={getDarkModeClasses("bg-white rounded-xl shadow-xl p-8 border border-blue-200", "bg-gray-800 rounded-xl shadow-xl p-8 border border-gray-600")}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={getDarkModeClasses("text-2xl font-bold text-genie-teal flex items-center gap-3", "text-2xl font-bold text-teal-400 flex items-center gap-3")}>
                         <span className="text-3xl">🤖</span>
                         AI-Powered Lead Scraping Agents
                       </h4>
@@ -2961,26 +3758,26 @@ END:VCALENDAR`;
               {activeLeadTab === 'import' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">📁 Bulk Lead Import Center</h3>
-                    <p className="text-gray-600">Import leads from CSV, Excel, or JSON files with intelligent processing</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>📁 Bulk Lead Import Center</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Import leads from CSV, Excel, or JSON files with intelligent processing</p>
                   </div>
 
                   {/* Enhanced Lead Import Tool */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-purple-200">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-purple-200'} rounded-xl shadow-xl p-8`}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} flex items-center gap-3`}>
                         <span className="text-3xl">📊</span>
                         Bulk Lead Import Center
                       </h4>
-                      <div className="text-sm text-gray-500">CSV, Excel, or JSON</div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>CSV, Excel, or JSON</div>
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {/* Drag & Drop Zone */}
-                      <div className="border-2 border-dashed border-purple-300 rounded-xl p-8 text-center bg-gradient-to-b from-purple-50 to-purple-100 hover:border-purple-400 transition-colors cursor-pointer group">
+                      <div className={`border-2 border-dashed border-purple-300 rounded-xl p-8 text-center ${isDarkMode ? 'bg-gray-600' : 'bg-gradient-to-b from-purple-50 to-purple-100'} hover:border-purple-400 transition-colors cursor-pointer group`}>
                         <div className="text-6xl mb-4 group-hover:animate-bounce">📁</div>
-                        <div className="text-xl font-semibold text-gray-700 mb-2">Drag & Drop Files Here</div>
-                        <div className="text-gray-500 mb-4">or click to browse</div>
+                        <div className={`text-xl font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-2`}>Drag & Drop Files Here</div>
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>or click to browse</div>
                         <input 
                           type="file" 
                           accept=".csv,.xlsx,.json" 
@@ -3046,14 +3843,14 @@ END:VCALENDAR`;
               {activeLeadTab === 'enrichment' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">🎯 AI-Powered Lead Enrichment</h3>
-                    <p className="text-gray-600">Capture and enrich lead information with intelligent validation and data enhancement</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>🎯 AI-Powered Lead Enrichment</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Capture and enrich lead information with intelligent validation and data enhancement</p>
                   </div>
 
                   {/* Enhanced Lead Capture Form with AI Enrichment */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 border border-teal-200">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-teal-200'} rounded-xl shadow-xl p-8`}>
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-2xl font-bold text-genie-teal flex items-center gap-3">
+                      <h4 className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} flex items-center gap-3`}>
                         <span className="text-3xl">🎯</span>
                         AI-Powered Lead Enrichment
                       </h4>
@@ -3067,7 +3864,7 @@ END:VCALENDAR`;
                       {/* Primary Contact Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">👤</span>
                             Full Name *
                           </label>
@@ -3076,13 +3873,13 @@ END:VCALENDAR`;
                             placeholder="John Doe" 
                             value={leadFormData.name}
                             onChange={(e) => setLeadFormData(prev => ({...prev, name: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             required 
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📧</span>
                             Email Address *
                           </label>
@@ -3092,7 +3889,7 @@ END:VCALENDAR`;
                               placeholder="john@company.com" 
                               value={leadFormData.email}
                               onChange={(e) => setLeadFormData(prev => ({...prev, email: e.target.value}))}
-                              className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                              className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                               required 
                             />
                             <div className="absolute right-3 top-3 text-green-500">
@@ -3105,7 +3902,7 @@ END:VCALENDAR`;
                       {/* Secondary Contact Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📱</span>
                             Phone Number
                           </label>
@@ -3114,12 +3911,12 @@ END:VCALENDAR`;
                             placeholder="+1 (555) 123-4567" 
                             value={leadFormData.phone}
                             onChange={(e) => setLeadFormData(prev => ({...prev, phone: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🏢</span>
                             Company
                           </label>
@@ -3129,7 +3926,7 @@ END:VCALENDAR`;
                               placeholder="Company Name" 
                               value={leadFormData.company}
                               onChange={(e) => setLeadFormData(prev => ({...prev, company: e.target.value}))}
-                              className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                              className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                             />
                             <div className="absolute right-3 top-3 text-blue-500">
                               <span className="text-sm animate-pulse">🔍</span>
@@ -3141,7 +3938,7 @@ END:VCALENDAR`;
                       {/* Social & Web Presence */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🔗</span>
                             LinkedIn
                           </label>
@@ -3150,12 +3947,12 @@ END:VCALENDAR`;
                             placeholder="linkedin.com/in/johndoe" 
                             value={leadFormData.linkedin}
                             onChange={(e) => setLeadFormData(prev => ({...prev, linkedin: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🐦</span>
                             Twitter
                           </label>
@@ -3164,12 +3961,12 @@ END:VCALENDAR`;
                             placeholder="@johndoe" 
                             value={leadFormData.twitter}
                             onChange={(e) => setLeadFormData(prev => ({...prev, twitter: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🌐</span>
                             Website
                           </label>
@@ -3178,7 +3975,7 @@ END:VCALENDAR`;
                             placeholder="company.com" 
                             value={leadFormData.website}
                             onChange={(e) => setLeadFormData(prev => ({...prev, website: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                       </div>
@@ -3186,26 +3983,26 @@ END:VCALENDAR`;
                       {/* Additional Info */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">🏷️</span>
                             Lead Source
                           </label>
                           <select 
                             value={leadFormData.source}
                             onChange={(e) => setLeadFormData(prev => ({...prev, source: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300"
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}
                           >
-                            <option value="manual">Manual Entry</option>
-                            <option value="website">Website Form</option>
-                            <option value="social">Social Media</option>
-                            <option value="referral">Referral</option>
-                            <option value="cold_outreach">Cold Outreach</option>
-                            <option value="event">Event/Conference</option>
+                            <option value="manual" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Manual Entry</option>
+                            <option value="website" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Website Form</option>
+                            <option value="social" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Social Media</option>
+                            <option value="referral" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Referral</option>
+                            <option value="cold_outreach" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Cold Outreach</option>
+                            <option value="event" className={isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-white text-gray-900'}>Event/Conference</option>
                           </select>
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} flex items-center gap-2`}>
                             <span className="text-lg">📝</span>
                             Notes
                           </label>
@@ -3214,7 +4011,7 @@ END:VCALENDAR`;
                             placeholder="Additional notes about this lead..." 
                             value={leadFormData.description}
                             onChange={(e) => setLeadFormData(prev => ({...prev, description: e.target.value}))}
-                            className="w-full border-2 border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300" 
+                            className={`w-full border-2 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`}
                           />
                         </div>
                       </div>
@@ -3278,20 +4075,53 @@ END:VCALENDAR`;
               {activeLeadTab === 'recent' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">👥 Recent Leads Management</h3>
-                    <p className="text-gray-600">Manage and organize all your leads in one place</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>👥 Recent Leads Management</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Manage and organize all your leads in one place</p>
+                    
+                    {/* 🚀 Emergency Sync Status Indicator */}
+                    {emergencySyncStatus.syncing && (
+                      <div className="mt-4 flex items-center justify-center px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+                        <span className="text-yellow-800 text-sm font-medium">
+                          🔄 Syncing {emergencySyncStatus.count} emergency leads to database...
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Emergency lead count and force sync button */}
+                    {emergencySyncStatus.count > 0 && !emergencySyncStatus.syncing && (
+                      <div className="mt-4 flex items-center justify-center">
+                        <div className="flex items-center space-x-4 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <span className="text-orange-800 text-sm font-medium">
+                            ⚠️ {emergencySyncStatus.count} leads waiting to sync to database
+                          </span>
+                          <button
+                            onClick={handleForceSync}
+                            className="px-3 py-1 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
+                          >
+                            🚀 Force Sync Now
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Filters/Search */}
                   <div className="flex flex-col md:flex-row gap-4 mb-4">
-                    <input type="text" placeholder="Search leads..." className="border p-2 rounded flex-1" />
-                    <select className="border p-2 rounded">
+                    <input type="text" placeholder="Search leads..." className={`border p-2 rounded flex-1 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200 placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'}`} />
+                    <select className={`border p-2 rounded ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300 text-gray-900'}`}>
                       <option>All Sources</option>
                       <option>Website</option>
                       <option>Referral</option>
                       <option>Event</option>
                     </select>
                     <button className="bg-genie-teal text-white px-4 py-2 rounded hover:bg-genie-teal/80">Filter</button>
+                    <button 
+                      onClick={() => loadLeadData()}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      🔄 Refresh
+                    </button>
                     <button 
                       onClick={handleRemoveDuplicates}
                       className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
@@ -3301,9 +4131,9 @@ END:VCALENDAR`;
                   </div>
 
                   {/* Enhanced Recent Leads Table */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-xl font-semibold text-genie-teal">Recent Leads ({leads.length})</h4>
+                      <h4 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>Recent Leads ({leads.length})</h4>
                       {selectedLeads.length > 0 && (
                         <div className="flex items-center gap-3">
                           <span className="text-sm text-gray-600">{selectedLeads.length} selected</span>
@@ -3320,7 +4150,7 @@ END:VCALENDAR`;
                     <div className="overflow-x-auto">
                       <table className="w-full text-left">
                         <thead>
-                          <tr className="border-b border-gray-200">
+                          <tr className={`${isDarkMode ? 'border-b border-gray-600' : 'border-b border-gray-200'}`}>
                             <th className="py-3 px-2">
                               <input 
                                 type="checkbox" 
@@ -3329,18 +4159,18 @@ END:VCALENDAR`;
                                 className="rounded"
                               />
                             </th>
-                            <th className="py-3">Name</th>
-                            <th className="py-3">Email</th>
-                            <th className="py-3">Company</th>
-                            <th className="py-3">Source</th>
-                            <th className="py-3">Tags</th>
-                            <th className="py-3">Score</th>
-                            <th className="py-3">Actions</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Name</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Email</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Company</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Source</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Tags</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Score</th>
+                            <th className={`py-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
                           {leads.length > 0 ? leads.map((lead, index) => (
-                            <tr key={lead.id} className={`border-b border-gray-100 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-blue-25' : ''}`}>
+                            <tr key={lead.id} className={`${isDarkMode ? 'border-b border-gray-600 hover:bg-gray-600' : 'border-b border-gray-100 hover:bg-gray-50'} ${index % 2 === 0 ? (isDarkMode ? 'bg-gray-800' : 'bg-blue-25') : (isDarkMode ? 'bg-gray-700' : '')}`}>
                               <td className="py-3 px-2">
                                 <input 
                                   type="checkbox" 
@@ -3349,13 +4179,24 @@ END:VCALENDAR`;
                                   className="rounded"
                                 />
                               </td>
-                              <td className="py-3 font-medium">{lead.firstName} {lead.lastName}</td>
-                              <td className="py-3 text-blue-600">{lead.email}</td>
-                              <td className="py-3">{lead.company || '—'}</td>
+                              <td className={`py-3 font-medium ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{lead.firstName} {lead.lastName}</td>
+                              <td className={`py-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{lead.email}</td>
+                              <td className={`py-3 ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{lead.company || '—'}</td>
                               <td className="py-3">
-                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                                  {lead.source}
-                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    lead.isEmergency 
+                                      ? 'bg-red-100 text-red-700 border border-red-300' 
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {lead.isEmergency ? '🚨 ' : ''}{lead.source}
+                                  </span>
+                                  {lead.isEmergency && (
+                                    <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs border border-orange-300">
+                                      Local Storage
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-3">
                                 <div className="flex flex-wrap gap-1">
@@ -3394,7 +4235,7 @@ END:VCALENDAR`;
                             </tr>
                           )) : (
                             <tr>
-                              <td colSpan="8" className="py-8 text-center text-gray-500">
+                              <td colSpan="8" className={`py-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                 <div className="text-4xl mb-2">🎯</div>
                                 <div>No leads yet. Add your first lead above or use the scraping tools!</div>
                               </td>
@@ -3608,104 +4449,180 @@ END:VCALENDAR`;
                 </div>
               )}
 
+              {/* Bounce Processing Modal */}
+              {showBounceModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} flex items-center`}>
+                        <span className="mr-2">📧</span>
+                        Process Bounced Emails
+                      </h3>
+                      <button 
+                        onClick={() => setShowBounceModal(false)}
+                        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-2xl font-bold`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                      <div className="flex items-start">
+                        <span className="mr-3 text-xl">💡</span>
+                        <div>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-800'} mb-2`}>
+                            <strong>How to use:</strong>
+                          </p>
+                          <ol className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} space-y-1`}>
+                            <li>1. Copy bounce email content from your Gmail</li>
+                            <li>2. Paste it in the text area below</li>
+                            <li>3. Click "Process Bounces" to automatically remove bounced emails from your contacts</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Paste Bounce Email Content:
+                      </label>
+                      <textarea
+                        value={pastedBounceText}
+                        onChange={(e) => setPastedBounceText(e.target.value)}
+                        className={`w-full h-40 border p-3 rounded-lg font-mono text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 placeholder-gray-500'
+                        }`}
+                        placeholder="Paste your bounce email content here..."
+                      />
+                    </div>
+                    
+                    <div className="flex gap-4 justify-end">
+                      <button
+                        onClick={() => setShowBounceModal(false)}
+                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                          isDarkMode 
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={processPastedBounces}
+                        disabled={bounceProcessing || !pastedBounceText.trim()}
+                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
+                          bounceProcessing || !pastedBounceText.trim()
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-orange-500 text-white hover:bg-orange-600'
+                        }`}
+                      >
+                        {bounceProcessing ? '🔄 Processing...' : '🧹 Process Bounces'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeLeadTab === 'analytics' && (
                 <div className="space-y-6">
                   <div className="text-center mb-8">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">📈 Lead Analytics & Performance</h3>
-                    <p className="text-gray-600">Comprehensive insights into your lead generation performance and trends</p>
+                    <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-2`}>📈 Lead Analytics & Performance</h3>
+                    <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Comprehensive insights into your lead generation performance and trends</p>
                   </div>
 
                   {/* Key Metrics Overview */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-blue-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-blue-500' : 'bg-white border-l-4 border-l-blue-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-blue-500 text-3xl mb-2">📊</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.activeReports || 0}</div>
-                      <div className="text-gray-500">Active Reports</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.activeReports || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Reports</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-green-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-green-500' : 'bg-white border-l-4 border-l-green-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-green-500 text-3xl mb-2">💡</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.keyInsights || 0}</div>
-                      <div className="text-gray-500">Key Insights</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.keyInsights || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Key Insights</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-purple-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-purple-500' : 'bg-white border-l-4 border-l-purple-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-purple-500 text-3xl mb-2">📈</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.monthlyGrowthRate || 0}%</div>
-                      <div className="text-gray-500">Growth Rate</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.monthlyGrowthRate || 0}%</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Growth Rate</div>
                     </div>
-                    <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center border-l-4 border-teal-500">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600 border-l-4 border-l-teal-500' : 'bg-white border-l-4 border-l-teal-500'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                       <span className="text-teal-500 text-3xl mb-2">🎯</span>
-                      <div className="text-2xl font-bold text-gray-900">{leadStats.totalLeads || 0}</div>
-                      <div className="text-gray-500">Total Leads</div>
+                      <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>{leadStats.totalLeads || 0}</div>
+                      <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Leads</div>
                     </div>
                   </div>
 
                   {/* Lead Performance Analytics */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Lead Sources Performance */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                      <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                         <span className="text-2xl">🚀</span>
                         Lead Sources Performance
                       </h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-blue-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-blue-500">🤖</span>
-                            <span className="font-medium">AI Scraping</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>AI Scraping</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-blue-600">{leadStats.aiScrapingSuccessRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Success Rate</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Success Rate</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-green-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-green-500">📁</span>
-                            <span className="font-medium">Bulk Import</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Bulk Import</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">{leadStats.bulkImportValidationRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Validation Rate</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Validation Rate</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-purple-50'}`}>
                           <div className="flex items-center gap-3">
                             <span className="text-purple-500">🎯</span>
-                            <span className="font-medium">Manual Entry</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Manual Entry</span>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-purple-600">{leadStats.manualEntryQualityRate || 0}%</div>
-                            <div className="text-xs text-gray-500">Quality Score</div>
+                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Quality Score</div>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Lead Quality Analytics */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                      <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                      <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                         <span className="text-2xl">⭐</span>
                         Lead Quality Breakdown
                       </h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-green-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                            <span className="font-medium">High Quality (80-100)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>High Quality (80-100)</span>
                           </div>
                           <div className="text-lg font-bold text-green-600">{leadStats.highQuality || 0}</div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-yellow-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                            <span className="font-medium">Medium Quality (60-79)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Medium Quality (60-79)</span>
                           </div>
                           <div className="text-lg font-bold text-yellow-600">{leadStats.mediumQuality || 0}</div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className={`flex items-center justify-between p-3 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-red-50'}`}>
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                            <span className="font-medium">Needs Review (0-59)</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Needs Review (0-59)</span>
                           </div>
                           <div className="text-lg font-bold text-red-600">{leadStats.lowQuality || 0}</div>
                         </div>
@@ -3714,57 +4631,57 @@ END:VCALENDAR`;
                   </div>
 
                   {/* Recent Activity & Trends */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+                    <h4 className={`text-xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
                       <span className="text-2xl">📊</span>
                       Recent Activity & Trends
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-blue-50 to-blue-100'}`}>
                         <div className="text-2xl font-bold text-blue-600">+{leadStats.leadsThisWeek || 0}</div>
-                        <div className="text-sm text-blue-700">Leads This Week</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>Leads This Week</div>
                         <div className={`text-xs mt-1 ${(leadStats.weeklyGrowthRate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {(leadStats.weeklyGrowthRate || 0) >= 0 ? '↗' : '↘'} {Math.abs(leadStats.weeklyGrowthRate || 0)}% from last week
                         </div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-green-50 to-green-100'}`}>
                         <div className="text-2xl font-bold text-green-600">{leadStats.avgQualityScore || 0}%</div>
-                        <div className="text-sm text-green-700">Avg Quality Score</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>Avg Quality Score</div>
                         <div className="text-xs text-green-600 mt-1">↗ Based on high-quality leads</div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
+                      <div className={`text-center p-4 rounded-lg ${isDarkMode ? 'bg-gray-600 border border-gray-500' : 'bg-gradient-to-r from-purple-50 to-purple-100'}`}>
                         <div className="text-2xl font-bold text-purple-600">${leadStats.avgCostPerLead || 0}</div>
-                        <div className="text-sm text-purple-700">Avg Cost Per Lead</div>
+                        <div className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-700'}`}>Avg Cost Per Lead</div>
                         <div className="text-xs text-green-600 mt-1">↗ From AI scraping</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-6 border border-teal-200">
-                    <h4 className="text-lg font-bold text-teal-800 mb-4">📋 Quick Analytics Actions</h4>
+                  <div className={`rounded-xl p-6 border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-teal-50 to-teal-100 border-teal-200'}`}>
+                    <h4 className={`text-lg font-bold ${isDarkMode ? 'text-teal-400' : 'text-teal-800'} mb-4`}>📋 Quick Analytics Actions</h4>
                     <div className="flex flex-wrap gap-3">
                       <button 
                         onClick={handleExportAnalyticsReport}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📊 Export Report
                       </button>
                       <button 
                         onClick={handleViewTrends}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📈 View Trends
                       </button>
                       <button 
                         onClick={handleQualityAnalysis}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         🎯 Quality Analysis
                       </button>
                       <button 
                         onClick={handleScheduleReport}
-                        className="bg-white text-teal-700 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors border border-teal-200"
+                        className={`px-4 py-2 rounded-lg transition-colors border ${isDarkMode ? 'bg-gray-600 text-teal-400 border-gray-500 hover:bg-gray-500' : 'bg-white text-teal-700 border-teal-200 hover:bg-teal-50'}`}
                       >
                         📧 Schedule Report
                       </button>
@@ -3780,42 +4697,112 @@ END:VCALENDAR`;
             <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
-              {/* Campaign Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="campaigns" className="text-genie-teal text-2xl mb-1">📧</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Active Campaigns</div>
+              {/* Campaign Stats - Real Data Only */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Active Campaigns</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="sent" className="text-genie-teal text-2xl mb-1">📤</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="sent" className="text-genie-teal text-3xl mb-2">📤</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsSent.toLocaleString()}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="opened" className="text-genie-teal text-2xl mb-1">📬</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsOpened.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Opened</div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="bounces" className="text-orange-500 text-3xl mb-2">🚫</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{bounceStats.totalBounces || 0}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Bounces Detected</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} text-center mt-1`}>
+                    {bounceStats.totalProcessed || 0} processed
+                  </div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="open-rate" className="text-genie-teal text-2xl mb-1">📊</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageOpenRate}%</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Open Rate</div>
+              </div>
+
+              {/* Automated Bounce Detection */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+                    <span className="mr-2">🤖</span>
+                    Enhanced Bounce Detection
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                      bounceDetectionActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full mr-2 ${
+                        bounceDetectionActive ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                      {bounceDetectionActive ? 'Active' : 'Inactive'}
+                    </div>
+                    <button
+                      onClick={bounceDetectionActive ? stopBounceMonitoring : startBounceMonitoring}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        bounceDetectionActive
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-genie-teal text-white hover:bg-genie-teal-dark'
+                      }`}
+                    >
+                      {bounceDetectionActive ? '🛑 Stop' : '🤖 Start Auto-Detection'}
+                    </button>
+                  </div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="responses" className="text-genie-teal text-2xl mb-1">💬</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.averageResponseRate}%</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Response Rate</div>
+                
+                <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                  <div className="flex items-start">
+                    <span className="mr-3 text-2xl">🧹</span>
+                    <div>
+                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-blue-900'} mb-2`}>
+                        Automated Bounce Management
+                      </h4>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} mb-3`}>
+                        Automatically monitors your Gmail for bounce notifications and removes bounced emails from your contact list. 
+                        Hard bounces are removed immediately, soft bounces are tracked and removed after 3 attempts.
+                      </p>
+                      
+                      {bounceStats.lastScan && (
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-blue-600'}`}>
+                          Last scan: {new Date(bounceStats.lastScan.seconds * 1000).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="bounced" className="text-red-500 text-2xl mb-1">⚠️</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalEmailsBounced.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Bounced</div>
-                </div>
-                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-4 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="unsubscribed" className="text-orange-500 text-2xl mb-1">🚫</span>
-                  <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalUnsubscribed.toLocaleString()}</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Unsubscribed</div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <button
+                    onClick={runBounceMonitoring}
+                    className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">🔍</span>
+                    Scan Now
+                  </button>
+                  
+                  <button
+                    onClick={setupGmailOAuth}
+                    className="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">🔗</span>
+                    Connect Gmail
+                  </button>
+                  
+                  <button
+                    onClick={resetBounceStatistics}
+                    className="bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">🔄</span>
+                    Reset Stats
+                  </button>
+                  
+                  <button
+                    onClick={loadBounceStats}
+                    className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
+                  >
+                    <span className="mr-2">📊</span>
+                    Refresh Stats
+                  </button>
                 </div>
               </div>
 
@@ -3902,7 +4889,7 @@ END:VCALENDAR`;
                       <select 
                         value={campaignFormData.targetAudience}
                         onChange={(e) => {
-                          setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegment: '' }))
+                          setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegments: [] }))
                         }}
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       >
@@ -3940,7 +4927,7 @@ END:VCALENDAR`;
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <div className="flex justify-between items-center mb-1">
-                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segments</label>
                           <button
                             type="button"
                             onClick={async () => {
@@ -3998,11 +4985,14 @@ END:VCALENDAR`;
                           </button>
                         </div>
                         <select 
-                          value={campaignFormData.customSegment}
-                          onChange={(e) => setCampaignFormData(prev => ({ ...prev, customSegment: e.target.value }))}
-                          className={`w-full border border-orange-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-orange-50' : 'bg-orange-50'}`}
+                          multiple
+                          value={campaignFormData.customSegments}
+                          onChange={(e) => {
+                            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                            setCampaignFormData(prev => ({ ...prev, customSegments: selectedOptions }))
+                          }}
+                          className={`w-full border border-orange-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-orange-50' : 'bg-orange-50'} min-h-[120px]`}
                         >
-                          <option value="">Choose a tagged segment...</option>
                           {availableTags.map(tag => (
                             <option key={tag} value={tag}>
                               🏷️ {tag}
@@ -4016,19 +5006,20 @@ END:VCALENDAR`;
                           </div>
                         )}
                         {availableTags.length > 0 && (
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                            Found {availableTags.length} tag(s): {availableTags.join(', ')}
-                          </p>
+                          <div className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            <p>Found {availableTags.length} tag(s): {availableTags.join(', ')}</p>
+                            <p className={`mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>💡 Hold Ctrl/Cmd to select multiple segments</p>
+                          </div>
                         )}
                         
-                        {/* Contact Count Display for Custom Segment */}
-                        {campaignFormData.customSegment && (
+                        {/* Contact Count Display for Custom Segments */}
+                        {campaignFormData.customSegments && campaignFormData.customSegments.length > 0 && (
                           <div className={`mt-3 p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-orange-50 text-orange-700'}`}>
                             <div className="flex items-center text-sm">
                               <span className="mr-2">🏷️</span>
                               <span>
                                 Campaign will send to <strong>{calculateTargetContacts(campaignFormData).length}</strong> contacts 
-                                with "{campaignFormData.customSegment}" tag
+                                with {campaignFormData.customSegments.length === 1 ? 'tag' : 'tags'}: <strong>{campaignFormData.customSegments.join(', ')}</strong>
                               </span>
                             </div>
                           </div>
@@ -4075,7 +5066,7 @@ END:VCALENDAR`;
                     <select
                       value={campaignFormData.aiSmartPrompt}
                       onChange={(e) => setCampaignFormData(prev => ({ ...prev, aiSmartPrompt: e.target.value }))}
-                      className={`w-full border border-purple-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-purple-50' : 'bg-purple-50'}`}
+                      className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-purple-50 border-purple-300'}`}
                     >
                       {aiSmartPrompts.map(prompt => (
                         <option key={prompt.value} value={prompt.value}>
@@ -4093,7 +5084,7 @@ END:VCALENDAR`;
                       onChange={(e) => setCampaignFormData(prev => ({ ...prev, additionalPrompt: e.target.value }))}
                       placeholder="Add any additional instructions or customizations for your AI-generated email content..."
                       rows={3}
-                      className={`w-full border border-indigo-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-indigo-50' : 'bg-indigo-50'}`}
+                      className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-300' : 'bg-indigo-50 border-indigo-300'}`}
                     />
                   </div>
 
@@ -4108,7 +5099,7 @@ END:VCALENDAR`;
                           value={campaignFormData.callToActionText}
                           onChange={(e) => setCampaignFormData(prev => ({ ...prev, callToActionText: e.target.value }))}
                           placeholder="e.g., 'Schedule a Free Consultation', 'Download Our Guide'"
-                          className={`w-full border border-blue-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white bg-blue-50' : 'bg-blue-50'}`}
+                          className={`w-full border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-300' : 'bg-blue-50 border-blue-300'}`}
                         />
                       </div>
                       <div>
@@ -4161,12 +5152,6 @@ END:VCALENDAR`;
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className={`text-xl font-semibold text-genie-teal`}>Active Campaigns</h3>
-                  <button
-                    onClick={() => setShowBounceManager(true)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
-                  >
-                    🧹 Manage Bounces
-                  </button>
                 </div>
                 <div className="space-y-4">
                   {campaigns.length === 0 ? (
@@ -4182,21 +5167,18 @@ END:VCALENDAR`;
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {(() => {
                                 const calculatedContacts = calculateTargetContacts(campaign).length;
-                                console.log('CAMPAIGN DISPLAY DEBUG:', {
-                                  campaignName: campaign.name,
-                                  emailsSent: campaign.emailsSent,
-                                  calculatedContacts: calculatedContacts,
-                                  totalContacts: campaign.totalContacts,
-                                  displayText: `${campaign.emailsSent} of ${calculatedContacts} contacts`
-                                });
-                                return `${campaign.type} • ${campaign.emailsSent} of ${calculatedContacts} contacts • Created: ${campaign.createdDate}`;
+                                const createdDate = formatDateUS(campaign.createdDate);
+                                const scheduledDate = campaign.sendDate ? formatDateUS(campaign.sendDate) : null;
+                                
+                                let dateInfo = `Created: ${createdDate}`;
+                                if (scheduledDate && scheduledDate !== 'Not set') {
+                                  dateInfo += ` • 📅 Scheduled: ${scheduledDate}`;
+                                }
+                                
+                                return `${campaign.type} • ${campaign.emailsSent} of ${calculatedContacts} contacts • ${dateInfo}`;
                               })()}
-                              {/* Debug info */}
-                              <span className="text-xs text-blue-500 ml-2">
-                                [DEBUG: totalContacts:{campaign.totalContacts}, calculated:{calculateTargetContacts(campaign).length}, audience:{campaign.targetAudience}]
-                              </span>
-                              {campaign.targetAudience === 'Custom Segment' && campaign.customSegment && (
-                                <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegment}</span>
+                              {campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0 && (
+                                <span className="text-orange-600 font-medium"> • 🏷️ {campaign.customSegments.join(', ')}</span>
                               )}
                             </p>
                             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
@@ -4325,6 +5307,35 @@ END:VCALENDAR`;
                       </div>
 
                       <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Scheduled Send Date</label>
+                        <input 
+                          type="datetime-local"
+                          value={(() => {
+                            if (!editingCampaign.scheduledDate) return '';
+                            // Handle both ISO string and datetime-local format
+                            const date = new Date(editingCampaign.scheduledDate);
+                            if (isNaN(date.getTime())) return '';
+                            // Convert to local timezone for display
+                            const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+                            return localDate.toISOString().slice(0, 16);
+                          })()}
+                          onChange={(e) => {
+                            const newDate = e.target.value ? e.target.value : null;
+                            setEditingCampaign({
+                              ...editingCampaign, 
+                              scheduledDate: newDate,
+                              sendDate: newDate  // Update both fields
+                            });
+                          }}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                          Leave empty for immediate sending, or set future date to schedule
+                        </p>
+                      </div>
+
+                      <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Selected Template</label>
                         <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
                           {editingCampaign.template || 'No template selected'}
@@ -4350,7 +5361,7 @@ END:VCALENDAR`;
                         {editingCampaign.targetAudience === 'Custom Segment' && (
                           <div className="mt-3">
                             <div className="flex justify-between items-center mb-1">
-                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segment</label>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>📋 Select Custom Segments</label>
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -4391,11 +5402,14 @@ END:VCALENDAR`;
                               </button>
                             </div>
                             <select 
-                              value={editingCampaign.customSegment || ''}
-                              onChange={(e) => setEditingCampaign({...editingCampaign, customSegment: e.target.value})}
-                              className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                              multiple
+                              value={editingCampaign.customSegments || []}
+                              onChange={(e) => {
+                                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                                setEditingCampaign({...editingCampaign, customSegments: selectedOptions})
+                              }}
+                              className={`w-full border p-3 rounded min-h-[120px] ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                             >
-                              <option value="">Choose a tagged segment...</option>
                               {availableTags.map(tag => (
                                 <option key={tag} value={tag}>
                                   🏷️ {tag}
@@ -4409,9 +5423,10 @@ END:VCALENDAR`;
                               </div>
                             )}
                             {availableTags.length > 0 && (
-                              <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                Found {availableTags.length} tag(s): {availableTags.join(', ')}
-                              </p>
+                              <div className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                <p>Found {availableTags.length} tag(s): {availableTags.join(', ')}</p>
+                                <p className={`mt-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>💡 Hold Ctrl/Cmd to select multiple segments</p>
+                              </div>
                             )}
                           </div>
                         )}
@@ -4465,11 +5480,21 @@ END:VCALENDAR`;
 
                     <div className="flex gap-3 mt-6">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          // Ensure both date fields are synchronized
+                          const syncedCampaign = {
+                            ...editingCampaign,
+                            sendDate: editingCampaign.scheduledDate,
+                            scheduledDate: editingCampaign.scheduledDate
+                          }
+                          
                           const updatedCampaigns = campaigns.map(c => 
-                            c.id === editingCampaign.id ? editingCampaign : c
+                            c.id === editingCampaign.id ? syncedCampaign : c
                           )
                           setCampaigns(updatedCampaigns)
+                          
+                          // Save to Firebase to persist changes
+                          await saveCampaignsToFirebase(updatedCampaigns)
                           
                           // Recalculate campaign stats after editing
                           updateCampaignStats()
@@ -4496,14 +5521,14 @@ END:VCALENDAR`;
                 </div>
               )}
 
-              {/* Bounce Management Modal */}
-              {showBounceManager && (
+              {/* Bounce Management Modal - DISABLED */}
+              {false && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                   <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
                     <div className="flex justify-between items-center mb-6">
                       <h3 className={`text-xl font-semibold text-genie-teal`}>🧹 Bulk Bounce Management</h3>
                       <button
-                        onClick={() => setShowBounceManager(false)}
+                        onClick={() => {}}
                         className={`${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'} text-2xl`}
                       >
                         ×
@@ -4648,7 +5673,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                         {processingBounces ? '🔄 Processing...' : '🧹 Remove Bounced Emails'}
                       </button>
                       <button
-                        onClick={() => setShowBounceManager(false)}
+                        onClick={() => {}}
                         className={`px-6 py-3 rounded-lg border transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
@@ -4663,16 +5688,16 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               )}
             </div>
           )}
-          {activeSection === 'CRM & Pipeline' && <CRMPipeline />}
+          {activeSection === 'CRM & Pipeline' && <CRMPipeline isDarkMode={isDarkMode} />}
           {activeSection === 'Appointments' && (
-            <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+            <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
               {/* APPOINTMENT BOOKING MODAL */}
               {(showAppointmentModal || forceShowModal.current) && (
                 <div 
                   className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
                   style={{zIndex: 1000}}
                 >
-                  <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl">
+                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-lg p-8 w-full max-w-md shadow-xl`}>
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-genie-teal">
                         {editingAppointment ? 'Reschedule Appointment' : 'Schedule Appointment'}
@@ -4682,7 +5707,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                           setShowAppointmentModal(false)
                           forceShowModal.current = false
                         }}
-                        className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-xl font-bold`}
                       >
                         ×
                       </button>
@@ -4836,33 +5861,33 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 </div>
               )}
 
-              <h2 className="text-3xl font-bold text-genie-teal mb-8">Appointments</h2>
+              <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-8`}>Appointments</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="calendar" className="text-genie-teal text-3xl mb-2">📅</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.upcoming}
                   </div>
-                  <div className="text-gray-500">Upcoming</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Upcoming</div>
                 </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="booked" className="text-genie-teal text-3xl mb-2">✅</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.booked}
                   </div>
-                  <div className="text-gray-500">Booked</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Booked</div>
                 </div>
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
+                <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} shadow-lg rounded-xl p-6 flex flex-col items-center`}>
                   <span role="img" aria-label="cancelled" className="text-genie-teal text-3xl mb-2">❌</span>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-teal-400' : 'text-gray-900'}`}>
                     {appointmentsLoading ? '...' : appointmentStats.cancelled}
                   </div>
-                  <div className="text-gray-500">Cancelled</div>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cancelled</div>
                 </div>
               </div>
               {/* Calendar Integration */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Calendar Integration</h3>
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6 mb-8`}>
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-4`}>Calendar Integration</h3>
                 <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
                   <button 
                     onClick={() => handleCalendarConnection('google')}
@@ -4924,9 +5949,9 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
 
               {/* Booking Settings */}
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6 mb-8`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-genie-teal">⚙️ Booking Settings</h3>
+                  <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'}`}>⚙️ Booking Settings</h3>
                   <button
                     type="button"
                     onClick={() => setShowBookingSettings(!showBookingSettings)}
@@ -4941,10 +5966,10 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 </div>
                 
                 {!showBookingSettings ? (
-                  <div className="p-4 rounded-lg bg-blue-50">
+                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-600' : 'bg-blue-50'}`}>
                     <div className="flex items-center text-sm">
                       <span className="mr-2">📅</span>
-                      <span className="text-blue-700">
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
                         Configure your booking preferences, available hours, and calendar settings for appointment scheduling.
                       </span>
                     </div>
@@ -4952,8 +5977,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 ) : (
                   <form onSubmit={handleBookingSettingsSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Duration</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Meeting Duration</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>15 minutes</option>
                       <option>30 minutes</option>
                       <option>45 minutes</option>
@@ -4961,8 +5986,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Buffer Time</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Buffer Time</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>No buffer</option>
                       <option>5 minutes</option>
                       <option>10 minutes</option>
@@ -4970,24 +5995,24 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours Start</label>
-                    <input type="time" className="border p-3 rounded w-full" defaultValue="09:00" />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Hours Start</label>
+                    <input type="time" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue="09:00" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Hours End</label>
-                    <input type="time" className="border p-3 rounded w-full" defaultValue="17:00" />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Hours End</label>
+                    <input type="time" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue="17:00" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range Start</label>
-                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date().toISOString().split('T')[0]} />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Date Range Start</label>
+                    <input type="date" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue={new Date().toISOString().split('T')[0]} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Date Range End</label>
-                    <input type="date" className="border p-3 rounded w-full" defaultValue={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Date Range End</label>
+                    <input type="date" className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} defaultValue={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Days</label>
-                    <select multiple className="border p-3 rounded w-full" size="3">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Available Days</label>
+                    <select multiple className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`} size="3">
                       <option value="monday" selected>Monday</option>
                       <option value="tuesday" selected>Tuesday</option>
                       <option value="wednesday" selected>Wednesday</option>
@@ -4998,8 +6023,8 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-                    <select className="border p-3 rounded w-full">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Timezone</label>
+                    <select className={`border p-3 rounded w-full ${isDarkMode ? 'bg-gray-600 border-gray-500 text-gray-200' : 'bg-white border-gray-300'}`}>
                       <option>UTC-5 (Eastern Time)</option>
                       <option>UTC-6 (Central Time)</option>
                       <option>UTC-7 (Mountain Time)</option>
@@ -5012,11 +6037,11 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
 
               {/* Upcoming Appointments */}
-              <div className="bg-white rounded-xl shadow p-6">
-                <h3 className="text-xl font-semibold text-genie-teal mb-4">Upcoming Appointments</h3>
+              <div className={`${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white'} rounded-xl shadow p-6`}>
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-teal-400' : 'text-genie-teal'} mb-4`}>Upcoming Appointments</h3>
                 <div className="space-y-4">
                   {appointments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <p>No appointments scheduled yet.</p>
                       <button 
                         onClick={handleBookMeeting}
@@ -5101,18 +6126,18 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
               </div>
             </div>
           )}
-          {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard />}
-          {activeSection === 'Cost Controls' && <CostControlsDashboard />}
+          {activeSection === 'White-Label SaaS' && <WhiteLabelDashboard isDarkMode={isDarkMode} />}
+          {activeSection === 'Resources & Docs' && <ResourceDocumentationCenter isDarkMode={isDarkMode} />}
           
           {activeSection === 'API Keys & Integrations' && (
             <APIKeysIntegrations 
               calendarConnections={calendarConnections}
               onCalendarConnect={handleCalendarConnection}
               saveCalendarConnections={saveCalendarConnections}
+              isDarkMode={isDarkMode}
             />
           )}
-          {activeSection === 'AI Swarm' && <AISwarmDashboard />}
-          {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && tenant?.role === 'founder' && renderAdminPanel()}
+          {activeSection === 'Admin Panel' && user?.email === 'dubdproducts@gmail.com' && renderAdminPanel()}
           {activeSection === 'Account Settings' && renderAccountSettings()}
           {activeSection === 'Profile' && renderProfile()}
           {activeSection === 'Billing' && renderBilling()}
@@ -5124,7 +6149,7 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
 
   function renderDashboard() {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-8">
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <h2 className={`text-3xl font-bold text-genie-teal mb-8 ${isDarkMode ? 'text-genie-teal' : ''}`}>SuperGenie Dashboard</h2>
         
         {/* Financial Overview Matrix */}
@@ -5569,6 +6594,103 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
     )
   }
 
+  function renderEmergencyMigration() {
+    const handleMigration = async () => {
+      setMigrationInProgress(true);
+      setMigrationResult(null);
+      
+      try {
+        // Use the emergency storage migration function
+        if (window.emergencyStorageSync && window.emergencyStorageSync.migrateDefaultTenantLeads) {
+          const result = await window.emergencyStorageSync.migrateDefaultTenantLeads();
+          setMigrationResult(result);
+          
+          if (result.success) {
+            toast.success(`🎉 ${result.message}`);
+          } else {
+            toast.error(`❌ Migration failed: ${result.error}`);
+          }
+        } else {
+          throw new Error('Migration service not available');
+        }
+      } catch (error) {
+        const errorResult = {
+          success: false,
+          error: error.message
+        };
+        setMigrationResult(errorResult);
+        toast.error(`❌ Migration failed: ${error.message}`);
+      } finally {
+        setMigrationInProgress(false);
+      }
+    };
+
+    return (
+      <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
+        <div className="max-w-4xl mx-auto">
+          <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>🚚 Emergency Lead Migration</h2>
+          
+          <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Migrate Leads from Default Tenant
+            </h3>
+            <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              This tool will move all leads from the 'default-tenant' collection to your correct tenant ID. 
+              After migration, your leads will appear in the Recent Leads tab.
+            </p>
+            
+            <div className="flex items-center space-x-4 mb-6">
+              <button
+                onClick={handleMigration}
+                disabled={migrationInProgress}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  migrationInProgress 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-purple-600 hover:bg-purple-700'
+                } text-white`}
+              >
+                {migrationInProgress ? '🔄 Migrating...' : '🚚 Start Migration'}
+              </button>
+              
+              <button
+                onClick={() => setActiveSection('Lead Generation')}
+                className={`px-6 py-3 rounded-lg font-medium border transition-colors ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Go to Recent Leads
+              </button>
+            </div>
+
+            {migrationResult && (
+              <div className={`p-4 rounded-lg ${
+                migrationResult.success 
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-red-50 border border-red-200'
+              }`}>
+                <h4 className={`font-medium ${
+                  migrationResult.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {migrationResult.success ? '✅ Migration Successful!' : '❌ Migration Failed'}
+                </h4>
+                <p className={`mt-2 ${
+                  migrationResult.success ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {migrationResult.success 
+                    ? `Successfully migrated ${migrationResult.migrated} leads. Skipped ${migrationResult.skipped} leads. Check your Recent Leads tab!`
+                    : migrationResult.error
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderAdminPanel() {
     // SECURITY CHECK: Only founder can access Admin Panel
     if (user?.email !== 'dubdproducts@gmail.com' || tenant?.role !== 'founder') {
@@ -5602,22 +6724,30 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <span role="img" aria-label="users" className="text-genie-teal text-3xl mb-2">👥</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>2,847</div>
+            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              {adminStats.isLoading ? '...' : adminStats.totalUsers.toLocaleString()}
+            </div>
             <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Users</div>
           </div>
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <span role="img" aria-label="revenue" className="text-genie-teal text-3xl mb-2">💰</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>$125K</div>
+            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              {adminStats.isLoading ? '...' : `$${(adminStats.monthlyRevenue / 1000).toFixed(0)}K`}
+            </div>
             <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Monthly Revenue</div>
           </div>
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <span role="img" aria-label="support" className="text-genie-teal text-3xl mb-2">🎫</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>23</div>
+            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              {adminStats.isLoading ? '...' : adminStats.openTickets}
+            </div>
             <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Open Tickets</div>
           </div>
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <span role="img" aria-label="system" className="text-genie-teal text-3xl mb-2">⚡</span>
-            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>99.8%</div>
+            <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              {adminStats.isLoading ? '...' : `${adminStats.systemUptime}%`}
+            </div>
             <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>System Uptime</div>
           </div>
         </div>
@@ -5627,17 +6757,15 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>User Management</h3>
             <div className="space-y-4">
-              <button className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 text-left flex items-center gap-3">
+              <button 
+                onClick={() => setAdminView('users')}
+                className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 text-left flex items-center gap-3">
                 <span>👤</span> View All Users
               </button>
-              <button className="w-full bg-green-600 text-white p-3 rounded hover:bg-green-700 text-left flex items-center gap-3">
+              <button 
+                onClick={() => setAdminView('create-user')}
+                className="w-full bg-green-600 text-white p-3 rounded hover:bg-green-700 text-left flex items-center gap-3">
                 <span>➕</span> Create New User
-              </button>
-              <button className="w-full bg-orange-600 text-white p-3 rounded hover:bg-orange-700 text-left flex items-center gap-3">
-                <span>🔒</span> Manage Permissions
-              </button>
-              <button className="w-full bg-red-600 text-white p-3 rounded hover:bg-red-700 text-left flex items-center gap-3">
-                <span>🚫</span> Suspended Users
               </button>
             </div>
           </div>
@@ -5645,19 +6773,173 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
           <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <h3 className={`text-xl font-semibold text-genie-teal mb-4`}>System Administration</h3>
             <div className="space-y-4">
-              <button className="w-full bg-purple-600 text-white p-3 rounded hover:bg-purple-700 text-left flex items-center gap-3">
+              <button 
+                onClick={() => setAdminView('analytics')}
+                className="w-full bg-purple-600 text-white p-3 rounded hover:bg-purple-700 text-left flex items-center gap-3">
                 <span>📊</span> System Analytics
               </button>
-              <button className="w-full bg-indigo-600 text-white p-3 rounded hover:bg-indigo-700 text-left flex items-center gap-3">
-                <span>⚙️</span> System Configuration
-              </button>
-              <button className="w-full bg-gray-600 text-white p-3 rounded hover:bg-gray-700 text-left flex items-center gap-3">
-                <span>📝</span> View System Logs
-              </button>
-              <button className="w-full bg-yellow-600 text-white p-3 rounded hover:bg-yellow-700 text-left flex items-center gap-3">
-                <span>🔧</span> Maintenance Mode
+              <button 
+                onClick={runDataMigration}
+                disabled={migrationStatus.inProgress}
+                className={`w-full p-3 rounded text-left flex items-center gap-3 transition-colors ${
+                  migrationStatus.inProgress 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : migrationStatus.completed
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}>
+                <span>{migrationStatus.inProgress ? '🔄' : migrationStatus.completed ? '✅' : '🔧'}</span> 
+                {migrationStatus.inProgress ? 'Migrating Data...' : migrationStatus.completed ? 'Migration Complete' : 'Fix Tenant Data Split'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* All Users Display - Always Visible */}
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} mb-8`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className={`text-xl font-semibold text-genie-teal`}>👥 All Users</h3>
+            <button 
+              onClick={loadAllUsers}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            >
+              🔄 Refresh
+            </button>
+          </div>
+          
+          {allUsers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className={`w-full border-collapse ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <thead>
+                  <tr className={`border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <th className="text-left p-3">User</th>
+                    <th className="text-left p-3">Plan</th>
+                    <th className="text-left p-3">Created</th>
+                    <th className="text-left p-3">Status</th>
+                    <th className="text-left p-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsers.map(user => (
+                    <tr key={user.id} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <td className="p-3">
+                        <div>
+                          <div className="font-medium">{user.name || user.displayName || 'No name'}</div>
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user.email}</div>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          user.plan === 'lifetime' ? 'bg-purple-100 text-purple-800' :
+                          user.plan === 'pro' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.plan || user.planType || 'free'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          user.suspended ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {user.suspended ? 'Suspended' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setSelectedUser(user)}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            Edit
+                          </button>
+                          {!user.suspended && (
+                            <button 
+                              onClick={() => suspendUser(user.id)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Suspend
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className="text-4xl mb-2">👥</div>
+              <p>Loading users... Click Refresh to load users from database.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Lifetime Plan Gift Tokens */}
+        <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} mb-8`}>
+          <h3 className={`text-xl font-semibold text-genie-teal mb-4 flex items-center gap-3`}>
+            <span>🎁</span> Lifetime Plan Gift Tokens
+          </h3>
+          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>
+            Copy and share these unique lifetime plan gift links. Each token can only be redeemed once.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(20)].map((_, index) => {
+              const tokenId = `LIFETIME-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}-${(index + 1).toString().padStart(2, '0')}`;
+              const giftUrl = `https://marketgenie.tech/redeem-gift?token=${tokenId}`;
+              
+              return (
+                <div key={index} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'} border-2 rounded-lg p-4 transition-all hover:shadow-lg`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-bold ${isDarkMode ? 'text-purple-300' : 'text-purple-600'} bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent`}>
+                      TOKEN #{(index + 1).toString().padStart(2, '0')}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'}`}>
+                      ✅ READY
+                    </span>
+                  </div>
+                  
+                  <div className={`text-xs font-mono ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} bg-${isDarkMode ? 'gray-800' : 'white'} p-2 rounded border mb-3 break-all`}>
+                    {tokenId}
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(giftUrl);
+                      // Add visual feedback
+                      const button = event.target;
+                      const originalText = button.textContent;
+                      button.textContent = '✅ Copied!';
+                      button.className = button.className.replace('bg-gradient-to-r from-purple-600 to-pink-600', 'bg-green-600');
+                      setTimeout(() => {
+                        button.textContent = originalText;
+                        button.className = button.className.replace('bg-green-600', 'bg-gradient-to-r from-purple-600 to-pink-600');
+                      }, 2000);
+                    }}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-medium py-2 px-3 rounded-md transition-all duration-300 transform hover:scale-105"
+                  >
+                    📋 Copy Gift Link
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className={`mt-6 p-4 ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
+            <div className={`flex items-center gap-2 text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-800'} mb-2`}>
+              <span>ℹ️</span>
+              <strong>Gift Token Instructions:</strong>
+            </div>
+            <ul className={`text-xs ${isDarkMode ? 'text-blue-200' : 'text-blue-700'} space-y-1 ml-6`}>
+              <li>• Each token grants one lifetime plan redemption</li>
+              <li>• Tokens expire after 90 days if unused</li>
+              <li>• Recipients will bypass payment and get instant access</li>
+              <li>• Track redemptions in the User Management section</li>
+            </ul>
           </div>
         </div>
 
@@ -5690,6 +6972,11 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
     return (
       <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-white to-blue-50'}`}>
         <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>🚀 Ultimate Lead Generation Ecosystem</h2>
+        
+        {/* Bulk Prospeo Scraper - NEW FEATURE */}
+        <div className="mb-10">
+          <BulkProspeoScraper />
+        </div>
         
         {/* Integration Connection Status */}
         <div className="mb-10">
@@ -6424,6 +7711,7 @@ function App() {
             {/* Auth Routes - Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/free-signup" element={<FreeSignup />} />
             
             {/* Plan Landing Pages - Public */}
@@ -6435,12 +7723,20 @@ function App() {
             <Route path="/pro-signup" element={<ProPlanSignup />} />
             <Route path="/lifetime-signup" element={<LifetimePlanSignup />} />
             
+            {/* Gift Token Redemption - Public */}
+            <Route path="/redeem-gift" element={<GiftRedemption />} />
+            
             {/* Unsubscribe Page - Public */}
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            
+            {/* Legal Pages - Public */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             
             {/* OAuth Callback Routes - Public */}
             <Route path="/oauth/zoho/callback" element={<OAuthCallback />} />
             <Route path="/oauth/microsoft/callback" element={<MicrosoftOAuthCallback />} />
+            <Route path="/oauth/gmail/callback" element={<GmailOAuthCallback />} />
             
             {/* Dashboard - Protected User workspace */}
             <Route path="/dashboard" element={

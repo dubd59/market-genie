@@ -26,12 +26,12 @@
 ## 🌟 Getting Started
 
 ### **🌐 Access Your Platform**
-- **Live URL**: https://market-genie-app.web.app
+- **Live URL**: https://marketgenie.tech
 - **Status**: 100% Live with automatic data saving
 - **Requirements**: Any modern web browser
 
 ### **⚡ First Login Steps**
-1. **Visit**: https://market-genie-app.web.app
+1. **Visit**: https://marketgenie.tech
 2. **Register**: Click "Register" and create your account
 3. **Login**: Use your email and password
 4. **Dashboard**: You'll see the main dashboard with 4 key sections
@@ -370,7 +370,7 @@ You now have everything you need to become a Market Genie power user! Remember:
 - **Test everything** with small groups first
 - **Monitor performance** and optimize continuously
 
-**🌐 Live Platform**: https://market-genie-app.web.app
+**🌐 Live Platform**: https://marketgenie.tech
 
 **📞 Support**: Check GitHub issues or create new ones for help
 
@@ -1280,7 +1280,7 @@ Track your lead generation performance with **real metrics**, conversion rates, 
 ## 🎛️ Pilot's Checklist - Turn Everything ON
 
 ### **✅ Pre-Flight Check (30 seconds)**
-1. 🌐 Open https://market-genie-app.web.app/
+1. 🌐 Open https://marketgenie.tech/
 2. 📧 Login/Register (Firebase authentication)
 3. 🎯 Navigate to "Lead Generation" section
 4. ✅ Verify all 6 sections are visible and loading
@@ -1354,7 +1354,7 @@ Track your lead generation performance with **real metrics**, conversion rates, 
 
 **Your Market Genie platform is now FULLY ACTIVATED with every switch ON, every counter LIVE, and every setting PERSISTENT!** 🚀💎🔥
 
-Visit **https://market-genie-app.web.app/** and watch the magic happen in real-time!
+Visit **https://marketgenie.tech/** and watch the magic happen in real-time!
 
 ## 🔥 Features Deep Dive
 
@@ -2433,7 +2433,7 @@ Market Genie represents the future of marketing automation with its AI-first app
 5. **Extend Functionality**: Add custom features and integrations
 
 ### **Support Resources**
-- **Live Demo**: https://market-genie.netlify.app/
+- **Live Demo**: https://marketgenie.tech/
 - **GitHub Repository**: https://github.com/dubd59/market-genie
 - **Documentation**: This comprehensive guide
 - **Community**: GitHub Discussions and Issues

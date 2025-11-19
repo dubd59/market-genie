@@ -160,6 +160,104 @@ exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
 admin.initializeApp();
 const db = admin.firestore();
 
+// Admin notification transporter for new user signups
+const adminNotificationTransporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: 'dubdproducts@gmail.com',
+    pass: 'laab vwmb aopx hujh' // App password for Market Genie Send emails
+  }
+});
+
+// HTTP function to send new user signup notifications to admin (called from client)
+exports.sendNewUserNotification = onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { userEmail, userName, userId, emailVerified } = req.body;
+    
+    if (!userEmail || !userId) {
+      res.status(400).json({ error: 'Missing required user information' });
+      return;
+    }
+
+    console.log('Sending admin notification for new user:', userEmail);
+    
+    const signupTime = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">🔔 New Market Genie User Signup</h2>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1e293b;">User Details:</h3>
+          <p><strong>Email:</strong> ${userEmail}</p>
+          <p><strong>Name:</strong> ${userName || 'Not provided'}</p>
+          <p><strong>User ID:</strong> ${userId}</p>
+          <p><strong>Signup Time:</strong> ${signupTime}</p>
+          <p><strong>Email Verified:</strong> ${emailVerified ? 'Yes' : 'No'}</p>
+          <p><strong>Account Type:</strong> Free Trial (default)</p>
+        </div>
+
+        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+          <p style="margin: 0;"><strong>Quick Actions:</strong></p>
+          <p style="margin: 5px 0 0 0;">
+            <a href="https://console.firebase.google.com/project/market-genie-f2d41/authentication/users" 
+               style="color: #2563eb; text-decoration: none;">View in Firebase Console →</a>
+          </p>
+        </div>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e2e8f0;">
+        
+        <p style="color: #64748b; font-size: 14px; margin: 0;">
+          This notification was automatically sent by Market Genie when a new user created an account.
+        </p>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: 'dubdproducts@gmail.com',
+      to: 'ddub@dubdproducts.com',
+      subject: `🔔 New Market Genie User: ${userEmail}`,
+      html: emailContent
+    };
+
+    await adminNotificationTransporter.sendMail(mailOptions);
+    console.log('Admin notification sent successfully for user:', userEmail);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Admin notification sent successfully' 
+    });
+    
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to send admin notification',
+      details: error.message 
+    });
+  }
+});
+
 // 🎯 CRITICAL: Set tenant custom claims for new users
 exports.setUserTenantClaims = onCall(async (request) => {
   // Verify the user is authenticated

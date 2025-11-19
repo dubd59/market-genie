@@ -893,50 +893,96 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     loadCRMTags()
   }, [user, tenant?.id])
 
-  // Load campaigns from Firebase
+  // Load campaigns from Firebase - Updated to check both legacy and tenant-based storage
   useEffect(() => {
     const loadCampaigns = async () => {
       if (!user?.uid || !tenant?.id) return
       
       try {
-        console.log('Loading campaigns for user:', user.uid)
-        const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
-        console.log('Campaigns loaded:', campaignsResult)
-        console.log('Campaign data type:', typeof campaignsResult.data)
-        console.log('Campaign data is array:', Array.isArray(campaignsResult.data))
-        console.log('Campaign data content:', campaignsResult.data)
+        console.log('🚀 Loading campaigns for user:', user.uid, 'tenant:', tenant.id)
         
-        if (campaignsResult.success && campaignsResult.data) {
-          let loadedCampaigns = []
+        // Try multiple data sources to find campaigns:
+        let loadedCampaigns = []
+        
+        // 1. Try tenant-based collection first (NEW FORMAT)
+        try {
+          console.log('📂 Checking tenant collection: tenants/' + tenant.id + '/campaigns')
+          const tenantCampaignsRef = collection(db, 'tenants', tenant.id, 'campaigns')
+          const tenantSnapshot = await getDocs(tenantCampaignsRef)
           
-          // Handle different data structures
-          if (Array.isArray(campaignsResult.data)) {
-            loadedCampaigns = campaignsResult.data
-          } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
-            // If it's an object, extract campaigns (filter out metadata like updatedAt)
-            if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
-              loadedCampaigns = campaignsResult.data.campaigns
-            } else {
-              // Filter object values to only include valid campaign objects
-              loadedCampaigns = Object.values(campaignsResult.data).filter(item => 
-                item && 
-                typeof item === 'object' && 
-                item.id && 
-                item.name && 
-                typeof item.name === 'string' &&
-                (typeof item.id === 'number' || (typeof item.id === 'string' && !isNaN(item.id))) // Valid campaign ID
-              )
-            }
+          if (!tenantSnapshot.empty) {
+            loadedCampaigns = tenantSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            console.log('✅ Found campaigns in tenant collection:', loadedCampaigns.length)
           }
-          
-          console.log('Final loaded campaigns:', loadedCampaigns)
-          setCampaigns(loadedCampaigns)
-        } else {
-          console.log('No campaigns data found, setting empty array')
-          setCampaigns([])
+        } catch (tenantError) {
+          console.log('⚠️ Tenant collection check failed:', tenantError.message)
         }
+        
+        // 2. If no campaigns found, try legacy user-based storage
+        if (loadedCampaigns.length === 0) {
+          console.log('📂 Checking legacy user storage...')
+          const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
+          console.log('Legacy campaigns result:', campaignsResult)
+          
+          if (campaignsResult.success && campaignsResult.data) {
+            // Handle different data structures
+            if (Array.isArray(campaignsResult.data)) {
+              loadedCampaigns = campaignsResult.data
+            } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
+              // If it's an object, extract campaigns (filter out metadata like updatedAt)
+              if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
+                loadedCampaigns = campaignsResult.data.campaigns
+              } else {
+                // Filter object values to only include valid campaign objects
+                loadedCampaigns = Object.values(campaignsResult.data).filter(item => 
+                  item && 
+                  typeof item === 'object' && 
+                  item.id && 
+                  item.name && 
+                  typeof item.name === 'string' &&
+                  (typeof item.id === 'number' || (typeof item.id === 'string' && !isNaN(item.id))) // Valid campaign ID
+                )
+              }
+            }
+            console.log('✅ Found campaigns in legacy storage:', loadedCampaigns.length)
+          }
+        }
+        
+        // 3. If still no campaigns, try direct campaigns collection
+        if (loadedCampaigns.length === 0) {
+          try {
+            console.log('📂 Checking direct campaigns collection...')
+            const directCampaignsRef = collection(db, 'campaigns')
+            const directSnapshot = await getDocs(directCampaignsRef)
+            
+            // Filter campaigns for current user
+            const userCampaigns = directSnapshot.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(campaign => campaign.userId === user.uid || campaign.createdBy === user.uid)
+            
+            if (userCampaigns.length > 0) {
+              loadedCampaigns = userCampaigns
+              console.log('✅ Found campaigns in direct collection:', loadedCampaigns.length)
+            }
+          } catch (directError) {
+            console.log('⚠️ Direct collection check failed:', directError.message)
+          }
+        }
+        
+        console.log('📊 Final loaded campaigns:', loadedCampaigns.length, 'campaigns')
+        console.log('Campaign details:', loadedCampaigns)
+        setCampaigns(loadedCampaigns)
+        
+        if (loadedCampaigns.length > 0) {
+          toast.success(`✅ Loaded ${loadedCampaigns.length} campaigns`)
+        }
+        
       } catch (error) {
-        console.error('Error loading campaigns:', error)
+        console.error('❌ Error loading campaigns:', error)
+        toast.error('Failed to load campaigns: ' + error.message)
       }
     }
 
@@ -5261,6 +5307,35 @@ END:VCALENDAR`;
                       </div>
 
                       <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Scheduled Send Date</label>
+                        <input 
+                          type="datetime-local"
+                          value={(() => {
+                            if (!editingCampaign.scheduledDate) return '';
+                            // Handle both ISO string and datetime-local format
+                            const date = new Date(editingCampaign.scheduledDate);
+                            if (isNaN(date.getTime())) return '';
+                            // Convert to local timezone for display
+                            const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+                            return localDate.toISOString().slice(0, 16);
+                          })()}
+                          onChange={(e) => {
+                            const newDate = e.target.value ? e.target.value : null;
+                            setEditingCampaign({
+                              ...editingCampaign, 
+                              scheduledDate: newDate,
+                              sendDate: newDate  // Update both fields
+                            });
+                          }}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                          Leave empty for immediate sending, or set future date to schedule
+                        </p>
+                      </div>
+
+                      <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Selected Template</label>
                         <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
                           {editingCampaign.template || 'No template selected'}
@@ -5405,11 +5480,21 @@ END:VCALENDAR`;
 
                     <div className="flex gap-3 mt-6">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          // Ensure both date fields are synchronized
+                          const syncedCampaign = {
+                            ...editingCampaign,
+                            sendDate: editingCampaign.scheduledDate,
+                            scheduledDate: editingCampaign.scheduledDate
+                          }
+                          
                           const updatedCampaigns = campaigns.map(c => 
-                            c.id === editingCampaign.id ? editingCampaign : c
+                            c.id === editingCampaign.id ? syncedCampaign : c
                           )
                           setCampaigns(updatedCampaigns)
+                          
+                          // Save to Firebase to persist changes
+                          await saveCampaignsToFirebase(updatedCampaigns)
                           
                           // Recalculate campaign stats after editing
                           updateCampaignStats()

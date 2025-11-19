@@ -114,12 +114,12 @@ export function TenantProvider({ children }) {
           setTimeout(() => reject(new Error('Tenant loading timeout')), loadTimeout)
         );
         
-        // 🎯 ADMIN BYPASS: Special handling for founder account
-        if (user.email === 'dubdproducts@gmail.com' && jwtTenantId === 'founder-tenant') {
-          console.log('👑 Admin account detected - creating founder tenant');
+        // 🎯 FOUNDER FIX: Always use actual user ID as tenant ID
+        if (user.email === 'dubdproducts@gmail.com') {
+          console.log('👑 Founder account detected - using user ID as tenant:', user.uid);
           const founderTenant = {
-            id: 'founder-tenant',
-            name: 'Market Genie - Admin Account',
+            id: user.uid, // Use actual user ID, not 'founder-tenant'
+            name: 'Market Genie - Founder Account',
             role: 'founder',
             ownerId: user.uid,
             ownerEmail: user.email,
@@ -140,7 +140,7 @@ export function TenantProvider({ children }) {
             createdAt: new Date(),
             updatedAt: new Date()
           };
-          console.log('✅ Founder tenant created:', founderTenant);
+          console.log('✅ Founder tenant created with user ID:', founderTenant);
           setTenant(founderTenant);
           setLoading(false);
           return;

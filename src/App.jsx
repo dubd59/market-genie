@@ -75,6 +75,7 @@ import BulkProspeoScraper from './components/BulkProspeoScraper'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
 import BounceDetectionService from './services/bounceDetectionService'
+import DataMigrationService from './services/dataMigrationService'
 import AuthNavigator from './components/AuthNavigator'
 
 function ProtectedRoute({ children }) {
@@ -247,6 +248,72 @@ function SophisticatedDashboard() {
     isLoading: true,
     lastUpdated: null
   })
+
+  // Data Migration State
+  const [migrationStatus, setMigrationStatus] = useState({
+    inProgress: false,
+    completed: false,
+    needsCheck: true
+  })
+
+  // 🔧 EMERGENCY DATA MIGRATION FUNCTION
+  const runDataMigration = async () => {
+    if (!user?.uid) {
+      toast.error('User authentication required for migration')
+      return
+    }
+
+    try {
+      setMigrationStatus(prev => ({ ...prev, inProgress: true }))
+      console.log('🚀 Starting emergency data migration for user:', user.uid)
+      
+      const result = await DataMigrationService.migrateFounderTenantData(user.uid)
+      
+      if (result.success) {
+        console.log('✅ Migration completed:', result)
+        setMigrationStatus(prev => ({ ...prev, completed: true, inProgress: false }))
+        
+        // Force reload all data after migration
+        setTimeout(async () => {
+          console.log('🔄 Reloading data after migration...')
+          await loadLeadData()
+          await loadBounceStats()
+        }, 1000)
+        
+      } else {
+        console.error('❌ Migration failed:', result)
+        setMigrationStatus(prev => ({ ...prev, inProgress: false }))
+      }
+      
+    } catch (error) {
+      console.error('❌ Migration error:', error)
+      setMigrationStatus(prev => ({ ...prev, inProgress: false }))
+      toast.error('Migration failed: ' + error.message)
+    }
+  }
+
+  // Check if migration is needed on component mount
+  useEffect(() => {
+    const checkMigrationNeeds = async () => {
+      if (user?.uid && user.email === 'dubdproducts@gmail.com' && migrationStatus.needsCheck) {
+        try {
+          const check = await DataMigrationService.checkForMigrationNeeds(user.uid)
+          if (check.needsMigration) {
+            console.log('📊 Migration recommended:', check)
+            toast('🔧 Data migration available to fix tenant issues', {
+              duration: 5000,
+              icon: '🔧'
+            })
+          }
+          setMigrationStatus(prev => ({ ...prev, needsCheck: false }))
+        } catch (error) {
+          console.error('Error checking migration needs:', error)
+        }
+      }
+    }
+
+    checkMigrationNeeds()
+  }, [user, migrationStatus.needsCheck])
   const [leadFormData, setLeadFormData] = useState({
     name: '',
     email: '',
@@ -6625,6 +6692,19 @@ email1@domain.com, email2@domain.com, email3@domain.com`}
                 onClick={() => setAdminView('analytics')}
                 className="w-full bg-purple-600 text-white p-3 rounded hover:bg-purple-700 text-left flex items-center gap-3">
                 <span>📊</span> System Analytics
+              </button>
+              <button 
+                onClick={runDataMigration}
+                disabled={migrationStatus.inProgress}
+                className={`w-full p-3 rounded text-left flex items-center gap-3 transition-colors ${
+                  migrationStatus.inProgress 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : migrationStatus.completed
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}>
+                <span>{migrationStatus.inProgress ? '🔄' : migrationStatus.completed ? '✅' : '🔧'}</span> 
+                {migrationStatus.inProgress ? 'Migrating Data...' : migrationStatus.completed ? 'Migration Complete' : 'Fix Tenant Data Split'}
               </button>
             </div>
           </div>

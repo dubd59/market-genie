@@ -55,12 +55,12 @@ class CORSBypass {
     
     // Special handling for admin account
     if (email === 'dubdproducts@gmail.com') {
-      console.log('👑 Admin account detected - using founder tenant fallback');
+      console.log('👑 Admin account detected - using user ID tenant fallback:', userId);
       return {
-        id: 'founder-tenant',
+        id: userId, // Use actual user ID, not 'founder-tenant'
         ownerId: userId,
         ownerEmail: email,
-        name: 'Market Genie - Admin Account (Offline)',
+        name: 'Market Genie - Founder Account (Offline)',
         role: 'founder',
         isFounderAccount: true,
         isMasterTenant: true,

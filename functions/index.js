@@ -1457,7 +1457,9 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       });
     }
     
+    const credentialsPath = `MarketGenie_tenants/${tenantId}/integrations/gmail`;
     console.log('Fetching SMTP credentials for tenant:', tenantId);
+    console.log('Firestore path for credentials:', credentialsPath);
     
     // Fetch Gmail SMTP credentials from database (stored in gmail integration)
     const credentialsDoc = await db
@@ -1468,15 +1470,22 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       .get();
     
     if (!credentialsDoc.exists) {
+      console.error('No credentials found at path:', credentialsPath);
       return res.status(400).json({
         success: false,
         error: 'Gmail SMTP credentials not configured. Please set up Gmail in integrations.',
-        setup: 'Go to Integrations → Gmail → Add your email and app password'
+        setup: 'Go to Integrations → Gmail → Add your email and app password',
+        debug: { credentialsPath, exists: false }
       });
     }
     
     const credentials = credentialsDoc.data();
-    console.log('Gmail SMTP credentials found for:', credentials.email);
+    console.log('Gmail SMTP credentials found:', credentials);
+    if (credentials && credentials.email) {
+      console.log('Using sender email:', credentials.email);
+    } else {
+      console.warn('No sender email found in credentials:', credentials);
+    }
     
     // Prepare Gmail/Google Workspace SMTP configuration
     const smtpConfig = {
@@ -1568,16 +1577,51 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       });
     }
     
-    // Send email
-    const result = await transporter.sendMail(mailOptions);
-    
-    console.log('SMTP email sent successfully:', result.messageId);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Email sent successfully via SMTP',
-      messageId: result.messageId
-    });
+    // Send email (with structured error handling for common SMTP responses)
+    let result;
+    try {
+      result = await transporter.sendMail(mailOptions);
+      console.log('SMTP email sent successfully:', result.messageId);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Email sent successfully via SMTP',
+        messageId: result.messageId
+      });
+    } catch (sendError) {
+      console.error('SMTP send failed:', sendError);
+      const respCode = sendError && (sendError.responseCode || sendError.code || '');
+      const msg = sendError && sendError.message ? sendError.message : String(sendError);
+
+      // Gmail daily sending limit (550)
+      if (msg.includes('Daily user sending limit') || respCode === 550) {
+        return res.status(429).json({
+          success: false,
+          code: 'SMTP_QUOTA',
+          message: 'Daily user sending limit exceeded for authenticated account',
+          suggestion: 'Try again tomorrow or configure SMTP relay in Google Workspace Admin console, or use a transactional email provider (Resend, SendGrid)',
+          details: msg
+        });
+      }
+
+      // Authentication failures (535 / EAUTH)
+      if (respCode === 535 || msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('auth')) {
+        return res.status(401).json({
+          success: false,
+          code: 'SMTP_AUTH',
+          message: 'SMTP authentication failed for the provided credentials',
+          suggestion: 'Ensure 2-Step Verification is enabled and the app password is correct (or use OAuth/SMTP relay)',
+          details: msg
+        });
+      }
+
+      // Fallback: return generic error
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send email via SMTP',
+        details: msg
+      });
+    }
     
   } catch (error) {
     console.error('Error in sendCampaignEmailSMTP:', error);

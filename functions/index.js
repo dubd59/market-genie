@@ -1,6 +1,6 @@
-const {onRequest} = require('firebase-functions/v2/https');
-const {onDocumentCreated} = require('firebase-functions/v2/firestore');
-const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const { onRequest } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const functions = require('firebase-functions'); // Keep for backward compatibility
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
@@ -26,7 +26,7 @@ exports.createFounderTenant = onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -34,7 +34,7 @@ exports.createFounderTenant = onRequest(async (req, res) => {
 
   try {
     console.log('Creating founder tenant document...');
-    
+
     // Create the founder-tenant document
     const founderTenantData = {
       id: 'founder-tenant',
@@ -55,18 +55,18 @@ exports.createFounderTenant = onRequest(async (req, res) => {
         advancedFeatures: true
       }
     };
-    
+
     // Write the document
     await db.collection('MarketGenie_tenants').doc('founder-tenant').set(founderTenantData);
-    
+
     console.log('Founder tenant document created successfully');
-    
+
     // Verify it was created
     const createdDoc = await db.collection('MarketGenie_tenants').doc('founder-tenant').get();
-    
+
     if (createdDoc.exists) {
       console.log('Verification successful:', createdDoc.data());
-      
+
       res.status(200).json({
         success: true,
         message: 'Founder tenant document created successfully',
@@ -75,10 +75,10 @@ exports.createFounderTenant = onRequest(async (req, res) => {
     } else {
       throw new Error('Document was not created properly');
     }
-    
+
   } catch (error) {
     console.error('Error creating founder tenant:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error.message
@@ -92,7 +92,7 @@ exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -100,34 +100,34 @@ exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
 
   try {
     console.log('Copying integrations from old tenant to founder tenant...');
-    
+
     const oldTenantId = 'U9vez3sI36Ti5JqoWi5gJUMq2nX2';
     const newTenantId = 'founder-tenant';
-    
+
     // Get all integrations from old tenant
     const integrationsRef = db.collection('MarketGenie_tenants').doc(oldTenantId).collection('integrations');
     const integrationsSnapshot = await integrationsRef.get();
-    
+
     let copiedCount = 0;
     const copiedIntegrations = [];
-    
+
     if (!integrationsSnapshot.empty) {
       console.log(`Found ${integrationsSnapshot.size} integrations to copy`);
-      
+
       // Copy each integration
       for (const doc of integrationsSnapshot.docs) {
         const integrationData = doc.data();
         const integrationId = doc.id;
-        
+
         console.log(`Copying integration: ${integrationId}`);
-        
+
         // Write to new tenant
         await db.collection('MarketGenie_tenants')
           .doc(newTenantId)
           .collection('integrations')
           .doc(integrationId)
           .set(integrationData);
-        
+
         copiedCount++;
         copiedIntegrations.push({
           id: integrationId,
@@ -136,19 +136,19 @@ exports.copyIntegrationsToFounder = onRequest(async (req, res) => {
         });
       }
     }
-    
+
     console.log(`Successfully copied ${copiedCount} integrations`);
-    
+
     res.status(200).json({
       success: true,
       message: `Successfully copied ${copiedCount} integrations to founder tenant`,
       copiedCount,
       integrations: copiedIntegrations
     });
-    
+
   } catch (error) {
     console.error('Error copying integrations:', error);
-    
+
     res.status(500).json({
       success: false,
       error: error.message
@@ -177,7 +177,7 @@ exports.sendNewUserNotification = onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -185,14 +185,14 @@ exports.sendNewUserNotification = onRequest(async (req, res) => {
 
   try {
     const { userEmail, userName, userId, emailVerified } = req.body;
-    
+
     if (!userEmail || !userId) {
       res.status(400).json({ error: 'Missing required user information' });
       return;
     }
 
     console.log('Sending admin notification for new user:', userEmail);
-    
+
     const signupTime = new Date().toLocaleString('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric',
@@ -242,18 +242,18 @@ exports.sendNewUserNotification = onRequest(async (req, res) => {
 
     await adminNotificationTransporter.sendMail(mailOptions);
     console.log('Admin notification sent successfully for user:', userEmail);
-    
-    res.status(200).json({ 
-      success: true, 
-      message: 'Admin notification sent successfully' 
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin notification sent successfully'
     });
-    
+
   } catch (error) {
     console.error('Error sending admin notification:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Failed to send admin notification',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -275,7 +275,7 @@ exports.setUserTenantClaims = onCall(async (request) => {
 
   try {
     console.log(`Setting tenant claims for user ${uid}: tenantId=${tenantId}`);
-    
+
     // Set custom claims
     await admin.auth().setCustomUserClaims(uid, {
       tenantId: tenantId,
@@ -284,13 +284,13 @@ exports.setUserTenantClaims = onCall(async (request) => {
     });
 
     console.log(`✅ Successfully set tenant claims for user ${uid}`);
-    
+
     return {
       success: true,
       message: 'Tenant claims set successfully',
       tenantId: tenantId
     };
-    
+
   } catch (error) {
     console.error('Error setting tenant claims:', error);
     throw new HttpsError('internal', `Failed to set tenant claims: ${error.message}`);
@@ -304,26 +304,26 @@ exports.onTenantCreated = onDocumentCreated('MarketGenie_tenants/{tenantId}', as
     const tenantId = event.params.tenantId;
     const ownerId = tenantData.ownerId;
 
-      if (!ownerId) {
-        console.log('No ownerId found in tenant data, skipping claims setup');
-        return;
-      }
-
-      console.log(`Auto-setting tenant claims for owner ${ownerId} of tenant ${tenantId}`);
-      
-      // Set custom claims for the tenant owner
-      await admin.auth().setCustomUserClaims(ownerId, {
-        tenantId: tenantId,
-        role: 'owner',
-        updatedAt: Date.now()
-      });
-
-      console.log(`✅ Auto-set tenant claims for user ${ownerId}`);
-      
-    } catch (error) {
-      console.error('Error auto-setting tenant claims:', error);
+    if (!ownerId) {
+      console.log('No ownerId found in tenant data, skipping claims setup');
+      return;
     }
-  });
+
+    console.log(`Auto-setting tenant claims for owner ${ownerId} of tenant ${tenantId}`);
+
+    // Set custom claims for the tenant owner
+    await admin.auth().setCustomUserClaims(ownerId, {
+      tenantId: tenantId,
+      role: 'owner',
+      updatedAt: Date.now()
+    });
+
+    console.log(`✅ Auto-set tenant claims for user ${ownerId}`);
+
+  } catch (error) {
+    console.error('Error auto-setting tenant claims:', error);
+  }
+});
 
 // 🛠️ ADMIN: Fix existing user claims (call manually)
 exports.fixUserClaims = onRequest(async (req, res) => {
@@ -331,7 +331,7 @@ exports.fixUserClaims = onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -339,7 +339,7 @@ exports.fixUserClaims = onRequest(async (req, res) => {
 
   try {
     const { userId, tenantId } = req.body;
-    
+
     if (!userId || !tenantId) {
       return res.status(400).json({
         success: false,
@@ -348,7 +348,7 @@ exports.fixUserClaims = onRequest(async (req, res) => {
     }
 
     console.log(`Fixing claims for user ${userId}: tenantId=${tenantId}`);
-    
+
     // Set custom claims
     await admin.auth().setCustomUserClaims(userId, {
       tenantId: tenantId,
@@ -357,14 +357,14 @@ exports.fixUserClaims = onRequest(async (req, res) => {
     });
 
     console.log(`✅ Fixed claims for user ${userId}`);
-    
+
     res.status(200).json({
       success: true,
       message: 'User claims fixed successfully',
       userId: userId,
       tenantId: tenantId
     });
-    
+
   } catch (error) {
     console.error('Error fixing user claims:', error);
     res.status(500).json({
@@ -379,7 +379,7 @@ const createTransporter = (smtpConfig) => {
   console.log('Creating transporter for:', smtpConfig.smtpEmail);
   console.log('Using host:', smtpConfig.smtpHost || 'smtp.gmail.com');
   console.log('Using port:', parseInt(smtpConfig.smtpPort) || 587);
-  
+
   // Enhanced configuration for Google Workspace and Gmail
   const transportConfig = {
     host: smtpConfig.smtpHost || 'smtp.gmail.com',
@@ -401,7 +401,7 @@ const createTransporter = (smtpConfig) => {
     debug: true, // Enable debug logging
     logger: console // Use console for logging
   };
-  
+
   // Special handling for Google Workspace domains
   if (smtpConfig.smtpEmail && !smtpConfig.smtpEmail.endsWith('@gmail.com')) {
     console.log('Detected potential Google Workspace account');
@@ -410,7 +410,7 @@ const createTransporter = (smtpConfig) => {
     transportConfig.port = 587;
     transportConfig.secure = false;
   }
-  
+
   return nodemailer.createTransport(transportConfig);
 };
 
@@ -424,7 +424,7 @@ exports.testFunction = functions.https.onCall(async (data, context) => {
 exports.sendZohoEmail = functions.https.onCall(async (data, context) => {
   console.log('=== sendZohoEmail function called ===');
   console.log('Data received:', JSON.stringify(data, null, 2));
-  
+
   try {
     // Validate input
     if (!data || !data.to || !data.subject || !data.content || !data.tenantId) {
@@ -445,7 +445,7 @@ exports.sendZohoEmail = functions.https.onCall(async (data, context) => {
 
     const credentials = credentialsDoc.data();
     const { accessToken, domain = 'com' } = credentials;
-    
+
     if (!accessToken) {
       throw new functions.https.HttpsError('failed-precondition', 'Invalid Zoho Campaigns credentials.');
     }
@@ -462,7 +462,7 @@ exports.sendZohoEmail = functions.https.onCall(async (data, context) => {
 
     // Send via Zoho Campaigns API
     const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/campaigns/quickcampaign`;
-    
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -473,10 +473,10 @@ exports.sendZohoEmail = functions.https.onCall(async (data, context) => {
     });
 
     const result = await response.json();
-    
+
     if (response.ok && result.status === 'success') {
       console.log('Zoho email sent successfully:', result.campaign_key);
-      
+
       return {
         success: true,
         campaignId: result.campaign_key,
@@ -490,11 +490,11 @@ exports.sendZohoEmail = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('=== Error in sendZohoEmail ===');
     console.error('Error message:', error.message);
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError('internal', 'Failed to send email: ' + error.message);
   }
 });
@@ -505,16 +505,16 @@ exports.sendEmailV2 = functions.https.onCall(async (data, context) => {
   console.log('Data received:', JSON.stringify(data, null, 2));
   console.log('Context auth:', context.auth ? { uid: context.auth.uid, token: context.auth.token } : 'No auth');
   console.log('Context app:', context.app ? context.app : 'No app');
-  
+
   try {
     console.log('Function called with data keys:', Object.keys(data || {}));
-    
+
     // Validate input
     if (!data || !data.to || !data.subject || !data.content || !data.tenantId) {
       console.log('Validation failed:', {
         hasData: !!data,
         hasTo: !!(data && data.to),
-        hasSubject: !!(data && data.subject), 
+        hasSubject: !!(data && data.subject),
         hasContent: !!(data && data.content),
         hasTenantId: !!(data && data.tenantId)
       });
@@ -541,7 +541,7 @@ exports.sendEmailV2 = functions.https.onCall(async (data, context) => {
     }
 
     const smtpConfig = credentialsDoc.data();
-    
+
     // Validate SMTP credentials
     if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
       throw new functions.https.HttpsError('failed-precondition', 'Incomplete SMTP configuration. Please check email settings.');
@@ -562,9 +562,9 @@ exports.sendEmailV2 = functions.https.onCall(async (data, context) => {
 
     // Send email
     const result = await transporter.sendMail(mailOptions);
-    
+
     console.log('Email sent successfully:', result.messageId);
-    
+
     return {
       success: true,
       messageId: result.messageId,
@@ -580,11 +580,11 @@ exports.sendEmailV2 = functions.https.onCall(async (data, context) => {
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError('internal', 'Failed to send email: ' + error.message);
   }
 });
@@ -592,30 +592,30 @@ exports.sendEmailV2 = functions.https.onCall(async (data, context) => {
 // Send email via Zoho Campaigns API using OAuth - HTTP version for testing
 exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
   console.log('=== sendCampaignEmailHTTP function called ===');
-  
+
   // Enable CORS for all origins
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
   }
-  
+
   console.log('Request method:', req.method);
   console.log('Request body:', req.body);
   console.log('Request headers:', req.headers);
-  
+
   try {
     const data = req.body;
-    
+
     // Validate input
     if (!data || !data.to || !data.subject || !data.content || !data.tenantId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing required fields: to, subject, content, tenantId' 
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
       });
     }
 
@@ -632,34 +632,34 @@ exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
     console.log('Credentials document exists:', credentialsDoc.exists);
 
     if (!credentialsDoc.exists) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Zoho Campaigns not configured for this tenant' 
+      return res.status(400).json({
+        success: false,
+        error: 'Zoho Campaigns not configured for this tenant'
       });
     }
 
     const credentials = credentialsDoc.data();
-    
+
     if (!credentials.accessToken) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Zoho Campaigns not connected - OAuth required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Zoho Campaigns not connected - OAuth required'
       });
     }
 
     let { accessToken, domain = 'com' } = credentials;
-    
+
     // Check if token is expired and refresh if needed
     if (credentials.expiresAt && new Date(credentials.expiresAt) <= new Date()) {
       console.log('Access token expired, attempting to refresh...');
-      
+
       if (!credentials.refreshToken) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Access token expired and no refresh token available' 
+        return res.status(400).json({
+          success: false,
+          error: 'Access token expired and no refresh token available'
         });
       }
-      
+
       try {
         // Refresh the token
         const formData = new URLSearchParams();
@@ -676,7 +676,7 @@ exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
 
         if (tokenResponse.data.access_token) {
           accessToken = tokenResponse.data.access_token;
-          
+
           // Update the stored credentials with new token
           const updatedCredentials = {
             ...credentials,
@@ -685,7 +685,7 @@ exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
             expiresAt: new Date(Date.now() + (tokenResponse.data.expires_in * 1000)).toISOString(),
             lastUpdated: new Date().toISOString()
           };
-          
+
           await credentialsDoc.ref.update(updatedCredentials);
           console.log('Token refreshed successfully');
         } else {
@@ -693,16 +693,16 @@ exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Access token expired and refresh failed. Please reconnect Zoho account.' 
+        return res.status(400).json({
+          success: false,
+          error: 'Access token expired and refresh failed. Please reconnect Zoho account.'
         });
       }
     }
-    
+
     // Send email via Zoho Campaigns API
     const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/campaigns/quickcampaign`;
-    
+
     const campaignData = {
       campaignname: data.subject || 'Market Genie Campaign',
       fromname: data.fromName || 'Market Genie',
@@ -725,42 +725,42 @@ exports.sendCampaignEmailHTTP = functions.https.onRequest(async (req, res) => {
     console.log('Zoho API response:', { status: response.status, result });
 
     if (response.status === 200 && result.status === 'success') {
-      return res.json({ 
-        success: true, 
-        data: { 
+      return res.json({
+        success: true,
+        data: {
           campaignId: result.campaign_key,
           message: 'Email campaign sent successfully via Zoho Campaigns'
-        } 
+        }
       });
     } else {
-      return res.status(500).json({ 
-        success: false, 
-        error: result.message || 'Failed to send email campaign via Zoho' 
+      return res.status(500).json({
+        success: false,
+        error: result.message || 'Failed to send email campaign via Zoho'
       });
     }
-    
+
   } catch (error) {
     console.error('Error in sendCampaignEmailHTTP:', error);
     console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    
+
     // Handle axios errors specifically
     if (error.response) {
       console.error('Axios response error:', error.response.status, error.response.data);
-      return res.status(500).json({ 
-        success: false, 
-        error: `Zoho API error: ${error.response.data?.message || error.response.statusText}` 
+      return res.status(500).json({
+        success: false,
+        error: `Zoho API error: ${error.response.data?.message || error.response.statusText}`
       });
     } else if (error.request) {
       console.error('Axios request error:', error.request);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Network error while contacting Zoho API' 
+      return res.status(500).json({
+        success: false,
+        error: 'Network error while contacting Zoho API'
       });
     }
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to send campaign email: ' + error.message 
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send campaign email: ' + error.message
     });
   }
 });
@@ -770,7 +770,7 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
   console.log('=== sendCampaignEmail function called ===');
   console.log('Data received:', JSON.stringify(data, null, 2));
   console.log('Context received:', JSON.stringify(context, null, 2));
-  
+
   try {
     // Log authentication info - more detailed
     console.log('Full context object keys:', Object.keys(context || {}));
@@ -778,13 +778,13 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
     console.log('Auth context:', context.auth);
     console.log('User UID:', context.auth?.uid);
     console.log('User token:', context.auth?.token);
-    
+
     // For now, allow unauthenticated calls for testing
     if (!context.auth || !context.auth.uid) {
       console.warn('No authentication context - allowing for testing purposes');
       // Don't throw error, just log it for now
     }
-    
+
     // Validate input
     if (!data || !data.to || !data.subject || !data.content || !data.tenantId) {
       throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: to, subject, content, tenantId');
@@ -807,21 +807,21 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
     }
 
     const credentials = credentialsDoc.data();
-    
+
     if (!credentials.accessToken) {
       throw new functions.https.HttpsError('failed-precondition', 'Zoho Campaigns not connected - OAuth required');
     }
 
     let { accessToken, domain = 'com' } = credentials;
-    
+
     // Check if token is expired and refresh if needed
     if (credentials.expiresAt && new Date(credentials.expiresAt) <= new Date()) {
       console.log('Access token expired, attempting to refresh...');
-      
+
       if (!credentials.refreshToken) {
         throw new functions.https.HttpsError('failed-precondition', 'Access token expired and no refresh token available');
       }
-      
+
       try {
         // Refresh the token
         const formData = new URLSearchParams();
@@ -838,7 +838,7 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
 
         if (tokenResponse.data.access_token) {
           accessToken = tokenResponse.data.access_token;
-          
+
           // Update the stored credentials with new token
           const updatedCredentials = {
             ...credentials,
@@ -847,7 +847,7 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
             expiresAt: new Date(Date.now() + (tokenResponse.data.expires_in * 1000)).toISOString(),
             lastUpdated: new Date().toISOString()
           };
-          
+
           await credentialsDoc.ref.update(updatedCredentials);
           console.log('Token refreshed successfully');
         } else {
@@ -858,10 +858,10 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('failed-precondition', 'Access token expired and refresh failed. Please reconnect Zoho account.');
       }
     }
-    
+
     // Send email via Zoho Campaigns API
     const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/campaigns/quickcampaign`;
-    
+
     const campaignData = {
       campaignname: data.subject || 'Market Genie Campaign',
       fromname: data.fromName || 'Market Genie',
@@ -884,21 +884,21 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
     console.log('Zoho API response:', { status: response.status, result });
 
     if (response.status === 200 && result.status === 'success') {
-      return { 
-        success: true, 
-        data: { 
+      return {
+        success: true,
+        data: {
           campaignId: result.campaign_key,
           message: 'Email campaign sent successfully via Zoho Campaigns'
-        } 
+        }
       };
     } else {
       throw new functions.https.HttpsError('internal', result.message || 'Failed to send email campaign via Zoho');
     }
-    
+
   } catch (error) {
     console.error('Error in sendCampaignEmail:', error);
     console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    
+
     // Handle axios errors specifically
     if (error.response) {
       console.error('Axios response error:', error.response.status, error.response.data);
@@ -907,11 +907,11 @@ exports.sendCampaignEmail = functions.https.onCall(async (data, context) => {
       console.error('Axios request error:', error.request);
       throw new functions.https.HttpsError('internal', 'Network error while contacting Zoho API');
     }
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError('internal', 'Failed to send campaign email: ' + error.message);
   }
 });
@@ -924,29 +924,29 @@ exports.helloWorld = functions.https.onRequest((request, response) => {
 // FIXED version - Send email via Zoho Campaigns API using OAuth - HTTP version
 exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
   console.log('=== sendCampaignEmailFixed function called ===');
-  
+
   // Enable CORS for all origins
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
   }
-  
+
   console.log('Request method:', req.method);
   console.log('Request body:', req.body);
-  
+
   try {
     const data = req.body;
-    
+
     // Validate input
     if (!data || !data.to || !data.subject || !data.content || !data.tenantId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing required fields: to, subject, content, tenantId' 
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
       });
     }
 
@@ -963,34 +963,34 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
     console.log('Credentials document exists:', credentialsDoc.exists);
 
     if (!credentialsDoc.exists) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Zoho Campaigns not configured for this tenant' 
+      return res.status(400).json({
+        success: false,
+        error: 'Zoho Campaigns not configured for this tenant'
       });
     }
 
     const credentials = credentialsDoc.data();
-    
+
     if (!credentials.accessToken) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Zoho Campaigns not connected - OAuth required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Zoho Campaigns not connected - OAuth required'
       });
     }
 
     let { accessToken, domain = 'com' } = credentials;
-    
+
     // Check if token is expired and refresh if needed
     if (credentials.expiresAt && new Date(credentials.expiresAt) <= new Date()) {
       console.log('Access token expired, attempting to refresh...');
-      
+
       if (!credentials.refreshToken) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Access token expired and no refresh token available' 
+        return res.status(400).json({
+          success: false,
+          error: 'Access token expired and no refresh token available'
         });
       }
-      
+
       try {
         // Refresh the token
         const formData = new URLSearchParams();
@@ -1007,7 +1007,7 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
 
         if (tokenResponse.data.access_token) {
           accessToken = tokenResponse.data.access_token;
-          
+
           // Update the stored credentials with new token
           const updatedCredentials = {
             ...credentials,
@@ -1016,7 +1016,7 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
             expiresAt: new Date(Date.now() + (tokenResponse.data.expires_in * 1000)).toISOString(),
             lastUpdated: new Date().toISOString()
           };
-          
+
           await credentialsDoc.ref.update(updatedCredentials);
           console.log('Token refreshed successfully');
         } else {
@@ -1024,18 +1024,18 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Access token expired and refresh failed. Please reconnect Zoho account.' 
+        return res.status(400).json({
+          success: false,
+          error: 'Access token expired and refresh failed. Please reconnect Zoho account.'
         });
       }
     }
-    
+
     // Use corrected Zoho Campaigns API format
     console.log('Sending via Zoho Campaigns API with corrected format...');
-    
+
     const apiUrl = `https://campaigns.zoho.${domain}/api/v1.1/json/campaigns/quickcampaign`;
-    
+
     const campaignData = {
       campaignname: `${data.subject} - ${Date.now()}`,
       fromname: data.fromName || 'Market Genie',
@@ -1058,43 +1058,43 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
     console.log('Zoho Campaigns API response:', { status: response.status, result });
 
     if (response.status === 200 && result.status === 'success') {
-      return res.json({ 
-        success: true, 
-        data: { 
+      return res.json({
+        success: true,
+        data: {
           campaignId: result.campaign_key,
           message: 'Email campaign sent successfully via Zoho Campaigns'
-        } 
+        }
       });
     } else {
-      return res.status(500).json({ 
-        success: false, 
+      return res.status(500).json({
+        success: false,
         error: `Zoho Campaigns API error: ${result.message || 'Unknown error'}`,
         details: result
       });
     }
-    
+
   } catch (error) {
     console.error('Error in sendCampaignEmailFixed:', error);
-    
+
     // Handle axios errors specifically
     if (error.response) {
       console.error('Axios response error:', error.response.status, error.response.data);
-      return res.status(500).json({ 
-        success: false, 
+      return res.status(500).json({
+        success: false,
         error: `API error: ${error.response.data?.message || error.response.statusText}`,
         details: error.response.data
       });
     } else if (error.request) {
       console.error('Axios request error:', error.request);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Network error while contacting Zoho API' 
+      return res.status(500).json({
+        success: false,
+        error: 'Network error while contacting Zoho API'
       });
     }
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to send campaign email: ' + error.message 
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send campaign email: ' + error.message
     });
   }
 });
@@ -1102,27 +1102,27 @@ exports.sendCampaignEmailFixed = functions.https.onRequest(async (req, res) => {
 // Kit (formerly ConvertKit) V4 API email sending function
 exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
   console.log('=== sendCampaignEmailKit function called ===');
-  
+
   // Set CORS headers
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
   }
-  
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
-  
+
   console.log('Request method:', req.method);
   console.log('Request body:', req.body);
-  
+
   try {
     const { to, subject, content, tenantId } = req.body;
-    
+
     // Validate input
     if (!to || !subject || !content || !tenantId) {
       return res.status(400).json({
@@ -1130,9 +1130,9 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
         error: 'Missing required fields: to, subject, content, tenantId'
       });
     }
-    
+
     console.log('Fetching Kit credentials for tenant:', tenantId);
-    
+
     // Fetch Kit credentials from database
     const credentialsDoc = await db
       .collection('tenants')
@@ -1140,30 +1140,30 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
       .collection('integrations')
       .doc('kit')
       .get();
-    
+
     console.log('Credentials document exists:', credentialsDoc.exists);
-    
+
     if (!credentialsDoc.exists) {
       return res.status(400).json({
         success: false,
         error: 'Kit credentials not found for tenant'
       });
     }
-    
+
     const credentials = credentialsDoc.data();
     console.log('Retrieved data keys:', Object.keys(credentials));
     console.log('Data status:', credentials.status);
     console.log('Has apiKey:', !!credentials.apiKey);
-    
+
     if (!credentials.apiKey || credentials.status !== 'connected') {
       return res.status(400).json({
         success: false,
         error: 'Kit API key not found or not connected'
       });
     }
-    
+
     console.log('Sending via Kit V4 API...');
-    
+
     // Prepare Kit broadcast data
     const broadcastData = {
       content: content,
@@ -1176,12 +1176,12 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
         email_address: to
       }
     };
-    
+
     console.log('Sending broadcast via Kit V4 API:', {
       apiUrl: 'https://api.kit.com/v4/broadcasts',
       broadcastData: broadcastData
     });
-    
+
     // Send broadcast via Kit V4 API
     const response = await axios.post(
       'https://api.kit.com/v4/broadcasts',
@@ -1194,12 +1194,12 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
         timeout: 30000
       }
     );
-    
+
     console.log('Kit V4 API response:', {
       status: response.status,
       data: response.data
     });
-    
+
     if (response.status === 200 || response.status === 201) {
       return res.status(200).json({
         success: true,
@@ -1214,38 +1214,38 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
         details: response.data
       });
     }
-    
+
   } catch (error) {
     console.error('Error in sendCampaignEmailKit:', error);
-    
+
     if (error.response) {
       console.error('Kit API error response:', {
         status: error.response.status,
         data: error.response.data,
         headers: error.response.headers
       });
-      
+
       return res.status(500).json({
         success: false,
         error: 'Kit API error: ' + (error.response.data?.message || error.response.statusText),
         details: error.response.data
       });
     }
-    
+
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
       return res.status(500).json({
         success: false,
         error: 'Timeout while contacting Kit API'
       });
     }
-    
+
     if (error.code && error.code.startsWith('E')) {
       return res.status(500).json({
         success: false,
         error: 'Network error while contacting Kit API'
       });
     }
-    
+
     return res.status(500).json({
       success: false,
       error: 'Failed to send campaign email: ' + error.message
@@ -1256,27 +1256,27 @@ exports.sendCampaignEmailKit = functions.https.onRequest(async (req, res) => {
 // Resend API email sending function
 exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => {
   console.log('=== sendCampaignEmailResend function called ===');
-  
+
   // Set CORS headers
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
   }
-  
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
-  
+
   console.log('Request method:', req.method);
   console.log('Request body:', req.body);
-  
+
   try {
     const { to, subject, content, tenantId } = req.body;
-    
+
     // Validate input
     if (!to || !subject || !content || !tenantId) {
       return res.status(400).json({
@@ -1284,9 +1284,9 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
         error: 'Missing required fields: to, subject, content, tenantId'
       });
     }
-    
+
     console.log('Fetching Resend credentials for tenant:', tenantId);
-    
+
     // Fetch Resend credentials from database
     const credentialsDoc = await db
       .collection('tenants')
@@ -1294,33 +1294,33 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
       .collection('integrations')
       .doc('resend')
       .get();
-    
+
     console.log('Credentials document exists:', credentialsDoc.exists);
-    
+
     if (!credentialsDoc.exists) {
       return res.status(400).json({
         success: false,
         error: 'Resend credentials not found for tenant'
       });
     }
-    
+
     const credentials = credentialsDoc.data();
     console.log('Retrieved data keys:', Object.keys(credentials));
     console.log('Data status:', credentials.status);
     console.log('Has apiKey:', !!credentials.apiKey);
-    
+
     if (!credentials.apiKey || credentials.status !== 'connected') {
       return res.status(400).json({
         success: false,
         error: 'Resend API key not found or not connected'
       });
     }
-    
+
     console.log('Sending via Resend SDK...');
-    
+
     // Initialize Resend with the tenant's API key
     const resend = new Resend(credentials.apiKey);
-    
+
     // Prepare Resend email data
     const emailData = {
       from: 'Market Genie <onboarding@resend.dev>', // Use verified Resend domain
@@ -1329,16 +1329,16 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
       html: content.replace(/\n/g, '<br>'), // Convert newlines to HTML breaks
       text: content // Plain text version
     };
-    
+
     console.log('Sending email via Resend SDK:', {
       emailData: emailData
     });
-    
+
     // Send email via Resend SDK
     const result = await resend.emails.send(emailData);
-    
+
     console.log('Resend SDK response:', result);
-    
+
     if (result.data && result.data.id) {
       return res.status(200).json({
         success: true,
@@ -1347,7 +1347,7 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
       });
     } else if (result.error) {
       console.error('Resend SDK error:', result.error);
-      
+
       // Check if this is a domain verification error
       const errorMessage = result.error.message || '';
       if (errorMessage.includes('You can only send testing emails to your own email address')) {
@@ -1358,7 +1358,7 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
           suggestion: 'To send to any email address, please verify your domain in Resend dashboard'
         });
       }
-      
+
       return res.status(500).json({
         success: false,
         error: 'Resend API error: ' + errorMessage,
@@ -1372,10 +1372,10 @@ exports.sendCampaignEmailResend = functions.https.onRequest(async (req, res) => 
         details: result
       });
     }
-    
+
   } catch (error) {
     console.error('Error in sendCampaignEmailResend:', error);
-    
+
     return res.status(500).json({
       success: false,
       error: 'Failed to send campaign email: ' + error.message
@@ -1389,14 +1389,14 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).send();
   }
-  
+
   console.log('=== testResendConnection function called ===');
-  
+
   try {
     // Verify authentication
     const authToken = req.get('Authorization');
@@ -1406,9 +1406,9 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
         error: 'Missing or invalid authorization token'
       });
     }
-    
+
     const idToken = authToken.split('Bearer ')[1];
-    
+
     try {
       await admin.auth().verifyIdToken(idToken);
     } catch (authError) {
@@ -1418,17 +1418,17 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
         error: 'Invalid authentication token'
       });
     }
-    
+
     // Get API key from request body
     const { apiKey } = req.body;
-    
+
     if (!apiKey) {
       return res.status(400).json({
         success: false,
         error: 'API key is required'
       });
     }
-    
+
     // Validate API key format (Resend keys start with "re_")
     if (!apiKey.startsWith('re_')) {
       return res.status(400).json({
@@ -1436,9 +1436,9 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
         error: 'Invalid Resend API key format. Keys must start with "re_"'
       });
     }
-    
+
     console.log('Testing Resend API with key:', apiKey.substring(0, 10) + '...');
-    
+
     try {
       // First try to get domains (works with full access keys)
       const response = await axios.get('https://api.resend.com/domains', {
@@ -1447,9 +1447,9 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('Resend API response:', response.data);
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -1460,16 +1460,16 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
         },
         message: 'Resend API connection successful'
       });
-      
+
     } catch (domainError) {
       // If domains call fails, check if it's a restricted key
       if (domainError.response && domainError.response.status === 401) {
         const errorData = domainError.response.data;
-        
+
         if (errorData && errorData.name === 'restricted_api_key') {
           // This is a restricted key that can only send emails
           console.log('Detected restricted API key - can only send emails');
-          
+
           return res.status(200).json({
             success: true,
             data: {
@@ -1483,25 +1483,25 @@ exports.testResendConnection = functions.https.onRequest(async (req, res) => {
           });
         }
       }
-      
+
       // Re-throw other errors to be handled by outer catch
       throw domainError;
     }
-    
+
   } catch (error) {
     console.error('Error testing Resend connection:', error);
-    
+
     if (error.response) {
       // Resend API error
       const status = error.response.status;
       const message = error.response.data?.message || 'Invalid API key';
-      
+
       return res.status(400).json({
         success: false,
         error: `Resend API error (${status}): ${message}`
       });
     }
-    
+
     return res.status(500).json({
       success: false,
       error: 'Failed to test Resend connection: ' + error.message
@@ -1515,14 +1515,14 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).send();
   }
-  
+
   console.log('=== sendCampaignEmailSMTP function called ===');
-  
+
   try {
     // Verify authentication
     const authToken = req.get('Authorization');
@@ -1532,9 +1532,9 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
         error: 'Missing or invalid authorization token'
       });
     }
-    
+
     const idToken = authToken.split('Bearer ')[1];
-    
+
     try {
       await admin.auth().verifyIdToken(idToken);
     } catch (authError) {
@@ -1544,9 +1544,9 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
         error: 'Invalid authentication token'
       });
     }
-    
+
     const { to, subject, content, tenantId } = req.body;
-    
+
     // Validate input
     if (!to || !subject || !content || !tenantId) {
       return res.status(400).json({
@@ -1554,9 +1554,11 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
         error: 'Missing required fields: to, subject, content, tenantId'
       });
     }
-    
+
+    const credentialsPath = `MarketGenie_tenants/${tenantId}/integrations/gmail`;
     console.log('Fetching SMTP credentials for tenant:', tenantId);
-    
+    console.log('Firestore path for credentials:', credentialsPath);
+
     // Fetch Gmail SMTP credentials from database (stored in gmail integration)
     const credentialsDoc = await db
       .collection('MarketGenie_tenants')
@@ -1564,18 +1566,25 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       .collection('integrations')
       .doc('gmail')
       .get();
-    
+
     if (!credentialsDoc.exists) {
+      console.error('No credentials found at path:', credentialsPath);
       return res.status(400).json({
         success: false,
         error: 'Gmail SMTP credentials not configured. Please set up Gmail in integrations.',
-        setup: 'Go to Integrations → Gmail → Add your email and app password'
+        setup: 'Go to Integrations → Gmail → Add your email and app password',
+        debug: { credentialsPath, exists: false }
       });
     }
-    
+
     const credentials = credentialsDoc.data();
-    console.log('Gmail SMTP credentials found for:', credentials.email);
-    
+    console.log('Gmail SMTP credentials found:', credentials);
+    if (credentials && credentials.email) {
+      console.log('Using sender email:', credentials.email);
+    } else {
+      console.warn('No sender email found in credentials:', credentials);
+    }
+
     // Prepare Gmail/Google Workspace SMTP configuration
     const smtpConfig = {
       smtpHost: 'smtp.gmail.com',
@@ -1583,7 +1592,7 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       smtpEmail: credentials.email,
       smtpPassword: credentials.appPassword || credentials.password
     };
-    
+
     if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
       return res.status(400).json({
         success: false,
@@ -1591,15 +1600,15 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
         setup: 'For Google Workspace: 1) Enable 2FA, 2) Generate app password at myaccount.google.com/apppasswords, 3) Use your full workspace email'
       });
     }
-    
+
     // Validate Google Workspace setup
     if (!smtpConfig.smtpEmail.endsWith('@gmail.com')) {
       console.log('Google Workspace account detected:', smtpConfig.smtpEmail);
       console.log('Ensure 2FA is enabled and app password is correctly generated');
     }
-    
+
     console.log('Creating SMTP transporter for:', smtpConfig.smtpEmail);
-    
+
     // Fetch business profile for sender name
     let senderName = 'Market Genie';
     try {
@@ -1622,10 +1631,10 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     } catch (error) {
       console.warn('Could not fetch business profile for sender name:', error);
     }
-    
+
     // Create SMTP transporter
     const transporter = createTransporter(smtpConfig);
-    
+
     // Prepare email
     const mailOptions = {
       from: `"${senderName}" <${smtpConfig.smtpEmail}>`,
@@ -1634,14 +1643,14 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       text: content.replace(/<[^>]*>/g, ''), // Strip HTML for plain text version
       html: content // Use content as-is since it's already HTML formatted
     };
-    
+
     console.log('Sending email via SMTP...');
     console.log('Mail options:', {
       from: mailOptions.from,
       to: mailOptions.to,
       subject: mailOptions.subject
     });
-    
+
     // Test connection first
     try {
       await transporter.verify();
@@ -1668,7 +1677,6 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
     
     // Send email
     const result = await transporter.sendMail(mailOptions);
-    
     console.log('SMTP email sent successfully:', result.messageId);
     
     return res.status(200).json({
@@ -1685,7 +1693,6 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
       error: 'Failed to send email via SMTP: ' + error.message
     });
   }
-});
 
 // Test Gmail SMTP Connection - Debug function
 exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
@@ -1693,14 +1700,14 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).send();
   }
-  
+
   console.log('=== testGmailConnection function called ===');
-  
+
   try {
     // Verify authentication
     const authToken = req.get('Authorization');
@@ -1710,9 +1717,9 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         error: 'Missing or invalid authorization token'
       });
     }
-    
+
     const idToken = authToken.split('Bearer ')[1];
-    
+
     try {
       await admin.auth().verifyIdToken(idToken);
     } catch (authError) {
@@ -1722,18 +1729,18 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         error: 'Invalid authentication token'
       });
     }
-    
+
     const { tenantId } = req.body;
-    
+
     if (!tenantId) {
       return res.status(400).json({
         success: false,
         error: 'Missing tenantId'
       });
     }
-    
+
     console.log('Testing Gmail connection for tenant:', tenantId);
-    
+
     // Check if Gmail credentials exist
     const credentialsDoc = await db
       .collection('MarketGenie_tenants')
@@ -1741,7 +1748,7 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
       .collection('integrations')
       .doc('gmail')
       .get();
-    
+
     if (!credentialsDoc.exists) {
       return res.status(400).json({
         success: false,
@@ -1752,14 +1759,14 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         }
       });
     }
-    
+
     const credentials = credentialsDoc.data();
     console.log('Gmail credentials found:', {
       email: credentials.email,
       hasAppPassword: !!credentials.appPassword,
       appPasswordLength: credentials.appPassword ? credentials.appPassword.length : 0
     });
-    
+
     // Test SMTP configuration
     const smtpConfig = {
       smtpHost: 'smtp.gmail.com',
@@ -1767,7 +1774,7 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
       smtpEmail: credentials.email,
       smtpPassword: credentials.appPassword || credentials.password
     };
-    
+
     if (!smtpConfig.smtpEmail || !smtpConfig.smtpPassword) {
       return res.status(400).json({
         success: false,
@@ -1779,16 +1786,16 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         }
       });
     }
-    
+
     // Create test transporter
     const transporter = createTransporter(smtpConfig);
-    
+
     // Verify SMTP connection
     console.log('Testing SMTP connection...');
     await transporter.verify();
-    
+
     console.log('Gmail SMTP connection test successful');
-    
+
     return res.status(200).json({
       success: true,
       message: 'Gmail SMTP connection test successful',
@@ -1799,10 +1806,10 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
         connectionVerified: true
       }
     });
-    
+
   } catch (error) {
     console.error('Error in testGmailConnection:', error);
-    
+
     return res.status(500).json({
       success: false,
       error: 'Gmail connection test failed: ' + error.message,
@@ -1817,10 +1824,10 @@ exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
 // Process unsubscribe requests
 exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
   console.log('=== processUnsubscribe function called ===');
-  
+
   try {
     const { token } = req.query;
-    
+
     if (!token) {
       return res.status(400).send(`
         <html>
@@ -1854,7 +1861,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
     }
 
     const { tenantId, email } = tokenData;
-    
+
     if (!tenantId || !email) {
       return res.status(400).send(`
         <html>
@@ -1869,7 +1876,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
     }
 
     console.log('Processing unsubscribe for:', email, 'in tenant:', tenantId);
-    
+
     // First, get the tenant owner (user ID) from the tenant ID
     let userId = tenantId; // Default fallback
     try {
@@ -1885,7 +1892,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
       console.error('Error getting tenant owner:', error);
       console.log('⚠️ Using tenantId as fallback userId');
     }
-    
+
     console.log('📍 Firebase paths being used:');
     console.log('📍 Contacts path: userData/' + userId + '_crm_contacts');
     console.log('📍 Unsubscribes path: userData/' + tenantId + '_unsubscribes');
@@ -1896,38 +1903,38 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
         .collection('userData')
         .doc(`${userId}_crm_contacts`)
         .get();
-      
+
       console.log('📊 Document exists:', contactsQuery.exists);
-      
+
       if (contactsQuery.exists) {
         const contactsData = contactsQuery.data();
         const contacts = contactsData.contacts || [];
-        
+
         console.log('📊 BEFORE REMOVAL - Total contacts:', contacts.length);
         console.log('📧 Looking for email to remove:', email);
         console.log('📧 Sample contacts:', contacts.slice(0, 2).map(c => ({ email: c.email, name: c.name })));
-        
+
         // Filter out the unsubscribing email
-        const updatedContacts = contacts.filter(contact => 
+        const updatedContacts = contacts.filter(contact =>
           contact.email && contact.email.toLowerCase() !== email.toLowerCase()
         );
-        
+
         console.log('📊 AFTER REMOVAL - Total contacts:', updatedContacts.length);
         console.log('📉 Contacts removed:', contacts.length - updatedContacts.length);
-        
+
         if (contacts.length !== updatedContacts.length) {
           console.log('✅ Contact found and will be removed!');
         } else {
           console.log('❌ Contact NOT found in list! Email not in contacts.');
           console.log('📧 All contact emails:', contacts.map(c => c.email));
         }
-        
+
         // Update the contacts collection using the correct userId
         await db
           .collection('userData')
           .doc(`${userId}_crm_contacts`)
           .set({ contacts: updatedContacts });
-        
+
         console.log('✅ Successfully updated contacts collection');
         console.log('Removed contact from CRM:', email);
       } else {
@@ -1949,7 +1956,7 @@ exports.processUnsubscribe = functions.https.onRequest(async (req, res) => {
             tokenData: tokenData
           })
         }, { merge: true });
-        
+
       console.log('Added to unsubscribe log:', email);
     } catch (error) {
       console.error('Error logging unsubscribe:', error);
@@ -2004,7 +2011,7 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
     leadEmail: data?.leadData?.email,
     leadCompany: data?.leadData?.company
   });
-  
+
   try {
     // Validate input
     if (!data || !data.tenantId || !data.leadData) {
@@ -2012,7 +2019,7 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
     }
 
     const { tenantId, leadData } = data;
-    
+
     // Validate lead data
     if (!leadData.email) {
       throw new functions.https.HttpsError('invalid-argument', 'Lead email is required');
@@ -2033,16 +2040,16 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
       status: leadData.status || 'new',
       tags: Array.isArray(leadData.tags) ? leadData.tags : ['emergency-saved'],
       notes: leadData.notes || `Emergency saved via Firebase Function at ${new Date().toISOString()}`,
-      
+
       // Timestamps
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      
+
       // Emergency save metadata
       _emergencySave: true,
       _savedVia: 'firebase-function',
       _transportErrorBypass: true,
-      
+
       // Security
       _tenantId: tenantId,
       _marketGenieApp: true,
@@ -2062,7 +2069,7 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
         leads: admin.firestore.FieldValue.increment(1),
         lastUpdated: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
-      
+
       console.log('✅ Tenant usage updated');
     } catch (usageError) {
       console.warn('⚠️ Failed to update tenant usage:', usageError.message);
@@ -2079,11 +2086,11 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
 
   } catch (error) {
     console.error('❌ Emergency save function error:', error);
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError('internal', `Emergency save failed: ${error.message}`);
   }
 });

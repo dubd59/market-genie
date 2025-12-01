@@ -1077,6 +1077,37 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
 
           {/* Tab Content */}
           <div className="p-6">
+            {/* Connected Account Status Banner - Show for Email tab when Gmail is connected */}
+            {activeTab === 'email-integrations' && emailIntegrations.find(e => e.id === 'gmail' && e.status === 'connected') && (
+              <div className={`mb-6 p-4 rounded-xl border-2 ${isDarkMode ? 'bg-green-900/30 border-green-500' : 'bg-green-50 border-green-400'}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl">
+                    ✓
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`text-lg font-bold ${isDarkMode ? 'text-green-400' : 'text-green-800'}`}>
+                      📧 Email Sending Account Connected
+                    </h3>
+                    <p className={`text-sm ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
+                      <span className="font-semibold">Active Account: </span>
+                      <span className="font-mono bg-green-200 text-green-800 px-2 py-0.5 rounded">
+                        {emailIntegrations.find(e => e.id === 'gmail')?.account || 'Connected'}
+                      </span>
+                    </p>
+                    <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400/70' : 'text-green-600'}`}>
+                      All campaign emails will be sent from this Google Workspace account
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500 text-white text-sm font-medium">
+                      <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                      Active
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {loadingStatuses ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>

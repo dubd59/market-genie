@@ -357,6 +357,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
   const [showAddKey, setShowAddKey] = useState(false);
   const [loadingStatuses, setLoadingStatuses] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showGmailChoiceModal, setShowGmailChoiceModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [integrationConfig, setIntegrationConfig] = useState({});
   const [newApiKey, setNewApiKey] = useState({
@@ -400,7 +401,12 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           const result = await IntegrationService.getConnectionStatus(integration.id, tenant.id);
           let isActuallyConnected = false;
           
-          if (integration.id === 'gmail' || integration.id === 'outlook') {
+          if (integration.id === 'gmail') {
+            // Gmail can be connected via OAuth (accessToken) OR SMTP (appPassword)
+            const hasOAuth = result.data && result.data.accessToken && result.data.refreshToken;
+            const hasSMTP = result.data && result.data.email && (result.data.appPassword || result.data.password);
+            isActuallyConnected = hasOAuth || (hasSMTP && result.data.status === 'connected');
+          } else if (integration.id === 'outlook') {
             isActuallyConnected = result.data && result.data.email && (result.data.appPassword || result.data.password) && result.data.status === 'connected';
           } else {
             isActuallyConnected = result.data && (result.data.apiKey || result.data.accessToken) && result.data.status === 'connected';
@@ -555,10 +561,95 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
     }
   };
 
+  // Handle Gmail OAuth connection
+  const handleGmailOAuth = async () => {
+    try {
+      console.log('🔗 Starting Gmail OAuth flow...');
+      toast.loading('Connecting to Google...', { id: 'gmail-oauth' });
+      
+      const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com';
+      const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback';
+      const SCOPES = [
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' ');
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${CLIENT_ID}` +
+        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(SCOPES)}` +
+        `&access_type=offline` +
+        `&prompt=consent` +
+        `&state=${tenant.id}`;
+      
+      // Open OAuth popup
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      
+      const popup = window.open(
+        authUrl,
+        'Gmail OAuth',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+      
+      // Listen for OAuth completion message from popup
+      const handleMessage = (event) => {
+        if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
+          console.log('✅ Gmail OAuth successful');
+          toast.dismiss('gmail-oauth');
+          toast.success('Gmail connected successfully!');
+          
+          // Update integration status
+          updateIntegrationStatus('gmail', 'connected', {
+            email: event.data.tokens?.email || 'Connected via OAuth',
+            lastSync: new Date().toLocaleString()
+          });
+          
+          // Refresh statuses
+          setTimeout(() => checkIntegrationStatuses(), 1000);
+          
+          window.removeEventListener('message', handleMessage);
+        } else if (event.data.type === 'GMAIL_OAUTH_ERROR') {
+          console.error('❌ Gmail OAuth failed:', event.data.error);
+          toast.dismiss('gmail-oauth');
+          toast.error('Gmail connection failed: ' + event.data.error);
+          window.removeEventListener('message', handleMessage);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      // Check if popup was blocked
+      if (!popup || popup.closed) {
+        toast.dismiss('gmail-oauth');
+        toast.error('Popup blocked! Please allow popups for this site.');
+        window.removeEventListener('message', handleMessage);
+      }
+      
+    } catch (error) {
+      console.error('Gmail OAuth error:', error);
+      toast.dismiss('gmail-oauth');
+      toast.error('Failed to start Gmail connection: ' + error.message);
+    }
+  };
+
   const connectIntegration = async (integration) => {
     // Handle calendar integrations separately
     if (integration.type === 'Calendar' || integration.type === 'Scheduling') {
       return handleCalendarConnection(integration);
+    }
+    
+    // Handle Gmail with OAuth option
+    if (integration.id === 'gmail') {
+      // Show choice modal for OAuth vs SMTP
+      setSelectedIntegration(integration);
+      setShowGmailChoiceModal(true);
+      return;
     }
     
     // Open configuration modal for other integrations
@@ -1135,6 +1226,83 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
             </div>
           </details>
         </div>
+
+        {/* Gmail Connection Choice Modal */}
+        {showGmailChoiceModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-xl p-6 max-w-lg w-full m-4 shadow-2xl`}>
+              <div className="text-center mb-6">
+                <span className="text-5xl mb-4 block">📧</span>
+                <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                  Connect Gmail / Google Workspace
+                </h3>
+                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Choose how you want to connect your email account
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* OAuth Option - Recommended */}
+                <button
+                  onClick={() => {
+                    setShowGmailChoiceModal(false);
+                    handleGmailOAuth();
+                  }}
+                  className="w-full p-4 rounded-xl border-2 border-green-500 bg-green-50 hover:bg-green-100 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl">
+                      🔐
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-green-800 text-lg">Connect with Google</h4>
+                        <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">Recommended</span>
+                      </div>
+                      <p className="text-green-700 text-sm">
+                        OAuth 2.0 • Higher limits (2,000/day) • Auto bounce detection
+                      </p>
+                    </div>
+                    <span className="text-green-500 text-2xl group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </button>
+
+                {/* SMTP Option */}
+                <button
+                  onClick={() => {
+                    setShowGmailChoiceModal(false);
+                    setIntegrationConfig({});
+                    setShowConfigModal(true);
+                  }}
+                  className={`w-full p-4 rounded-xl border-2 ${isDarkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'} transition-all text-left group`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full ${isDarkMode ? 'bg-gray-600' : 'bg-gray-400'} flex items-center justify-center text-white text-2xl`}>
+                      🔑
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} text-lg`}>App Password (SMTP)</h4>
+                      <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm`}>
+                        Manual setup • Lower limits (500/day) • Requires 2FA app password
+                      </p>
+                    </div>
+                    <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-400'} text-2xl group-hover:translate-x-1 transition-transform`}>→</span>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowGmailChoiceModal(false);
+                  setSelectedIntegration(null);
+                }}
+                className={`w-full mt-4 py-2 rounded-lg ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Configuration Modal */}
         {renderConfigModal()}

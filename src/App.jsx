@@ -1284,17 +1284,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // Helper function to send email via Firebase Function (fixed)
+  // Helper function to send email via Gmail API (OAuth)
   const sendEmailViaFirebase = async (emailData, tenantId) => {
     try {
-      console.log('📧 Sending email via Firebase Function to:', emailData.to)
+      console.log('📧 Sending email to:', emailData.to)
       console.log('📧 TenantId:', tenantId)
-      console.log('📧 Email data:', emailData)
-      
-      // Check authentication state
-      console.log('📧 Current user:', auth.currentUser)
-      console.log('📧 User UID:', auth.currentUser?.uid)
-      console.log('📧 User email:', auth.currentUser?.email)
       
       if (!auth.currentUser) {
         throw new Error('User not authenticated')
@@ -1302,7 +1296,6 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       
       // Get the user's ID token
       const idToken = await auth.currentUser.getIdToken(true)
-      console.log('📧 Got ID token:', idToken ? 'Yes' : 'No')
       
       // Prepare the payload
       const payload = {
@@ -1311,12 +1304,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         content: emailData.content,
         tenantId: tenantId
       }
-      
-      console.log('📧 Payload being sent:', payload)
 
-      // Use simple SMTP email sending (works with existing Gmail account)
-      console.log('📧 Sending via SMTP function...')
-      const smtpResponse = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailSMTP', {
+      // Send via Gmail API (OAuth)
+      console.log('📧 Sending via Gmail API (OAuth)...')
+      const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailGmailAPI', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1325,20 +1316,21 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         body: JSON.stringify(payload)
       })
       
-      const smtpResult = await smtpResponse.json()
-      console.log('📧 SMTP function response:', smtpResult)
+      const result = await response.json()
+      console.log('📧 Gmail API response:', result)
       
-      if (smtpResult.success) {
-        console.log('📧 Email sent successfully via SMTP:', smtpResult.message)
+      if (result.success) {
+        console.log('📧 ✅ Email sent via Gmail API:', result.messageId)
         return {
           success: true,
-          data: smtpResult
+          data: result,
+          method: 'gmail_api'
         }
       } else {
-        console.error('📧 SMTP function failed:', smtpResult.error)
+        console.error('📧 ❌ Gmail API failed:', result.error)
         return {
           success: false,
-          error: smtpResult.error || 'Email sending failed'
+          error: result.error || 'Email sending failed'
         }
       }
       

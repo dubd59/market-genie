@@ -1633,6 +1633,244 @@ exports.sendCampaignEmailSMTP = functions.https.onRequest(async (req, res) => {
   }
 });
 
+// ============================================
+// Gmail API Sending (OAuth) - Higher limits!
+// ============================================
+exports.sendCampaignEmailGmailAPI = functions.https.onRequest(async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send();
+  }
+  
+  console.log('=== sendCampaignEmailGmailAPI function called ===');
+  
+  try {
+    // Verify authentication
+    const authToken = req.get('Authorization');
+    if (!authToken || !authToken.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing or invalid authorization token'
+      });
+    }
+    
+    const idToken = authToken.split('Bearer ')[1];
+    
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+    
+    const { to, subject, content, tenantId } = req.body;
+    
+    if (!to || !subject || !content || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
+      });
+    }
+    
+    console.log('Fetching Gmail OAuth credentials for tenant:', tenantId);
+    
+    // Fetch Gmail OAuth credentials
+    const credentialsDoc = await db
+      .collection('MarketGenie_tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('gmail')
+      .get();
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail not configured. Please connect Gmail in integrations.'
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    
+    // Check if OAuth tokens are available
+    if (!credentials.accessToken || !credentials.refreshToken) {
+      console.log('No OAuth tokens found, falling back to SMTP');
+      return res.status(400).json({
+        success: false,
+        error: 'Gmail OAuth not connected. Please use "Connect with Google" button.',
+        fallbackToSMTP: true
+      });
+    }
+    
+    let accessToken = credentials.accessToken;
+    
+    // Refresh token if needed (tokens expire after 1 hour)
+    const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com';
+    const CLIENT_SECRET = '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';
+    
+    try {
+      // Always try to refresh token to ensure it's valid
+      console.log('Refreshing Gmail access token...');
+      const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', 
+        new URLSearchParams({
+          refresh_token: credentials.refreshToken,
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          grant_type: 'refresh_token'
+        }).toString(),
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }
+      );
+      
+      accessToken = tokenResponse.data.access_token;
+      console.log('Access token refreshed successfully');
+      
+      // Update stored access token
+      await db
+        .collection('MarketGenie_tenants')
+        .doc(tenantId)
+        .collection('integrations')
+        .doc('gmail')
+        .update({
+          accessToken: accessToken,
+          tokenRefreshedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError.response?.data || refreshError.message);
+      return res.status(401).json({
+        success: false,
+        error: 'Gmail token expired. Please reconnect Gmail.',
+        code: 'GMAIL_TOKEN_EXPIRED'
+      });
+    }
+    
+    // Get user email from Gmail API
+    let senderEmail = credentials.email;
+    if (!senderEmail) {
+      try {
+        const profileResponse = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        senderEmail = profileResponse.data.emailAddress;
+        
+        // Store email for future reference
+        await db
+          .collection('MarketGenie_tenants')
+          .doc(tenantId)
+          .collection('integrations')
+          .doc('gmail')
+          .update({ email: senderEmail });
+          
+      } catch (profileError) {
+        console.error('Could not get user profile:', profileError.message);
+        return res.status(400).json({
+          success: false,
+          error: 'Could not retrieve Gmail profile'
+        });
+      }
+    }
+    
+    // Fetch business profile for sender name
+    let senderName = 'Market Genie';
+    try {
+      const businessProfileDoc = await db
+        .collection('userData')
+        .doc(`${tenantId}_businessProfile`)
+        .get();
+      
+      if (businessProfileDoc.exists) {
+        const businessInfo = businessProfileDoc.data().businessInfo;
+        if (businessInfo && businessInfo.companyName) {
+          senderName = businessInfo.companyName;
+        }
+      }
+    } catch (error) {
+      console.warn('Could not fetch business profile:', error);
+    }
+    
+    // Build the email message in RFC 2822 format
+    const emailLines = [
+      `From: "${senderName}" <${senderEmail}>`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      content
+    ];
+    
+    const email = emailLines.join('\r\n');
+    
+    // Encode to base64url
+    const encodedEmail = Buffer.from(email)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    
+    // Send via Gmail API
+    console.log('Sending email via Gmail API...');
+    console.log('From:', senderEmail, 'To:', to, 'Subject:', subject);
+    
+    try {
+      const sendResponse = await axios.post(
+        'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+        { raw: encodedEmail },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('✅ Email sent successfully via Gmail API');
+      console.log('Message ID:', sendResponse.data.id);
+      
+      return res.status(200).json({
+        success: true,
+        messageId: sendResponse.data.id,
+        method: 'gmail_api',
+        from: senderEmail
+      });
+      
+    } catch (sendError) {
+      console.error('Gmail API send error:', sendError.response?.data || sendError.message);
+      
+      const errorMessage = sendError.response?.data?.error?.message || sendError.message;
+      
+      // Check for specific errors
+      if (errorMessage.includes('Daily Limit Exceeded') || errorMessage.includes('rateLimitExceeded')) {
+        return res.status(429).json({
+          success: false,
+          error: 'Daily sending limit reached. Try again tomorrow.',
+          code: 'GMAIL_API_QUOTA'
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send email via Gmail API: ' + errorMessage
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in sendCampaignEmailGmailAPI:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send email: ' + error.message
+    });
+  }
+});
+
 // Test Gmail SMTP Connection - Debug function
 exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
   // Set CORS headers

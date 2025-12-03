@@ -497,20 +497,36 @@ const CRMPipeline = ({ isDarkMode = false }) => {
 
   // Export data
   const exportContacts = () => {
-    const csvContent = [
+    // Helper function to escape CSV fields properly
+    const escapeCSV = (field) => {
+      if (field === null || field === undefined) return ''
+      const str = String(field)
+      // If field contains comma, newline, or quote, wrap in quotes and escape internal quotes
+      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const csvRows = [
       ['Name', 'Email', 'Phone', 'Company', 'Position', 'Country', 'Tags', 'Notes'],
       ...contacts.map(contact => [
-        contact.name,
-        contact.email,
-        contact.phone,
-        contact.company,
-        contact.position,
-        contact.tags?.join(';') || '',
-        contact.notes
+        contact.name || '',
+        contact.email || '',
+        contact.phone || '',
+        contact.company || '',
+        contact.position || '',
+        contact.country || '',
+        contact.tags?.join('; ') || '',
+        contact.notes || ''
       ])
-    ].map(row => row.join(',')).join('\\n')
+    ]
 
-    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const csvContent = csvRows
+      .map(row => row.map(escapeCSV).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.setAttribute('hidden', '')

@@ -404,6 +404,7 @@ function SophisticatedDashboard() {
   // AI Subject Line Generator state
   const [subjectGeneratorOpen, setSubjectGeneratorOpen] = useState(false)
   const [subjectTone, setSubjectTone] = useState('professional')
+  const [subjectPrompt, setSubjectPrompt] = useState('')
   const [generatedSubjects, setGeneratedSubjects] = useState([])
   const [generatingSubjects, setGeneratingSubjects] = useState(false)
   
@@ -2760,8 +2761,8 @@ ${companyName}</p>
 
   // AI Subject Line Generator
   const generateSubjectLines = async () => {
-    if (!campaignFormData.name && !campaignFormData.targetAudience) {
-      toast.error('Please enter a campaign name or target audience first');
+    if (!subjectPrompt.trim()) {
+      toast.error('Please describe what the email is about');
       return;
     }
 
@@ -2789,14 +2790,16 @@ ${companyName}</p>
         professional: 'formal, business-appropriate, and trustworthy',
         friendly: 'warm, approachable, and conversational',
         urgent: 'time-sensitive, action-oriented, and compelling',
-        curious: 'intriguing, question-based, and thought-provoking'
+        curious: 'intriguing, question-based, and thought-provoking',
+        exclusive: 'VIP, premium, making the reader feel special and privileged',
+        helpful: 'supportive, solution-focused, and value-driven',
+        playful: 'fun, lighthearted, with a touch of humor',
+        bold: 'confident, direct, attention-grabbing, and impactful'
       };
 
-      const prompt = `Generate 5 email subject lines for the following campaign:
-Campaign Name: ${campaignFormData.name || 'Marketing Campaign'}
-Target Audience: ${campaignFormData.targetAudience || 'Business Professionals'}
-Campaign Type: ${campaignFormData.type || 'Email'}
-Additional Context: ${campaignFormData.additionalPrompt || 'General marketing email'}
+      const prompt = `Generate 5 email subject lines based on this description:
+
+"${subjectPrompt}"
 
 Tone: ${toneDescriptions[subjectTone] || toneDescriptions.professional}
 
@@ -4925,116 +4928,104 @@ END:VCALENDAR`;
                       required
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Subject</label>
-                      <button
-                        type="button"
-                        onClick={() => setSubjectGeneratorOpen(!subjectGeneratorOpen)}
-                        className="flex items-center gap-1 text-sm text-genie-teal hover:text-teal-600 transition-colors"
-                      >
-                        <span>✨</span>
-                        <span>AI Generate</span>
-                      </button>
+                  
+                  {/* Email Subject with Integrated AI Generator */}
+                  <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-gray-750 border-gray-600' : 'bg-gradient-to-r from-gray-50 to-teal-50 border-gray-200'}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">✉️</span>
+                      <label className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Email Subject</label>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-teal-900 text-teal-300' : 'bg-teal-100 text-teal-700'}`}>AI Powered</span>
                     </div>
                     
-                    {/* AI Subject Generator Panel */}
-                    {subjectGeneratorOpen && (
-                      <div className={`mb-3 p-4 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200'}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-lg">🎯</span>
-                          <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>AI Subject Line Generator</span>
-                        </div>
-                        
-                        {/* Tone Selection */}
-                        <div className="mb-3">
-                          <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Select Tone:</label>
-                          <div className="flex flex-wrap gap-2">
-                            {[
-                              { id: 'professional', label: '💼 Professional', desc: 'Formal & trustworthy' },
-                              { id: 'friendly', label: '😊 Friendly', desc: 'Warm & approachable' },
-                              { id: 'urgent', label: '⚡ Urgent', desc: 'Action-oriented' },
-                              { id: 'curious', label: '🤔 Curious', desc: 'Intriguing & engaging' }
-                            ].map(tone => (
-                              <button
-                                key={tone.id}
-                                type="button"
-                                onClick={() => setSubjectTone(tone.id)}
-                                className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                                  subjectTone === tone.id
-                                    ? 'bg-genie-teal text-white shadow-md'
-                                    : isDarkMode 
-                                      ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-                                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                }`}
-                              >
-                                {tone.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Generate Button */}
-                        <button
-                          type="button"
-                          onClick={generateSubjectLines}
-                          disabled={generatingSubjects}
-                          className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
-                            generatingSubjects
-                              ? 'bg-gray-400 cursor-wait'
-                              : 'bg-genie-teal hover:bg-teal-600 text-white'
-                          }`}
-                        >
-                          {generatingSubjects ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="animate-spin">⏳</span>
-                              Generating...
-                            </span>
-                          ) : (
-                            <span>✨ Generate 5 Subject Lines</span>
-                          )}
-                        </button>
-                        
-                        {/* Generated Subjects */}
-                        {generatedSubjects.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            <label className={`block text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                              Click to select:
-                            </label>
-                            {generatedSubjects.map((subject, index) => (
-                              <button
-                                key={index}
-                                type="button"
-                                onClick={() => selectSubjectLine(subject)}
-                                className={`w-full text-left p-3 rounded-lg border transition-all hover:scale-[1.01] ${
-                                  isDarkMode
-                                    ? 'bg-gray-600 border-gray-500 text-white hover:bg-gray-500 hover:border-teal-400'
-                                    : 'bg-white border-gray-200 text-gray-800 hover:bg-teal-50 hover:border-teal-300'
-                                }`}
-                              >
-                                <span className="text-teal-500 font-medium mr-2">{index + 1}.</span>
-                                {subject}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Personalization Tip */}
-                        <div className={`mt-3 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          💡 Tip: Use {'{firstName}'}, {'{lastName}'}, or {'{company}'} for personalization
-                        </div>
-                      </div>
-                    )}
-                    
+                    {/* Subject Input Field */}
                     <input 
                       type="text" 
                       value={campaignFormData.subject}
                       onChange={(e) => setCampaignFormData(prev => ({ ...prev, subject: e.target.value }))}
-                      className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                      placeholder="Exciting news about our latest product!"
+                      className={`w-full border p-3 rounded-lg mb-3 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
+                      placeholder="Enter subject or generate with AI below..."
                       required
                     />
+                    
+                    {/* Compact AI Generator */}
+                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-white border border-gray-200'}`}>
+                      {/* Prompt + Tone Row */}
+                      <div className="flex flex-col md:flex-row gap-3 mb-3">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={subjectPrompt}
+                            onChange={(e) => setSubjectPrompt(e.target.value)}
+                            placeholder="Describe your email (e.g., Product launch with 20% discount)"
+                            className={`w-full border p-2 rounded text-sm ${
+                              isDarkMode 
+                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
+                            }`}
+                          />
+                        </div>
+                        <select
+                          value={subjectTone}
+                          onChange={(e) => setSubjectTone(e.target.value)}
+                          className={`border p-2 rounded text-sm min-w-[160px] ${
+                            isDarkMode 
+                              ? 'bg-gray-600 border-gray-500 text-white' 
+                              : 'bg-white border-gray-200 text-gray-800'
+                          }`}
+                        >
+                          <option value="professional">💼 Professional</option>
+                          <option value="friendly">😊 Friendly</option>
+                          <option value="urgent">⚡ Urgent</option>
+                          <option value="curious">🤔 Curious</option>
+                          <option value="exclusive">👑 Exclusive</option>
+                          <option value="helpful">🤝 Helpful</option>
+                          <option value="playful">🎉 Playful</option>
+                          <option value="bold">🔥 Bold</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={generateSubjectLines}
+                          disabled={generatingSubjects || !subjectPrompt.trim()}
+                          className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                            generatingSubjects || !subjectPrompt.trim()
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-genie-teal hover:bg-teal-600 text-white'
+                          }`}
+                        >
+                          {generatingSubjects ? '⏳ Generating...' : '✨ Generate'}
+                        </button>
+                      </div>
+                      
+                      {/* Generated Subjects - Compact List */}
+                      {generatedSubjects.length > 0 && (
+                        <div className="space-y-1">
+                          {generatedSubjects.map((subject, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => selectSubjectLine(subject)}
+                              className={`w-full text-left px-3 py-2 rounded text-sm transition-all ${
+                                isDarkMode
+                                  ? 'bg-gray-600 text-white hover:bg-teal-700 hover:text-white'
+                                  : 'bg-gray-50 text-gray-700 hover:bg-teal-100 hover:text-teal-800'
+                              }`}
+                            >
+                              <span className="text-teal-500 font-medium mr-2">{index + 1}.</span>
+                              {subject}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Subtle hint when no subjects generated */}
+                      {generatedSubjects.length === 0 && (
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          💡 Describe your email, pick a tone, and click Generate for AI subject suggestions
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Campaign Type</label>

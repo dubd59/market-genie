@@ -2803,14 +2803,18 @@ ${companyName}</p>
 
 Tone: ${toneDescriptions[subjectTone] || toneDescriptions.professional}
 
-Requirements:
-- Generate exactly 5 unique subject lines
+STRICT RULES:
+- Return ONLY the raw subject line text
+- NO prefixes like "Subject:" or "Subject Line:"
+- NO quotation marks around the subject
+- NO names at the end (like ", John" or ", Darrell")
 - Keep each under 60 characters
-- Make them compelling and click-worthy
-- Match the specified tone
-- Include personalization tokens where appropriate: {firstName}, {company}, {lastName}
-- Return ONLY the 5 subject lines, one per line, numbered 1-5
-- Do NOT include any explanations or additional text`;
+- Use {firstName} or {company} ONLY as merge tags, not actual names
+- Format: Just number and text, like:
+1. Your exclusive offer awaits
+2. Don't miss this opportunity
+
+Generate exactly 5 subject lines now:`;
 
       let response;
       if (provider === 'openai') {
@@ -2853,9 +2857,19 @@ Requirements:
       const data = await response.json();
       const content = data.choices[0].message.content;
 
-      // Parse the subject lines
+      // Parse and clean up the subject lines
       const lines = content.split('\n')
-        .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+        .map(line => {
+          let cleaned = line
+            .replace(/^\d+[\.\)]\s*/, '')  // Remove numbering like "1." or "1)"
+            .replace(/^["']|["']$/g, '')   // Remove surrounding quotes
+            .replace(/^Subject\s*Line\s*:\s*/i, '')  // Remove "Subject Line:" prefix
+            .replace(/^Subject\s*:\s*/i, '')  // Remove "Subject:" prefix
+            .replace(/,\s*[A-Z][a-z]+\s*$/g, '')  // Remove trailing ", Name" patterns
+            .replace(/,\s*\{firstName\}\s*$/g, ', {firstName}')  // Keep merge tags but clean spacing
+            .trim();
+          return cleaned;
+        })
         .filter(line => line.length > 0 && line.length < 100);
 
       setGeneratedSubjects(lines.slice(0, 5));

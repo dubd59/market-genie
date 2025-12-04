@@ -8,18 +8,12 @@ export class AIService {
   // Get stored API keys from Firebase - checks BOTH locations
   static async getStoredAPIKeys(userId, tenantId = null) {
     try {
-      console.log('🔍 AIService.getStoredAPIKeys - Looking for keys with userId:', userId, 'tenantId:', tenantId);
-      
       // First try the userData location (old method)
-      console.log('🔍 Checking userData/' + userId + '_apiKeys');
       const userDataKeys = await FirebaseUserDataService.getAPIKeys(userId);
-      console.log('🔍 userData keys found:', userDataKeys);
       
-      // Also check IntegrationService location (new method) if tenantId provided
+      // Also check IntegrationService location (new method)
       let integrationKeys = [];
-      const effectiveTenantId = tenantId || userId; // Use userId as tenantId if not provided
-      
-      console.log('🔍 Checking MarketGenie_tenants/' + effectiveTenantId + '/integrations/...');
+      const effectiveTenantId = tenantId || userId;
       
       // Check for each AI provider in IntegrationService
       const aiProviders = ['openai', 'deepseek', 'anthropic', 'gemini'];
@@ -27,7 +21,6 @@ export class AIService {
         try {
           const result = await IntegrationService.getIntegrationCredentials(effectiveTenantId, provider);
           if (result.success && result.data && result.data.apiKey && result.data.status === 'connected') {
-            console.log(`🔍 Found ${provider} key in IntegrationService`);
             integrationKeys.push({
               id: `integration_${provider}`,
               name: provider.charAt(0).toUpperCase() + provider.slice(1),
@@ -42,8 +35,6 @@ export class AIService {
         }
       }
       
-      console.log('🔍 IntegrationService keys found:', integrationKeys.map(k => k.service));
-      
       // Merge both sources, preferring IntegrationService (newer)
       const allKeys = [...integrationKeys];
       
@@ -55,7 +46,6 @@ export class AIService {
         }
       }
       
-      console.log('🔍 Total keys available:', allKeys.map(k => ({ service: k.service, status: k.status, source: k.source || 'userData' })));
       return allKeys;
     } catch (error) {
       console.error('Error loading API keys:', error);
@@ -323,17 +313,12 @@ EXCEPTION: If the user specifically provides a URL or link in their prompt, you 
 Write a professional email based on the campaign details above. Your content should end with a compelling call-to-action paragraph. Do NOT add any signatures, closings, "Best regards", names, or footer content after the CTA. The system will automatically add the professional footer and unsubscribe links below your content.
     `;
 
-    // Use tenantId for key lookup - this is the key fix!
+    // Use tenantId for key lookup
     const effectiveTenantId = tenantId || userId;
     const apiKeys = await this.getStoredAPIKeys(userId, effectiveTenantId);
-    console.log('🔑 AI Service - Raw API Keys from Firebase:', apiKeys);
-    console.log('🔑 AI Service - User ID:', userId, 'Tenant ID:', effectiveTenantId);
-    
     const activeKeys = apiKeys.filter(k => k.status === 'active');
-    console.log('🔑 AI Service - Active Keys:', activeKeys.map(k => ({ service: k.service, status: k.status, source: k.source })));
 
     if (activeKeys.length === 0) {
-      console.error('🔑 AI Service - NO ACTIVE KEYS FOUND! This is why fallback is happening.');
       throw new Error('No active AI API keys found. Please add API keys in the API Keys & Integrations section.');
     }
 
@@ -353,7 +338,6 @@ Write a professional email based on the campaign details above. Your content sho
       const providerKey = activeKeys.find(k => k.service.toLowerCase().includes(provider?.name || ''));
       if (provider && providerKey) {
         try {
-          console.log(`🚀 Trying preferred provider: ${provider.name} with key from ${providerKey.source || 'userData'}`);
           generatedContent = await provider.func.call(this, userId, prompt, campaignData, providerKey.key);
           toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
         } catch (error) {
@@ -368,7 +352,6 @@ Write a professional email based on the campaign details above. Your content sho
         const providerKey = activeKeys.find(k => k.service.toLowerCase().includes(provider.name));
         if (providerKey) {
           try {
-            console.log(`🚀 Trying provider: ${provider.name} with key from ${providerKey.source || 'userData'}`);
             generatedContent = await provider.func.call(this, userId, prompt, campaignData, providerKey.key);
             toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
             break;

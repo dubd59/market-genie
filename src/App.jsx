@@ -401,6 +401,12 @@ function SophisticatedDashboard() {
     callToActionUrl: ''
   })
   
+  // AI Subject Line Generator state
+  const [subjectGeneratorOpen, setSubjectGeneratorOpen] = useState(false)
+  const [subjectTone, setSubjectTone] = useState('professional')
+  const [generatedSubjects, setGeneratedSubjects] = useState([])
+  const [generatingSubjects, setGeneratingSubjects] = useState(false)
+  
   // Available CRM tags for custom segments
   const [availableTags, setAvailableTags] = useState([])
   
@@ -2752,6 +2758,120 @@ ${companyName}</p>
     }
   }
 
+  // AI Subject Line Generator
+  const generateSubjectLines = async () => {
+    if (!campaignFormData.name && !campaignFormData.targetAudience) {
+      toast.error('Please enter a campaign name or target audience first');
+      return;
+    }
+
+    setGeneratingSubjects(true);
+    setGeneratedSubjects([]);
+
+    try {
+      // Get API keys from IntegrationService
+      const effectiveTenantId = tenant?.id || user?.uid;
+      const apiKeys = await AIService.getStoredAPIKeys(user?.uid, effectiveTenantId);
+      const activeKeys = apiKeys.filter(k => k.status === 'active');
+
+      if (activeKeys.length === 0) {
+        toast.error('No AI API keys configured. Please add an API key in Settings.');
+        setGeneratingSubjects(false);
+        return;
+      }
+
+      // Find OpenAI key preferably
+      const openaiKey = activeKeys.find(k => k.service.toLowerCase().includes('openai'));
+      const apiKey = openaiKey?.key || activeKeys[0]?.key;
+      const provider = openaiKey ? 'openai' : activeKeys[0]?.service;
+
+      const toneDescriptions = {
+        professional: 'formal, business-appropriate, and trustworthy',
+        friendly: 'warm, approachable, and conversational',
+        urgent: 'time-sensitive, action-oriented, and compelling',
+        curious: 'intriguing, question-based, and thought-provoking'
+      };
+
+      const prompt = `Generate 5 email subject lines for the following campaign:
+Campaign Name: ${campaignFormData.name || 'Marketing Campaign'}
+Target Audience: ${campaignFormData.targetAudience || 'Business Professionals'}
+Campaign Type: ${campaignFormData.type || 'Email'}
+Additional Context: ${campaignFormData.additionalPrompt || 'General marketing email'}
+
+Tone: ${toneDescriptions[subjectTone] || toneDescriptions.professional}
+
+Requirements:
+- Generate exactly 5 unique subject lines
+- Keep each under 60 characters
+- Make them compelling and click-worthy
+- Match the specified tone
+- Include personalization tokens where appropriate: {firstName}, {company}, {lastName}
+- Return ONLY the 5 subject lines, one per line, numbered 1-5
+- Do NOT include any explanations or additional text`;
+
+      let response;
+      if (provider === 'openai') {
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 300,
+            temperature: 0.8
+          })
+        });
+      } else if (provider === 'deepseek') {
+        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 300,
+            temperature: 0.8
+          })
+        });
+      } else {
+        throw new Error('Unsupported AI provider for subject generation');
+      }
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'AI request failed');
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+
+      // Parse the subject lines
+      const lines = content.split('\n')
+        .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(line => line.length > 0 && line.length < 100);
+
+      setGeneratedSubjects(lines.slice(0, 5));
+      toast.success('Subject lines generated!');
+    } catch (error) {
+      console.error('Subject generation error:', error);
+      toast.error('Failed to generate subjects: ' + error.message);
+    } finally {
+      setGeneratingSubjects(false);
+    }
+  }
+
+  const selectSubjectLine = (subject) => {
+    setCampaignFormData(prev => ({ ...prev, subject }));
+    setSubjectGeneratorOpen(false);
+    setGeneratedSubjects([]);
+    toast.success('Subject line selected!');
+  }
+
   const selectEmailTemplate = (template) => {
     console.log('selectEmailTemplate called:', template)
     setCampaignFormData(prev => ({
@@ -4806,7 +4926,106 @@ END:VCALENDAR`;
                     />
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Subject</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Subject</label>
+                      <button
+                        type="button"
+                        onClick={() => setSubjectGeneratorOpen(!subjectGeneratorOpen)}
+                        className="flex items-center gap-1 text-sm text-genie-teal hover:text-teal-600 transition-colors"
+                      >
+                        <span>✨</span>
+                        <span>AI Generate</span>
+                      </button>
+                    </div>
+                    
+                    {/* AI Subject Generator Panel */}
+                    {subjectGeneratorOpen && (
+                      <div className={`mb-3 p-4 rounded-lg border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200'}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-lg">🎯</span>
+                          <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>AI Subject Line Generator</span>
+                        </div>
+                        
+                        {/* Tone Selection */}
+                        <div className="mb-3">
+                          <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Select Tone:</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: 'professional', label: '💼 Professional', desc: 'Formal & trustworthy' },
+                              { id: 'friendly', label: '😊 Friendly', desc: 'Warm & approachable' },
+                              { id: 'urgent', label: '⚡ Urgent', desc: 'Action-oriented' },
+                              { id: 'curious', label: '🤔 Curious', desc: 'Intriguing & engaging' }
+                            ].map(tone => (
+                              <button
+                                key={tone.id}
+                                type="button"
+                                onClick={() => setSubjectTone(tone.id)}
+                                className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                                  subjectTone === tone.id
+                                    ? 'bg-genie-teal text-white shadow-md'
+                                    : isDarkMode 
+                                      ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
+                                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                                }`}
+                              >
+                                {tone.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Generate Button */}
+                        <button
+                          type="button"
+                          onClick={generateSubjectLines}
+                          disabled={generatingSubjects}
+                          className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                            generatingSubjects
+                              ? 'bg-gray-400 cursor-wait'
+                              : 'bg-genie-teal hover:bg-teal-600 text-white'
+                          }`}
+                        >
+                          {generatingSubjects ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="animate-spin">⏳</span>
+                              Generating...
+                            </span>
+                          ) : (
+                            <span>✨ Generate 5 Subject Lines</span>
+                          )}
+                        </button>
+                        
+                        {/* Generated Subjects */}
+                        {generatedSubjects.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <label className={`block text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              Click to select:
+                            </label>
+                            {generatedSubjects.map((subject, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => selectSubjectLine(subject)}
+                                className={`w-full text-left p-3 rounded-lg border transition-all hover:scale-[1.01] ${
+                                  isDarkMode
+                                    ? 'bg-gray-600 border-gray-500 text-white hover:bg-gray-500 hover:border-teal-400'
+                                    : 'bg-white border-gray-200 text-gray-800 hover:bg-teal-50 hover:border-teal-300'
+                                }`}
+                              >
+                                <span className="text-teal-500 font-medium mr-2">{index + 1}.</span>
+                                {subject}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Personalization Tip */}
+                        <div className={`mt-3 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          💡 Tip: Use {'{firstName}'}, {'{lastName}'}, or {'{company}'} for personalization
+                        </div>
+                      </div>
+                    )}
+                    
                     <input 
                       type="text" 
                       value={campaignFormData.subject}

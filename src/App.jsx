@@ -398,7 +398,8 @@ function SophisticatedDashboard() {
     additionalPrompt: '',
     customSegments: [],
     callToActionText: '',
-    callToActionUrl: ''
+    callToActionUrl: '',
+    batchSize: 50  // Default to 50 emails per batch to avoid Gmail limits
   })
   
   // AI Subject Line Generator state
@@ -1184,9 +1185,24 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
       // Track newly sent emails
       const newlySentEmails = []
+      
+      // Batch Size Control - respect campaign batch limit
+      const batchSize = campaign.batchSize || 50  // Default to 50 if not set
+      const maxToSendThisBatch = Math.min(batchSize, remainingContacts.length)
+      let batchLimitReached = false
+      
+      console.log(`📦 Batch Size: ${batchSize}, Sending up to ${maxToSendThisBatch} emails this session`)
+      toast.success(`📦 Sending batch of ${maxToSendThisBatch} emails (batch size: ${batchSize})`, { duration: 4000 })
 
-      // Send emails to remaining contacts only
+      // Send emails to remaining contacts only (limited by batch size)
       for (const contact of remainingContacts) {
+        // Check if we've hit the batch limit
+        if (newlySentEmails.length >= batchSize) {
+          console.log(`📦 Batch limit of ${batchSize} reached - pausing campaign`)
+          batchLimitReached = true
+          break
+        }
+        
         try {
           // Personalize email content with CLEAN AI-generated footer
           let personalizedContent = campaign.emailContent
@@ -1257,6 +1273,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
       // Update campaign stats with smart resume tracking
       const allSentEmails = [...sentEmails, ...newlySentEmails]
+      const remainingToSend = targetContacts.length - allSentEmails.length
       const updatedCampaigns = campaigns.map(c => {
         if (c.id === campaign.id) {
           return {
@@ -1266,7 +1283,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             totalContacts: targetContacts.length,
             sentEmails: allSentEmails,
             lastSent: new Date().toISOString(),
-            progress: `${allSentEmails.length} of ${targetContacts.length} contacts`
+            lastBatchSentAt: new Date().toISOString(),  // Track when this batch was sent
+            progress: `${allSentEmails.length} of ${targetContacts.length} contacts`,
+            batchSize: campaign.batchSize || 50  // Preserve batch size setting
           }
         }
         return c
@@ -1277,12 +1296,18 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
       if (emailsSent > 0) {
         const isComplete = allSentEmails.length >= targetContacts.length
-        const message = isComplete 
-          ? `🎉 Campaign completed! ${allSentEmails.length} emails delivered successfully.`
-          : `📧 Progress saved! ${emailsSent} new emails sent (${allSentEmails.length}/${targetContacts.length} total). Click Send again to continue.`
+        let message = ''
+        
+        if (isComplete) {
+          message = `🎉 Campaign completed! ${allSentEmails.length} emails delivered successfully.`
+        } else if (batchLimitReached) {
+          message = `📦 Batch complete! ${emailsSent} emails sent this session.\n\n📊 Progress: ${allSentEmails.length}/${targetContacts.length} total\n⏳ ${remainingToSend} remaining - resume tomorrow to continue.`
+        } else {
+          message = `📧 Progress saved! ${emailsSent} new emails sent (${allSentEmails.length}/${targetContacts.length} total). Click Send again to continue.`
+        }
         
         console.log(message)
-        toast.success(message)
+        toast.success(message, { duration: 6000 })
       }
       
       if (errors.length > 0) {
@@ -5318,6 +5343,23 @@ END:VCALENDAR`;
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       />
                     </div>
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>📦 Daily Batch Size</label>
+                      <select
+                        value={campaignFormData.batchSize || 50}
+                        onChange={(e) => setCampaignFormData(prev => ({ ...prev, batchSize: parseInt(e.target.value) }))}
+                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                      >
+                        <option value={50}>50 emails (Safe - Recommended)</option>
+                        <option value={75}>75 emails (Moderate)</option>
+                        <option value={100}>100 emails (Standard)</option>
+                        <option value={150}>150 emails (High Volume)</option>
+                        <option value={200}>200 emails (Max - Use with caution)</option>
+                      </select>
+                      <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Gmail limits: ~500/day. Auto-pauses after batch, resume next day.
+                      </p>
+                    </div>
                   </div>
                   <button type="submit" className="bg-genie-teal text-white px-6 py-3 rounded hover:bg-genie-teal/80 transition-colors">
                     Create Campaign
@@ -5481,6 +5523,24 @@ END:VCALENDAR`;
                           <option value="Active">Active</option>
                           <option value="Paused">Paused</option>
                         </select>
+                      </div>
+
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>📦 Daily Batch Size</label>
+                        <select
+                          value={editingCampaign.batchSize || 50}
+                          onChange={(e) => setEditingCampaign({...editingCampaign, batchSize: parseInt(e.target.value)})}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        >
+                          <option value={50}>50 emails (Safe - Recommended)</option>
+                          <option value={75}>75 emails (Moderate)</option>
+                          <option value={100}>100 emails (Standard)</option>
+                          <option value={150}>150 emails (High Volume)</option>
+                          <option value={200}>200 emails (Max - Use with caution)</option>
+                        </select>
+                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Gmail limits: ~500/day. Auto-pauses after batch, resume next day.
+                        </p>
                       </div>
 
                       <div>

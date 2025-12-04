@@ -1945,9 +1945,9 @@ exports.sendEmailViaSendGrid = functions.https.onRequest(async (req, res) => {
     
     console.log('Sending email via SendGrid to:', to);
     
-    // Get the from email - use connected Gmail or default
-    let fromEmail = 'noreply@marketgenie.tech';
-    let fromName = 'Market Genie';
+    // Get the from email - check multiple sources
+    let fromEmail = null;
+    let fromName = 'Dub D Digital Products';
     
     // Try to get Gmail connection for sender info
     const gmailDoc = await db
@@ -1957,10 +1957,27 @@ exports.sendEmailViaSendGrid = functions.https.onRequest(async (req, res) => {
       .doc('gmail')
       .get();
     
-    if (gmailDoc.exists && gmailDoc.data().email) {
-      fromEmail = gmailDoc.data().email;
-      fromName = gmailDoc.data().email.split('@')[0];
+    if (gmailDoc.exists) {
+      const gmailData = gmailDoc.data();
+      console.log('Gmail doc data keys:', Object.keys(gmailData));
+      
+      // Check various possible email field names
+      fromEmail = gmailData.email || gmailData.userEmail || gmailData.account || gmailData.senderEmail;
+      
+      if (fromEmail) {
+        fromName = fromEmail.split('@')[0];
+        console.log('Using email from Gmail doc:', fromEmail);
+      }
     }
+    
+    // If still no email, use the verified SendGrid sender
+    if (!fromEmail) {
+      fromEmail = 'ddub@dubdproducts.com';  // Your verified sender
+      fromName = 'Dub D Digital Products';
+      console.log('Using hardcoded verified sender:', fromEmail);
+    }
+    
+    console.log('Final from email:', fromEmail);
     
     // Prepare SendGrid API request
     const sendgridPayload = {

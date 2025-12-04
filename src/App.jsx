@@ -1371,12 +1371,17 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             method: 'sendgrid'
           }
         } else {
-          console.warn('📧 ⚠️ SendGrid failed, falling back to Gmail:', result.error)
-          // Fall through to Gmail
+          // SendGrid failed - DO NOT fall back to Gmail, just return the error
+          console.error('📧 ❌ SendGrid failed:', result.error)
+          return {
+            success: false,
+            error: 'SendGrid: ' + (result.error || 'Email sending failed'),
+            method: 'sendgrid'
+          }
         }
       }
       
-      // Prepare the payload for Gmail
+      // No SendGrid - use Gmail
       const payload = {
         to: emailData.to,
         subject: emailData.subject,
@@ -2622,6 +2627,25 @@ Enter number (1-4):`);
     
     if (!campaignFormData.name || !campaignFormData.subject) {
       toast.error('Please fill in Campaign Name and Subject')
+      return
+    }
+
+    // SAFETY CHECK: Require Target Audience selection to prevent accidental mass emails
+    if (!campaignFormData.targetAudience) {
+      toast.error('⚠️ Please select a Target Audience before creating the campaign!', { 
+        duration: 5000,
+        icon: '🎯'
+      })
+      return
+    }
+
+    // If Custom Segment is selected, require at least one segment
+    if (campaignFormData.targetAudience === 'Custom Segment' && 
+        (!campaignFormData.customSegments || campaignFormData.customSegments.length === 0)) {
+      toast.error('⚠️ Please select at least one Custom Segment!', { 
+        duration: 5000,
+        icon: '🏷️'
+      })
       return
     }
 
@@ -5127,21 +5151,32 @@ END:VCALENDAR`;
                       </select>
                     </div>
                     <div>
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Target Audience</label>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                        🎯 Target Audience <span className="text-red-500">*</span> <span className="text-xs text-red-400">(Required)</span>
+                      </label>
                       <select 
                         value={campaignFormData.targetAudience}
                         onChange={(e) => {
                           setCampaignFormData(prev => ({ ...prev, targetAudience: e.target.value, customSegments: [] }))
                         }}
-                        className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        className={`w-full border p-3 rounded ${!campaignFormData.targetAudience ? 'border-red-400 border-2' : ''} ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                        required
                       >
-                        <option value="">Select Audience</option>
+                        <option value="">⚠️ Select Audience (Required)</option>
                         <option value="All Leads">All Leads</option>
                         <option value="All Contacts">All Contacts</option>
                         <option value="New Leads">New Leads</option>
                         <option value="Warm Prospects">Warm Prospects</option>
-                        <option value="Custom Segment">Custom Segment</option>
+                        <option value="Custom Segment">Custom Segment (Tags)</option>
                       </select>
+                      
+                      {/* Warning if no audience selected */}
+                      {!campaignFormData.targetAudience && (
+                        <div className="mt-2 p-2 rounded-lg bg-red-100 text-red-700 text-sm flex items-center">
+                          <span className="mr-2">⚠️</span>
+                          <span>You must select a target audience before creating the campaign</span>
+                        </div>
+                      )}
                       
                       {/* Contact Count Display */}
                       {campaignFormData.targetAudience && (

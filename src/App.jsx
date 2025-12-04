@@ -1195,12 +1195,19 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           personalizedContent = personalizedContent.replace(/{name}/g, contact.name || 'there')
           
           // Fix unsubscribe links to use correct recipient email
-          // Generate correct unsubscribe link for this specific recipient
-          const correctUnsubscribeLink = UnsubscribeService.createUnsubscribeLink(
-            tenant.id, 
-            contact.email, 
-            `campaign_${Date.now()}`
-          )
+          // Generate correct unsubscribe link for this specific recipient (with error protection)
+          let correctUnsubscribeLink = ''
+          try {
+            correctUnsubscribeLink = UnsubscribeService.createUnsubscribeLink(
+              tenant.id, 
+              contact.email, 
+              `campaign_${Date.now()}`
+            )
+          } catch (unsubErr) {
+            console.warn(`⚠️ Could not generate unsubscribe link for ${contact.email}, using fallback`)
+            // Fallback: use a generic unsubscribe link
+            correctUnsubscribeLink = `https://us-central1-market-genie-f2d41.cloudfunctions.net/processUnsubscribe?email=${encodeURIComponent(contact.email)}`
+          }
           
           // Replace any unsubscribe links in the content with the correct one
           personalizedContent = personalizedContent.replace(

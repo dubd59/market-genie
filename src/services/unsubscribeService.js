@@ -6,17 +6,50 @@ import toast from 'react-hot-toast';
 
 export class UnsubscribeService {
   
+  // Helper: Safely encode string to base64 (handles Unicode)
+  static safeBase64Encode(str) {
+    try {
+      // First try the standard way
+      return btoa(str);
+    } catch (e) {
+      // If it fails (Unicode chars), encode to UTF-8 first
+      try {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => 
+          String.fromCharCode(parseInt(p1, 16))
+        ));
+      } catch (e2) {
+        // Ultimate fallback: just use a hash-like approach
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36) + Date.now().toString(36);
+      }
+    }
+  }
+
   // Generate unique unsubscribe token for email
   static generateUnsubscribeToken(tenantId, email, campaignId = null) {
+    // Sanitize inputs to ensure they're safe strings
+    const safeEmail = typeof email === 'string' 
+      ? email.toLowerCase().replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
+      : String(email || '').toLowerCase().replace(/[^\x00-\x7F]/g, '');
+    
+    const safeTenantId = typeof tenantId === 'string'
+      ? tenantId.replace(/[^\x00-\x7F]/g, '')
+      : String(tenantId || '').replace(/[^\x00-\x7F]/g, '');
+
     const data = {
-      tenantId,
-      email: typeof email === 'string' ? email.toLowerCase() : String(email || '').toLowerCase(),
+      tenantId: safeTenantId,
+      email: safeEmail,
       campaignId,
       timestamp: Date.now()
     };
     
-    // Create a unique token (in production, use proper encryption)
-    const token = btoa(JSON.stringify(data)).replace(/[^a-zA-Z0-9]/g, '');
+    // Create a unique token using safe encoding
+    const token = this.safeBase64Encode(JSON.stringify(data)).replace(/[^a-zA-Z0-9]/g, '');
     return token;
   }
 

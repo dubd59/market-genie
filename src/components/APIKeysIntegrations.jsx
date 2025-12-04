@@ -930,6 +930,15 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           return [
             { key: 'apiKey', label: 'Clearbit API Key', type: 'password', placeholder: 'sk_...' }
           ];
+        case 'sendgrid':
+          return [
+            { key: 'apiKey', label: 'SendGrid API Key', type: 'password', placeholder: 'SG.xxxxxx...' }
+          ];
+        case 'mailgun':
+          return [
+            { key: 'apiKey', label: 'Mailgun API Key', type: 'password', placeholder: 'key-xxxxxx...' },
+            { key: 'domain', label: 'Mailgun Domain', type: 'text', placeholder: 'mg.yourdomain.com' }
+          ];
         default:
           return [
             { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter your API key' }

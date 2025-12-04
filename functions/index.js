@@ -1871,6 +1871,157 @@ exports.sendCampaignEmailGmailAPI = functions.https.onRequest(async (req, res) =
   }
 });
 
+// ============================================
+// SendGrid Email Sending - Best for bulk!
+// ============================================
+exports.sendEmailViaSendGrid = functions.https.onRequest(async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).send();
+  }
+  
+  console.log('=== sendEmailViaSendGrid function called ===');
+  
+  try {
+    // Verify authentication
+    const authToken = req.get('Authorization');
+    if (!authToken || !authToken.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Missing or invalid authorization token'
+      });
+    }
+    
+    const idToken = authToken.split('Bearer ')[1];
+    
+    try {
+      await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+    
+    const { to, subject, content, tenantId } = req.body;
+    
+    if (!to || !subject || !content || !tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: to, subject, content, tenantId'
+      });
+    }
+    
+    console.log('Fetching SendGrid API key for tenant:', tenantId);
+    
+    // Fetch SendGrid credentials
+    const credentialsDoc = await db
+      .collection('MarketGenie_tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('sendgrid')
+      .get();
+    
+    if (!credentialsDoc.exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'SendGrid not configured. Please connect SendGrid in integrations.'
+      });
+    }
+    
+    const credentials = credentialsDoc.data();
+    
+    if (!credentials.apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'SendGrid API key not found. Please reconnect SendGrid.'
+      });
+    }
+    
+    console.log('Sending email via SendGrid to:', to);
+    
+    // Get the from email - use connected Gmail or default
+    let fromEmail = 'noreply@marketgenie.tech';
+    let fromName = 'Market Genie';
+    
+    // Try to get Gmail connection for sender info
+    const gmailDoc = await db
+      .collection('MarketGenie_tenants')
+      .doc(tenantId)
+      .collection('integrations')
+      .doc('gmail')
+      .get();
+    
+    if (gmailDoc.exists && gmailDoc.data().email) {
+      fromEmail = gmailDoc.data().email;
+      fromName = gmailDoc.data().email.split('@')[0];
+    }
+    
+    // Prepare SendGrid API request
+    const sendgridPayload = {
+      personalizations: [{
+        to: [{ email: to }]
+      }],
+      from: { 
+        email: fromEmail,
+        name: fromName
+      },
+      subject: subject,
+      content: [{
+        type: 'text/html',
+        value: content
+      }]
+    };
+    
+    // Send via SendGrid API
+    const sendgridResponse = await axios.post(
+      'https://api.sendgrid.com/v3/mail/send',
+      sendgridPayload,
+      {
+        headers: {
+          'Authorization': `Bearer ${credentials.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    // SendGrid returns 202 for success
+    if (sendgridResponse.status === 202 || sendgridResponse.status === 200) {
+      console.log('✅ Email sent via SendGrid to:', to);
+      return res.status(200).json({
+        success: true,
+        method: 'sendgrid',
+        to: to,
+        from: fromEmail
+      });
+    } else {
+      console.error('SendGrid returned unexpected status:', sendgridResponse.status);
+      return res.status(400).json({
+        success: false,
+        error: 'SendGrid returned status: ' + sendgridResponse.status
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in sendEmailViaSendGrid:', error.response?.data || error.message);
+    
+    let errorMessage = error.message;
+    if (error.response?.data?.errors) {
+      errorMessage = error.response.data.errors.map(e => e.message).join(', ');
+    }
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send via SendGrid: ' + errorMessage
+    });
+  }
+});
+
 // Test Gmail SMTP Connection - Debug function
 exports.testGmailConnection = functions.https.onRequest(async (req, res) => {
   // Set CORS headers

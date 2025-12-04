@@ -1323,7 +1323,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // Helper function to send email via Gmail API (OAuth)
+  // Helper function to send email via SendGrid or Gmail API
   const sendEmailViaFirebase = async (emailData, tenantId) => {
     try {
       console.log('📧 Sending email to:', emailData.to)
@@ -1336,7 +1336,47 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Get the user's ID token
       const idToken = await auth.currentUser.getIdToken(true)
       
-      // Prepare the payload
+      // Check if SendGrid is connected (prefer SendGrid over Gmail for bulk sending)
+      const sendgridCreds = await IntegrationService.getIntegrationCredentials(tenantId, 'sendgrid')
+      
+      if (sendgridCreds.success && sendgridCreds.data?.apiKey) {
+        // Use SendGrid
+        console.log('📧 Sending via SendGrid...')
+        
+        const sendgridPayload = {
+          to: emailData.to,
+          subject: emailData.subject,
+          content: emailData.content,
+          tenantId: tenantId,
+          provider: 'sendgrid'
+        }
+        
+        const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendEmailViaSendGrid', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify(sendgridPayload)
+        })
+        
+        const result = await response.json()
+        console.log('📧 SendGrid response:', result)
+        
+        if (result.success) {
+          console.log('📧 ✅ Email sent via SendGrid')
+          return {
+            success: true,
+            data: result,
+            method: 'sendgrid'
+          }
+        } else {
+          console.warn('📧 ⚠️ SendGrid failed, falling back to Gmail:', result.error)
+          // Fall through to Gmail
+        }
+      }
+      
+      // Prepare the payload for Gmail
       const payload = {
         to: emailData.to,
         subject: emailData.subject,

@@ -1653,6 +1653,12 @@ class IntegrationService {
         case 'voila-norbert':
           return await this.testLeadProvider('voilanorbert', config.apiKey);
 
+        case 'sendgrid':
+          return await this.testSendGridConnection(config.apiKey);
+
+        case 'mailgun':
+          return await this.testMailgunConnection(config.apiKey, config.domain);
+
         default:
           return { success: false, error: `Test connection not implemented for ${serviceId}` };
       }
@@ -1749,6 +1755,74 @@ class IntegrationService {
         success: false, 
         error: `Connection test failed: ${error.message}` 
       };
+    }
+  }
+
+  // Test SendGrid API connection
+  async testSendGridConnection(apiKey) {
+    try {
+      console.log('🔌 Testing SendGrid API connection...');
+      
+      // SendGrid API test - check API key validity
+      const response = await fetch('https://api.sendgrid.com/v3/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { 
+          success: true, 
+          message: 'SendGrid connection successful!',
+          account: data.username || 'Connected'
+        };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Invalid SendGrid API key' };
+      } else {
+        return { success: false, error: `SendGrid API error: ${response.status}` };
+      }
+    } catch (error) {
+      console.error('SendGrid test error:', error);
+      return { success: false, error: `Connection failed: ${error.message}` };
+    }
+  }
+
+  // Test Mailgun API connection
+  async testMailgunConnection(apiKey, domain) {
+    try {
+      console.log('🔌 Testing Mailgun API connection...');
+      
+      if (!domain) {
+        return { success: false, error: 'Mailgun domain is required' };
+      }
+
+      // Mailgun requires Basic Auth
+      const response = await fetch(`https://api.mailgun.net/v3/${domain}/messages`, {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`api:${apiKey}`)
+        }
+      });
+
+      // 405 means the endpoint works but GET isn't allowed (which is expected)
+      // This confirms the API key is valid
+      if (response.ok || response.status === 405 || response.status === 400) {
+        return { 
+          success: true, 
+          message: 'Mailgun connection successful!',
+          domain: domain
+        };
+      } else if (response.status === 401) {
+        return { success: false, error: 'Invalid Mailgun API key' };
+      } else {
+        return { success: false, error: `Mailgun API error: ${response.status}` };
+      }
+    } catch (error) {
+      console.error('Mailgun test error:', error);
+      return { success: false, error: `Connection failed: ${error.message}` };
     }
   }
 

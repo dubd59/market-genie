@@ -49,57 +49,6 @@ export class FirebaseUserDataService {
     }
   }
 
-  // Save a single API key (tenant-aware)
-  static async saveApiKey(userId, tenantId, apiKeyData) {
-    try {
-      // Get existing keys
-      const existingKeys = await this.getAPIKeys(userId);
-      
-      // Create new key object with ID
-      const newKey = {
-        id: Date.now().toString(),
-        name: apiKeyData.name,
-        service: apiKeyData.service,
-        key: apiKeyData.key,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        tenantId: tenantId
-      };
-      
-      // Add to existing keys
-      const updatedKeys = [...existingKeys, newKey];
-      
-      // Save back
-      const apiKeysRef = this.getUserDataRef(userId, 'apiKeys');
-      await setDoc(apiKeysRef, {
-        apiKeys: updatedKeys,
-        updatedAt: new Date()
-      });
-      
-      return newKey;
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      throw error;
-    }
-  }
-
-  // Delete a single API key
-  static async deleteApiKey(userId, tenantId, keyId) {
-    try {
-      const existingKeys = await this.getAPIKeys(userId);
-      const updatedKeys = existingKeys.filter(k => k.id !== keyId);
-      
-      const apiKeysRef = this.getUserDataRef(userId, 'apiKeys');
-      await setDoc(apiKeysRef, {
-        apiKeys: updatedKeys,
-        updatedAt: new Date()
-      });
-    } catch (error) {
-      console.error('Error deleting API key:', error);
-      throw error;
-    }
-  }
-
   static async getAPIKeys(userId) {
     try {
       const apiKeysRef = this.getUserDataRef(userId, 'apiKeys');

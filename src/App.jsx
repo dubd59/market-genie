@@ -424,12 +424,6 @@ function SophisticatedDashboard() {
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
   
-  // AI Subject Line Generator state
-  const [subjectPrompt, setSubjectPrompt] = useState('')
-  const [subjectTone, setSubjectTone] = useState('professional')
-  const [generatedSubjects, setGeneratedSubjects] = useState([])
-  const [isGeneratingSubjects, setIsGeneratingSubjects] = useState(false)
-  
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
   
@@ -1207,16 +1201,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             correctUnsubscribeLink
           )
 
-          // Personalize subject line too
-          let personalizedSubject = campaign.subject
-          personalizedSubject = personalizedSubject.replace(/{firstName}/g, contact.name?.split(' ')[0] || 'there')
-          personalizedSubject = personalizedSubject.replace(/{company}/g, contact.company || 'your company')
-          personalizedSubject = personalizedSubject.replace(/{name}/g, contact.name || 'there')
-
           // Send email via Firebase Function
           const emailData = {
             to: contact.email,
-            subject: personalizedSubject,
+            subject: campaign.subject,
             content: personalizedContent
           }
 
@@ -2712,165 +2700,6 @@ Enter number (1-4):`);
     
     setCampaigns(updatedCampaigns)
     await saveCampaignsToFirebase(updatedCampaigns)
-  }
-
-  // AI-powered subject line generator
-  const generateAISubjectLines = async () => {
-    if (!subjectPrompt.trim()) {
-      toast.error('Please describe what your email is about')
-      return
-    }
-
-    setIsGeneratingSubjects(true)
-    setGeneratedSubjects([])
-
-    try {
-      const toneDescriptions = {
-        professional: 'professional and business-appropriate',
-        friendly: 'warm, friendly, and approachable',
-        urgent: 'urgent and time-sensitive, creating FOMO',
-        curious: 'intriguing and curiosity-inducing, making the reader want to know more'
-      }
-
-      const prompt = `Generate exactly 3 compelling email subject lines for the following purpose:
-
-Purpose: ${subjectPrompt}
-
-Tone: ${toneDescriptions[subjectTone]}
-
-Requirements:
-- Each subject line should be under 60 characters for optimal display
-- Make them attention-grabbing and click-worthy
-- Avoid spam trigger words like "FREE", "ACT NOW", excessive caps or exclamation marks
-- Use personalization where appropriate (can include {firstName} placeholder)
-
-Return ONLY the 3 subject lines, one per line, numbered 1-3. No explanations or additional text.`
-
-      // Get API keys from IntegrationService (where they're actually stored)
-      let result = null
-      
-      // Try OpenAI first
-      try {
-        const openaiStatus = await IntegrationService.getConnectionStatus('openai', tenant?.id)
-        if (openaiStatus.success && openaiStatus.data?.apiKey) {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiStatus.data.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4',
-              messages: [
-                { role: 'system', content: 'You are an expert email marketing copywriter.' },
-                { role: 'user', content: prompt }
-              ],
-              max_tokens: 500,
-              temperature: 0.8
-            })
-          })
-          if (response.ok) {
-            const data = await response.json()
-            result = data.choices[0].message.content
-          }
-        }
-      } catch (openaiError) {
-        console.log('OpenAI not available, trying DeepSeek...')
-      }
-
-      // Try DeepSeek if OpenAI didn't work
-      if (!result) {
-        try {
-          const deepseekStatus = await IntegrationService.getConnectionStatus('deepseek', tenant?.id)
-          if (deepseekStatus.success && deepseekStatus.data?.apiKey) {
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${deepseekStatus.data.apiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                  { role: 'system', content: 'You are an expert email marketing copywriter.' },
-                  { role: 'user', content: prompt }
-                ],
-                max_tokens: 500,
-                temperature: 0.8
-              })
-            })
-            if (response.ok) {
-              const data = await response.json()
-              result = data.choices[0].message.content
-            }
-          }
-        } catch (deepseekError) {
-          console.log('DeepSeek not available, trying Claude...')
-        }
-      }
-
-      // Try Claude if others didn't work
-      if (!result) {
-        try {
-          const claudeStatus = await IntegrationService.getConnectionStatus('anthropic', tenant?.id)
-          if (claudeStatus.success && claudeStatus.data?.apiKey) {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
-              method: 'POST',
-              headers: {
-                'x-api-key': claudeStatus.data.apiKey,
-                'Content-Type': 'application/json',
-                'anthropic-version': '2023-06-01'
-              },
-              body: JSON.stringify({
-                model: 'claude-3-sonnet-20240229',
-                max_tokens: 500,
-                messages: [{ role: 'user', content: prompt }]
-              })
-            })
-            if (response.ok) {
-              const data = await response.json()
-              result = data.content[0].text
-            }
-          }
-        } catch (claudeError) {
-          console.log('Claude not available')
-        }
-      }
-
-      if (!result) {
-        throw new Error('No AI API keys configured. Please connect OpenAI, DeepSeek, or Anthropic in Settings → Integrations.')
-      }
-
-      if (result) {
-        // Parse the result - extract subject lines
-        const lines = result.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .map(line => line.replace(/^\d+[\.\)\-\s]+/, '').trim()) // Remove numbering
-          .filter(line => line.length > 5 && line.length < 100) // Reasonable length
-          .slice(0, 3)
-
-        if (lines.length > 0) {
-          setGeneratedSubjects(lines)
-          toast.success(`Generated ${lines.length} subject line${lines.length > 1 ? 's' : ''}!`)
-        } else {
-          toast.error('Could not parse AI response. Please try again.')
-        }
-      }
-    } catch (error) {
-      console.error('Subject generation error:', error)
-      toast.error(error.message || 'Failed to generate subject lines')
-    } finally {
-      setIsGeneratingSubjects(false)
-    }
-  }
-
-  // Select a generated subject line
-  const selectGeneratedSubject = (subject) => {
-    setCampaignFormData(prev => ({ ...prev, subject }))
-    setGeneratedSubjects([])
-    setSubjectPrompt('')
-    toast.success('Subject line selected!')
   }
 
   // AI-powered email content generation based on campaign settings
@@ -4976,69 +4805,6 @@ END:VCALENDAR`;
                       required
                     />
                   </div>
-                  
-                  {/* AI Subject Line Generator */}
-                  <div className={`${isDarkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'} border rounded-lg p-4`}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-lg">✨</span>
-                      <label className={`text-sm font-medium ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>AI Subject Line Generator</label>
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row gap-3 mb-3">
-                      <input 
-                        type="text" 
-                        value={subjectPrompt}
-                        onChange={(e) => setSubjectPrompt(e.target.value)}
-                        className={`flex-1 border p-2.5 rounded text-sm ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' : 'bg-white border-gray-300'}`} 
-                        placeholder="Describe your email purpose... e.g., 'Introducing our new productivity template'"
-                      />
-                      <select
-                        value={subjectTone}
-                        onChange={(e) => setSubjectTone(e.target.value)}
-                        className={`w-full md:w-36 border p-2.5 rounded text-sm ${isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300'}`}
-                      >
-                        <option value="professional">💼 Professional</option>
-                        <option value="friendly">😊 Friendly</option>
-                        <option value="urgent">⚡ Urgent</option>
-                        <option value="curious">🤔 Curious</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={generateAISubjectLines}
-                        disabled={isGeneratingSubjects || !subjectPrompt.trim()}
-                        className={`px-4 py-2.5 rounded text-sm font-medium transition-colors whitespace-nowrap ${
-                          isGeneratingSubjects || !subjectPrompt.trim()
-                            ? 'bg-gray-400 cursor-not-allowed text-gray-200'
-                            : 'bg-purple-600 hover:bg-purple-700 text-white'
-                        }`}
-                      >
-                        {isGeneratingSubjects ? '⏳ Generating...' : '✨ Generate'}
-                      </button>
-                    </div>
-                    
-                    {/* Generated Subject Lines */}
-                    {generatedSubjects.length > 0 && (
-                      <div className="space-y-2">
-                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Click to use:</p>
-                        {generatedSubjects.map((subject, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => selectGeneratedSubject(subject)}
-                            className={`w-full text-left p-3 rounded-lg border transition-all ${
-                              isDarkMode 
-                                ? 'bg-gray-600 border-gray-500 hover:border-purple-400 hover:bg-gray-500 text-white' 
-                                : 'bg-white border-gray-200 hover:border-purple-400 hover:shadow-md text-gray-800'
-                            }`}
-                          >
-                            <span className="text-purple-500 mr-2">📧</span>
-                            {subject}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   <div>
                     <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email Subject</label>
                     <input 

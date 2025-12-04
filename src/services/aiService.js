@@ -2,12 +2,61 @@
 import toast from 'react-hot-toast';
 import FirebaseUserDataService from './firebaseUserData';
 import UnsubscribeService from './unsubscribeService';
+import IntegrationService from './integrationService';
 
 export class AIService {
-  // Get stored API keys from Firebase (requires userId)
-  static async getStoredAPIKeys(userId) {
+  // Get stored API keys from Firebase - checks BOTH locations
+  static async getStoredAPIKeys(userId, tenantId = null) {
     try {
-      return await FirebaseUserDataService.getAPIKeys(userId);
+      console.log('🔍 AIService.getStoredAPIKeys - Looking for keys with userId:', userId, 'tenantId:', tenantId);
+      
+      // First try the userData location (old method)
+      console.log('🔍 Checking userData/' + userId + '_apiKeys');
+      const userDataKeys = await FirebaseUserDataService.getAPIKeys(userId);
+      console.log('🔍 userData keys found:', userDataKeys);
+      
+      // Also check IntegrationService location (new method) if tenantId provided
+      let integrationKeys = [];
+      const effectiveTenantId = tenantId || userId; // Use userId as tenantId if not provided
+      
+      console.log('🔍 Checking MarketGenie_tenants/' + effectiveTenantId + '/integrations/...');
+      
+      // Check for each AI provider in IntegrationService
+      const aiProviders = ['openai', 'deepseek', 'anthropic', 'gemini'];
+      for (const provider of aiProviders) {
+        try {
+          const result = await IntegrationService.getIntegrationCredentials(effectiveTenantId, provider);
+          if (result.success && result.data && result.data.apiKey && result.data.status === 'connected') {
+            console.log(`🔍 Found ${provider} key in IntegrationService`);
+            integrationKeys.push({
+              id: `integration_${provider}`,
+              name: provider.charAt(0).toUpperCase() + provider.slice(1),
+              service: provider,
+              key: result.data.apiKey,
+              status: 'active',
+              source: 'integrationService'
+            });
+          }
+        } catch (e) {
+          // Provider not found, continue
+        }
+      }
+      
+      console.log('🔍 IntegrationService keys found:', integrationKeys.map(k => k.service));
+      
+      // Merge both sources, preferring IntegrationService (newer)
+      const allKeys = [...integrationKeys];
+      
+      // Add userData keys that aren't duplicates
+      for (const key of userDataKeys) {
+        const exists = allKeys.some(k => k.service.toLowerCase() === key.service.toLowerCase());
+        if (!exists) {
+          allKeys.push(key);
+        }
+      }
+      
+      console.log('🔍 Total keys available:', allKeys.map(k => ({ service: k.service, status: k.status, source: k.source || 'userData' })));
+      return allKeys;
     } catch (error) {
       console.error('Error loading API keys:', error);
       return [];
@@ -15,8 +64,8 @@ export class AIService {
   }
 
   // Get the first active API key for a specific service
-  static async getAPIKey(userId, serviceName) {
-    const apiKeys = await this.getStoredAPIKeys(userId);
+  static async getAPIKey(userId, serviceName, tenantId = null) {
+    const apiKeys = await this.getStoredAPIKeys(userId, tenantId);
     const key = apiKeys.find(k => 
       k.service.toLowerCase().includes(serviceName.toLowerCase()) && 
       k.status === 'active'
@@ -25,9 +74,10 @@ export class AIService {
   }
 
   // Generate email content using OpenAI GPT-4
-  static async generateWithOpenAI(userId, prompt, campaignData) {
-    const apiKey = await this.getAPIKey(userId, 'openai');
-    if (!apiKey) {
+  static async generateWithOpenAI(userId, prompt, campaignData, apiKey = null) {
+    // Use provided key or fetch from storage
+    const key = apiKey || await this.getAPIKey(userId, 'openai');
+    if (!key) {
       throw new Error('No active OpenAI API key found. Please add one in API Keys & Integrations.');
     }
 
@@ -35,7 +85,7 @@ export class AIService {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${key}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -69,9 +119,9 @@ export class AIService {
   }
 
   // Generate email content using Anthropic Claude
-  static async generateWithClaude(userId, prompt, campaignData) {
-    const apiKey = await this.getAPIKey(userId, 'anthropic');
-    if (!apiKey) {
+  static async generateWithClaude(userId, prompt, campaignData, apiKey = null) {
+    const key = apiKey || await this.getAPIKey(userId, 'anthropic');
+    if (!key) {
       throw new Error('No active Anthropic API key found. Please add one in API Keys & Integrations.');
     }
 
@@ -79,7 +129,7 @@ export class AIService {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          'x-api-key': apiKey,
+          'x-api-key': key,
           'Content-Type': 'application/json',
           'anthropic-version': '2023-06-01'
         },
@@ -109,14 +159,14 @@ export class AIService {
   }
 
   // Generate email content using Google Gemini
-  static async generateWithGemini(userId, prompt, campaignData) {
-    const apiKey = await this.getAPIKey(userId, 'gemini');
-    if (!apiKey) {
+  static async generateWithGemini(userId, prompt, campaignData, apiKey = null) {
+    const key = apiKey || await this.getAPIKey(userId, 'gemini');
+    if (!key) {
       throw new Error('No active Google Gemini API key found. Please add one in API Keys & Integrations.');
     }
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,9 +198,9 @@ export class AIService {
   }
 
   // Generate email content using DeepSeek
-  static async generateWithDeepSeek(userId, prompt, campaignData) {
-    const apiKey = await this.getAPIKey(userId, 'deepseek');
-    if (!apiKey) {
+  static async generateWithDeepSeek(userId, prompt, campaignData, apiKey = null) {
+    const key = apiKey || await this.getAPIKey(userId, 'deepseek');
+    if (!key) {
       throw new Error('No active DeepSeek API key found. Please add one in API Keys & Integrations.');
     }
 
@@ -158,7 +208,7 @@ export class AIService {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${key}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -273,10 +323,17 @@ EXCEPTION: If the user specifically provides a URL or link in their prompt, you 
 Write a professional email based on the campaign details above. Your content should end with a compelling call-to-action paragraph. Do NOT add any signatures, closings, "Best regards", names, or footer content after the CTA. The system will automatically add the professional footer and unsubscribe links below your content.
     `;
 
-    const apiKeys = await this.getStoredAPIKeys(userId);
+    // Use tenantId for key lookup - this is the key fix!
+    const effectiveTenantId = tenantId || userId;
+    const apiKeys = await this.getStoredAPIKeys(userId, effectiveTenantId);
+    console.log('🔑 AI Service - Raw API Keys from Firebase:', apiKeys);
+    console.log('🔑 AI Service - User ID:', userId, 'Tenant ID:', effectiveTenantId);
+    
     const activeKeys = apiKeys.filter(k => k.status === 'active');
+    console.log('🔑 AI Service - Active Keys:', activeKeys.map(k => ({ service: k.service, status: k.status, source: k.source })));
 
     if (activeKeys.length === 0) {
+      console.error('🔑 AI Service - NO ACTIVE KEYS FOUND! This is why fallback is happening.');
       throw new Error('No active AI API keys found. Please add API keys in the API Keys & Integrations section.');
     }
 
@@ -293,9 +350,11 @@ Write a professional email based on the campaign details above. Your content sho
     // If preferred provider is specified, try it first
     if (preferredProvider) {
       const provider = providers.find(p => p.name === preferredProvider.toLowerCase());
-      if (provider && activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
+      const providerKey = activeKeys.find(k => k.service.toLowerCase().includes(provider?.name || ''));
+      if (provider && providerKey) {
         try {
-          generatedContent = await provider.func.call(this, userId, prompt, campaignData);
+          console.log(`🚀 Trying preferred provider: ${provider.name} with key from ${providerKey.source || 'userData'}`);
+          generatedContent = await provider.func.call(this, userId, prompt, campaignData, providerKey.key);
           toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
         } catch (error) {
           console.warn(`${preferredProvider} failed, trying fallback providers:`, error.message);
@@ -306,9 +365,11 @@ Write a professional email based on the campaign details above. Your content sho
     // Try each available provider if no content generated yet
     if (!generatedContent) {
       for (const provider of providers) {
-        if (activeKeys.some(k => k.service.toLowerCase().includes(provider.name))) {
+        const providerKey = activeKeys.find(k => k.service.toLowerCase().includes(provider.name));
+        if (providerKey) {
           try {
-            generatedContent = await provider.func.call(this, userId, prompt, campaignData);
+            console.log(`🚀 Trying provider: ${provider.name} with key from ${providerKey.source || 'userData'}`);
+            generatedContent = await provider.func.call(this, userId, prompt, campaignData, providerKey.key);
             toast.success(`Email generated successfully with ${provider.name.toUpperCase()}!`);
             break;
           } catch (error) {

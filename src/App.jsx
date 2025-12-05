@@ -399,7 +399,7 @@ function SophisticatedDashboard() {
     customSegments: [],
     callToActionText: '',
     callToActionUrl: '',
-    batchSize: 50  // Default to 50 emails per batch to avoid Gmail limits
+    batchSize: 25  // Default to 25 emails per batch for safe Gmail sending
   })
   
   // AI Subject Line Generator state
@@ -1187,7 +1187,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       const newlySentEmails = []
       
       // Batch Size Control - respect campaign batch limit
-      const batchSize = campaign.batchSize || 50  // Default to 50 if not set
+      const batchSize = campaign.batchSize || 25  // Default to 25 if not set
       const maxToSendThisBatch = Math.min(batchSize, remainingContacts.length)
       let batchLimitReached = false
       
@@ -1285,7 +1285,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             lastSent: new Date().toISOString(),
             lastBatchSentAt: new Date().toISOString(),  // Track when this batch was sent
             progress: `${allSentEmails.length} of ${targetContacts.length} contacts`,
-            batchSize: campaign.batchSize || 50  // Preserve batch size setting
+            batchSize: campaign.batchSize || 25  // Preserve batch size setting
           }
         }
         return c
@@ -1336,52 +1336,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Get the user's ID token
       const idToken = await auth.currentUser.getIdToken(true)
       
-      // Check if SendGrid is connected (prefer SendGrid over Gmail for bulk sending)
-      const sendgridCreds = await IntegrationService.getIntegrationCredentials(tenantId, 'sendgrid')
-      
-      if (sendgridCreds.success && sendgridCreds.data?.apiKey) {
-        // Use SendGrid
-        console.log('📧 Sending via SendGrid...')
-        
-        const sendgridPayload = {
-          to: emailData.to,
-          subject: emailData.subject,
-          content: emailData.content,
-          tenantId: tenantId,
-          provider: 'sendgrid'
-        }
-        
-        const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendEmailViaSendGrid', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify(sendgridPayload)
-        })
-        
-        const result = await response.json()
-        console.log('📧 SendGrid response:', result)
-        
-        if (result.success) {
-          console.log('📧 ✅ Email sent via SendGrid')
-          return {
-            success: true,
-            data: result,
-            method: 'sendgrid'
-          }
-        } else {
-          // SendGrid failed - DO NOT fall back to Gmail, just return the error
-          console.error('📧 ❌ SendGrid failed:', result.error)
-          return {
-            success: false,
-            error: 'SendGrid: ' + (result.error || 'Email sending failed'),
-            method: 'sendgrid'
-          }
-        }
-      }
-      
-      // No SendGrid - use Gmail
+      // Use Gmail OAuth only (SendGrid disabled - use Gmail for trusted sending)
       const payload = {
         to: emailData.to,
         subject: emailData.subject,
@@ -5421,18 +5376,18 @@ END:VCALENDAR`;
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>📦 Daily Batch Size</label>
                       <select
-                        value={campaignFormData.batchSize || 50}
+                        value={campaignFormData.batchSize || 25}
                         onChange={(e) => setCampaignFormData(prev => ({ ...prev, batchSize: parseInt(e.target.value) }))}
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       >
-                        <option value={50}>50 emails (Safe - Recommended)</option>
+                        <option value={25}>25 emails (Conservative - Recommended)</option>
+                        <option value={50}>50 emails (Safe)</option>
                         <option value={75}>75 emails (Moderate)</option>
                         <option value={100}>100 emails (Standard)</option>
-                        <option value={150}>150 emails (High Volume)</option>
-                        <option value={200}>200 emails (Max - Use with caution)</option>
+                        <option value={150}>150 emails (High Volume - Use with caution)</option>
                       </select>
                       <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Gmail limits: ~500/day. Auto-pauses after batch, resume next day.
+                        Gmail OAuth: Start with 25/day to build trust. Resume next day for remaining contacts.
                       </p>
                     </div>
                   </div>
@@ -5603,18 +5558,18 @@ END:VCALENDAR`;
                       <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>📦 Daily Batch Size</label>
                         <select
-                          value={editingCampaign.batchSize || 50}
+                          value={editingCampaign.batchSize || 25}
                           onChange={(e) => setEditingCampaign({...editingCampaign, batchSize: parseInt(e.target.value)})}
                           className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                         >
-                          <option value={50}>50 emails (Safe - Recommended)</option>
+                          <option value={25}>25 emails (Conservative - Recommended)</option>
+                          <option value={50}>50 emails (Safe)</option>
                           <option value={75}>75 emails (Moderate)</option>
                           <option value={100}>100 emails (Standard)</option>
-                          <option value={150}>150 emails (High Volume)</option>
-                          <option value={200}>200 emails (Max - Use with caution)</option>
+                          <option value={150}>150 emails (High Volume - Use with caution)</option>
                         </select>
                         <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Gmail limits: ~500/day. Auto-pauses after batch, resume next day.
+                          Gmail OAuth: Start with 25/day to build trust. Resume next day for remaining contacts.
                         </p>
                       </div>
 

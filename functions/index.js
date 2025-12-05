@@ -1,6 +1,7 @@
 const {onRequest} = require('firebase-functions/v2/https');
 const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
 const functions = require('firebase-functions'); // Keep for backward compatibility
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
@@ -2437,5 +2438,292 @@ exports.emergencySaveLead = functions.https.onCall(async (data, context) => {
     }
     
     throw new functions.https.HttpsError('internal', `Emergency save failed: ${error.message}`);
+  }
+});
+
+// ============================================
+// SCHEDULED CAMPAIGN SENDER
+// Runs every hour to check for campaigns due to send
+// ============================================
+exports.scheduledCampaignSender = onSchedule({
+  schedule: 'every 1 hours',
+  timeZone: 'America/New_York',
+  memory: '512MiB',
+  timeoutSeconds: 540
+}, async (event) => {
+  console.log('🕐 Scheduled Campaign Sender running...');
+  
+  const now = new Date();
+  console.log('Current time:', now.toISOString());
+  
+  try {
+    // Get all tenants
+    const tenantsSnapshot = await db.collection('MarketGenie_tenants').get();
+    
+    for (const tenantDoc of tenantsSnapshot.docs) {
+      const tenantId = tenantDoc.id;
+      console.log(`\n📧 Checking tenant: ${tenantId}`);
+      
+      try {
+        // Get campaigns for this tenant
+        const userDataDoc = await db
+          .collection('MarketGenie_tenants')
+          .doc(tenantId)
+          .collection('user_data')
+          .doc(`${tenantId}_campaigns`)
+          .get();
+        
+        if (!userDataDoc.exists) {
+          console.log(`No campaigns found for tenant ${tenantId}`);
+          continue;
+        }
+        
+        const campaignsData = userDataDoc.data();
+        let campaigns = campaignsData.data || [];
+        let campaignsUpdated = false;
+        
+        // Get contacts for this tenant
+        const contactsDoc = await db
+          .collection('MarketGenie_tenants')
+          .doc(tenantId)
+          .collection('user_data')
+          .doc(`${tenantId}_contacts`)
+          .get();
+        
+        let contacts = [];
+        if (contactsDoc.exists) {
+          const contactsData = contactsDoc.data();
+          contacts = contactsData.data || [];
+        }
+        
+        // Check each campaign
+        for (let i = 0; i < campaigns.length; i++) {
+          const campaign = campaigns[i];
+          
+          // Skip if not scheduled or already completed
+          if (!campaign.sendDate || campaign.status === 'Completed') {
+            continue;
+          }
+          
+          const scheduledTime = new Date(campaign.sendDate);
+          
+          // Check if campaign is due (scheduled time has passed)
+          if (scheduledTime <= now && (campaign.status === 'Scheduled' || campaign.status === 'In Progress')) {
+            console.log(`\n🚀 Campaign "${campaign.name}" is due for sending!`);
+            console.log(`Scheduled: ${scheduledTime.toISOString()}, Now: ${now.toISOString()}`);
+            
+            // Get Gmail credentials
+            const gmailDoc = await db
+              .collection('MarketGenie_tenants')
+              .doc(tenantId)
+              .collection('integrations')
+              .doc('gmail')
+              .get();
+            
+            if (!gmailDoc.exists || !gmailDoc.data().refreshToken) {
+              console.log(`❌ Gmail not configured for tenant ${tenantId}`);
+              campaigns[i].status = 'Error';
+              campaigns[i].lastError = 'Gmail not configured';
+              campaignsUpdated = true;
+              continue;
+            }
+            
+            const gmailCreds = gmailDoc.data();
+            
+            // Refresh access token
+            const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com';
+            const CLIENT_SECRET = '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';
+            
+            let accessToken;
+            try {
+              const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', 
+                new URLSearchParams({
+                  refresh_token: gmailCreds.refreshToken,
+                  client_id: CLIENT_ID,
+                  client_secret: CLIENT_SECRET,
+                  grant_type: 'refresh_token'
+                }).toString(),
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+              );
+              accessToken = tokenResponse.data.access_token;
+              console.log('✅ Gmail token refreshed');
+            } catch (tokenError) {
+              console.error('❌ Token refresh failed:', tokenError.message);
+              campaigns[i].status = 'Error';
+              campaigns[i].lastError = 'Gmail token expired - reconnect required';
+              campaignsUpdated = true;
+              continue;
+            }
+            
+            // Get sender email
+            let senderEmail = gmailCreds.email || 'noreply@example.com';
+            try {
+              const profileResponse = await axios.get(
+                'https://gmail.googleapis.com/gmail/v1/users/me/profile',
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+              );
+              senderEmail = profileResponse.data.emailAddress;
+            } catch (profileError) {
+              console.warn('Could not fetch sender email, using stored:', senderEmail);
+            }
+            
+            // Get target contacts based on audience
+            const targetContacts = contacts.filter(contact => {
+              if (!contact.email) return false;
+              
+              // Skip already sent
+              const sentList = campaign.sentContacts || [];
+              if (sentList.includes(contact.email)) return false;
+              
+              // Filter by audience
+              if (!campaign.targetAudience || campaign.targetAudience === 'All Leads' || campaign.targetAudience === 'All Contacts') {
+                return true;
+              }
+              if (campaign.targetAudience === 'New Leads') {
+                return contact.status === 'new' || contact.status === 'lead';
+              }
+              if (campaign.targetAudience === 'Warm Prospects') {
+                return contact.status === 'qualified' || contact.status === 'warm';
+              }
+              if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments?.length > 0) {
+                return campaign.customSegments.some(segment => {
+                  if (contact.tags?.includes(segment)) return true;
+                  if (segment.startsWith('Company: ')) {
+                    return contact.company === segment.replace('Company: ', '');
+                  }
+                  if (segment.startsWith('Status: ')) {
+                    return contact.status === segment.replace('Status: ', '');
+                  }
+                  return false;
+                });
+              }
+              return false;
+            });
+            
+            console.log(`📊 Found ${targetContacts.length} contacts to send to`);
+            
+            if (targetContacts.length === 0) {
+              console.log('✅ All contacts have been sent - marking as Completed');
+              campaigns[i].status = 'Completed';
+              campaigns[i].completedDate = new Date().toISOString();
+              campaignsUpdated = true;
+              continue;
+            }
+            
+            // Get batch size
+            const batchSize = campaign.batchSize || 25;
+            const contactsToSend = targetContacts.slice(0, batchSize);
+            console.log(`📧 Sending to ${contactsToSend.length} contacts (batch size: ${batchSize})`);
+            
+            // Update campaign to In Progress
+            campaigns[i].status = 'In Progress';
+            campaigns[i].lastSendAttempt = new Date().toISOString();
+            
+            let sentCount = 0;
+            const sentContacts = campaign.sentContacts || [];
+            
+            for (const contact of contactsToSend) {
+              try {
+                // Personalize content
+                let emailContent = campaign.emailContent || '';
+                emailContent = emailContent
+                  .replace(/{{first_name}}/gi, contact.name?.split(' ')[0] || 'there')
+                  .replace(/{{name}}/gi, contact.name || 'there')
+                  .replace(/{{company}}/gi, contact.company || 'your company')
+                  .replace(/{{email}}/gi, contact.email || '');
+                
+                // Build raw email
+                const boundary = `boundary_${Date.now()}`;
+                const rawEmail = [
+                  `From: ${senderEmail}`,
+                  `To: ${contact.email}`,
+                  `Subject: ${campaign.subject || 'No Subject'}`,
+                  `MIME-Version: 1.0`,
+                  `Content-Type: multipart/alternative; boundary="${boundary}"`,
+                  '',
+                  `--${boundary}`,
+                  'Content-Type: text/plain; charset="UTF-8"',
+                  '',
+                  emailContent.replace(/<[^>]*>/g, ''),
+                  '',
+                  `--${boundary}`,
+                  'Content-Type: text/html; charset="UTF-8"',
+                  '',
+                  emailContent,
+                  '',
+                  `--${boundary}--`
+                ].join('\r\n');
+                
+                // Base64 encode for Gmail API
+                const encodedMessage = Buffer.from(rawEmail)
+                  .toString('base64')
+                  .replace(/\+/g, '-')
+                  .replace(/\//g, '_')
+                  .replace(/=+$/, '');
+                
+                // Send via Gmail API
+                const sendResponse = await axios.post(
+                  'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+                  { raw: encodedMessage },
+                  { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+                );
+                
+                console.log(`✅ Sent to ${contact.email}`);
+                sentCount++;
+                sentContacts.push(contact.email);
+                
+                // Small delay between emails
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+              } catch (sendError) {
+                console.error(`❌ Failed to send to ${contact.email}:`, sendError.response?.data?.error?.message || sendError.message);
+              }
+            }
+            
+            // Update campaign stats
+            campaigns[i].sentContacts = sentContacts;
+            campaigns[i].emailsSent = sentContacts.length;
+            campaigns[i].lastSentDate = new Date().toISOString();
+            
+            // Check if all done
+            const remainingContacts = targetContacts.length - sentCount;
+            if (remainingContacts <= 0) {
+              campaigns[i].status = 'Completed';
+              campaigns[i].completedDate = new Date().toISOString();
+              console.log(`🎉 Campaign "${campaign.name}" completed!`);
+            } else {
+              // Schedule next batch for tomorrow (same time)
+              const nextSend = new Date(now);
+              nextSend.setDate(nextSend.getDate() + 1);
+              campaigns[i].sendDate = nextSend.toISOString();
+              console.log(`📅 Next batch scheduled for: ${nextSend.toISOString()}`);
+            }
+            
+            campaignsUpdated = true;
+            console.log(`📧 Sent ${sentCount} emails for campaign "${campaign.name}"`);
+          }
+        }
+        
+        // Save updated campaigns
+        if (campaignsUpdated) {
+          await db
+            .collection('MarketGenie_tenants')
+            .doc(tenantId)
+            .collection('user_data')
+            .doc(`${tenantId}_campaigns`)
+            .update({ data: campaigns, lastUpdated: admin.firestore.FieldValue.serverTimestamp() });
+          console.log(`✅ Saved updated campaigns for tenant ${tenantId}`);
+        }
+        
+      } catch (tenantError) {
+        console.error(`Error processing tenant ${tenantId}:`, tenantError.message);
+      }
+    }
+    
+    console.log('\n✅ Scheduled Campaign Sender completed');
+    
+  } catch (error) {
+    console.error('❌ Scheduled Campaign Sender error:', error);
+    throw error;
   }
 });

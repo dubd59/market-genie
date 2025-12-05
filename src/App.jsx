@@ -2625,11 +2625,14 @@ Enter number (1-4):`);
       
       // CTA is now handled entirely by the AI service - no manual insertion needed
       
+      // Determine initial status based on whether sendDate is set
+      const initialStatus = campaignFormData.sendDate ? "Scheduled" : "Draft";
+      
       // New campaigns start with 0 emails sent until actually launched
       const newCampaign = {
         id: Date.now(), // Use timestamp for unique ID
         name: campaignFormData.name,
-        status: "Draft", // New campaigns start as Draft, not Active
+        status: initialStatus, // Scheduled if sendDate set, otherwise Draft
         type: campaignFormData.type,
         emailsSent: 0, // Start with 0 emails sent
         openRate: 0, // No opens until emails are sent
@@ -2643,6 +2646,7 @@ Enter number (1-4):`);
         targetAudience: campaignFormData.targetAudience,
         customSegments: campaignFormData.customSegments,
         sendDate: campaignFormData.sendDate,
+        sentContacts: [], // Track which contacts have been sent to
         callToActionText: campaignFormData.callToActionText,
         callToActionUrl: campaignFormData.callToActionUrl,
         totalContacts: (Array.isArray(contacts) ? contacts : []).filter(contact => {
@@ -5365,13 +5369,16 @@ END:VCALENDAR`;
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Send Date</label>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>⏰ Schedule Send (Auto)</label>
                       <input 
                         type="datetime-local" 
                         value={campaignFormData.sendDate}
                         onChange={(e) => setCampaignFormData(prev => ({ ...prev, sendDate: e.target.value }))}
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       />
+                      <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Set date/time for automatic sending. Leave blank to send manually.
+                      </p>
                     </div>
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>📦 Daily Batch Size</label>
@@ -5387,7 +5394,7 @@ END:VCALENDAR`;
                         <option value={150}>150 emails (High Volume - Use with caution)</option>
                       </select>
                       <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Gmail OAuth: Start with 25/day to build trust. Resume next day for remaining contacts.
+                        Sends batch daily until all contacts reached. Auto-continues each day.
                       </p>
                     </div>
                   </div>
@@ -5438,10 +5445,39 @@ END:VCALENDAR`;
                                   ? 'bg-blue-100 text-blue-800'
                                   : campaign.status === 'Paused'
                                   ? 'bg-orange-100 text-orange-800'
+                                  : campaign.status === 'Scheduled'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : campaign.status === 'In Progress'
+                                  ? 'bg-cyan-100 text-cyan-800'
+                                  : campaign.status === 'Completed'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : campaign.status === 'Error'
+                                  ? 'bg-red-100 text-red-800'
                                   : campaign.status === 'Sent'
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-yellow-100 text-yellow-800'
-                              }`}>{campaign.status}</span>
+                              }`}>
+                                {campaign.status === 'Scheduled' && '⏰ '}
+                                {campaign.status === 'In Progress' && '🔄 '}
+                                {campaign.status === 'Completed' && '✅ '}
+                                {campaign.status === 'Error' && '❌ '}
+                                {campaign.status}
+                              </span>
+                              {campaign.status === 'Scheduled' && campaign.sendDate && (
+                                <span className={`ml-2 text-xs ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                                  📅 Auto-sends: {new Date(campaign.sendDate).toLocaleString()}
+                                </span>
+                              )}
+                              {campaign.status === 'In Progress' && campaign.sentContacts && (
+                                <span className={`ml-2 text-xs ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                                  📧 {campaign.sentContacts.length} sent, next batch in ~24h
+                                </span>
+                              )}
+                              {campaign.lastError && (
+                                <span className={`ml-2 text-xs text-red-500`}>
+                                  ⚠️ {campaign.lastError}
+                                </span>
+                              )}
                               {campaign.progress && (
                                 <span className={`ml-2 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800`}>
                                   📧 {campaign.progress}

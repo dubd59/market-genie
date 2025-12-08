@@ -2658,6 +2658,17 @@ exports.scheduledCampaignSender = onSchedule({
                   .replace(/{{company}}/gi, contact.company || 'your company')
                   .replace(/{{email}}/gi, contact.email || '');
                 
+                // Add tracking pixel for open rate monitoring
+                const trackingPixel = `<img src="https://us-central1-market-genie-f2d41.cloudfunctions.net/trackEmailOpen?campaignId=${campaign.id}&recipientEmail=${encodeURIComponent(contact.email)}&userId=${userId}" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`;
+                
+                // Append tracking pixel before closing body tag, or at end if no body tag
+                let trackedContent = emailContent;
+                if (emailContent.toLowerCase().includes('</body>')) {
+                  trackedContent = emailContent.replace(/<\/body>/i, trackingPixel + '</body>');
+                } else {
+                  trackedContent = emailContent + trackingPixel;
+                }
+                
                 // Build raw email
                 const boundary = `boundary_${Date.now()}`;
                 const rawEmail = [
@@ -2675,7 +2686,7 @@ exports.scheduledCampaignSender = onSchedule({
                   `--${boundary}`,
                   'Content-Type: text/html; charset="UTF-8"',
                   '',
-                  emailContent,
+                  trackedContent,
                   '',
                   `--${boundary}--`
                 ].join('\r\n');
@@ -2752,5 +2763,166 @@ exports.scheduledCampaignSender = onSchedule({
   } catch (error) {
     console.error('❌ Scheduled Campaign Sender error:', error);
     throw error;
+  }
+});
+
+// ============================================
+// EMAIL OPEN TRACKING
+// Serves a 1x1 transparent pixel and logs opens
+// ============================================
+exports.trackEmailOpen = onRequest({
+  cors: true,
+  memory: '128MiB',
+  timeoutSeconds: 10
+}, async (req, res) => {
+  try {
+    const { campaignId, recipientEmail, userId } = req.query;
+    
+    console.log(`📧 Email opened - Campaign: ${campaignId}, Recipient: ${recipientEmail}`);
+    
+    if (campaignId && userId) {
+      const db = admin.firestore();
+      
+      // Log the open event
+      const openRef = db.collection('emailOpens').doc();
+      await openRef.set({
+        campaignId: campaignId,
+        recipientEmail: recipientEmail || 'unknown',
+        userId: userId,
+        openedAt: admin.firestore.FieldValue.serverTimestamp(),
+        userAgent: req.headers['user-agent'] || 'unknown',
+        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown'
+      });
+      
+      // Update campaign open count
+      const campaignDocId = `${userId}_${userId}_campaigns`;
+      const campaignDoc = await db.collection('userData').doc(campaignDocId).get();
+      
+      if (campaignDoc.exists) {
+        const campaignData = campaignDoc.data();
+        let campaigns = campaignData.data || [];
+        
+        // Find and update the specific campaign
+        let updated = false;
+        for (let i = 0; i < campaigns.length; i++) {
+          if (campaigns[i].id == campaignId || campaigns[i].id === parseInt(campaignId)) {
+            campaigns[i].opensCount = (campaigns[i].opensCount || 0) + 1;
+            
+            // Track unique opens by email
+            if (!campaigns[i].openedBy) campaigns[i].openedBy = [];
+            if (recipientEmail && !campaigns[i].openedBy.includes(recipientEmail)) {
+              campaigns[i].openedBy.push(recipientEmail);
+              campaigns[i].uniqueOpens = campaigns[i].openedBy.length;
+            }
+            
+            // Calculate open rate
+            const sent = campaigns[i].emailsSent || 1;
+            campaigns[i].openRate = Math.round((campaigns[i].uniqueOpens / sent) * 100);
+            
+            updated = true;
+            console.log(`✅ Updated campaign ${campaignId}: ${campaigns[i].uniqueOpens} unique opens, ${campaigns[i].openRate}% rate`);
+            break;
+          }
+        }
+        
+        if (updated) {
+          await db.collection('userData').doc(campaignDocId).set({
+            data: campaigns,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
+    }
+    
+    // Return a 1x1 transparent GIF
+    const transparentGif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    );
+    
+    res.set('Content-Type', 'image/gif');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.status(200).send(transparentGif);
+    
+  } catch (error) {
+    console.error('Error tracking email open:', error);
+    // Still return the pixel even on error
+    const transparentGif = Buffer.from(
+      'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+      'base64'
+    );
+    res.set('Content-Type', 'image/gif');
+    res.status(200).send(transparentGif);
+  }
+});
+
+// ============================================
+// GET EMAIL STATS
+// Returns aggregated email open statistics
+// ============================================
+exports.getEmailStats = onRequest({
+  cors: true,
+  memory: '128MiB',
+  timeoutSeconds: 30
+}, async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+    
+    const db = admin.firestore();
+    
+    // Get all campaigns for user
+    const campaignDocId = `${userId}_${userId}_campaigns`;
+    const campaignDoc = await db.collection('userData').doc(campaignDocId).get();
+    
+    if (!campaignDoc.exists) {
+      return res.json({
+        totalEmailsSent: 0,
+        totalOpens: 0,
+        uniqueOpens: 0,
+        overallOpenRate: 0,
+        activeCampaigns: 0
+      });
+    }
+    
+    const campaignData = campaignDoc.data();
+    const campaigns = campaignData.data || [];
+    
+    // Aggregate stats
+    let totalEmailsSent = 0;
+    let totalOpens = 0;
+    let totalUniqueOpens = 0;
+    let activeCampaigns = 0;
+    
+    campaigns.forEach(campaign => {
+      totalEmailsSent += campaign.emailsSent || 0;
+      totalOpens += campaign.opensCount || 0;
+      totalUniqueOpens += campaign.uniqueOpens || 0;
+      
+      if (['Scheduled', 'Active', 'In Progress'].includes(campaign.status)) {
+        activeCampaigns++;
+      }
+    });
+    
+    const overallOpenRate = totalEmailsSent > 0 
+      ? Math.round((totalUniqueOpens / totalEmailsSent) * 100) 
+      : 0;
+    
+    res.json({
+      totalEmailsSent,
+      totalOpens,
+      uniqueOpens: totalUniqueOpens,
+      overallOpenRate,
+      activeCampaigns
+    });
+    
+  } catch (error) {
+    console.error('Error getting email stats:', error);
+    res.status(500).json({ error: error.message });
   }
 });

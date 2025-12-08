@@ -385,7 +385,9 @@ function SophisticatedDashboard() {
   const [campaigns, setCampaigns] = useState([])
   const [campaignStats, setCampaignStats] = useState({
     totalCampaigns: 0,
-    totalEmailsSent: 0
+    totalEmailsSent: 0,
+    totalOpens: 0,
+    openRate: 0
   })
   const [campaignFormData, setCampaignFormData] = useState({
     name: '',
@@ -2501,12 +2503,19 @@ Enter number (1-4):`);
 
   // Campaign Functions
   const updateCampaignStats = () => {
-    const activeCampaigns = campaigns.filter(c => c.status === 'Active')
+    // Count campaigns that are active, scheduled, or in progress (not just 'Active' status)
+    const activeCampaigns = campaigns.filter(c => 
+      ['Active', 'Scheduled', 'In Progress'].includes(c.status)
+    )
     const totalEmailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.emailsSent || 0), 0)
+    const totalOpens = campaigns.reduce((sum, campaign) => sum + (campaign.uniqueOpens || 0), 0)
+    const openRate = totalEmailsSent > 0 ? Math.round((totalOpens / totalEmailsSent) * 100) : 0
 
     setCampaignStats({
       totalCampaigns: activeCampaigns.length,
-      totalEmailsSent: totalEmailsSent
+      totalEmailsSent: totalEmailsSent,
+      totalOpens: totalOpens,
+      openRate: openRate
     })
   }
 
@@ -4844,7 +4853,7 @@ END:VCALENDAR`;
               <h2 className={`text-3xl font-bold text-genie-teal mb-8`}>Outreach Automation</h2>
               
               {/* Campaign Stats - Real Data Only */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
                 <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <span role="img" aria-label="campaigns" className="text-genie-teal text-3xl mb-2">📧</span>
                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalCampaigns}</div>
@@ -4856,12 +4865,14 @@ END:VCALENDAR`;
                   <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Sent</div>
                 </div>
                 <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <span role="img" aria-label="bounces" className="text-orange-500 text-3xl mb-2">🚫</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{bounceStats.totalBounces || 0}</div>
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Bounces Detected</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} text-center mt-1`}>
-                    {bounceStats.totalProcessed || 0} processed
-                  </div>
+                  <span role="img" aria-label="opens" className="text-green-500 text-3xl mb-2">👁️</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalOpens.toLocaleString()}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Opened</div>
+                </div>
+                <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <span role="img" aria-label="rate" className="text-purple-500 text-3xl mb-2">📊</span>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.openRate}%</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Open Rate</div>
                 </div>
               </div>
 

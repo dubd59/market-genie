@@ -2732,12 +2732,13 @@ exports.scheduledCampaignSender = onSchedule({
         
         // Save updated campaigns back to the same document
         if (campaignsUpdated) {
-          // Determine the correct format to save
-          const saveData = campaignsData.data !== undefined 
-            ? { ...campaignsData, data: campaigns, lastUpdated: admin.firestore.FieldValue.serverTimestamp() }
-            : campaigns;
+          // Always save with { data: [...] } format for consistency
+          const saveData = { 
+            data: campaigns, 
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp() 
+          };
           
-          await db.collection('userData').doc(docId).set(saveData, { merge: true });
+          await db.collection('userData').doc(docId).set(saveData, { merge: false });
           console.log(`✅ Saved updated campaigns for user ${userId}`);
         }
         

@@ -921,8 +921,10 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           if (Array.isArray(campaignsResult.data)) {
             loadedCampaigns = campaignsResult.data
           } else if (campaignsResult.data && typeof campaignsResult.data === 'object') {
-            // If it's an object, extract campaigns (filter out metadata like updatedAt)
-            if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
+            // Check for our new { data: [...] } format first
+            if (campaignsResult.data.data && Array.isArray(campaignsResult.data.data)) {
+              loadedCampaigns = campaignsResult.data.data
+            } else if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
               loadedCampaigns = campaignsResult.data.campaigns
             } else {
               // Filter object values to only include valid campaign objects
@@ -1080,7 +1082,8 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     
     try {
       console.log('Saving campaigns to Firebase:', campaignsData)
-      const result = await FirebaseUserDataService.saveUserData(user.uid, `${user.uid}_campaigns`, campaignsData)
+      // Wrap campaigns array in object with data property for proper Firestore storage
+      const result = await FirebaseUserDataService.saveUserData(user.uid, `${user.uid}_campaigns`, { data: campaignsData })
       console.log('Save result:', result)
     } catch (error) {
       console.error('Error saving campaigns:', error)

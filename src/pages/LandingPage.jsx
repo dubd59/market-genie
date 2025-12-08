@@ -300,7 +300,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex justify-center"
+              className="flex flex-col sm:flex-row justify-center items-center gap-4"
             >
               <button 
                 onClick={scrollToPricing}
@@ -309,6 +309,9 @@ export default function LandingPage() {
                 🧞‍♂️ Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </button>
+              <a href="https://fazier.com/launches/marketgenie.tech" target="_blank" rel="noopener noreferrer">
+                <img src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=featured&theme=light" width="250" alt="Fazier Featured badge" className="hover:opacity-90 transition-opacity" />
+              </a>
             </motion.div>
 
             <motion.div 

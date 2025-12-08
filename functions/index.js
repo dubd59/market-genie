@@ -2457,48 +2457,74 @@ exports.scheduledCampaignSender = onSchedule({
   console.log('Current time:', now.toISOString());
   
   try {
-    // Get all tenants
-    const tenantsSnapshot = await db.collection('MarketGenie_tenants').get();
+    // Get all campaign documents from userData collection
+    // Campaigns are stored at: userData/{userId}_{userId}_campaigns
+    const userDataSnapshot = await db.collection('userData').get();
     
-    for (const tenantDoc of tenantsSnapshot.docs) {
-      const tenantId = tenantDoc.id;
-      console.log(`\n📧 Checking tenant: ${tenantId}`);
+    // Filter to only campaign documents
+    const campaignDocs = userDataSnapshot.docs.filter(doc => doc.id.endsWith('_campaigns'));
+    console.log(`Found ${campaignDocs.length} campaign documents to check`);
+    
+    for (const campaignDoc of campaignDocs) {
+      // Extract userId from document ID (format: {userId}_{userId}_campaigns)
+      const docId = campaignDoc.id;
+      const userId = docId.split('_')[0];
+      console.log(`\n📧 Checking user: ${userId} (doc: ${docId})`);
       
       try {
-        // Get campaigns for this tenant
-        const userDataDoc = await db
-          .collection('MarketGenie_tenants')
-          .doc(tenantId)
-          .collection('user_data')
-          .doc(`${tenantId}_campaigns`)
-          .get();
+        const campaignsData = campaignDoc.data();
         
-        if (!userDataDoc.exists) {
-          console.log(`No campaigns found for tenant ${tenantId}`);
+        // Handle both array and object with data property
+        let campaigns = Array.isArray(campaignsData) ? campaignsData : (campaignsData.data || campaignsData || []);
+        if (!Array.isArray(campaigns)) {
+          campaigns = Object.values(campaigns).filter(c => c && typeof c === 'object' && c.name);
+        }
+        
+        if (!campaigns || campaigns.length === 0) {
+          console.log(`No campaigns found for user ${userId}`);
           continue;
         }
         
-        const campaignsData = userDataDoc.data();
-        let campaigns = campaignsData.data || [];
+        console.log(`Found ${campaigns.length} campaigns for user ${userId}`);
         let campaignsUpdated = false;
         
-        // Get contacts for this tenant
-        const contactsDoc = await db
-          .collection('MarketGenie_tenants')
-          .doc(tenantId)
-          .collection('user_data')
-          .doc(`${tenantId}_contacts`)
-          .get();
+        // Get contacts for this user
+        const contactsDoc = await db.collection('userData').doc(`${userId}_crm_contacts`).get();
         
         let contacts = [];
         if (contactsDoc.exists) {
           const contactsData = contactsDoc.data();
-          contacts = contactsData.data || [];
+          contacts = contactsData.data || contactsData.contacts || [];
+          if (!Array.isArray(contacts)) {
+            contacts = Object.values(contacts).filter(c => c && c.email);
+          }
+        }
+        console.log(`Found ${contacts.length} contacts for user ${userId}`);
+        
+        // Find tenant ID for this user (for Gmail credentials)
+        let tenantId = userId; // Default to userId
+        const tenantSnapshot = await db.collection('MarketGenie_tenants')
+          .where('ownerUid', '==', userId)
+          .limit(1)
+          .get();
+        
+        if (!tenantSnapshot.empty) {
+          tenantId = tenantSnapshot.docs[0].id;
+          console.log(`Found tenant: ${tenantId} for user ${userId}`);
+        } else {
+          // Try using userId directly as tenantId
+          const directTenantDoc = await db.collection('MarketGenie_tenants').doc(userId).get();
+          if (directTenantDoc.exists) {
+            tenantId = userId;
+            console.log(`Using userId as tenantId: ${tenantId}`);
+          }
         }
         
         // Check each campaign
         for (let i = 0; i < campaigns.length; i++) {
           const campaign = campaigns[i];
+          
+          if (!campaign || typeof campaign !== 'object') continue;
           
           // Skip if not scheduled or already completed
           if (!campaign.sendDate || campaign.status === 'Completed') {
@@ -2512,7 +2538,7 @@ exports.scheduledCampaignSender = onSchedule({
             console.log(`\n🚀 Campaign "${campaign.name}" is due for sending!`);
             console.log(`Scheduled: ${scheduledTime.toISOString()}, Now: ${now.toISOString()}`);
             
-            // Get Gmail credentials
+            // Get Gmail credentials from tenant
             const gmailDoc = await db
               .collection('MarketGenie_tenants')
               .doc(tenantId)
@@ -2704,19 +2730,19 @@ exports.scheduledCampaignSender = onSchedule({
           }
         }
         
-        // Save updated campaigns
+        // Save updated campaigns back to the same document
         if (campaignsUpdated) {
-          await db
-            .collection('MarketGenie_tenants')
-            .doc(tenantId)
-            .collection('user_data')
-            .doc(`${tenantId}_campaigns`)
-            .update({ data: campaigns, lastUpdated: admin.firestore.FieldValue.serverTimestamp() });
-          console.log(`✅ Saved updated campaigns for tenant ${tenantId}`);
+          // Determine the correct format to save
+          const saveData = campaignsData.data !== undefined 
+            ? { ...campaignsData, data: campaigns, lastUpdated: admin.firestore.FieldValue.serverTimestamp() }
+            : campaigns;
+          
+          await db.collection('userData').doc(docId).set(saveData, { merge: true });
+          console.log(`✅ Saved updated campaigns for user ${userId}`);
         }
         
-      } catch (tenantError) {
-        console.error(`Error processing tenant ${tenantId}:`, tenantError.message);
+      } catch (userError) {
+        console.error(`Error processing user ${userId}:`, userError.message);
       }
     }
     

@@ -230,23 +230,31 @@ async function searchVoilaNorbert(apiKey, searchData) {
   const { firstName, lastName, domain } = searchData;
   
   try {
+    const fullName = `${firstName} ${lastName}`;
+    const cleanDomain = domain.replace('www.', '').replace('http://', '').replace('https://', '');
+    
     console.log('VoilaNorbert search request:', {
-      name: `${firstName} ${lastName}`,
-      domain: domain,
+      name: fullName,
+      domain: cleanDomain,
       apiKey: apiKey.substring(0, 8) + '...' // Log partial key for debugging
     });
+
+    // VoilaNorbert uses HTTP Basic Auth (any_string:api_key)
+    const authString = Buffer.from(`any_string:${apiKey}`).toString('base64');
+    
+    // Use form-urlencoded data as per API docs
+    const formData = new URLSearchParams();
+    formData.append('name', fullName);
+    formData.append('domain', cleanDomain);
 
     // Search for the email directly using the 2018-01-08 API
     const response = await fetch('https://api.voilanorbert.com/2018-01-08/search/name', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-KEY': apiKey
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${authString}`
       },
-      body: JSON.stringify({
-        name: `${firstName} ${lastName}`,
-        domain: domain.replace('www.', '').replace('http://', '').replace('https://', '')
-      })
+      body: formData.toString()
     });
 
     console.log('VoilaNorbert response status:', response.status);
@@ -260,12 +268,20 @@ async function searchVoilaNorbert(apiKey, searchData) {
         throw new Error('Invalid API key - please check your VoilaNorbert API key');
       } else if (response.status === 403) {
         throw new Error('API access forbidden - please check your VoilaNorbert plan');
+      } else if (response.status === 402) {
+        throw new Error('No credits left - please top up your VoilaNorbert account');
       } else if (response.status === 429) {
         throw new Error('Rate limit exceeded - please try again later');
       } else if (response.status === 400) {
-        throw new Error('Bad request - please check the name and domain format');
+        // 400 can mean domain not found, which is valid (just no result)
+        console.log('VoilaNorbert 400 error - domain may not be in their database');
+        return {
+          success: false,
+          provider: 'voilanorbert',
+          error: 'Domain not found in VoilaNorbert database'
+        };
       } else {
-        throw new Error(data.message || `VoilaNorbert API error: ${response.status}`);
+        throw new Error(data.error || data.message || `VoilaNorbert API error: ${response.status}`);
       }
     }
 
@@ -454,20 +470,25 @@ async function handleVoilaAccountTest(req, res) {
   const fetch = require('node-fetch');
   
   try {
-    // Test account info endpoint with correct header format
-    const response = await fetch('https://api.voilanorbert.com/2018-01-08/account/info', {
+    // VoilaNorbert uses HTTP Basic Auth (any_string:api_key)
+    const authString = Buffer.from(`any_string:${apiKey}`).toString('base64');
+    
+    // Test account endpoint (correct endpoint is /account/ not /account/info)
+    const response = await fetch('https://api.voilanorbert.com/2018-01-08/account/', {
       headers: {
-        'X-API-KEY': apiKey
+        'Authorization': `Basic ${authString}`
       }
     });
 
     const data = await response.json();
+    console.log('VoilaNorbert account test response:', data);
     
-    if (response.ok && data.credits !== undefined) {
+    if (response.ok && (data.credits !== undefined || data.email)) {
       return res.json({ 
         success: true, 
         message: 'Voila Norbert connection successful!',
-        credits: data.credits
+        credits: data.credits?.remains || data.credits || 'Unknown',
+        email: data.email
       });
     } else {
       return res.json({ 
@@ -476,9 +497,10 @@ async function handleVoilaAccountTest(req, res) {
       });
     }
   } catch (error) {
+    console.error('VoilaNorbert account test error:', error);
     return res.json({ 
       success: false, 
-      error: 'Failed to connect to Voila Norbert' 
+      error: 'Failed to connect to Voila Norbert: ' + error.message 
     });
   }
 }

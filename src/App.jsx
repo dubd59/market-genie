@@ -2645,7 +2645,12 @@ Enter number (1-4):`);
         emailContent: finalEmailContent,
         targetAudience: campaignFormData.targetAudience,
         customSegments: campaignFormData.customSegments,
-        sendDate: campaignFormData.sendDate,
+        // Convert local datetime to ISO string (with timezone) for proper scheduling
+        // datetime-local gives "2025-12-08T08:55" - we need to add timezone offset
+        sendDate: campaignFormData.sendDate 
+          ? new Date(campaignFormData.sendDate).toISOString()  // Converts local time to UTC ISO string
+          : '',
+        userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Store user's timezone for reference
         sentContacts: [], // Track which contacts have been sent to
         callToActionText: campaignFormData.callToActionText,
         callToActionUrl: campaignFormData.callToActionUrl,
@@ -5377,7 +5382,7 @@ END:VCALENDAR`;
                         className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
                       />
                       <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Set date/time for automatic sending. Leave blank to send manually.
+                        🕐 Uses your local time ({Intl.DateTimeFormat().resolvedOptions().timeZone}). Leave blank to send manually.
                       </p>
                     </div>
                     <div>

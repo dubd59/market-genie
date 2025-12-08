@@ -2743,9 +2743,12 @@ exports.scheduledCampaignSender = onSchedule({
         
         // Save updated campaigns back to the same document
         if (campaignsUpdated) {
+          // Convert to plain JSON to avoid Firestore serialization issues
+          const plainCampaigns = JSON.parse(JSON.stringify(campaigns));
+          
           // Always save with { data: [...] } format for consistency
           const saveData = { 
-            data: campaigns, 
+            data: plainCampaigns, 
             lastUpdated: admin.firestore.FieldValue.serverTimestamp() 
           };
           

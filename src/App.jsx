@@ -1215,6 +1215,16 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           personalizedContent = personalizedContent.replace(/{company}/g, contact.company || 'your company')
           personalizedContent = personalizedContent.replace(/{name}/g, contact.name || 'there')
           
+          // Add tracking pixel for open rate monitoring
+          const trackingPixel = `<img src="https://us-central1-market-genie-f2d41.cloudfunctions.net/trackEmailOpen?campaignId=${campaign.id}&recipientEmail=${encodeURIComponent(contact.email)}&userId=${user.uid}" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`
+          
+          // Append tracking pixel before closing body tag, or at end if no body tag
+          if (personalizedContent.toLowerCase().includes('</body>')) {
+            personalizedContent = personalizedContent.replace(/<\/body>/i, trackingPixel + '</body>')
+          } else {
+            personalizedContent = personalizedContent + trackingPixel
+          }
+          
           // Fix unsubscribe links to use correct recipient email
           // Generate correct unsubscribe link for this specific recipient (with error protection)
           let correctUnsubscribeLink = ''
@@ -1279,18 +1289,27 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Update campaign stats with smart resume tracking
       const allSentEmails = [...sentEmails, ...newlySentEmails]
       const remainingToSend = targetContacts.length - allSentEmails.length
+      
+      // Calculate next send date (24 hours from now) for automatic continuation
+      const nextSendDate = new Date()
+      nextSendDate.setDate(nextSendDate.getDate() + 1)
+      
       const updatedCampaigns = campaigns.map(c => {
         if (c.id === campaign.id) {
+          const isComplete = allSentEmails.length >= targetContacts.length
           return {
             ...c,
-            status: allSentEmails.length >= targetContacts.length ? 'Sent' : 'Paused',
+            status: isComplete ? 'Completed' : 'Scheduled',  // Schedule for auto-continuation
             emailsSent: allSentEmails.length,
             totalContacts: targetContacts.length,
             sentEmails: allSentEmails,
+            sentContacts: allSentEmails,  // Also save as sentContacts for scheduler compatibility
             lastSent: new Date().toISOString(),
             lastBatchSentAt: new Date().toISOString(),  // Track when this batch was sent
             progress: `${allSentEmails.length} of ${targetContacts.length} contacts`,
-            batchSize: campaign.batchSize || 25  // Preserve batch size setting
+            batchSize: campaign.batchSize || 25,  // Preserve batch size setting
+            // Auto-schedule next batch if not complete
+            sendDate: isComplete ? null : nextSendDate.toISOString()
           }
         }
         return c
@@ -1306,9 +1325,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         if (isComplete) {
           message = `🎉 Campaign completed! ${allSentEmails.length} emails delivered successfully.`
         } else if (batchLimitReached) {
-          message = `📦 Batch complete! ${emailsSent} emails sent this session.\n\n📊 Progress: ${allSentEmails.length}/${targetContacts.length} total\n⏳ ${remainingToSend} remaining - resume tomorrow to continue.`
+          // Format next send time for user
+          const nextSendFormatted = nextSendDate.toLocaleString()
+          message = `📦 Batch complete! ${emailsSent} emails sent this session.\n\n📊 Progress: ${allSentEmails.length}/${targetContacts.length} total\n⏰ Next batch auto-scheduled for: ${nextSendFormatted}`
         } else {
-          message = `📧 Progress saved! ${emailsSent} new emails sent (${allSentEmails.length}/${targetContacts.length} total). Click Send again to continue.`
+          message = `📧 Progress saved! ${emailsSent} new emails sent (${allSentEmails.length}/${targetContacts.length} total). Next batch auto-scheduled for tomorrow.`
         }
         
         console.log(message)

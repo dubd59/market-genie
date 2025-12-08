@@ -2767,14 +2767,20 @@ exports.scheduledCampaignSender = onSchedule({
 });
 
 // ============================================
-// EMAIL OPEN TRACKING
+// EMAIL OPEN TRACKING (Gen 1)
 // Serves a 1x1 transparent pixel and logs opens
 // ============================================
-exports.trackEmailOpen = onRequest({
-  cors: true,
-  memory: '128MiB',
-  timeoutSeconds: 10
-}, async (req, res) => {
+exports.trackEmailOpen = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
   try {
     const { campaignId, recipientEmail, userId } = req.query;
     
@@ -2859,14 +2865,20 @@ exports.trackEmailOpen = onRequest({
 });
 
 // ============================================
-// GET EMAIL STATS
+// GET EMAIL STATS (Gen 1)
 // Returns aggregated email open statistics
 // ============================================
-exports.getEmailStats = onRequest({
-  cors: true,
-  memory: '128MiB',
-  timeoutSeconds: 30
-}, async (req, res) => {
+exports.getEmailStats = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
   try {
     const { userId } = req.query;
     

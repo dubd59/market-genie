@@ -219,7 +219,7 @@ const LiveLeadGeneration = () => {
   const handleGenerateAILeads = async (source) => {
     setGenerating(true)
     try {
-      const result = await LeadService.generateAILeads(tenant.id, source, 5)
+      const result = await LeadService.generateAILeads(tenant.id, source, 10)
       
       if (result.data && result.data.length > 0) {
         toast.success(`Generated ${result.data.length} AI leads from ${source}!`)

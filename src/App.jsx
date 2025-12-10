@@ -41,7 +41,7 @@ import DatabaseInitializer from './services/databaseInitializer'
 import toast, { Toaster } from 'react-hot-toast'
 import { functions, auth, db } from './firebase'
 import { httpsCallable } from 'firebase/functions'
-import { collection, doc, setDoc, getDocs } from 'firebase/firestore'
+import { collection, doc, setDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
 import Sidebar from './components/Sidebar'
@@ -433,6 +433,9 @@ function SophisticatedDashboard() {
   
   // Business Profile state for Outreach Automation
   const [showBusinessProfile, setShowBusinessProfile] = useState(false)
+  
+  // Engagement Hub tab state (Opened Emails vs Bounce Detection)
+  const [activeEngagementTab, setActiveEngagementTab] = useState('opens')
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
@@ -1460,6 +1463,15 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   const [pastedBounceText, setPastedBounceText] = useState('')
   const [bounceProcessing, setBounceProcessing] = useState(false)
 
+  // Email Opens Report State
+  const [emailOpens, setEmailOpens] = useState([])
+  const [emailOpensLoading, setEmailOpensLoading] = useState(false)
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false)
+  const [followUpRecipient, setFollowUpRecipient] = useState(null)
+  const [followUpSubject, setFollowUpSubject] = useState('')
+  const [followUpMessage, setFollowUpMessage] = useState('')
+  const [sendingFollowUp, setSendingFollowUp] = useState(false)
+
   const handleSelectLead = (leadId) => {
     setSelectedLeads(prev => 
       prev.includes(leadId) 
@@ -1644,6 +1656,104 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
     } catch (error) {
       console.error('Error loading bounce stats:', error)
+    }
+  }
+
+  // ==================== EMAIL OPENS REPORT FUNCTIONS ====================
+  
+  // Load email opens from Firestore
+  const loadEmailOpens = async () => {
+    if (!user?.uid) return
+    
+    try {
+      setEmailOpensLoading(true)
+      
+      // Query emailOpens collection for this user's opens
+      const opensRef = collection(db, 'emailOpens')
+      const opensQuery = query(
+        opensRef, 
+        where('userId', '==', user.uid),
+        orderBy('openedAt', 'desc'),
+        limit(100)
+      )
+      
+      const snapshot = await getDocs(opensQuery)
+      const opens = []
+      
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        opens.push({
+          id: doc.id,
+          ...data,
+          openedAt: data.openedAt?.toDate?.() || new Date(data.openedAt)
+        })
+      })
+      
+      // Enrich with contact info if available
+      const enrichedOpens = opens.map(open => {
+        const contact = contacts.find(c => c.email === open.recipientEmail)
+        const campaign = campaigns.find(c => c.id == open.campaignId || c.id === parseInt(open.campaignId))
+        return {
+          ...open,
+          firstName: contact?.firstName || open.recipientEmail?.split('@')[0] || 'Unknown',
+          lastName: contact?.lastName || '',
+          company: contact?.company || '',
+          campaignName: campaign?.name || `Campaign ${open.campaignId}`
+        }
+      })
+      
+      setEmailOpens(enrichedOpens)
+      console.log(`📧 Loaded ${enrichedOpens.length} email opens`)
+      
+    } catch (error) {
+      console.error('Error loading email opens:', error)
+      toast.error('Failed to load email opens')
+    } finally {
+      setEmailOpensLoading(false)
+    }
+  }
+
+  // Open follow-up modal
+  const openFollowUpModal = (recipient) => {
+    setFollowUpRecipient(recipient)
+    setFollowUpSubject(`Re: Following up`)
+    setFollowUpMessage(`Hi ${recipient.firstName},\n\nI noticed you opened my previous email and wanted to follow up...\n\nBest regards`)
+    setShowFollowUpModal(true)
+  }
+
+  // Send follow-up email
+  const sendFollowUpEmail = async () => {
+    if (!followUpRecipient || !followUpSubject || !followUpMessage) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    try {
+      setSendingFollowUp(true)
+      
+      const sendEmail = httpsCallable(functions, 'sendCampaignEmailGmailAPI')
+      const result = await sendEmail({
+        to: followUpRecipient.recipientEmail,
+        subject: followUpSubject,
+        body: followUpMessage,
+        userId: user.uid,
+        isFollowUp: true
+      })
+
+      if (result.data.success) {
+        toast.success(`✅ Follow-up sent to ${followUpRecipient.firstName}!`)
+        setShowFollowUpModal(false)
+        setFollowUpRecipient(null)
+        setFollowUpSubject('')
+        setFollowUpMessage('')
+      } else {
+        toast.error('Failed to send follow-up: ' + (result.data.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error sending follow-up:', error)
+      toast.error('Failed to send follow-up email')
+    } finally {
+      setSendingFollowUp(false)
     }
   }
 
@@ -2064,7 +2174,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     toast.loading('Generating leads from ' + source + '...', { duration: 2000 })
     
     try {
-      const result = await LeadService.generateAILeads(tenant.id, source.toLowerCase(), 5)
+      const result = await LeadService.generateAILeads(tenant.id, source.toLowerCase(), 10)
       
       if (result.success && result.data && result.data.length > 0) {
         toast.success(`Generated ${result.data.length} leads from ${source}!`)
@@ -4897,92 +5007,330 @@ END:VCALENDAR`;
                 </div>
               </div>
 
-              {/* Automated Bounce Detection */}
-              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+              {/* 📊 ENGAGEMENT HUB - Tabbed Card for Opens & Bounce Detection */}
+              <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow-lg p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                {/* Tab Headers */}
+                <div className="flex border-b border-gray-200 mb-6">
+                  <button
+                    onClick={() => { setActiveEngagementTab('opens'); loadEmailOpens(); }}
+                    className={`flex-1 py-3 px-4 text-center font-semibold transition-all ${
+                      activeEngagementTab === 'opens'
+                        ? 'border-b-3 border-genie-teal text-genie-teal bg-teal-50/50'
+                        : isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                    style={activeEngagementTab === 'opens' ? { borderBottomWidth: '3px' } : {}}
+                  >
+                    <span className="mr-2">👁️</span>
+                    Opened Emails
+                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                      activeEngagementTab === 'opens' 
+                        ? 'bg-green-100 text-green-700' 
+                        : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {emailOpens.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveEngagementTab('bounces')}
+                    className={`flex-1 py-3 px-4 text-center font-semibold transition-all ${
+                      activeEngagementTab === 'bounces'
+                        ? 'border-b-3 border-genie-teal text-genie-teal bg-teal-50/50'
+                        : isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                    style={activeEngagementTab === 'bounces' ? { borderBottomWidth: '3px' } : {}}
+                  >
                     <span className="mr-2">🤖</span>
-                    Enhanced Bounce Detection
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                    Bounce Detection
+                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
                       bounceDetectionActive 
                         ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
+                        : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
                     }`}>
-                      <div className={`w-2 h-2 rounded-full mr-2 ${
-                        bounceDetectionActive ? 'bg-green-500' : 'bg-gray-400'
-                      }`}></div>
-                      {bounceDetectionActive ? 'Active' : 'Inactive'}
-                    </div>
-                    <button
-                      onClick={bounceDetectionActive ? stopBounceMonitoring : startBounceMonitoring}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        bounceDetectionActive
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'bg-genie-teal text-white hover:bg-genie-teal-dark'
-                      }`}
-                    >
-                      {bounceDetectionActive ? '🛑 Stop' : '🤖 Start Auto-Detection'}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                  <div className="flex items-start">
-                    <span className="mr-3 text-2xl">🧹</span>
-                    <div>
-                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-blue-900'} mb-2`}>
-                        Automated Bounce Management
-                      </h4>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} mb-3`}>
-                        Automatically monitors your Gmail for bounce notifications and removes bounced emails from your contact list. 
-                        Hard bounces are removed immediately, soft bounces are tracked and removed after 3 attempts.
-                      </p>
-                      
-                      {bounceStats.lastScan && (
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-blue-600'}`}>
-                          Last scan: {new Date(bounceStats.lastScan.seconds * 1000).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                      {bounceDetectionActive ? 'Active' : 'Off'}
+                    </span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <button
-                    onClick={runBounceMonitoring}
-                    className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
-                  >
-                    <span className="mr-2">🔍</span>
-                    Scan Now
-                  </button>
-                  
-                  <button
-                    onClick={setupGmailOAuth}
-                    className="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
-                  >
-                    <span className="mr-2">🔗</span>
-                    Connect Gmail
-                  </button>
-                  
-                  <button
-                    onClick={resetBounceStatistics}
-                    className="bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center"
-                  >
-                    <span className="mr-2">🔄</span>
-                    Reset Stats
-                  </button>
-                  
-                  <button
-                    onClick={loadBounceStats}
-                    className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
-                  >
-                    <span className="mr-2">📊</span>
-                    Refresh Stats
-                  </button>
-                </div>
+                {/* Tab Content: Opened Emails */}
+                {activeEngagementTab === 'opens' && (
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+                          <span className="mr-2">🔥</span>
+                          Hot Leads - Who Opened Your Emails
+                        </h3>
+                        <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          These contacts engaged with your emails - perfect for follow-up!
+                        </p>
+                      </div>
+                      <button
+                        onClick={loadEmailOpens}
+                        disabled={emailOpensLoading}
+                        className="px-4 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80 transition-colors flex items-center disabled:opacity-50"
+                      >
+                        {emailOpensLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <span className="mr-2">🔄</span>
+                            Refresh
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {emailOpens.length === 0 ? (
+                      <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className="text-5xl mb-4">📭</div>
+                        <p className="text-lg font-medium">No email opens tracked yet</p>
+                        <p className="text-sm mt-2">Opens will appear here as recipients view your campaign emails.</p>
+                        <button
+                          onClick={loadEmailOpens}
+                          className="mt-4 px-4 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80"
+                        >
+                          Load Email Opens
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                        {emailOpens.map((open, index) => (
+                          <div 
+                            key={open.id || index} 
+                            className={`flex items-center justify-between p-4 rounded-lg border ${
+                              isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                            } hover:shadow-md transition-shadow`}
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                                index % 3 === 0 ? 'bg-green-500' : index % 3 === 1 ? 'bg-blue-500' : 'bg-purple-500'
+                              }`}>
+                                {open.firstName?.[0]?.toUpperCase() || '?'}
+                              </div>
+                              <div>
+                                <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {open.firstName} {open.lastName}
+                                </h4>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {open.recipientEmail}
+                                </p>
+                                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                  {open.company && `${open.company} • `}
+                                  <span className="text-genie-teal">{open.campaignName}</span>
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="text-right">
+                                <div className={`text-sm font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'} flex items-center`}>
+                                  <span className="mr-1">✅</span> Opened
+                                </div>
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                  {open.openedAt?.toLocaleString?.() || 'Recently'}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => openFollowUpModal(open)}
+                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm flex items-center shadow-md"
+                              >
+                                <span className="mr-1">✉️</span>
+                                Follow-Up
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab Content: Bounce Detection */}
+                {activeEngagementTab === 'bounces' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+                          <span className="mr-2">🧹</span>
+                          Automated Bounce Management
+                        </h3>
+                        <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          Monitors Gmail for bounces and removes bad emails automatically
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
+                          bounceDetectionActive 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full mr-2 ${
+                            bounceDetectionActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                          }`}></div>
+                          {bounceDetectionActive ? 'Monitoring Active' : 'Inactive'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                      <div className="flex items-start">
+                        <span className="mr-3 text-2xl">📧</span>
+                        <div>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
+                            Hard bounces are removed immediately. Soft bounces are tracked and removed after 3 failed attempts.
+                            Connect your sending Gmail account to enable automatic scanning.
+                          </p>
+                          {bounceStats.lastScan && (
+                            <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-blue-600'}`}>
+                              Last scan: {new Date(bounceStats.lastScan.seconds * 1000).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <button
+                        onClick={bounceDetectionActive ? stopBounceMonitoring : startBounceMonitoring}
+                        className={`px-4 py-3 rounded-lg transition-colors flex items-center justify-center font-medium ${
+                          bounceDetectionActive
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-genie-teal text-white hover:bg-genie-teal/80'
+                        }`}
+                      >
+                        <span className="mr-2">{bounceDetectionActive ? '🛑' : '🤖'}</span>
+                        {bounceDetectionActive ? 'Stop' : 'Start Auto'}
+                      </button>
+                      
+                      <button
+                        onClick={runBounceMonitoring}
+                        className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                      >
+                        <span className="mr-2">🔍</span>
+                        Scan Now
+                      </button>
+                      
+                      <button
+                        onClick={setupGmailOAuth}
+                        className="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
+                      >
+                        <span className="mr-2">🔗</span>
+                        Connect Gmail
+                      </button>
+                      
+                      <button
+                        onClick={loadBounceStats}
+                        className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
+                      >
+                        <span className="mr-2">📊</span>
+                        Refresh Stats
+                      </button>
+                    </div>
+
+                    {/* Bounce Stats Summary */}
+                    <div className="grid grid-cols-3 gap-4 mt-6">
+                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {bounceStats.totalScans || 0}
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Scans</div>
+                      </div>
+                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {bounceStats.totalBounces || 0}
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bounces Found</div>
+                      </div>
+                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <div className={`text-2xl font-bold ${bounceStats.bounceRate > 5 ? 'text-red-500' : isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                          {bounceStats.bounceRate || 0}%
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bounce Rate</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Follow-Up Email Modal */}
+              {showFollowUpModal && followUpRecipient && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-lg mx-4`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className={`text-xl font-semibold text-genie-teal`}>
+                        ✉️ Send Follow-Up to {followUpRecipient.firstName}
+                      </h3>
+                      <button 
+                        onClick={() => setShowFollowUpModal(false)}
+                        className={`text-gray-500 hover:text-gray-700 text-2xl ${isDarkMode ? 'hover:text-gray-300' : ''}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className={`p-3 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
+                        <strong>To:</strong> {followUpRecipient.recipientEmail}
+                      </p>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-blue-600'} mt-1`}>
+                        Opened: {followUpRecipient.openedAt?.toLocaleString?.() || 'Recently'} • Campaign: {followUpRecipient.campaignName}
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Subject</label>
+                        <input 
+                          type="text" 
+                          value={followUpSubject}
+                          onChange={(e) => setFollowUpSubject(e.target.value)}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                          placeholder="Re: Following up on my previous email"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Message</label>
+                        <textarea 
+                          value={followUpMessage}
+                          onChange={(e) => setFollowUpMessage(e.target.value)}
+                          rows={6}
+                          className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                          placeholder="Write your follow-up message..."
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => setShowFollowUpModal(false)}
+                          className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={sendFollowUpEmail}
+                          disabled={sendingFollowUp}
+                          className="px-6 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80 disabled:opacity-50 flex items-center"
+                        >
+                          {sendingFollowUp ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-2">📤</span>
+                              Send Follow-Up
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Business Profile Section */}
               <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl shadow p-6 mb-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>

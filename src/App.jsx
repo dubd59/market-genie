@@ -436,7 +436,7 @@ function SophisticatedDashboard() {
   
   // Engagement Hub tab state (Opened Emails vs Bounce Detection)
   const [activeEngagementTab, setActiveEngagementTab] = useState('opens')
-  const [hotLeadsExpanded, setHotLeadsExpanded] = useState(true)
+  const [hotLeadsExpanded, setHotLeadsExpanded] = useState(false)
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)

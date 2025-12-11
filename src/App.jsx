@@ -276,7 +276,6 @@ function SophisticatedDashboard() {
         setTimeout(async () => {
           console.log('🔄 Reloading data after migration...')
           await loadLeadData()
-          await loadBounceStats()
         }, 1000)
         
       } else {
@@ -2037,8 +2036,6 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           })
         }
         
-        // Refresh stats and contacts
-        await loadBounceStats()
         // Refresh contacts by reloading from Firestore
         try {
           const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
@@ -2081,7 +2078,6 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       
       if (result.success) {
         toast.success('✅ Bounce statistics reset to zero')
-        await loadBounceStats() // Refresh the display
       } else {
         toast.error('Failed to reset statistics: ' + result.error)
       }
@@ -5202,25 +5198,6 @@ END:VCALENDAR`;
                       {emailOpens.length}
                     </span>
                   </button>
-                  <button
-                    onClick={() => setActiveEngagementTab('bounces')}
-                    className={`flex-1 py-3 px-4 text-center font-semibold transition-all ${
-                      activeEngagementTab === 'bounces'
-                        ? 'border-b-3 border-genie-teal text-genie-teal bg-teal-50/50'
-                        : isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                    style={activeEngagementTab === 'bounces' ? { borderBottomWidth: '3px' } : {}}
-                  >
-                    <span className="mr-2">🤖</span>
-                    Bounce Detection
-                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                      bounceDetectionActive 
-                        ? 'bg-green-100 text-green-700' 
-                        : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'
-                    }`}>
-                      {bounceDetectionActive ? 'Active' : 'Off'}
-                    </span>
-                  </button>
                 </div>
 
                 {/* Tab Content: Opened Emails */}
@@ -5400,105 +5377,8 @@ END:VCALENDAR`;
                   </div>
                 )}
 
-                {/* Tab Content: Bounce Detection */}
-                {activeEngagementTab === 'bounces' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
-                          <span className="mr-2">🧹</span>
-                          Automated Bounce Management
-                        </h3>
-                        <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          Monitors Gmail for bounces and removes bad emails automatically
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
-                          bounceDetectionActive 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full mr-2 ${
-                            bounceDetectionActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                          }`}></div>
-                          {bounceDetectionActive ? 'Monitoring Active' : 'Inactive'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={`p-4 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                      <div className="flex items-start">
-                        <span className="mr-3 text-2xl">📧</span>
-                        <div>
-                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'}`}>
-                            Hard bounces are removed immediately. Soft bounces are tracked and removed after 3 failed attempts.
-                            Connect your sending Gmail account to enable automatic scanning.
-                          </p>
-                          {bounceStats.lastScan && (
-                            <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-blue-600'}`}>
-                              Last scan: {new Date(bounceStats.lastScan.seconds * 1000).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                {/* Follow-Up Email Modal */}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <button
-                        onClick={bounceDetectionActive ? stopBounceMonitoring : startBounceMonitoring}
-                        className={`px-4 py-3 rounded-lg transition-colors flex items-center justify-center font-medium ${
-                          bounceDetectionActive
-                            ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'bg-genie-teal text-white hover:bg-genie-teal/80'
-                        }`}
-                      >
-                        <span className="mr-2">{bounceDetectionActive ? '🛑' : '🤖'}</span>
-                        {bounceDetectionActive ? 'Stop' : 'Start Auto'}
-                      </button>
-                      
-                      <button
-                        onClick={runBounceMonitoring}
-                        className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
-                      >
-                        <span className="mr-2">🔍</span>
-                        Scan Now
-                      </button>
-                      
-                      {/* Gmail OAuth connect still available for sending; bounce detection removed */}
-                      
-                      <button
-                        onClick={loadBounceStats}
-                        className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
-                      >
-                        <span className="mr-2">📊</span>
-                        Refresh Stats
-                      </button>
-                    </div>
-
-                    {/* Bounce Stats Summary */}
-                    <div className="grid grid-cols-3 gap-4 mt-6">
-                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {bounceStats.totalScans || 0}
-                        </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Scans</div>
-                      </div>
-                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {bounceStats.totalBounces || 0}
-                        </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bounces Found</div>
-                      </div>
-                      <div className={`p-4 rounded-lg text-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        <div className={`text-2xl font-bold ${bounceStats.bounceRate > 5 ? 'text-red-500' : isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                          {bounceStats.bounceRate || 0}%
-                        </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bounce Rate</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Follow-Up Email Modal */}

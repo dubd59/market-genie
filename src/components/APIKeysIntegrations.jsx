@@ -1267,7 +1267,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
                         <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">Recommended</span>
                       </div>
                       <p className="text-green-700 text-sm">
-                        OAuth 2.0 • Higher limits (2,000/day) • Auto bounce detection
+                        OAuth 2.0 • Higher limits (2,000/day)
                       </p>
                     </div>
                     <span className="text-green-500 text-2xl group-hover:translate-x-1 transition-transform">→</span>

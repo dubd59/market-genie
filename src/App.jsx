@@ -74,7 +74,6 @@ import ContactManager from './components/ContactManager'
 import BulkProspeoScraper from './components/BulkProspeoScraper'
 import FunnelPreview from './pages/FunnelPreview'
 import UnsubscribeService from './services/unsubscribeService'
-import BounceDetectionService from './services/bounceDetectionService'
 import DataMigrationService from './services/dataMigrationService'
 import AuthNavigator from './components/AuthNavigator'
 
@@ -1451,18 +1450,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     description: ''
   })
 
-  // Bounce Detection State
-  const [bounceDetectionActive, setBounceDetectionActive] = useState(false)
-  const [bounceStats, setBounceStats] = useState({
-    totalScans: 0,
-    totalBounces: 0,
-    totalProcessed: 0,
-    bounceRate: 0,
-    lastScan: null
-  })
-  const [showBounceModal, setShowBounceModal] = useState(false)
-  const [pastedBounceText, setPastedBounceText] = useState('')
-  const [bounceProcessing, setBounceProcessing] = useState(false)
+  // Bounce detection removed - UI and automated mailbox scanning disabled
 
   // Email Opens Report State
   const [emailOpens, setEmailOpens] = useState([])
@@ -1659,21 +1647,8 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // ==================== BOUNCE DETECTION FUNCTIONS ====================
-  
-  // Load bounce statistics
-  const loadBounceStats = async () => {
-    if (!tenant?.id) return
-    
-    try {
-      const statsResult = await BounceDetectionService.getBounceStats(tenant.id)
-      if (statsResult.success) {
-        setBounceStats(statsResult.data)
-      }
-    } catch (error) {
-      console.error('Error loading bounce stats:', error)
-    }
-  }
+  // ==================== BOUNCE DETECTION FUNCTIONS (REMOVED) ====================
+  // Bounce detection and stats have been removed. Keepers: open tracking and unsubscribes still active.
 
   // ==================== EMAIL OPENS REPORT FUNCTIONS ====================
   
@@ -2032,89 +2007,12 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       return
     }
 
-    try {
-      setBounceDetectionActive(true)
-      console.log('🤖 Starting automated bounce detection...')
-      toast('🤖 Starting automated bounce detection...', { duration: 2000 })
-      
-      const result = await BounceDetectionService.startAutomatedMonitoring(
-        tenant.id, 
-        user.uid, 
-        30 // Check every 30 minutes
-      )
-      
-      if (result.success) {
-        toast.success('✅ Automated bounce monitoring started!')
-        console.log('🤖 Bounce monitoring active:', result.message)
-        
-        // Load initial stats
-        await loadBounceStats()
-      } else {
-        setBounceDetectionActive(false)
-        toast.error('Failed to start bounce monitoring: ' + result.error)
-      }
-    } catch (error) {
-      setBounceDetectionActive(false)
-      console.error('Error starting bounce monitoring:', error)
-      toast.error('Failed to start bounce monitoring')
-    }
+    // Automated bounce monitoring removed
   }
 
-  // Stop automated bounce monitoring
-  const stopBounceMonitoring = () => {
-    try {
-      const stopped = BounceDetectionService.stopAutomatedMonitoring()
-      if (stopped) {
-        setBounceDetectionActive(false)
-        toast.success('🛑 Bounce monitoring stopped')
-      }
-    } catch (error) {
-      console.error('Error stopping bounce monitoring:', error)
-    }
-  }
+  // Stop automated bounce monitoring removed
 
-  // Manual bounce processing
-  const processPastedBounces = async () => {
-    if (!pastedBounceText.trim()) {
-      toast.error('Please paste bounce email content')
-      return
-    }
-
-    if (!tenant?.id || !user?.uid) {
-      toast.error('Authentication required')
-      return
-    }
-
-    try {
-      setBounceProcessing(true)
-      
-      const result = await BounceDetectionService.processPastedBounces(
-        pastedBounceText,
-        tenant.id,
-        user.uid
-      )
-      
-      if (result.success) {
-        toast.success(`✅ Processed ${result.processed} bounced emails`)
-        console.log('Bounce processing results:', result.results)
-        
-        // Refresh bounce stats and contacts
-        await loadBounceStats()
-        await loadContactData()
-        
-        // Clear the form
-        setPastedBounceText('')
-        setShowBounceModal(false)
-      } else {
-        toast.error('Bounce processing failed: ' + result.error)
-      }
-    } catch (error) {
-      console.error('Error processing bounces:', error)
-      toast.error('Error processing bounces')
-    } finally {
-      setBounceProcessing(false)
-    }
-  }
+  // Manual bounce processing removed
 
   // Run manual bounce scan
   const runBounceMonitoring = async () => {
@@ -2241,12 +2139,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // Load bounce stats on component mount
-  useEffect(() => {
-    if (tenant?.id) {
-      loadBounceStats()
-    }
-  }, [tenant?.id])
+  // Bounce stats and automated monitoring removed; no effect on mount
 
   // ==================== END BOUNCE DETECTION FUNCTIONS ====================
 
@@ -5572,13 +5465,7 @@ END:VCALENDAR`;
                         Scan Now
                       </button>
                       
-                      <button
-                        onClick={setupGmailOAuth}
-                        className="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
-                      >
-                        <span className="mr-2">🔗</span>
-                        Connect Gmail
-                      </button>
+                      {/* Gmail OAuth connect still available for sending; bounce detection removed */}
                       
                       <button
                         onClick={loadBounceStats}

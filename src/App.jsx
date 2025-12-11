@@ -2201,7 +2201,7 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Gmail OAuth configuration - Your actual credentials
       const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com'
       const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback'
-      const SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
+      const SCOPE = 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email'
       
       // Build OAuth URL
       const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?` +

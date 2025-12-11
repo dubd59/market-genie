@@ -58,8 +58,7 @@ This guide walks you through setting up Gmail OAuth so users can connect their G
    - Search for and add these scopes:
      ```
      https://www.googleapis.com/auth/gmail.send
-     https://www.googleapis.com/auth/gmail.readonly
-     https://www.googleapis.com/auth/gmail.modify
+   https://www.googleapis.com/auth/gmail.send
      https://www.googleapis.com/auth/userinfo.email
      ```
    - Click **"Update"**

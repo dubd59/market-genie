@@ -2526,12 +2526,17 @@ exports.scheduledCampaignSender = onSchedule({
           
           if (!campaign || typeof campaign !== 'object') continue;
           
+          // Debug: Log campaign details
+          console.log(`📋 Campaign "${campaign.name}": status=${campaign.status}, sendDate=${campaign.sendDate}`);
+          
           // Skip if not scheduled or already completed
           if (!campaign.sendDate || campaign.status === 'Completed') {
+            console.log(`⏭️ Skipping: No sendDate or Completed`);
             continue;
           }
           
           const scheduledTime = new Date(campaign.sendDate);
+          console.log(`⏰ Scheduled: ${scheduledTime.toISOString()}, Now: ${now.toISOString()}, Due: ${scheduledTime <= now}`);
           
           // Check if campaign is due (scheduled time has passed)
           if (scheduledTime <= now && (campaign.status === 'Scheduled' || campaign.status === 'In Progress')) {

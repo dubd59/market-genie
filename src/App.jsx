@@ -41,7 +41,7 @@ import DatabaseInitializer from './services/databaseInitializer'
 import toast, { Toaster } from 'react-hot-toast'
 import { functions, auth, db } from './firebase'
 import { httpsCallable } from 'firebase/functions'
-import { collection, doc, setDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
+import { collection, doc, setDoc, getDocs, query, where, orderBy, limit, addDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import VoiceButton from './features/voice-control/VoiceButton'
 import './assets/brand.css'
 import Sidebar from './components/Sidebar'
@@ -436,6 +436,7 @@ function SophisticatedDashboard() {
   
   // Engagement Hub tab state (Opened Emails vs Bounce Detection)
   const [activeEngagementTab, setActiveEngagementTab] = useState('opens')
+  const [hotLeadsExpanded, setHotLeadsExpanded] = useState(true)
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
@@ -1471,6 +1472,21 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   const [followUpSubject, setFollowUpSubject] = useState('')
   const [followUpMessage, setFollowUpMessage] = useState('')
   const [sendingFollowUp, setSendingFollowUp] = useState(false)
+  
+  // Hot Lead Tagging State
+  const [showTagModal, setShowTagModal] = useState(false)
+  const [tagRecipient, setTagRecipient] = useState(null)
+  const [selectedTags, setSelectedTags] = useState([])
+  const [newTagName, setNewTagName] = useState('')
+  const [savingTag, setSavingTag] = useState(false)
+  const [hotLeadTags] = useState([
+    'Hot Lead - Opened Email',
+    'Priority Follow-Up',
+    'Interested',
+    'Schedule Call',
+    'Send Proposal',
+    'VIP Prospect'
+  ])
 
   const handleSelectLead = (leadId) => {
     setSelectedLeads(prev => 
@@ -1662,11 +1678,32 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
   // ==================== EMAIL OPENS REPORT FUNCTIONS ====================
   
   // Load email opens from Firestore
-  const loadEmailOpens = async () => {
+  const loadEmailOpens = async (campaignsList = campaigns) => {
     if (!user?.uid) return
     
     try {
       setEmailOpensLoading(true)
+      
+      // If no campaigns yet, try to load them using the same method as the main campaign loader
+      let campaignsToUse = campaignsList
+      if (!campaignsToUse || campaignsToUse.length === 0) {
+        try {
+          // Load campaigns the same way the main app does
+          const campaignsResult = await FirebaseUserDataService.getUserData(user.uid, `${user.uid}_campaigns`)
+          if (campaignsResult.success && campaignsResult.data) {
+            if (Array.isArray(campaignsResult.data)) {
+              campaignsToUse = campaignsResult.data
+            } else if (campaignsResult.data.data && Array.isArray(campaignsResult.data.data)) {
+              campaignsToUse = campaignsResult.data.data
+            } else if (campaignsResult.data.campaigns && Array.isArray(campaignsResult.data.campaigns)) {
+              campaignsToUse = campaignsResult.data.campaigns
+            }
+          }
+          console.log('📊 Loaded campaigns for matching:', campaignsToUse?.map(c => ({ id: c.id, name: c.name })))
+        } catch (err) {
+          console.log('Could not load campaigns:', err)
+        }
+      }
       
       // Query emailOpens collection for this user's opens
       const opensRef = collection(db, 'emailOpens')
@@ -1689,27 +1726,152 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         })
       })
       
+      console.log('📊 Campaigns available for matching:', campaignsToUse?.map(c => ({ id: c.id, name: c.name })) || [])
+      console.log('📧 Sample email open campaignId:', opens[0]?.campaignId)
+      console.log('📊 Campaign IDs available:', (campaignsToUse || []).map(c => ({ id: c.id, idType: typeof c.id, name: c.name })))
+      
       // Enrich with contact info if available
       const enrichedOpens = opens.map(open => {
         const contact = contacts.find(c => c.email === open.recipientEmail)
-        const campaign = campaigns.find(c => c.id == open.campaignId || c.id === parseInt(open.campaignId))
+        
+        // Try multiple ways to match campaign - ID could be string, number, or timestamp
+        const openCampaignId = open.campaignId?.toString()
+        const campaign = (campaignsToUse || []).find(c => {
+          const cId = c.id?.toString()
+          const matches = cId === openCampaignId || c.id == open.campaignId || c.name === open.campaignName
+          return matches
+        })
+        
+        // Log first few matches
+        if (opens.indexOf(open) < 5) {
+          console.log(`🔍 Matching: campaignId=${open.campaignId} (${typeof open.campaignId}), found=${campaign?.name || 'NOT FOUND'}`)
+        }
+        
         return {
           ...open,
           firstName: contact?.firstName || open.recipientEmail?.split('@')[0] || 'Unknown',
           lastName: contact?.lastName || '',
           company: contact?.company || '',
-          campaignName: campaign?.name || `Campaign ${open.campaignId}`
+          campaignName: campaign?.name || open.campaignName || 'Previous Campaign'
         }
       })
       
-      setEmailOpens(enrichedOpens)
-      console.log(`📧 Loaded ${enrichedOpens.length} email opens`)
+      // Deduplicate by recipientEmail - aggregate ALL campaigns they opened
+      const emailToOpensMap = new Map()
+      for (const open of enrichedOpens) {
+        if (!emailToOpensMap.has(open.recipientEmail)) {
+          // First time seeing this email - initialize with first open data
+          emailToOpensMap.set(open.recipientEmail, {
+            ...open,
+            campaignsOpened: [{ 
+              name: open.campaignName, 
+              openedAt: open.openedAt,
+              campaignId: open.campaignId 
+            }],
+            totalOpens: 1
+          })
+        } else {
+          // Already seen - add this campaign to their list
+          const existing = emailToOpensMap.get(open.recipientEmail)
+          // Check if we already have this campaign (avoid duplicate campaign entries)
+          const alreadyHasCampaign = existing.campaignsOpened.some(c => c.campaignId === open.campaignId)
+          if (!alreadyHasCampaign) {
+            existing.campaignsOpened.push({ 
+              name: open.campaignName, 
+              openedAt: open.openedAt,
+              campaignId: open.campaignId 
+            })
+          }
+          existing.totalOpens++
+          // Keep the most recent openedAt date
+          if (open.openedAt > existing.openedAt) {
+            existing.openedAt = open.openedAt
+          }
+        }
+      }
+      
+      // Check for unsubscribed emails to filter them out
+      let unsubscribedEmails = new Set()
+      try {
+        const unsubscribesRef = collection(db, 'unsubscribes')
+        const unsubQuery = query(unsubscribesRef, where('tenantId', '==', user.uid))
+        const unsubSnapshot = await getDocs(unsubQuery)
+        unsubSnapshot.forEach(doc => {
+          const email = doc.data().email?.toLowerCase()
+          if (email) unsubscribedEmails.add(email)
+        })
+        console.log(`📧 Found ${unsubscribedEmails.size} unsubscribed emails to filter out`)
+      } catch (err) {
+        console.log('Could not load unsubscribes:', err)
+      }
+      
+      // Convert map to array, filter out unsubscribed, and resolve any unresolved campaign names
+      const uniqueOpens = Array.from(emailToOpensMap.values())
+        .filter(entry => {
+          // Filter out unsubscribed contacts
+          const isUnsubscribed = unsubscribedEmails.has(entry.recipientEmail?.toLowerCase())
+          if (isUnsubscribed) {
+            console.log(`📧 Filtering out unsubscribed contact: ${entry.recipientEmail}`)
+          }
+          return !isUnsubscribed
+        })
+        .map(entry => {
+        // For each campaign opened, try to resolve the name if it's still showing as "Campaign {id}" or "Previous Campaign"
+        entry.campaignsOpened = entry.campaignsOpened.map(c => {
+          if (c.name && (c.name.startsWith('Campaign ') || c.name === 'Previous Campaign') && c.campaignId) {
+            // Try to find the real name
+            const matchedCampaign = (campaignsToUse || []).find(camp => 
+              camp.id?.toString() === c.campaignId?.toString() || camp.id == c.campaignId
+            )
+            if (matchedCampaign?.name) {
+              return { ...c, name: matchedCampaign.name }
+            }
+            // If still not found, use "Previous Campaign" instead of ugly number
+            return { ...c, name: 'Previous Campaign' }
+          }
+          return c
+        })
+        return entry
+      })
+      
+      setEmailOpens(uniqueOpens)
+      console.log(`📧 Loaded ${uniqueOpens.length} unique email opens (${enrichedOpens.length} total events)`)
       
     } catch (error) {
       console.error('Error loading email opens:', error)
       toast.error('Failed to load email opens')
     } finally {
       setEmailOpensLoading(false)
+    }
+  }
+
+  // Delete a hot lead from the email opens list
+  const deleteHotLead = async (emailOpen) => {
+    if (!emailOpen?.id && !emailOpen?.recipientEmail) {
+      toast.error('Cannot delete this entry')
+      return
+    }
+
+    try {
+      // Delete all email open records for this recipient
+      const opensRef = collection(db, 'emailOpens')
+      const opensQuery = query(
+        opensRef,
+        where('userId', '==', user.uid),
+        where('recipientEmail', '==', emailOpen.recipientEmail)
+      )
+      
+      const snapshot = await getDocs(opensQuery)
+      const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref))
+      await Promise.all(deletePromises)
+      
+      // Remove from local state immediately
+      setEmailOpens(prev => prev.filter(o => o.recipientEmail !== emailOpen.recipientEmail))
+      
+      toast.success(`Removed ${emailOpen.firstName || emailOpen.recipientEmail} from hot leads`)
+    } catch (error) {
+      console.error('Error deleting hot lead:', error)
+      toast.error('Failed to delete hot lead')
     }
   }
 
@@ -1756,6 +1918,112 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       setSendingFollowUp(false)
     }
   }
+
+  // Open tag modal for a hot lead
+  const openTagModal = (recipient) => {
+    setTagRecipient(recipient)
+    // Find existing tags for this contact
+    const contact = contacts.find(c => c.email === recipient.recipientEmail)
+    const existingTags = contact?.tags || []
+    setSelectedTags(Array.isArray(existingTags) ? existingTags : [existingTags].filter(Boolean))
+    setNewTagName('')
+    setShowTagModal(true)
+  }
+
+  // Save tags to a contact
+  const saveTagsToContact = async () => {
+    if (!tagRecipient || selectedTags.length === 0) {
+      toast.error('Please select at least one tag')
+      return
+    }
+
+    try {
+      setSavingTag(true)
+      
+      // Find the contact by email
+      const contact = contacts.find(c => c.email === tagRecipient.recipientEmail)
+      
+      if (contact) {
+        // Update existing contact
+        const contactRef = doc(db, 'users', user.uid, 'contacts', contact.id)
+        const existingTags = contact.tags || []
+        const mergedTags = [...new Set([...(Array.isArray(existingTags) ? existingTags : []), ...selectedTags])]
+        
+        await updateDoc(contactRef, { 
+          tags: mergedTags,
+          updatedAt: new Date()
+        })
+        
+        // Update local state
+        setContacts(prev => prev.map(c => 
+          c.id === contact.id ? { ...c, tags: mergedTags } : c
+        ))
+        
+        toast.success(`🏷️ Tagged ${tagRecipient.firstName} with: ${selectedTags.join(', ')}`)
+      } else {
+        // Create new contact with tags
+        const newContact = {
+          email: tagRecipient.recipientEmail,
+          firstName: tagRecipient.firstName || '',
+          lastName: tagRecipient.lastName || '',
+          company: tagRecipient.company || '',
+          tags: selectedTags,
+          source: 'Hot Lead - Email Opened',
+          status: 'qualified',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+        
+        const contactsRef = collection(db, 'users', user.uid, 'contacts')
+        const docRef = await addDoc(contactsRef, newContact)
+        
+        // Update local state
+        setContacts(prev => [...prev, { id: docRef.id, ...newContact }])
+        
+        toast.success(`🏷️ Created contact for ${tagRecipient.firstName} with tags: ${selectedTags.join(', ')}`)
+      }
+      
+      // Add new tags to available tags if not already there
+      const newTags = selectedTags.filter(tag => !availableTags.includes(tag))
+      if (newTags.length > 0) {
+        setAvailableTags(prev => [...prev, ...newTags])
+      }
+      
+      // Update the emailOpens state to reflect the tags
+      setEmailOpens(prev => prev.map(open => 
+        open.recipientEmail === tagRecipient.recipientEmail 
+          ? { ...open, tags: selectedTags }
+          : open
+      ))
+      
+      setShowTagModal(false)
+      setTagRecipient(null)
+      setSelectedTags([])
+      
+    } catch (error) {
+      console.error('Error saving tags:', error)
+      toast.error('Failed to save tags: ' + error.message)
+    } finally {
+      setSavingTag(false)
+    }
+  }
+
+  // Add custom tag
+  const addCustomTag = () => {
+    if (!newTagName.trim()) return
+    const trimmedTag = newTagName.trim()
+    if (!selectedTags.includes(trimmedTag)) {
+      setSelectedTags(prev => [...prev, trimmedTag])
+    }
+    setNewTagName('')
+  }
+
+  // Auto-load email opens when entering Outreach Automation section
+  React.useEffect(() => {
+    if (activeSection === 'Outreach Automation' && user?.uid && emailOpens.length === 0) {
+      loadEmailOpens()
+    }
+  }, [activeSection, user?.uid])
 
   // Start automated bounce monitoring
   const startBounceMonitoring = async () => {
@@ -2671,6 +2939,17 @@ Enter number (1-4):`);
       }
       if (campaign.targetAudience === 'Warm Prospects') {
         return contact.status === 'qualified' || contact.status === 'warm'
+      }
+      // NEW: Target contacts tagged as Hot Lead - Opened Email
+      if (campaign.targetAudience === 'Hot Lead - Opened Email') {
+        const tags = contact.tags || []
+        const tagArray = Array.isArray(tags) ? tags : [tags]
+        return tagArray.some(tag => 
+          tag === 'Hot Lead - Opened Email' || 
+          tag === 'Priority Follow-Up' || 
+          tag === 'Interested' ||
+          tag.toLowerCase().includes('hot lead')
+        )
       }
       if (campaign.targetAudience === 'Custom Segment' && campaign.customSegments && campaign.customSegments.length > 0) {
         // Check if contact matches ANY of the selected custom segments
@@ -4997,8 +5276,8 @@ END:VCALENDAR`;
                 </div>
                 <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <span role="img" aria-label="opens" className="text-green-500 text-3xl mb-2">👁️</span>
-                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{campaignStats.totalOpens.toLocaleString()}</div>
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Emails Opened</div>
+                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{emailOpens.length > 0 ? emailOpens.length : campaignStats.totalOpens}</div>
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>Unique Opens</div>
                 </div>
                 <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} shadow-lg rounded-xl p-6 flex flex-col items-center border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <span role="img" aria-label="rate" className="text-purple-500 text-3xl mb-2">📊</span>
@@ -5054,18 +5333,32 @@ END:VCALENDAR`;
                 {/* Tab Content: Opened Emails */}
                 {activeEngagementTab === 'opens' && (
                   <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
-                          <span className="mr-2">🔥</span>
-                          Hot Leads - Who Opened Your Emails
-                        </h3>
-                        <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          These contacts engaged with your emails - perfect for follow-up!
-                        </p>
+                    {/* Collapsible Header */}
+                    <div 
+                      className={`flex justify-between items-center mb-4 cursor-pointer p-3 rounded-lg transition-colors ${
+                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => setHotLeadsExpanded(!hotLeadsExpanded)}
+                    >
+                      <div className="flex items-center">
+                        <span className={`mr-3 text-lg transition-transform ${hotLeadsExpanded ? 'rotate-90' : ''}`}>
+                          ▶
+                        </span>
+                        <div>
+                          <h3 className={`text-xl font-semibold text-genie-teal flex items-center`}>
+                            <span className="mr-2">🔥</span>
+                            Hot Leads - Who Opened Your Emails
+                            <span className={`ml-3 px-2.5 py-1 text-sm rounded-full bg-green-100 text-green-700`}>
+                              {emailOpens.length} unique
+                            </span>
+                          </h3>
+                          <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {hotLeadsExpanded ? 'Click to collapse' : 'Click to expand'} - These contacts engaged with your emails!
+                          </p>
+                        </div>
                       </div>
                       <button
-                        onClick={loadEmailOpens}
+                        onClick={(e) => { e.stopPropagation(); loadEmailOpens(); }}
                         disabled={emailOpensLoading}
                         className="px-4 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80 transition-colors flex items-center disabled:opacity-50"
                       >
@@ -5083,66 +5376,133 @@ END:VCALENDAR`;
                       </button>
                     </div>
 
-                    {emailOpens.length === 0 ? (
-                      <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        <div className="text-5xl mb-4">📭</div>
-                        <p className="text-lg font-medium">No email opens tracked yet</p>
-                        <p className="text-sm mt-2">Opens will appear here as recipients view your campaign emails.</p>
-                        <button
-                          onClick={loadEmailOpens}
-                          className="mt-4 px-4 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80"
-                        >
-                          Load Email Opens
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                        {emailOpens.map((open, index) => (
-                          <div 
-                            key={open.id || index} 
-                            className={`flex items-center justify-between p-4 rounded-lg border ${
-                              isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                            } hover:shadow-md transition-shadow`}
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
-                                index % 3 === 0 ? 'bg-green-500' : index % 3 === 1 ? 'bg-blue-500' : 'bg-purple-500'
-                              }`}>
-                                {open.firstName?.[0]?.toUpperCase() || '?'}
-                              </div>
-                              <div>
-                                <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {open.firstName} {open.lastName}
-                                </h4>
-                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  {open.recipientEmail}
-                                </p>
-                                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                  {open.company && `${open.company} • `}
-                                  <span className="text-genie-teal">{open.campaignName}</span>
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                              <div className="text-right">
-                                <div className={`text-sm font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'} flex items-center`}>
-                                  <span className="mr-1">✅</span> Opened
-                                </div>
-                                <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                  {open.openedAt?.toLocaleString?.() || 'Recently'}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => openFollowUpModal(open)}
-                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm flex items-center shadow-md"
-                              >
-                                <span className="mr-1">✉️</span>
-                                Follow-Up
-                              </button>
-                            </div>
+                    {/* Collapsible Content */}
+                    {hotLeadsExpanded && (
+                      <>
+                        {emailOpens.length === 0 ? (
+                          <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <div className="text-5xl mb-4">📭</div>
+                            <p className="text-lg font-medium">No email opens tracked yet</p>
+                            <p className="text-sm mt-2">Opens will appear here as recipients view your campaign emails.</p>
+                            <button
+                              onClick={loadEmailOpens}
+                              className="mt-4 px-4 py-2 bg-genie-teal text-white rounded-lg hover:bg-genie-teal/80"
+                            >
+                              Load Email Opens
+                            </button>
                           </div>
-                        ))}
-                      </div>
+                        ) : (
+                          <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                            {emailOpens.map((open, index) => {
+                              // Get contact tags if available
+                              const contact = contacts.find(c => c.email === open.recipientEmail)
+                              const contactTags = contact?.tags || open.tags || []
+                              const campaignsOpened = open.campaignsOpened || [{ name: open.campaignName, openedAt: open.openedAt }]
+                              
+                              return (
+                              <div 
+                                key={open.id || index} 
+                                className={`flex items-center justify-between p-4 rounded-lg border ${
+                                  isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                                } hover:shadow-md transition-shadow`}
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <div className="relative">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                                      campaignsOpened.length >= 3 ? 'bg-red-500' : 
+                                      campaignsOpened.length >= 2 ? 'bg-orange-500' : 
+                                      index % 3 === 0 ? 'bg-green-500' : index % 3 === 1 ? 'bg-blue-500' : 'bg-purple-500'
+                                    }`}>
+                                      {open.firstName?.[0]?.toUpperCase() || '?'}
+                                    </div>
+                                    {campaignsOpened.length > 1 && (
+                                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                        {campaignsOpened.length}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        {open.firstName} {open.lastName}
+                                      </h4>
+                                      {campaignsOpened.length >= 2 && (
+                                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                                          🔥 Super Hot!
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                      {open.recipientEmail}
+                                    </p>
+                                    
+                                    {/* Campaigns Opened List */}
+                                    <div className={`mt-1 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                      {open.company && <span className="mr-2">{open.company}</span>}
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Opened:</span>
+                                        {campaignsOpened.map((campaign, i) => (
+                                          <span key={i} className="px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded text-xs">
+                                            📧 {campaign.name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Tags */}
+                                    {contactTags.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {(Array.isArray(contactTags) ? contactTags : [contactTags]).map((tag, i) => (
+                                          <span key={i} className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                                            🏷️ {tag}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="text-right mr-2">
+                                    <div className={`text-sm font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'} flex items-center`}>
+                                      <span className="mr-1">✅</span> {campaignsOpened.length > 1 ? `${campaignsOpened.length} campaigns` : 'Opened'}
+                                    </div>
+                                    <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                      Last: {open.openedAt?.toLocaleString?.() || 'Recently'}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => openTagModal(open)}
+                                    className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium text-sm flex items-center shadow-md"
+                                  >
+                                    <span className="mr-1">🏷️</span>
+                                    Tag
+                                  </button>
+                                  <button
+                                    onClick={() => openFollowUpModal(open)}
+                                    className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm flex items-center shadow-md"
+                                  >
+                                    <span className="mr-1">✉️</span>
+                                    Follow-Up
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`Remove ${open.firstName || open.recipientEmail} from hot leads?`)) {
+                                        deleteHotLead(open)
+                                      }
+                                    }}
+                                    className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm flex items-center shadow-md"
+                                    title="Remove from hot leads"
+                                  >
+                                    <span className="mr-1">🗑️</span>
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -5323,6 +5683,142 @@ END:VCALENDAR`;
                             <>
                               <span className="mr-2">📤</span>
                               Send Follow-Up
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tag Hot Lead Modal */}
+              {showTagModal && tagRecipient && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl p-6 w-full max-w-lg mx-4`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className={`text-xl font-semibold text-purple-600`}>
+                        🏷️ Tag {tagRecipient.firstName}
+                      </h3>
+                      <button 
+                        onClick={() => setShowTagModal(false)}
+                        className={`text-gray-500 hover:text-gray-700 text-2xl ${isDarkMode ? 'hover:text-gray-300' : ''}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className={`p-3 rounded-lg mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-purple-50'}`}>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-purple-700'}`}>
+                        <strong>Contact:</strong> {tagRecipient.recipientEmail}
+                      </p>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-purple-600'} mt-1`}>
+                        Tags help you segment contacts for targeted follow-up campaigns
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {/* Quick Tag Buttons */}
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Quick Tags (click to select)
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {hotLeadTags.map(tag => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                if (selectedTags.includes(tag)) {
+                                  setSelectedTags(prev => prev.filter(t => t !== tag))
+                                } else {
+                                  setSelectedTags(prev => [...prev, tag])
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                selectedTags.includes(tag)
+                                  ? 'bg-purple-600 text-white shadow-md'
+                                  : isDarkMode 
+                                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                    : 'bg-gray-100 text-gray-700 hover:bg-purple-100'
+                              }`}
+                            >
+                              {selectedTags.includes(tag) ? '✓ ' : ''}{tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Custom Tag Input */}
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                          Create Custom Tag
+                        </label>
+                        <div className="flex space-x-2">
+                          <input 
+                            type="text" 
+                            value={newTagName}
+                            onChange={(e) => setNewTagName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
+                            className={`flex-1 border p-2 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                            placeholder="e.g., December Campaign"
+                          />
+                          <button
+                            type="button"
+                            onClick={addCustomTag}
+                            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Selected Tags Display */}
+                      {selectedTags.length > 0 && (
+                        <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-green-50'}`}>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-green-700'} mb-2`}>
+                            Selected Tags ({selectedTags.length})
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTags.map(tag => (
+                              <span 
+                                key={tag} 
+                                className="px-3 py-1 bg-green-500 text-white rounded-full text-sm flex items-center"
+                              >
+                                🏷️ {tag}
+                                <button 
+                                  onClick={() => setSelectedTags(prev => prev.filter(t => t !== tag))}
+                                  className="ml-2 hover:text-red-200"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-end space-x-3 pt-2">
+                        <button
+                          onClick={() => setShowTagModal(false)}
+                          className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={saveTagsToContact}
+                          disabled={savingTag || selectedTags.length === 0}
+                          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center"
+                        >
+                          {savingTag ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-2">💾</span>
+                              Save Tags
                             </>
                           )}
                         </button>
@@ -5514,6 +6010,7 @@ END:VCALENDAR`;
                         <option value="All Contacts">All Contacts</option>
                         <option value="New Leads">New Leads</option>
                         <option value="Warm Prospects">Warm Prospects</option>
+                        <option value="Hot Lead - Opened Email">🔥 Hot Leads (Opened Email)</option>
                         <option value="Custom Segment">Custom Segment (Tags)</option>
                       </select>
                       

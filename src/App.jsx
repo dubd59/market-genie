@@ -48,6 +48,7 @@ import Sidebar from './components/Sidebar'
 import SupportTicketForm from './components/SupportTicketForm'
 import SupportTicketList from './components/SupportTicketList'
 import APIKeysIntegrations from './components/APIKeysIntegrations'
+import { useLimitEnforcement } from './hooks/useLimitEnforcement'
 
 // Initialize extension defense early
 import './security/ExtensionDefense'
@@ -160,6 +161,7 @@ function SophisticatedDashboard() {
   const [showAIAssistant, setShowAIAssistant] = useState(false)
   const { user, logout, checkAuthHealth, refreshAuthToken } = useAuth()
   const { tenant, loading: tenantLoading } = useTenant()
+  const { checkAndEnforce, trackAction } = useLimitEnforcement()
 
   // Emergency Migration State
   const [migrationInProgress, setMigrationInProgress] = useState(false);
@@ -438,11 +440,6 @@ function SophisticatedDashboard() {
   
   // Booking Settings toggle state for Appointments
   const [showBookingSettings, setShowBookingSettings] = useState(false)
-  
-  // Legacy bounce management - minimal state for compatibility
-  const [bounceEmails, setBounceEmails] = useState('')
-  const [processingBounces, setProcessingBounces] = useState(false)
-  const [bounceMethod, setBounceMethod] = useState('paste')
   
   // Contacts from ContactManager for campaign targeting
   const [contactsForCampaigns, setContactsForCampaigns] = useState([])
@@ -1096,6 +1093,14 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
   // Send campaign emails using Zoho Mail
   const sendCampaignNow = async (campaign) => {
+    // Check limits before sending emails
+    const batchSize = campaign.batchSize || 25
+    const limitCheck = await checkAndEnforce('sendEmail', batchSize)
+    if (!limitCheck.allowed) {
+      // Limit enforcement will show upgrade modal automatically
+      return
+    }
+
     try {
       console.log('Sending campaign emails...')
       // toast.info('Sending campaign emails...')
@@ -1342,6 +1347,11 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
         console.error('Email sending errors:', errors)
         console.log(`${errors.length} emails failed to send. Check console for details.`)
         // toast.error(`${errors.length} emails failed to send. Check console for details.`)
+      }
+      
+      // Track usage after successful email sending
+      if (emailsSent > 0) {
+        await trackAction('sendEmail', emailsSent)
       }
       
     } catch (error) {
@@ -1999,143 +2009,8 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }, [activeSection, user?.uid])
 
-  // Start automated bounce monitoring
-  const startBounceMonitoring = async () => {
-    if (!tenant?.id || !user?.uid) {
-      toast.error('Authentication required for bounce monitoring')
-      return
-    }
-
-    // Automated bounce monitoring removed
-  }
-
-  // Stop automated bounce monitoring removed
-
-  // Manual bounce processing removed
-
-  // Run manual bounce scan
-  const runBounceMonitoring = async () => {
-    if (!tenant?.id || !user?.uid) {
-      toast.error('Authentication required')
-      return
-    }
-
-    try {
-      console.log('🔍 Scanning Gmail for bounces...')
-      toast('🔍 Scanning Gmail for bounces...', { duration: 2000 })
-      
-      const result = await BounceDetectionService.monitorGmailBounces(tenant.id, user.uid)
-      
-      if (result.success) {
-        if (result.processed > 0) {
-          toast.success(`🧹 Found and processed ${result.processed} bounced emails`)
-        } else {
-          toast('✅ No bounces found - all good!', { 
-            icon: '✅',
-            duration: 3000
-          })
-        }
-        
-        // Refresh contacts by reloading from Firestore
-        try {
-          const contactsResult = await FirebaseUserDataService.getContacts(user.uid, user.uid)
-          if (contactsResult.success && contactsResult.data) {
-            let contactsArray = []
-            if (Array.isArray(contactsResult.data)) {
-              contactsArray = contactsResult.data
-            } else if (contactsResult.data.contacts && Array.isArray(contactsResult.data.contacts)) {
-              contactsArray = contactsResult.data.contacts
-            }
-            setContacts(contactsArray)
-            console.log('✅ Refreshed contacts after bounce processing')
-          }
-        } catch (error) {
-          console.error('Error refreshing contacts:', error)
-        }
-        
-        console.log('Manual bounce scan results:', result)
-      } else {
-        toast.error('Bounce scan failed: ' + result.error)
-      }
-    } catch (error) {
-      console.error('Error running bounce monitoring:', error)
-      toast.error('Error scanning for bounces')
-    }
-  }
-
-  // Reset bounce statistics to zero
-  const resetBounceStatistics = async () => {
-    if (!tenant?.id) {
-      toast.error('Authentication required')
-      return
-    }
-
-    try {
-      console.log('🔄 Resetting bounce statistics...')
-      toast('🔄 Resetting bounce statistics...', { duration: 2000 })
-      
-      const result = await BounceDetectionService.resetBounceStats(tenant.id)
-      
-      if (result.success) {
-        toast.success('✅ Bounce statistics reset to zero')
-      } else {
-        toast.error('Failed to reset statistics: ' + result.error)
-      }
-    } catch (error) {
-      console.error('Error resetting bounce statistics:', error)
-      toast.error('Error resetting statistics')
-    }
-  }
-
-  // Setup Gmail OAuth for live bounce detection
-  const setupGmailOAuth = async () => {
-    try {
-      toast('🔗 Setting up Gmail OAuth connection...', { duration: 3000 })
-      
-      // Gmail OAuth configuration - Your actual credentials
-      const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com'
-      const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback'
-      const SCOPE = 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email'
-      
-      // Build OAuth URL
-      const oauthURL = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${CLIENT_ID}&` +
-        `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
-        `scope=${encodeURIComponent(SCOPE)}&` +
-        `response_type=code&` +
-        `access_type=offline&` +
-        `prompt=consent&` +
-        `state=${tenant?.id || 'default'}`
-      
-      console.log('🔗 Opening Gmail OAuth window...')
-      console.log('OAuth URL:', oauthURL)
-      
-      // Open OAuth window
-      const popup = window.open(oauthURL, 'gmail-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes')
-      
-      if (!popup) {
-        toast.error('Popup blocked! Please allow popups and try again.')
-        return
-      }
-      
-      // Listen for OAuth completion
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed)
-          toast('OAuth window closed - please try again if not completed')
-        }
-      }, 1000)
-      
-      console.log('📧 Gmail OAuth setup initiated')
-      toast('📧 Complete Gmail authorization in the popup window')
-      
-    } catch (error) {
-      console.error('Error setting up Gmail OAuth:', error)
-      toast.error('Error setting up Gmail connection')
-    }
-  }
-
-  // Bounce stats and automated monitoring removed; no effect on mount
+  // ==================== BOUNCE DETECTION FUNCTIONS (REMOVED) ====================
+  // Bounce detection and stats have been removed. Keepers: open tracking and unsubscribes still active.
 
   // ==================== END BOUNCE DETECTION FUNCTIONS ====================
 
@@ -4897,82 +4772,6 @@ END:VCALENDAR`;
                         className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-700 transition-colors font-medium"
                       >
                         ✅ Continue
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Bounce Processing Modal */}
-              {showBounceModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className={`${getDarkModeClasses('bg-white', 'bg-gray-800')} rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto`}>
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} flex items-center`}>
-                        <span className="mr-2">📧</span>
-                        Process Bounced Emails
-                      </h3>
-                      <button 
-                        onClick={() => setShowBounceModal(false)}
-                        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-2xl font-bold`}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    
-                    <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                      <div className="flex items-start">
-                        <span className="mr-3 text-xl">💡</span>
-                        <div>
-                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-800'} mb-2`}>
-                            <strong>How to use:</strong>
-                          </p>
-                          <ol className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-blue-700'} space-y-1`}>
-                            <li>1. Copy bounce email content from your Gmail</li>
-                            <li>2. Paste it in the text area below</li>
-                            <li>3. Click "Process Bounces" to automatically remove bounced emails from your contacts</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-6">
-                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                        Paste Bounce Email Content:
-                      </label>
-                      <textarea
-                        value={pastedBounceText}
-                        onChange={(e) => setPastedBounceText(e.target.value)}
-                        className={`w-full h-40 border p-3 rounded-lg font-mono text-sm ${
-                          isDarkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                            : 'bg-white border-gray-300 placeholder-gray-500'
-                        }`}
-                        placeholder="Paste your bounce email content here..."
-                      />
-                    </div>
-                    
-                    <div className="flex gap-4 justify-end">
-                      <button
-                        onClick={() => setShowBounceModal(false)}
-                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
-                          isDarkMode 
-                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={processPastedBounces}
-                        disabled={bounceProcessing || !pastedBounceText.trim()}
-                        className={`py-2 px-6 rounded-lg transition-colors font-medium ${
-                          bounceProcessing || !pastedBounceText.trim()
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                            : 'bg-orange-500 text-white hover:bg-orange-600'
-                        }`}
-                      >
-                        {bounceProcessing ? '🔄 Processing...' : '🧹 Process Bounces'}
                       </button>
                     </div>
                   </div>

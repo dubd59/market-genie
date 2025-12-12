@@ -9,11 +9,13 @@ import {
 } from 'lucide-react';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLimitEnforcement } from '../hooks/useLimitEnforcement';
 import FunnelMetricsService from '../services/FunnelMetricsService';
 
 const SuperiorFunnelBuilder = () => {
   const { tenant } = useTenant();
   const { user } = useAuth();
+  const { checkAndEnforce, trackAction } = useLimitEnforcement();
   
   const [selectedFunnel, setSelectedFunnel] = useState(null);
   const [builderMode, setBuilderMode] = useState('dashboard'); // dashboard, ai-wizard, ai-results, launch-success
@@ -75,6 +77,13 @@ const SuperiorFunnelBuilder = () => {
 
   // Launch funnel function - the big reveal!
   const launchFunnel = async () => {
+    // Check funnel build limits (same as campaign limit)
+    const limitCheck = await checkAndEnforce('createCampaign', 1)
+    if (!limitCheck.allowed) {
+      // Limit enforcement will show upgrade modal automatically
+      return
+    }
+
     setIsLaunching(true);
     setLaunchStep(1);
 
@@ -98,6 +107,9 @@ const SuperiorFunnelBuilder = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsLaunching(false);
     setBuilderMode('launch-success');
+    
+    // Track funnel build usage
+    await trackAction('createCampaign', 1);
   };
 
   // 🚀 THE MAGIC FUNCTION - Download Complete Funnel System!

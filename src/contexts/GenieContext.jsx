@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { useAuth } from './AuthContext'
+import { useTenant } from './TenantContext'
+import { useLimitEnforcement } from '../hooks/useLimitEnforcement'
 
 const GenieContext = createContext({})
 
@@ -78,6 +80,8 @@ function genieReducer(state, action) {
 export function GenieProvider({ children, contacts: externalContacts }) {
   const [state, dispatch] = useReducer(genieReducer, initialState)
   const { user } = useAuth()
+  const { tenant } = useTenant()
+  const { checkAndEnforce, trackAction } = useLimitEnforcement()
 
   // Update contacts when external contacts change
   useEffect(() => {
@@ -146,6 +150,13 @@ export function GenieProvider({ children, contacts: externalContacts }) {
   }
 
   const createCampaign = async (campaignData) => {
+    // Check limits before creating campaign
+    const limitCheck = await checkAndEnforce('createCampaign', 1)
+    if (!limitCheck.allowed) {
+      // Limit enforcement will show upgrade modal automatically
+      throw new Error('Campaign limit reached')
+    }
+
     try {
       const newCampaign = {
         id: Date.now(),
@@ -156,6 +167,10 @@ export function GenieProvider({ children, contacts: externalContacts }) {
       }
       
       dispatch({ type: 'ADD_CAMPAIGN', payload: newCampaign })
+      
+      // Track usage after successful creation
+      await trackAction('createCampaign', 1)
+      
       return newCampaign
     } catch (error) {
       console.error('Error creating campaign:', error)

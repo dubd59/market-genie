@@ -115,7 +115,7 @@ function FreeSignup() {
               </h1>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Start Free Today</h2>
-            <p className="text-gray-300">No credit card required • 75 contacts • 300 emails/month</p>
+            <p className="text-gray-300">No credit card required • 50 contacts • 100 emails/month</p>
           </div>
 
           {/* Free Plan Benefits */}
@@ -126,11 +126,12 @@ function FreeSignup() {
             </h3>
             <div className="space-y-2">
               {[
-                'Up to 75 contacts',
-                '300 emails per month', 
-                '3 active campaigns',
+                'Up to 50 contacts',
+                '100 emails per month', 
+                '1 active campaign',
                 'Basic AI automation',
-                'Lead capture forms'
+                'Lead capture forms',
+                'Teaser AI (1 funnel build/month)'
               ].map((feature, index) => (
                 <div key={index} className="flex items-center text-gray-200">
                   <CheckCircle className="w-4 h-4 text-green-400 mr-3" />
@@ -351,8 +352,8 @@ function FreeSignup() {
             </h1>
             
             <p className="text-gray-300 mb-8 text-lg">
-              Your free account is ready. You can start with up to 75 contacts, 
-              300 emails per month, and 3 active campaigns.
+              Your free account is ready. You can start with up to 50 contacts, 
+              100 emails per month, and 1 active campaign.
             </p>
 
             <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -361,7 +362,7 @@ function FreeSignup() {
                   <Users className="w-6 h-6 text-blue-400" />
                 </div>
                 <h3 className="font-semibold text-white mb-1">Add Contacts</h3>
-                <p className="text-sm text-gray-400">Import or manually add up to 75 contacts</p>
+                <p className="text-sm text-gray-400">Import or manually add up to 50 contacts</p>
               </div>
               
               <div className="text-center">
@@ -369,7 +370,7 @@ function FreeSignup() {
                   <Mail className="w-6 h-6 text-green-400" />
                 </div>
                 <h3 className="font-semibold text-white mb-1">Send Emails</h3>
-                <p className="text-sm text-gray-400">Send up to 300 emails this month</p>
+                <p className="text-sm text-gray-400">Send up to 100 emails this month</p>
               </div>
               
               <div className="text-center">
@@ -377,7 +378,7 @@ function FreeSignup() {
                   <Target className="w-6 h-6 text-purple-400" />
                 </div>
                 <h3 className="font-semibold text-white mb-1">Create Campaigns</h3>
-                <p className="text-sm text-gray-400">Build up to 3 automated campaigns</p>
+                <p className="text-sm text-gray-400">Build up to 1 automated campaign</p>
               </div>
             </div>
 

@@ -86,7 +86,7 @@ const TermsOfService = () => {
             
             <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">4.1 Plan Types</h3>
             <ul className="list-disc pl-6 mb-4">
-              <li><strong>Free Plan:</strong> Limited features (75 contacts, 300 emails/month, 3 campaigns)</li>
+              <li><strong>Free Plan:</strong> Limited features (50 contacts, 100 emails/month, 1 campaign)</li>
               <li><strong>Pro Plan:</strong> $20/month - Enhanced features and higher limits</li>
               <li><strong>Lifetime Plan:</strong> $300 one-time - Lifetime access to Pro features</li>
               <li><strong>White Label Plan:</strong> $497 one-time - Full white-label reseller rights</li>

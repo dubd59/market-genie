@@ -5,6 +5,7 @@ import FirebaseUserDataService from '../services/firebaseUserData'
 import SuperiorFunnelBuilder from './SuperiorFunnelBuilder'
 import SuperiorCRMSystem from './SuperiorCRMSystem'
 import toast from 'react-hot-toast'
+import { useLimitEnforcement } from '../hooks/useLimitEnforcement'
 
 // Import sorting icons
 const ChevronDown = () => (
@@ -28,6 +29,7 @@ const ArrowDown = () => (
 const CRMPipeline = ({ isDarkMode = false }) => {
   const { user } = useAuth()
   const { tenant } = useTenant()
+  const { checkAndEnforce, trackAction } = useLimitEnforcement()
   
   // Helper function to update classes with dark mode support
   const getDarkModeClasses = (lightClasses, darkClasses = '') => {
@@ -291,6 +293,13 @@ const CRMPipeline = ({ isDarkMode = false }) => {
       return
     }
 
+    // Check limits before adding contact
+    const limitCheck = await checkAndEnforce('addContact', 1)
+    if (!limitCheck.allowed) {
+      // Limit enforcement will show upgrade modal automatically
+      return
+    }
+
     const contact = {
       id: Date.now().toString(),
       ...newContact,
@@ -314,6 +323,10 @@ const CRMPipeline = ({ isDarkMode = false }) => {
       status: 'new'
     })
     setShowContactModal(false)
+    
+    // Track usage after successful addition
+    await trackAction('addContact', 1)
+    
     toast.success('Contact added successfully!')
   }
 

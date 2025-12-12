@@ -4,14 +4,14 @@
 export const PLAN_LIMITS = {
   free: {
     name: 'Free',
-    maxContacts: 75,
-    maxEmailsPerMonth: 300,
-    maxCampaigns: 3,
+    maxContacts: 50,
+    maxEmailsPerMonth: 100,
+    maxCampaigns: 1,
     features: {
       basicAutomation: true,
       emailSupport: true,
       leadCaptureForms: true,
-      basicAI: true,
+      teaserAI: true,
       // Disabled features for free plan
       advancedAI: false,
       premiumIntegrations: false,

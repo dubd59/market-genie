@@ -105,13 +105,13 @@ export default function LandingPage() {
       price: 0,
       description: 'Perfect for small businesses getting started',
       features: [
-        '75 contacts',
-        '300 emails/month',
-        '3 active campaigns',
+        '50 contacts',
+        '100 emails/month',
+        '1 active campaign',
         'Basic automation',
         'Email support',
         'Lead capture forms',
-        'Basic AI features'
+        'Teaser AI (1 funnel build/month)'
       ],
       popular: false,
       buttonText: 'Free with Limitations',
@@ -247,7 +247,7 @@ export default function LandingPage() {
             >
               <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
               <br />
-              <span className="text-yellow-400 text-lg mt-2 block font-semibold">(Compare ingredients to HighLevel and Click Funnels)</span>
+              <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Compare ingredients to HighLevel and Click Funnels)</span>
             </motion.p>
             
             {/* AI Features Grid */}
@@ -469,6 +469,61 @@ export default function LandingPage() {
                 </button>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section className="comparison-section py-16 bg-black/8 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600 mb-4" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
+            Why Teams Are Leaving HighLevel & ClickFunnels in 2026
+          </h2>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full max-w-4xl mx-auto text-left border-collapse bg-white/15 backdrop-blur-lg shadow-lg rounded-lg overflow-hidden">
+              <thead>
+                <tr className="bg-white/10">
+                  <th className="px-6 py-5 text-lg font-semibold text-white">What Most Teams Pay For Today</th>
+                  <th className="px-6 py-5 text-lg font-semibold text-yellow-500">What You Get with Market Genie</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/20">
+                <tr>
+                  <td className="px-6 py-5 text-gray-200">$97–$297+/month recurring</td>
+                  <td className="px-6 py-5 text-yellow-500 font-medium">Start free → upgrade from $29/mo (or $300 once)</td>
+                </tr>
+                <tr className="bg-white/5">
+                  <td className="px-6 py-5 text-gray-200">Manually build every funnel & email</td>
+                  <td className="px-6 py-5 text-yellow-500 font-medium">Tell our AI what you want → built in minutes</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-5 text-gray-200">Basic reporting & automation</td>
+                  <td className="px-6 py-5 text-yellow-500 font-medium">Predictive lead scoring + campaigns that improve themselves</td>
+                </tr>
+                <tr className="bg-white/5">
+                  <td className="px-6 py-5 text-gray-200">Separate tools + constant logins</td>
+                  <td className="px-6 py-5 text-yellow-500 font-medium">One AI dashboard replaces the whole stack</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-5 text-gray-200">Hours of setup per campaign</td>
+                  <td className="px-6 py-5 text-yellow-500 font-medium">9-minute campaigns that run 24/7</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-10 text-xl text-gray-200">
+            <strong>Real early users report saving 22+ hours a week</strong> and paying <strong>70–90% less</strong> than the big platforms.
+          </p>
+          <p className="mt-4 text-lg text-gray-300">
+            No contracts. Cancel anytime. Lifetime option available.
+          </p>
+
+          <div className="mt-10">
+            <a href="/signup" className="inline-block px-10 py-5 border border-white text-white text-xl font-semibold rounded-lg hover:bg-white/10 transition-all duration-200 transform hover:scale-105">
+              Try It Free – No Card Required
+            </a>
           </div>
         </div>
       </section>

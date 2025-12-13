@@ -111,21 +111,32 @@ If your Client ID is different, let me know and I'll update the code.
 
 ---
 
-## Step 7: Publish the App
+## ⚠️ Important: Verification Process Active
 
-**IMPORTANT:** While in "Testing" mode, only users you add as test users can connect.
+**DO NOT switch back to testing mode** if you see this warning! Your app is currently undergoing Google's verification review for the Gmail scope.
 
-To allow all users to connect:
+### What This Means:
+- ✅ Your verification application is **active** and being reviewed
+- ✅ The process takes **4-6 weeks** for full approval
+- ✅ Switching to testing mode will **withdraw your application**
+- ✅ You'll need to **resubmit** if you want production access later
 
-1. Go to: https://console.cloud.google.com/apis/credentials/consent
+### What You CAN Do Right Now:
+1. **Wait for verification** - Google will email you within 3-5 days
+2. **Respond promptly** to any Google emails about verification
+3. **Use alternative email methods** for testing (App Passwords)
+4. **Continue development** of other features
 
-2. Look for the **"Publishing status"** section
+### Alternative Testing Options:
+While waiting for Gmail OAuth approval, users can:
+- Connect Gmail via **App Passwords** (Settings → Email Integrations)
+- Use **SMTP settings** for other email providers
+- Test all other app features normally
 
-3. Click **"Publish App"**
-
-4. Click **"Confirm"**
-
-> ⚠️ **Note:** Google may show a warning screen to users until your app is verified. This is normal and users can click "Advanced" → "Go to Market Genie (unsafe)" to proceed.
+### When Verification Completes:
+- You'll get an email from Google
+- Gmail OAuth will work for all users
+- No more "unverified app" warnings
 
 ---
 

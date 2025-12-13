@@ -570,9 +570,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
       const CLIENT_ID = '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com';
       const REDIRECT_URI = window.location.origin + '/oauth/gmail/callback';
       const SCOPES = [
-        'https://www.googleapis.com/auth/gmail.send',
-        'https://www.googleapis.com/auth/gmail.modify',
-        'https://www.googleapis.com/auth/userinfo.email'
+        'https://www.googleapis.com/auth/gmail.send'
       ].join(' ');
       
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +

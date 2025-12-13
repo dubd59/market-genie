@@ -602,8 +602,9 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           toast.success('Gmail connected successfully!');
           
           // Update integration status
+          const email = event.data.tokens?.email || event.data.email || 'Connected via OAuth';
           updateIntegrationStatus('gmail', 'connected', {
-            email: event.data.tokens?.email || 'Connected via OAuth',
+            email: email,
             lastSync: new Date().toLocaleString()
           });
           

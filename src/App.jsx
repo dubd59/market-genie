@@ -1093,10 +1093,17 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
 
   // Send campaign emails using Zoho Mail
   const sendCampaignNow = async (campaign) => {
-    // Check limits before sending emails
+    console.log('🚀 sendCampaignNow STARTED with campaign:', campaign.id, campaign.name)
+    console.log('🚀 Campaign status:', campaign.status)
+    console.log('🚀 Campaign target contacts:', campaign.contacts?.length || 'no contacts')
+    
+    console.log('🚀 sendCampaignNow: Checking limits...')
     const batchSize = campaign.batchSize || 25
     const limitCheck = await checkAndEnforce('sendEmail', batchSize)
+    console.log('🚀 sendCampaignNow: Limit check result:', limitCheck)
+    
     if (!limitCheck.allowed) {
+      console.log('🚀 sendCampaignNow: Limit check failed, stopping')
       // Limit enforcement will show upgrade modal automatically
       return
     }
@@ -1114,8 +1121,13 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       }
       
       // Check if Gmail SMTP credentials are configured
+      console.log('🚀 sendCampaignNow: Checking Gmail credentials for tenant:', tenant?.id)
+      console.log('🚀 sendCampaignNow: Tenant object:', tenant)
       const smtpCredentials = await IntegrationService.getIntegrationCredentials(tenant.id, 'gmail')
+      console.log('🚀 sendCampaignNow: Gmail credentials result:', smtpCredentials)
+      
       if (!smtpCredentials.success) {
+        console.log('🚀 sendCampaignNow: Gmail credentials check failed, stopping')
         console.log('Gmail SMTP not configured. Please configure Gmail integration.')
         toast.error('Gmail SMTP not configured. Please set up Gmail in Integrations → Gmail.')
         return
@@ -1199,7 +1211,6 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       const newlySentEmails = []
       
       // Batch Size Control - respect campaign batch limit
-      const batchSize = campaign.batchSize || 25  // Default to 25 if not set
       const maxToSendThisBatch = Math.min(batchSize, remainingContacts.length)
       let batchLimitReached = false
       
@@ -1267,6 +1278,14 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
             emailsSent++
             newlySentEmails.push(contact.email.toLowerCase())
             console.log(`✅ Email sent to ${contact.email} (${emailsSent}/${remainingContacts.length})`)
+            
+            // Update progress in real-time
+            const currentProgress = `${emailsSent} of ${remainingContacts.length} contacts`
+            const updatedCampaignsProgress = campaigns.map(c => 
+              c.id === campaign.id ? { ...c, progress: currentProgress, emailsSent: emailsSent } : c
+            )
+            setCampaigns(updatedCampaignsProgress)
+            
           } else {
             // Check if this is a "daily limit exceeded" after some emails were sent
             const isLimitExceeded = sendResult.error && sendResult.error.includes('Daily user sending limit exceeded')
@@ -1361,6 +1380,77 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
+  // Helper function to send email via SMTP fallback
+  const sendEmailViaSMTP = async (emailData, tenantId) => {
+    try {
+      console.log('📧 Sending email via SMTP fallback...')
+      
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated')
+      }
+      
+      // Get the user's ID token
+      const idToken = await auth.currentUser.getIdToken(true)
+      
+      const payload = {
+        to: emailData.to,
+        subject: emailData.subject,
+        content: emailData.content,
+        tenantId: tenantId
+      }
+
+      console.log('📧 SMTP URL:', 'https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailSMTP')
+      
+      // Create AbortController for timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
+      const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailSMTP', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+      console.log('📧 SMTP response status:', response.status)
+      
+      const result = await response.json()
+      console.log('📧 SMTP response:', result)
+      
+      if (result.success) {
+        console.log('📧 ✅ Email sent via SMTP')
+        return {
+          success: true,
+          data: result
+        }
+      } else {
+        console.error('📧 ❌ SMTP failed:', result.error)
+        return {
+          success: false,
+          error: result.error || 'SMTP sending failed'
+        }
+      }
+      
+    } catch (error) {
+      console.error('📧 Error sending via SMTP:', error)
+      if (error.name === 'AbortError') {
+        console.error('📧 SMTP timeout')
+        return { 
+          success: false, 
+          error: 'SMTP timeout' 
+        }
+      }
+      return { 
+        success: false, 
+        error: error.message 
+      }
+    }
+  }
+
   // Helper function to send email via SendGrid or Gmail API
   const sendEmailViaFirebase = async (emailData, tenantId) => {
     try {
@@ -1374,45 +1464,45 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Get the user's ID token
       const idToken = await auth.currentUser.getIdToken(true)
       
-      // Use Gmail OAuth only (SendGrid disabled - use Gmail for trusted sending)
-      const payload = {
-        to: emailData.to,
-        subject: emailData.subject,
-        content: emailData.content,
-        tenantId: tenantId
-      }
-
-      // Send via Gmail API (OAuth)
-      console.log('📧 Sending via Gmail API (OAuth)...')
-      const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailGmailAPI', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify(payload)
-      })
+      // TEMPORARY: Skip OAuth completely and use SMTP directly due to verification issues
+      console.log('📧 TEMPORARY: Using SMTP as primary method (OAuth disabled)')
       
-      const result = await response.json()
-      console.log('📧 Gmail API response:', result)
-      
-      if (result.success) {
-        console.log('📧 ✅ Email sent via Gmail API:', result.messageId)
-        return {
-          success: true,
-          data: result,
-          method: 'gmail_api'
+      try {
+        const smtpResult = await sendEmailViaSMTP(emailData, tenantId)
+        if (smtpResult.success) {
+          console.log('📧 ✅ Email sent via SMTP (primary method)')
+          return {
+            success: true,
+            data: smtpResult.data,
+            method: 'smtp_primary'
+          }
+        } else {
+          console.error('📧 ❌ SMTP failed:', smtpResult.error)
+          return {
+            success: false,
+            error: smtpResult.error || 'SMTP sending failed'
+          }
         }
-      } else {
-        console.error('📧 ❌ Gmail API failed:', result.error)
-        return {
-          success: false,
-          error: result.error || 'Email sending failed'
+      } catch (smtpError) {
+        console.error('📧 Error with SMTP:', smtpError)
+        return { 
+          success: false, 
+          error: smtpError.message 
         }
       }
       
     } catch (error) {
       console.error('📧 Error sending email:', error)
+      
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        console.error('📧 Timeout: Email sending took too long (30 seconds)')
+        return { 
+          success: false, 
+          error: 'Email sending timeout - please try again' 
+        }
+      }
+      
       return { 
         success: false, 
         error: error.message 
@@ -1924,29 +2014,40 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     try {
       setSavingTag(true)
       
-      // Find the contact by email
-      const contact = contacts.find(c => c.email === tagRecipient.recipientEmail)
+      // Load current contacts from Firebase
+      const contactsResult = await FirebaseUserDataService.getContacts(user.uid, tenant?.id)
+      let currentContacts = []
       
-      if (contact) {
+      if (contactsResult.success && contactsResult.data && contactsResult.data.contacts) {
+        currentContacts = contactsResult.data.contacts
+      }
+      
+      // Find the contact by email
+      const contactIndex = currentContacts.findIndex(c => c.email === tagRecipient.recipientEmail)
+      
+      if (contactIndex !== -1) {
         // Update existing contact
-        const contactRef = doc(db, 'users', user.uid, 'contacts', contact.id)
-        const existingTags = contact.tags || []
+        const existingContact = currentContacts[contactIndex]
+        const existingTags = existingContact.tags || []
         const mergedTags = [...new Set([...(Array.isArray(existingTags) ? existingTags : []), ...selectedTags])]
         
-        await updateDoc(contactRef, { 
+        currentContacts[contactIndex] = {
+          ...existingContact,
           tags: mergedTags,
           updatedAt: new Date()
-        })
+        }
+        
+        // Save updated contacts back to Firebase
+        await FirebaseUserDataService.saveCRMContacts(user.uid, { contacts: currentContacts })
         
         // Update local state
-        setContacts(prev => prev.map(c => 
-          c.id === contact.id ? { ...c, tags: mergedTags } : c
-        ))
+        setContacts(currentContacts)
         
         toast.success(`🏷️ Tagged ${tagRecipient.firstName} with: ${selectedTags.join(', ')}`)
       } else {
         // Create new contact with tags
         const newContact = {
+          id: `hot_lead_${Date.now()}`,
           email: tagRecipient.recipientEmail,
           firstName: tagRecipient.firstName || '',
           lastName: tagRecipient.lastName || '',
@@ -1958,11 +2059,13 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
           updatedAt: new Date()
         }
         
-        const contactsRef = collection(db, 'users', user.uid, 'contacts')
-        const docRef = await addDoc(contactsRef, newContact)
+        currentContacts.push(newContact)
+        
+        // Save updated contacts back to Firebase
+        await FirebaseUserDataService.saveCRMContacts(user.uid, { contacts: currentContacts })
         
         // Update local state
-        setContacts(prev => [...prev, { id: docRef.id, ...newContact }])
+        setContacts(currentContacts)
         
         toast.success(`🏷️ Created contact for ${tagRecipient.firstName} with tags: ${selectedTags.join(', ')}`)
       }

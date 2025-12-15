@@ -18,8 +18,9 @@ export const useLimitEnforcement = () => {
 
   const fetchLimitStatus = async () => {
     try {
+      const plan = tenant.plan || tenant.subscription?.plan || 'free'
       const tracker = new UsageTracker(tenant.id)
-      const status = await tracker.getLimitStatus(tenant.plan)
+      const status = await tracker.getLimitStatus(plan)
       setLimitStatus(status)
     } catch (error) {
       console.error('Error fetching limit status:', error)
@@ -29,12 +30,13 @@ export const useLimitEnforcement = () => {
   }
 
   const checkAndEnforce = async (actionType, amount = 1) => {
-    if (!tenant?.id || !tenant?.plan) {
+    if (!tenant?.id || (!tenant?.plan && !tenant?.subscription?.plan)) {
       return { allowed: false, reason: 'No tenant configured' }
     }
 
+    const currentPlan = tenant.plan || tenant.subscription?.plan || 'free'
     const tracker = new UsageTracker(tenant.id)
-    const canPerform = await tracker.canPerformAction(tenant.plan, actionType, amount)
+    const canPerform = await tracker.canPerformAction(currentPlan, actionType, amount)
 
     if (!canPerform) {
       const actionLimits = {
@@ -48,7 +50,7 @@ export const useLimitEnforcement = () => {
         allowed: false,
         reason: 'limit_reached',
         limitType,
-        currentPlan: tenant.plan
+        currentPlan
       }
     }
 

@@ -6407,6 +6407,53 @@ END:VCALENDAR`;
                         </p>
                       </div>
 
+                      {/* Auto-Scheduling Section */}
+                      <div className={`p-4 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-blue-50 border-blue-200'}`}>
+                        <div className="flex items-center mb-3">
+                          <input
+                            type="checkbox"
+                            id="autoSchedule"
+                            checked={editingCampaign.autoSchedule || false}
+                            onChange={(e) => setEditingCampaign({...editingCampaign, autoSchedule: e.target.checked})}
+                            className="mr-2"
+                          />
+                          <label htmlFor="autoSchedule" className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            ⏰ Enable Auto-Scheduling
+                          </label>
+                        </div>
+                        
+                        {editingCampaign.autoSchedule && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                                📅 First Send Date & Time
+                              </label>
+                              <input 
+                                type="datetime-local" 
+                                value={editingCampaign.sendDate || ''}
+                                onChange={(e) => setEditingCampaign({...editingCampaign, sendDate: e.target.value})}
+                                className={`w-full border p-3 rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                              />
+                              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                🕐 Uses your local time ({Intl.DateTimeFormat().resolvedOptions().timeZone}). First batch sends at this time.
+                              </p>
+                            </div>
+                            
+                            <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-600' : 'bg-blue-100'}`}>
+                              <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>
+                                <strong>📊 Auto-Schedule Behavior:</strong>
+                              </p>
+                              <ul className={`text-xs mt-1 space-y-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <li>• First batch: {editingCampaign.batchSize || 25} emails on selected date/time</li>
+                                <li>• Subsequent batches: {editingCampaign.batchSize || 25} emails daily at same time</li>
+                                <li>• Status automatically changes to "Scheduled" when enabled</li>
+                                <li>• Campaign pauses if rate limits are hit, resumes next day</li>
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Selected Template</label>
                         <div className={`p-3 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-300 text-gray-600'}`}>
@@ -6553,8 +6600,23 @@ END:VCALENDAR`;
                     <div className="flex gap-3 mt-6">
                       <button 
                         onClick={() => {
+                          // Handle auto-scheduling logic
+                          let updatedCampaign = { ...editingCampaign };
+                          
+                          if (updatedCampaign.autoSchedule) {
+                            updatedCampaign.status = 'Scheduled';
+                            // Ensure sendDate is set
+                            if (!updatedCampaign.sendDate) {
+                              toast.error('Please set a send date and time for auto-scheduling');
+                              return;
+                            }
+                          } else {
+                            // Clear sendDate if auto-schedule is disabled
+                            updatedCampaign.sendDate = null;
+                          }
+                          
                           const updatedCampaigns = campaigns.map(c => 
-                            c.id === editingCampaign.id ? editingCampaign : c
+                            c.id === editingCampaign.id ? updatedCampaign : c
                           )
                           setCampaigns(updatedCampaigns)
                           
@@ -6562,7 +6624,7 @@ END:VCALENDAR`;
                           updateCampaignStats()
                           
                           setShowEditModal(false)
-                          toast.success('Campaign updated successfully!')
+                          toast.success(updatedCampaign.autoSchedule ? 'Campaign scheduled for auto-send!' : 'Campaign updated successfully!')
                         }}
                         className="bg-genie-teal text-white px-6 py-2 rounded hover:bg-genie-teal/80 transition-colors"
                       >

@@ -2848,6 +2848,27 @@ exports.trackEmailOpen = functions.https.onRequest(async (req, res) => {
       }
     }
     
+    // Auto-tag the contact as hot lead
+    try {
+      const contactQuery = await db.collection('contacts').where('email', '==', recipientEmail).where('userId', '==', userId).limit(1).get();
+      if (!contactQuery.empty) {
+        const contactDoc = contactQuery.docs[0];
+        const contactData = contactDoc.data();
+        const hotLeadTag = 'Hot Lead - Opened Email';
+        if (!contactData.tags || !contactData.tags.includes(hotLeadTag)) {
+          const newTags = [...(contactData.tags || []), hotLeadTag];
+          await contactDoc.ref.update({ tags: newTags });
+          console.log(`🏷️ Auto-tagged contact ${recipientEmail} with "${hotLeadTag}"`);
+        } else {
+          console.log(`🏷️ Contact ${recipientEmail} already tagged with "${hotLeadTag}"`);
+        }
+      } else {
+        console.log(`⚠️ Contact not found for email ${recipientEmail}`);
+      }
+    } catch (tagError) {
+      console.error('Error auto-tagging contact:', tagError);
+    }
+    
     // Return a 1x1 transparent GIF
     const transparentGif = Buffer.from(
       'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',

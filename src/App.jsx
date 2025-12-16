@@ -1942,6 +1942,9 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       setEmailOpens(uniqueOpens)
       console.log(`📧 Loaded ${uniqueOpens.length} unique email opens (${enrichedOpens.length} total events)`)
       
+      // Auto-tag contacts with "Hot Lead - Opened Email" if not already tagged
+      await autoTagHotLeads(uniqueOpens)
+      
     } catch (error) {
       console.error('Error loading email opens:', error)
       toast.error('Failed to load email opens')
@@ -1950,33 +1953,193 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
     }
   }
 
-  // Delete a hot lead from the email opens list
-  const deleteHotLead = async (emailOpen) => {
-    if (!emailOpen?.id && !emailOpen?.recipientEmail) {
-      toast.error('Cannot delete this entry')
+  // Auto-tag hot leads with "Hot Lead - Opened Email"
+  const autoTagHotLeads = async (uniqueOpens) => {
+    if (!user?.uid || uniqueOpens.length === 0) return
+
+    try {
+      // Load current contacts from Firebase
+      const contactsResult = await FirebaseUserDataService.getContacts(user.uid, tenant?.id)
+      let currentContacts = []
+      
+      if (contactsResult.success && contactsResult.data && contactsResult.data.contacts) {
+        currentContacts = contactsResult.data.contacts
+      }
+
+      const hotLeadTag = 'Hot Lead - Opened Email'
+      let contactsUpdated = false
+
+      for (const open of uniqueOpens) {
+        const contactIndex = currentContacts.findIndex(c => c.email === open.recipientEmail)
+        
+        if (contactIndex !== -1) {
+          // Existing contact - check if already has the tag
+          const existingContact = currentContacts[contactIndex]
+          const existingTags = existingContact.tags || []
+          const hasHotLeadTag = Array.isArray(existingTags) ? existingTags.includes(hotLeadTag) : existingTags === hotLeadTag
+          
+          if (!hasHotLeadTag) {
+            // Add the tag
+            const mergedTags = [...new Set([...(Array.isArray(existingTags) ? existingTags : []), hotLeadTag])]
+            currentContacts[contactIndex] = {
+              ...existingContact,
+              tags: mergedTags,
+              updatedAt: new Date()
+            }
+            contactsUpdated = true
+            console.log(`🏷️ Auto-tagged existing contact: ${open.recipientEmail}`)
+          }
+        } else {
+          // Create new contact with the tag
+          const newContact = {
+            id: `hot_lead_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            email: open.recipientEmail,
+            firstName: open.firstName || '',
+            lastName: open.lastName || '',
+            company: open.company || '',
+            tags: [hotLeadTag],
+            source: 'Hot Lead - Email Opened',
+            status: 'qualified',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+          
+          currentContacts.push(newContact)
+          contactsUpdated = true
+          console.log(`🏷️ Auto-created and tagged new contact: ${open.recipientEmail}`)
+        }
+      }
+
+      if (contactsUpdated) {
+        // Save updated contacts back to Firebase
+        await FirebaseUserDataService.saveCRMContacts(user.uid, { contacts: currentContacts })
+        
+        // Update local state
+        setContacts(currentContacts)
+        
+        console.log(`🏷️ Auto-tagged ${uniqueOpens.length} hot leads`)
+      }
+      
+    } catch (error) {
+      console.error('Error auto-tagging hot leads:', error)
+      // Don't show toast for auto-tagging errors to avoid spam
+    }
+  }
+
+  // Bulk tag all current hot leads
+  const bulkTagAllHotLeads = async () => {
+    if (emailOpens.length === 0) {
+      toast.error('No hot leads to tag')
+      return
+    }
+
+    if (!window.confirm(`Tag all ${emailOpens.length} hot leads with "Hot Lead - Opened Email"?`)) {
       return
     }
 
     try {
-      // Delete all email open records for this recipient
+      setSavingTag(true)
+      
+      // Load current contacts from Firebase
+      const contactsResult = await FirebaseUserDataService.getContacts(user.uid, tenant?.id)
+      let currentContacts = []
+      
+      if (contactsResult.success && contactsResult.data && contactsResult.data.contacts) {
+        currentContacts = contactsResult.data.contacts
+      }
+
+      const hotLeadTag = 'Hot Lead - Opened Email'
+      let contactsUpdated = false
+
+      for (const open of emailOpens) {
+        const contactIndex = currentContacts.findIndex(c => c.email === open.recipientEmail)
+        
+        if (contactIndex !== -1) {
+          // Existing contact - add the tag if not present
+          const existingContact = currentContacts[contactIndex]
+          const existingTags = existingContact.tags || []
+          const hasHotLeadTag = Array.isArray(existingTags) ? existingTags.includes(hotLeadTag) : existingTags === hotLeadTag
+          
+          if (!hasHotLeadTag) {
+            const mergedTags = [...new Set([...(Array.isArray(existingTags) ? existingTags : []), hotLeadTag])]
+            currentContacts[contactIndex] = {
+              ...existingContact,
+              tags: mergedTags,
+              updatedAt: new Date()
+            }
+            contactsUpdated = true
+          }
+        } else {
+          // Create new contact with the tag
+          const newContact = {
+            id: `hot_lead_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            email: open.recipientEmail,
+            firstName: open.firstName || '',
+            lastName: open.lastName || '',
+            company: open.company || '',
+            tags: [hotLeadTag],
+            source: 'Hot Lead - Email Opened',
+            status: 'qualified',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+          
+          currentContacts.push(newContact)
+          contactsUpdated = true
+        }
+      }
+
+      if (contactsUpdated) {
+        // Save updated contacts back to Firebase
+        await FirebaseUserDataService.saveCRMContacts(user.uid, { contacts: currentContacts })
+        
+        // Update local state
+        setContacts(currentContacts)
+        
+        toast.success(`🏷️ Tagged all ${emailOpens.length} hot leads!`)
+      } else {
+        toast.info('All hot leads were already tagged')
+      }
+      
+    } catch (error) {
+      console.error('Error bulk tagging hot leads:', error)
+      toast.error('Failed to bulk tag hot leads: ' + error.message)
+    } finally {
+      setSavingTag(false)
+    }
+  }
+
+  // Clear all hot leads
+  const clearAllHotLeads = async () => {
+    if (emailOpens.length === 0) {
+      toast.error('No hot leads to clear')
+      return
+    }
+
+    if (!window.confirm(`Remove all ${emailOpens.length} hot leads from the list? This will delete all email open records.`)) {
+      return
+    }
+
+    try {
+      setEmailOpensLoading(true)
+      
+      // Delete all email open records for this user
       const opensRef = collection(db, 'emailOpens')
-      const opensQuery = query(
-        opensRef,
-        where('userId', '==', user.uid),
-        where('recipientEmail', '==', emailOpen.recipientEmail)
-      )
+      const opensQuery = query(opensRef, where('userId', '==', user.uid))
       
       const snapshot = await getDocs(opensQuery)
       const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref))
       await Promise.all(deletePromises)
       
-      // Remove from local state immediately
-      setEmailOpens(prev => prev.filter(o => o.recipientEmail !== emailOpen.recipientEmail))
+      // Clear local state
+      setEmailOpens([])
       
-      toast.success(`Removed ${emailOpen.firstName || emailOpen.recipientEmail} from hot leads`)
+      toast.success(`🗑️ Cleared all ${emailOpens.length} hot leads`)
     } catch (error) {
-      console.error('Error deleting hot lead:', error)
-      toast.error('Failed to delete hot lead')
+      console.error('Error clearing hot leads:', error)
+      toast.error('Failed to clear hot leads')
+    } finally {
+      setEmailOpensLoading(false)
     }
   }
 
@@ -3078,6 +3241,9 @@ Enter number (1-4):`);
           case 'send_now':
             sendCampaignNow(campaign)
             return { ...campaign, status: 'Sending' }
+          case 'reload':
+            toast.success('Campaign reset for resending')
+            return { ...campaign, status: 'Scheduled', emailsSent: 0, sentContacts: [], lastError: null, progress: null }
           default:
             return campaign
         }
@@ -5177,6 +5343,44 @@ END:VCALENDAR`;
                           </>
                         )}
                       </button>
+                      {emailOpens.length > 0 && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); bulkTagAllHotLeads(); }}
+                            disabled={savingTag}
+                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center disabled:opacity-50"
+                          >
+                            {savingTag ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Tagging...
+                              </>
+                            ) : (
+                              <>
+                                <span className="mr-2">🏷️</span>
+                                Bulk Tag All
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); clearAllHotLeads(); }}
+                            disabled={emailOpensLoading}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center disabled:opacity-50"
+                          >
+                            {emailOpensLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Clearing...
+                              </>
+                            ) : (
+                              <>
+                                <span className="mr-2">🗑️</span>
+                                Clear All
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Collapsible Content */}
@@ -6111,6 +6315,15 @@ END:VCALENDAR`;
                             >
                               Delete
                             </button>
+                            {campaign.emailsSent > 0 && campaign.emailsSent < calculateTargetContacts(campaign).length && (
+                              <button 
+                                onClick={() => handleCampaignAction(campaign.id, 'reload')}
+                                className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600 transition-colors"
+                                disabled={campaign.status === 'Sending'}
+                              >
+                                🔄 Reload
+                              </button>
+                            )}
                           </div>
                         </div>
                         <div className="mt-3">

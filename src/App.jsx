@@ -1464,30 +1464,61 @@ P.S. If you're no longer interested in MarketGenie, you can unsubscribe here [un
       // Get the user's ID token
       const idToken = await auth.currentUser.getIdToken(true)
       
-      // TEMPORARY: Skip OAuth completely and use SMTP directly due to verification issues
-      console.log('📧 TEMPORARY: Using SMTP as primary method (OAuth disabled)')
+      // PRIMARY: Try OAuth Gmail API first (now that verification is approved)
+      console.log('📧 PRIMARY: Attempting OAuth Gmail API (verification approved)')
       
       try {
-        const smtpResult = await sendEmailViaSMTP(emailData, tenantId)
-        if (smtpResult.success) {
-          console.log('📧 ✅ Email sent via SMTP (primary method)')
+        const response = await fetch('https://us-central1-market-genie-f2d41.cloudfunctions.net/sendCampaignEmailGmailAPI', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            ...emailData,
+            tenantId: tenantId
+          })
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          console.log('📧 ✅ Email sent via OAuth Gmail API (primary method)')
           return {
             success: true,
-            data: smtpResult.data,
-            method: 'smtp_primary'
+            data: result,
+            method: 'oauth_primary'
           }
         } else {
-          console.error('📧 ❌ SMTP failed:', smtpResult.error)
-          return {
-            success: false,
-            error: smtpResult.error || 'SMTP sending failed'
-          }
+          console.log('📧 OAuth failed, falling back to SMTP:', result.error)
+          throw new Error(result.error || 'OAuth sending failed')
         }
-      } catch (smtpError) {
-        console.error('📧 Error with SMTP:', smtpError)
-        return { 
-          success: false, 
-          error: smtpError.message 
+      } catch (oauthError) {
+        console.log('📧 OAuth failed, falling back to SMTP:', oauthError.message)
+        
+        // FALLBACK: Use SMTP if OAuth fails
+        try {
+          const smtpResult = await sendEmailViaSMTP(emailData, tenantId)
+          if (smtpResult.success) {
+            console.log('📧 ✅ Email sent via SMTP (fallback method)')
+            return {
+              success: true,
+              data: smtpResult.data,
+              method: 'smtp_fallback'
+            }
+          } else {
+            console.error('📧 ❌ Both OAuth and SMTP failed')
+            return {
+              success: false,
+              error: 'Both OAuth and SMTP sending failed'
+            }
+          }
+        } catch (smtpError) {
+          console.error('📧 ❌ Both OAuth and SMTP failed:', smtpError)
+          return { 
+            success: false, 
+            error: 'Both OAuth and SMTP sending failed' 
+          }
         }
       }
       

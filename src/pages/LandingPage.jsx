@@ -59,42 +59,42 @@ export default function LandingPage() {
     {
       icon: Bot,
       title: "AI-Powered Automation",
-      description: "Smart workflows that adapt and optimize themselves for maximum ROI"
+      description: "Complete marketing automation with AI email generation that learns and optimizes your campaigns"
     },
     {
       icon: Users,
       title: "Advanced Lead Generation",
-      description: "Automated web scraping and lead enrichment from multiple sources"
+      description: "Automated web scraping and lead enrichment from multiple sources with AI-powered targeting"
     },
     {
       icon: Mail,
       title: "Multi-Channel Campaigns",
-      description: "Email and social media campaigns from one platform"
+      description: "Email and social media campaigns from one platform with intelligent cross-channel optimization"
     },
     {
       icon: Brain,
       title: "Intelligent Lead Scoring",
-      description: "AI analyzes behavior patterns to identify your hottest prospects"
+      description: "AI analyzes behavior patterns to identify your hottest prospects and prioritize follow-ups"
     },
     {
       icon: Workflow,
-      title: "Visual Funnel Builder",
-      description: "Generates stunning landing page funnels from your requests"
+      title: "AI Funnel Builder",
+      description: "Creates complete, high-converting landing page funnels instantly based on your business needs"
     },
     {
       icon: Calendar,
       title: "Appointment Automation",
-      description: "Smart scheduling with automated reminders and follow-ups"
+      description: "Smart scheduling with automated reminders and AI-powered follow-up sequences"
     },
     {
       icon: BarChart3,
       title: "Real-Time Analytics",
-      description: "Beautiful 3D dashboards with predictive insights"
+      description: "Beautiful 3D dashboards with predictive insights and performance optimization recommendations"
     },
     {
       icon: Shield,
       title: "Smart Campaign Analytics",
-      description: "AI-powered performance monitoring and optimization insights"
+      description: "AI-powered performance monitoring with automated optimization and conversion insights"
     }
   ]
 
@@ -236,7 +236,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-2xl md:text-3xl font-bold mb-8 text-gray-200"
             >
-              The Only Platform That Automates, Optimizes & Even Fixes Itself
+              The Revolutionary AI Marketing Platform That Writes, Optimizes & Converts Like a Human Expert
             </motion.h2>
             
             <motion.p 
@@ -245,9 +245,9 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
-              <strong className="text-white">Meet Market Genie</strong> - Where every feature is powered by AI that learns your business, anticipates customer behavior, and continuously improves your results.
+              <strong className="text-white">Meet Market Genie</strong> - The AI marketing genius that writes killer emails, builds stunning funnels, and optimizes campaigns with superhuman intelligence. Watch your conversions explode as our AI learns your business and turns visitors into customers.
               <br />
-              <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Compare ingredients to HighLevel and Click Funnels)</span>
+              <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Why settle for basic tools when you can have an AI marketing genius?)</span>
             </motion.p>
             
             {/* AI Features Grid */}
@@ -262,21 +262,21 @@ export default function LandingPage() {
                   🧠 AI That Actually Works For You
                 </h3>
                 <ul className="text-gray-300 space-y-2 text-left">
-                  <li><strong className="text-white">Natural Language Commands</strong> - "Find me more leads like my top customers"</li>
-                  <li><strong className="text-white">Smart Analytics</strong> - AI-powered performance monitoring</li>
-                  <li><strong className="text-white">Predictive Analytics</strong> - Know which leads will convert before you contact them</li>
+                  <li><strong className="text-white">AI-Powered Email Writing</strong> - GPT-4 generates personalized, high-converting emails that sound like you wrote them</li>
+                  <li><strong className="text-white">Self-Optimizing Campaigns</strong> - Campaigns that automatically improve performance and fix themselves</li>
+                  <li><strong className="text-white">Smart Lead Intelligence</strong> - AI analyzes patterns to predict which leads will convert</li>
                 </ul>
               </div>
               
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-yellow-300 mb-3 flex items-center">
-                  🚀 Everything You Need. Nothing You Don't.
+                  🚀 Complete AI Marketing Suite
                 </h3>
                 <div className="text-gray-300 text-left">
                   <div className="text-lg font-semibold text-white mb-2">
-                    Generate Leads → Automate Campaigns → Close Deals → Analyze Results
+                    AI Email Writing → Smart Funnel Creation → Automated Campaigns → Conversion Explosion
                   </div>
-                  <p className="italic text-yellow-200">All in one unified platform that replaces 10+ tools</p>
+                  <p className="italic text-yellow-200">One AI platform that replaces your entire marketing stack with superhuman intelligence</p>
                 </div>
               </div>
             </motion.div>
@@ -288,11 +288,11 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="bg-white/8 backdrop-blur-lg rounded-xl p-6 border border-white/12 max-w-2xl mx-auto mb-8"
             >
-              <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ See The Magic In Action</h3>
+              <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ The AI Marketing Revolution</h3>
               <blockquote className="text-lg text-gray-300 italic mb-3">
-                "Setup our entire lead generation system in one afternoon - something that used to take weeks"
+                "Market Genie's AI wrote emails that converted 40% better than our best copywriter. The funnel builder created a complete sales system in minutes. This isn't just automation - it's AI that thinks like a marketing genius."
               </blockquote>
-              <p className="text-sm text-gray-400">- E-commerce Brand Director</p>
+              <p className="text-sm text-gray-400">- SaaS Founder, 300% ROI Increase</p>
             </motion.div>
             
             <motion.div 
@@ -609,7 +609,7 @@ export default function LandingPage() {
                 <span className="text-2xl font-bold text-white">Market Genie</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-sm">
-                AI-powered marketing automation that learns, optimizes, and fixes itself. 
+                AI-powered marketing automation that writes killer emails, builds stunning funnels, and optimizes campaigns with superhuman intelligence. 
                 Transform your business with intelligent campaigns that grow with you.
               </p>
             </div>

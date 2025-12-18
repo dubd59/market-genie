@@ -5474,7 +5474,7 @@ END:VCALENDAR`;
                                       <span className="mr-1">✅</span> {campaignsOpened.length > 1 ? `${campaignsOpened.length} campaigns` : 'Opened'}
                                     </div>
                                     <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                      Last: {open.openedAt?.toLocaleString?.() || 'Recently'}
+                                      Last: {open.openedAt?.toLocaleString?.() || open.openedAt?.toDate?.()?.toLocaleString?.() || 'Recently'}
                                     </div>
                                   </div>
                                   <button

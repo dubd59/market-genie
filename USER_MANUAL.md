@@ -1363,17 +1363,11 @@ Visit **https://marketgenie.tech/** and watch the magic happen in real-time!
 #### **GenieConsole**
 - **Location**: Available on every page via the floating genie lamp icon
 - **Function**: Natural language interface for all platform operations
-- **Usage**: Type or speak commands like:
+- **Usage**: Type commands like:
   - "Create a welcome email campaign for new customers"
   - "Show me my best performing campaigns"
   - "Optimize my lead generation funnel"
   - "Find contacts who haven't engaged in 30 days"
-
-#### **Voice Commands**
-- **Activation**: Click the microphone button (floating bottom-right)
-- **Supported Commands**: All text commands can be spoken
-- **Technology**: Web Speech API with real-time transcription
-- **Languages**: Supports multiple languages based on browser settings
 
 #### **Smart Suggestions**
 - **Context-Aware**: Suggestions change based on current page and data
@@ -1446,22 +1440,6 @@ Visit **https://marketgenie.tech/** and watch the magic happen in real-time!
 - **Testing**: Send test messages before going live
 - **Analytics**: Track performance of each block
 
-### 🎤 **5. Voice-Controlled Interface**
-
-#### **Voice Button**
-- **Location**: Floating button bottom-right corner
-- **States**: 
-  - Blue: Ready to listen
-  - Red: Currently listening
-  - Green: Processing command
-  - Orange: Command completed
-
-#### **Supported Commands**
-- **Navigation**: "Go to dashboard", "Show contacts", "Open settings"
-- **Campaign Management**: "Create new campaign", "Pause all campaigns"
-- **Data Queries**: "What's my conversion rate?", "Show top campaigns"
-- **AI Requests**: "Optimize my email open rates", "Find my best customers"
-
 ---
 
 ## 📱 User Guide
@@ -1497,7 +1475,6 @@ Visit **https://marketgenie.tech/** and watch the magic happen in real-time!
 
 #### **Quick Actions**
 - **Genie Lamp Icon**: Open AI console for natural language commands
-- **Voice Button**: Activate voice control
 - **+ New Campaign**: Quick campaign creation
 - **Settings Gear**: Access platform settings
 
@@ -1628,12 +1605,6 @@ Visit **https://marketgenie.tech/** and watch the magic happen in real-time!
 **Appwrite**: Analytics, self-healing, and serverless functions
 **PostgreSQL**: Analytics data storage
 
-### **AI & Voice Integration**
-- **Web Speech API**: Browser-native voice recognition
-- **Natural Language Processing**: Command interpretation
-- **AI Service Integration**: Ready for OpenAI/Claude APIs
-- **Voice Synthesis**: Text-to-speech capabilities
-
 ### **File Structure**
 ```
 src/
@@ -1651,8 +1622,7 @@ src/
 │   ├── AuthContext.jsx     # Authentication state
 │   └── GenieContext.jsx    # AI and app state
 ├── features/                # Feature-specific components
-│   ├── self-healing/        # Campaign health monitoring
-│   └── voice-control/       # Voice command system
+│   └── self-healing/        # Campaign health monitoring
 ├── hooks/                   # Custom React hooks
 ├── pages/                   # Main application pages
 │   ├── Dashboard.jsx        # Main dashboard
@@ -1749,7 +1719,6 @@ src/
 #### **Feature Customization**
 - **AI Prompts**: Modify prompts in `src/services/genie/`
 - **3D Visualization**: Customize Three.js settings in `src/components/ui/Funnel3D.jsx`
-- **Voice Commands**: Add commands in `src/hooks/useVoiceGenie.js`
 - **Campaign Blocks**: Add new block types in `src/pages/CampaignBuilder.jsx`
 
 ---
@@ -1849,12 +1818,6 @@ VITE_APP_VERSION=1.0.0
 - **TypeScript Errors**: Fix type errors or disable strict mode
 - **Missing Dependencies**: Ensure all packages are installed
 - **Environment Variables**: Verify all required env vars are set
-
-#### **Voice Commands Not Working**
-- **Browser Support**: Ensure Web Speech API support
-- **Permissions**: Allow microphone access
-- **HTTPS Required**: Voice API requires secure connection
-- **Language Settings**: Check browser language settings
 
 #### **3D Visualization Issues**
 - **WebGL Support**: Verify browser WebGL capabilities
@@ -1985,27 +1948,6 @@ const {
 } = useAuth();
 ```
 
-### **Voice Command API**
-
-#### **Supported Command Types**
-- **Navigation**: "go to [page]", "show [section]"
-- **Campaign Management**: "create campaign", "pause [campaign]"
-- **Data Queries**: "what is my [metric]", "show [timeframe]"
-- **AI Requests**: "optimize [target]", "suggest [improvement]"
-
-#### **Voice Integration**
-```javascript
-const {
-  isListening,     // Boolean: Currently listening
-  startListening,  // () => void: Start voice recognition
-  stopListening,   // () => void: Stop voice recognition
-  transcript       // string: Current transcript
-} = useVoiceGenie({
-  onResult: (text) => {}, // Callback for speech result
-  onError: (error) => {}  // Callback for errors
-});
-```
-
 ---
 
 ## 🧞‍♂️ CRM & Funnels - The Heart of MarketGenie
@@ -2043,7 +1985,6 @@ MarketGenie's funnel system outperforms ClickFunnels in every way:
 - ⚡ **Dynamic Content** - Pages change based on visitor psychology
 - 📊 **Advanced Analytics** - 340% better performance tracking
 - 🎯 **Multi-dimensional Testing** - Beyond simple A/B tests
-- 🤖 **Voice Control** - "Create lead magnet funnel" and it happens
 - 🏗️ **Enterprise Architecture** - Multi-tenant, real-time collaboration
 
 #### **🎯 Accessing the Superior Funnel Builder**
@@ -2423,7 +2364,7 @@ Market Genie represents the future of marketing automation with its AI-first app
 - **Visual**: 3D analytics and drag-and-drop builders enhance user experience
 - **Intelligent**: Self-healing campaigns optimize themselves automatically
 - **Scalable**: Built on modern technology stack for enterprise growth
-- **Accessible**: Voice commands and intuitive design for all users
+- **Accessible**: Intuitive design for all users
 
 ### **Next Steps**
 1. **Explore Features**: Try all the competitive differentiators

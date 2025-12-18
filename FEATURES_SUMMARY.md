@@ -9,7 +9,6 @@
 
 ### **🤖 AI-Powered Automation**
 - Natural language campaign creation
-- Voice-activated commands and queries
 - Smart suggestions and auto-optimization
 - Self-healing campaigns with predictive alerts
 - GPT-4 powered personalized responses
@@ -25,7 +24,6 @@
 - Email marketing automation
 - SMS campaigns with personalization
 - Social media automation
-- Voice and video message automation
 - Cross-channel attribution tracking
 
 ### **🏗️ Advanced Funnel Builder**
@@ -106,13 +104,6 @@
 - Intuitive navigation and user flow
 - Magical genie-themed branding
 
-### **Voice Control**
-- Speech-to-text commands
-- Hands-free operation
-- Voice analytics queries
-- Natural language processing
-- Multi-language support
-
 ### **Accessibility**
 - WCAG compliance
 - Keyboard navigation
@@ -189,10 +180,9 @@
 
 1. **AI-First Approach**: Unlike competitors, every feature is AI-enhanced
 2. **3D Visualization**: Unique immersive analytics experience
-3. **Voice Control**: Hands-free operation not available elsewhere
-4. **Self-Healing**: Campaigns automatically optimize themselves
-5. **Budget Awareness**: Built-in cost control and optimization
-6. **Unified Platform**: All tools in one place vs. multiple subscriptions
+3. **Self-Healing**: Campaigns automatically optimize themselves
+4. **Budget Awareness**: Built-in cost control and optimization
+5. **Unified Platform**: All tools in one place vs. multiple subscriptions
 
 ---
 

@@ -595,14 +595,42 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
       );
       
       // Listen for OAuth completion message from popup
-      const handleMessage = (event) => {
+      const handleMessage = async (event) => {
         if (event.data.type === 'GMAIL_OAUTH_SUCCESS') {
           console.log('✅ Gmail OAuth successful');
+          
+          // Save tokens to Firestore
+          try {
+            const { db } = await import('../firebase');
+            const { doc, setDoc } = await import('firebase/firestore');
+            
+            const gmailCredentialsRef = doc(db, 'MarketGenie_tenants', tenant.id, 'integrations', 'gmail');
+            
+            const credentialsData = {
+              accessToken: event.data.tokens.access_token,
+              refreshToken: event.data.tokens.refresh_token,
+              expiresIn: event.data.tokens.expires_in,
+              tokenType: 'Bearer',
+              scope: 'https://www.googleapis.com/auth/gmail.send',
+              connectedAt: new Date(),
+              clientId: '1023666208479-besa8q2moobncp0ih4njtop8a95htop9.apps.googleusercontent.com',
+              email: event.data.tokens.email || 'Gmail Connected'
+            };
+            
+            await setDoc(gmailCredentialsRef, credentialsData, { merge: true });
+            console.log('💾 Gmail credentials saved to Firestore');
+          } catch (saveError) {
+            console.error('Failed to save Gmail credentials:', saveError);
+            toast.error('Gmail connected but credentials not saved. Please try again.');
+            window.removeEventListener('message', handleMessage);
+            return;
+          }
+          
           toast.dismiss('gmail-oauth');
           toast.success('Gmail connected successfully!');
           
           // Update integration status
-          const email = event.data.tokens?.email || event.data.email || 'Connected via OAuth';
+          const email = event.data.tokens?.email || 'Connected via OAuth';
           updateIntegrationStatus('gmail', 'connected', {
             email: email,
             lastSync: new Date().toLocaleString()

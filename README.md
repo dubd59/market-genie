@@ -18,7 +18,6 @@
 
 ### 🧠 **1. AI-First Experience**
 - **Natural Language Interface**: Ask the AI genie to create campaigns, analyze data, or optimize performance
-- **Voice Commands**: Speech-to-text integration for hands-free operation
 - **Smart Suggestions**: Context-aware recommendations throughout the platform
 
 ### 📊 **2. 3D Analytics Visualization** 
@@ -37,7 +36,6 @@
 - **Real-time Preview**: See your campaigns come to life as you build
 
 ### ✨ **5. Advanced UX Features**
-- **Voice Control**: Hands-free interaction throughout the platform
 - **Responsive Design**: Perfect experience on desktop, tablet, and mobile
 - **Custom Animations**: Smooth transitions and delightful micro-interactions
 - **Genie Theme**: Unique magical branding that stands out from competitors
@@ -64,11 +62,6 @@
 **Appwrite** - Analytics, self-healing, and serverless functions
 **PostgreSQL** - Analytics data storage
 
-### **AI & Voice**
-- **Web Speech API** - Voice recognition and synthesis
-- **Custom AI Integration** - Ready for OpenAI/Claude integration
-- **Natural Language Processing** - Smart command interpretation
-
 ---
 
 ## 🏗️ **Architecture**
@@ -81,8 +74,7 @@ src/
 │   └── ui/              # Reusable UI components (Funnel3D)
 ├── contexts/            # React contexts for state management
 ├── features/            # Feature-specific components
-│   ├── self-healing/    # Campaign health monitoring
-│   └── voice-control/   # Voice command functionality
+│   └── self-healing/    # Campaign health monitoring
 ├── hooks/               # Custom React hooks
 ├── pages/               # Main application pages
 ├── services/            # API and external service integrations
@@ -140,7 +132,6 @@ src/
 - 3D funnel visualization with interactive stages
 - Real-time campaign health monitoring
 - AI-powered insights and recommendations
-- Voice-activated commands and queries
 
 ### **Campaign Builder**
 - Visual drag-and-drop workflow creation
@@ -156,7 +147,6 @@ src/
 
 ### **AI Genie Console**
 - Natural language campaign creation
-- Voice-to-text command interface
 - Smart suggestions based on context
 - Historical wish/command tracking
 

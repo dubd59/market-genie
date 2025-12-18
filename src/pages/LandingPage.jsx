@@ -69,7 +69,7 @@ export default function LandingPage() {
     {
       icon: Mail,
       title: "Multi-Channel Campaigns",
-      description: "Email, social media, and voice campaigns from one platform"
+      description: "Email and social media campaigns from one platform"
     },
     {
       icon: Brain,
@@ -264,7 +264,6 @@ export default function LandingPage() {
                 <ul className="text-gray-300 space-y-2 text-left">
                   <li><strong className="text-white">Natural Language Commands</strong> - "Find me more leads like my top customers"</li>
                   <li><strong className="text-white">Smart Analytics</strong> - AI-powered performance monitoring</li>
-                  <li><strong className="text-white">Voice-Activated Control</strong> - Hands-free marketing management</li>
                   <li><strong className="text-white">Predictive Analytics</strong> - Know which leads will convert before you contact them</li>
                 </ul>
               </div>
@@ -681,13 +680,31 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-white/10 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 mb-4 md:mb-0">
-              © 2025 Market Genie. All rights reserved.
+          <div className="border-t border-white/10 mt-8 pt-8">
+            {/* Our Other Applications & Backlinks */}
+            <div className="mb-8">
+              <h4 className="text-white font-semibold mb-3 text-center md:text-left">🚀 Our Other Applications & Backlinks</h4>
+              <div className="flex flex-wrap justify-center md:justify-start gap-6">
+                <a href="https://supportgenie.help/" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">
+                  Support Genie
+                </a>
+                <a href="https://dcpro3.com/" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">
+                  DC Pro 3
+                </a>
+                <a href="https://raveup.shop/" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">
+                  Rave Up Shop
+                </a>
+              </div>
             </div>
-            <div className="flex space-x-6 text-gray-400">
-              <a href="/privacy-policy.html" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="/terms-of-service.html" className="hover:text-white transition-colors">Terms of Service</a>
+            
+            <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row justify-between items-center">
+              <div className="text-gray-400 mb-4 md:mb-0">
+                © 2025 Market Genie. All rights reserved.
+              </div>
+              <div className="flex space-x-6 text-gray-400">
+                <a href="/privacy-policy.html" className="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="/terms-of-service.html" className="hover:text-white transition-colors">Terms of Service</a>
+              </div>
             </div>
           </div>
         </div>

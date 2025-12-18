@@ -2663,8 +2663,14 @@ exports.scheduledCampaignSender = onSchedule({
                   .replace(/{{company}}/gi, contact.company || 'your company')
                   .replace(/{{email}}/gi, contact.email || '');
                 
-                // Add tracking pixel for open rate monitoring
-                const trackingPixel = `<img src="https://us-central1-market-genie-f2d41.cloudfunctions.net/trackEmailOpen?campaignId=${campaign.id}&recipientEmail=${encodeURIComponent(contact.email)}&userId=${userId}" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`;
+                // Add tracking pixel for open rate monitoring with JavaScript delay for better accuracy
+                const trackingPixel = `<script>
+setTimeout(function() {
+  var img = new Image();
+  img.src = 'https://us-central1-market-genie-f2d41.cloudfunctions.net/trackEmailOpen?campaignId=${campaign.id}&recipientEmail=${encodeURIComponent(contact.email)}&userId=${userId}';
+}, 3000);
+</script>
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="1" height="1" style="display:none;visibility:hidden;" alt="" />`;
                 
                 // Append tracking pixel before closing body tag, or at end if no body tag
                 let trackedContent = emailContent;
@@ -2803,7 +2809,7 @@ exports.trackEmailOpen = functions.https.onRequest(async (req, res) => {
         campaignId: campaignId,
         recipientEmail: recipientEmail || 'unknown',
         userId: userId,
-        openedAt: admin.firestore.FieldValue.serverTimestamp(),
+        openedAt: new Date(),
         userAgent: req.headers['user-agent'] || 'unknown',
         ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown'
       });

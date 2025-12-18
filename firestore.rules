@@ -408,6 +408,13 @@ service cloud.firestore {
       allow list: if isAuthenticated();
     }
 
+    // USERDATA COLLECTION (LEGACY SUPPORT)
+    // Allow users to access their own userData documents (format: {userId}_{collection})
+    match /userData/{documentId} {
+      allow read, write, create: if isAuthenticated() && 
+                                    request.auth.uid == documentId.split('_')[0];
+    }
+
     // CATCH-ALL RULE FOR AUTHENTICATED FOUNDER ACCOUNT
     // Allow founder account access to any collection as fallback
     match /{collection}/{document=**} {

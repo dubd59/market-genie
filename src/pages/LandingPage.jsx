@@ -236,7 +236,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-2xl md:text-3xl font-bold mb-8 text-gray-200"
             >
-              The Revolutionary AI Marketing Platform That Writes, Optimizes & Converts Like a Human Expert
+              The Revolutionary AI Marketing Platform That Writes, Optimizes & Converts Like a Superhuman
             </motion.h2>
             
             <motion.p 
@@ -290,9 +290,9 @@ export default function LandingPage() {
             >
               <h3 className="text-xl font-bold text-yellow-300 mb-3">✨ The AI Marketing Revolution</h3>
               <blockquote className="text-lg text-gray-300 italic mb-3">
-                "Market Genie's AI wrote emails that converted 40% better than our best copywriter. The funnel builder created a complete sales system in minutes. This isn't just automation - it's AI that thinks like a marketing genius."
+                "We built this powerful application out of need and frustration over high priced marketing tools. Market Genie is different, it builds campaigns, generates leads, and handles optimization automatically at an affordable price. Everyone can afford."
               </blockquote>
-              <p className="text-sm text-gray-400">- SaaS Founder, 300% ROI Increase</p>
+              <p className="text-sm text-yellow-400">- Your Market Genie Developer</p>
             </motion.div>
             
             <motion.div 
@@ -310,6 +310,9 @@ export default function LandingPage() {
               </button>
               <a href="https://fazier.com/launches/marketgenie.tech" target="_blank" rel="noopener noreferrer">
                 <img src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=featured&theme=light" width="250" alt="Fazier Featured badge" className="hover:opacity-90 transition-opacity" />
+              </a>
+              <a href="https://www.producthunt.com/products/market-genie-your-ai-marketing-co-pilot?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-market-genie-your-ai-marketing-co-pilot" target="_blank" rel="noopener noreferrer">
+                <img alt="Market Genie: Your AI Marketing Co-Pilot - When You succeed, we succeed. Your breakthrough starts here | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1052277&theme=light&t=1766161185805" />
               </a>
             </motion.div>
 

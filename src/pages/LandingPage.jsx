@@ -263,7 +263,7 @@ export default function LandingPage() {
                 </h3>
                 <ul className="text-gray-300 space-y-2 text-left">
                   <li><strong className="text-white">AI-Powered Email Writing</strong> - GPT-4 generates personalized, high-converting emails that sound like you wrote them</li>
-                  <li><strong className="text-white">Self-Optimizing Campaigns</strong> - Campaigns that automatically improve performance and fix themselves</li>
+                  <li><strong className="text-white">AI-Optimized Campaigns</strong> - Campaigns that automatically analyze performance and apply AI-driven optimizations</li>
                   <li><strong className="text-white">Smart Lead Intelligence</strong> - AI analyzes patterns to predict which leads will convert</li>
                 </ul>
               </div>

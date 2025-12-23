@@ -247,7 +247,7 @@ export default function LandingPage() {
             >
               <strong className="text-white">Meet Market Genie</strong> - The AI marketing genius that writes killer emails, builds stunning funnels, and optimizes campaigns with superhuman intelligence. Watch your conversions explode as our AI learns your business and turns visitors into customers.
               <br />
-              <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Why settle for basic tools when you can have an AI marketing genius?)</span>
+              <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Compare ingredients to Highlevel and Clickfunnel)</span>
             </motion.p>
             
             {/* AI Features Grid */}

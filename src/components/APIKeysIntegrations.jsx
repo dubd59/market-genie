@@ -244,7 +244,7 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
       type: 'Lead Generation',
       status: 'disconnected',
       icon: '🔥',
-      description: 'Advanced web scraping for comprehensive lead data extraction',
+      description: 'Advanced web scraping (currently limited - LinkedIn blocked)',
       lastSync: 'Never',
       account: 'Not connected',
       features: ['Web Scraping', 'Data Extraction', 'Lead Enrichment', 'API Access']

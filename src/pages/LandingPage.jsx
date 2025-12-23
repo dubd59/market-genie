@@ -245,7 +245,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
-              <strong className="text-white">Stop wasting hours on complex platforms and thousands on ineffective campaigns.</strong> Market Genie is the AI-powered marketing solution that automates everything—writing high-converting emails, building optimized funnels, scoring leads, and running multi-channel campaigns—all from one affordable dashboard. No more juggling expensive tools that promise results but deliver frustration.
+              <strong className="text-white">Stop wasting hours on complex platforms and thousands on ineffective campaigns.</strong> Market Genie is the AI-powered marketing solution that automates everything writing high-converting emails, building optimized funnels, scoring leads, and running multi-channel campaigns all from one affordable dashboard. No more juggling expensive tools that promise results but deliver frustration.
               <br />
               <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Compare ingredients to Highlevel and Clickfunnel)</span>
             </motion.p>

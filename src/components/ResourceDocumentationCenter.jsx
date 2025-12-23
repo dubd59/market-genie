@@ -221,7 +221,7 @@ const ResourceDocumentationCenter = () => {
                         <li><strong>Outreach Automation:</strong> Email and LinkedIn campaign management - Create, schedule, and monitor personalized outreach sequences with advanced automation and A/B testing capabilities.</li>
                         <li><strong>CRM & Pipeline:</strong> Customer relationship management - Organize leads, track interactions, manage deal stages, and monitor your entire sales funnel from prospect to customer.</li>
                         <li><strong>Appointments:</strong> Booking and calendar integration - Seamlessly schedule meetings with integrated calendar sync, automated reminders, and professional booking pages.</li>
-                        <li><strong>API Keys & Integrations:</strong> Third-party service connections - Configure and manage all external service integrations including Prospeo, Hunter, VoilaNorbert, and email providers.</li>
+                        <li><strong>API Keys & Integrations:</strong> Third-party service connections - Configure and manage all external service integrations including Prospeo, Hunter, Firecrawl, and email providers.</li>
                         <li><strong>Resources & Docs:</strong> This documentation center - Access comprehensive guides, tutorials, troubleshooting help, and best practices for maximizing your success.</li>
                         <li><strong>White-Label SaaS:</strong> Partner program and reseller tools - Explore partnership opportunities, revenue sharing programs, and white-label solutions for scaling your business.</li>
                       </ul>

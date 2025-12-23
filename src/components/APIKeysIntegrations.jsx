@@ -919,10 +919,6 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           return [
             { key: 'apiKey', label: 'Prospeo.io API Key', type: 'password', placeholder: 'Your Prospeo.io API key (75 FREE credits)' }
           ];
-        case 'voila-norbert':
-          return [
-            { key: 'apiKey', label: 'Voila Norbert API Key', type: 'password', placeholder: 'Your Voila Norbert API key' }
-          ];
         case 'rocketreach':
           return [
             { key: 'apiKey', label: 'RocketReach API Key', type: 'password', placeholder: 'Your RocketReach API key' }
@@ -948,6 +944,10 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
           return [
             { key: 'apiKey', label: 'Mailgun API Key', type: 'password', placeholder: 'key-xxxxxx...' },
             { key: 'domain', label: 'Mailgun Domain', type: 'text', placeholder: 'mg.yourdomain.com' }
+          ];
+        case 'firecrawl':
+          return [
+            { key: 'apiKey', label: 'Firecrawl API Key', type: 'password', placeholder: 'Your Firecrawl API key' }
           ];
         default:
           return [

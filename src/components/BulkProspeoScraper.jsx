@@ -654,7 +654,7 @@ const BulkProspeoScraper = () => {
           
           console.log(`🔍 Multi-provider search for ${executive.first} ${executive.last} at ${executive.company}...`);
           
-          // Use multi-provider approach: Hunter.io, VoilaNorbert, AND Prospeo!
+          // Use multi-provider approach: Hunter.io, Firecrawl, AND Prospeo!
           const result = await LeadService.findPersonMultiProvider(
             tenant.id, 
             executive.domain, 
@@ -975,7 +975,7 @@ const BulkProspeoScraper = () => {
       )}
 
       <div className="text-xs text-purple-200 mt-4 space-y-2">
-        <div>💡 All leads auto-save to Recent Leads database. Uses Hunter.io, VoilaNorbert, AND Prospeo APIs for maximum coverage!</div>
+        <div>💡 All leads auto-save to Recent Leads database. Uses Hunter.io, Firecrawl, AND Prospeo APIs for maximum coverage!</div>
         <div>🎯 <strong>Enhanced SMB Targeting:</strong> Now includes 500+ executives across construction, automotive, beauty, food service, healthcare, education, cleaning services, pet care, landscaping, and more!</div>
         <div>🏗️ <strong>Industry-Specific Filtering:</strong> Choose your target industry to focus on the most relevant prospects for your business.</div>
         <div>📈 <strong>Better Lead Quality:</strong> Excludes large enterprises and focuses on small-to-medium businesses that can actually use your services.</div>

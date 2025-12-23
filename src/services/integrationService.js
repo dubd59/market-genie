@@ -494,7 +494,8 @@ class IntegrationService {
       const providerMap = {
         'prospeo-io': 'prospeo',
         'voilanorbert': 'voilanorbert',
-        'hunter': 'hunter'
+        'hunter': 'hunter',
+        'firecrawl': 'firecrawl'
       };
       
       const proxyProvider = providerMap[provider] || provider;
@@ -547,6 +548,10 @@ class IntegrationService {
 
   async findEmailHunter(tenantId, domain, firstName, lastName) {
     return await this.findEmailWithProvider(tenantId, 'hunter', domain, firstName, lastName);
+  }
+
+  async findEmailFirecrawl(tenantId, domain, firstName, lastName) {
+    return await this.findEmailWithProvider(tenantId, 'firecrawl', domain, firstName, lastName);
   }
 
   // Verify email using any provider

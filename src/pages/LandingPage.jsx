@@ -226,7 +226,7 @@ export default function LandingPage() {
               className="text-5xl md:text-7xl font-bold mb-6"
             >
               <span className="text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-300 to-yellow-600" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.3)', filter: 'brightness(1.1) saturate(1.2)'}}>
-                Your Marketing Just Grew an AI Brain
+                Tired of Overpaying for Marketing Tools That Don't Deliver?
               </span>
             </motion.h1>
             
@@ -236,7 +236,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-2xl md:text-3xl font-bold mb-8 text-gray-200"
             >
-              The Revolutionary AI Marketing Platform That Writes, Optimizes & Converts Like a Superhuman
+              Market Genie: The Affordable AI Alternative to HighLevel & ClickFunnels That Actually Works
             </motion.h2>
             
             <motion.p 
@@ -245,7 +245,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto"
             >
-              <strong className="text-white">Meet Market Genie</strong> - The AI marketing genius that writes killer emails, builds stunning funnels, and optimizes campaigns with superhuman intelligence. Watch your conversions explode as our AI learns your business and turns visitors into customers.
+              <strong className="text-white">Stop wasting hours on complex platforms and thousands on ineffective campaigns.</strong> Market Genie is the AI-powered marketing solution that automates everything—writing high-converting emails, building optimized funnels, scoring leads, and running multi-channel campaigns—all from one affordable dashboard. No more juggling expensive tools that promise results but deliver frustration.
               <br />
               <span className="text-yellow-400 text-2xl md:text-3xl mt-2 block font-bold">(Compare ingredients to Highlevel and Clickfunnel)</span>
             </motion.p>

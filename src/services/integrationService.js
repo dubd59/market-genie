@@ -551,16 +551,26 @@ class IntegrationService {
 
   async findEmailFirecrawl(tenantId, domain, firstName, lastName) {
     try {
+      console.log(`🔥 Firecrawl: Getting credentials for tenant ${tenantId}`);
       const credentials = await this.getIntegrationCredentials(tenantId, 'firecrawl');
+      console.log(`🔥 Firecrawl: Credentials result:`, { success: credentials.success, hasApiKey: !!(credentials.data?.apiKey) });
+
       if (!credentials.success) {
+        console.log(`❌ Firecrawl: Not connected - ${credentials.error}`);
         return { success: false, error: 'Firecrawl not connected' };
+      }
+
+      if (!credentials.data.apiKey) {
+        console.log(`❌ Firecrawl: No API key found in credentials`);
+        return { success: false, error: 'Firecrawl API key not configured' };
       }
 
       // For Firecrawl, we'll try to scrape LinkedIn or company website
       // First, try to find a LinkedIn profile URL
       const linkedinUrl = `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
-      
+
       console.log(`🔥 Firecrawl: Attempting to scrape ${linkedinUrl}`);
+      console.log(`🔥 Firecrawl: Using API key starting with: ${credentials.data.apiKey.substring(0, 8)}...`);
 
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
@@ -575,9 +585,12 @@ class IntegrationService {
         })
       });
 
+      console.log(`🔥 Firecrawl: API response status: ${response.status}`);
+
       if (!response.ok) {
-        console.log(`❌ Firecrawl API error: ${response.status}`);
-        return { success: false, error: `Firecrawl API error: ${response.status}` };
+        const errorText = await response.text();
+        console.log(`❌ Firecrawl API error: ${response.status} - ${errorText}`);
+        return { success: false, error: `Firecrawl API error: ${response.status} - ${errorText}` };
       }
 
       const result = await response.json();
@@ -587,11 +600,11 @@ class IntegrationService {
         // Try to extract email from the scraped content
         const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
         const emails = result.data.markdown.match(emailRegex);
-        
+
         if (emails && emails.length > 0) {
           const email = emails[0]; // Take the first email found
           console.log(`✅ Firecrawl found email: ${email}`);
-          
+
           return {
             success: true,
             data: {
@@ -606,6 +619,7 @@ class IntegrationService {
         }
       }
 
+      console.log(`❌ Firecrawl: No email found in scraped content`);
       return { success: false, error: 'No email found in scraped content' };
     } catch (error) {
       console.error('❌ Firecrawl error:', error);

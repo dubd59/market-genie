@@ -215,6 +215,18 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
 
   const [leadGenerationIntegrations, setLeadGenerationIntegrations] = useState([
     {
+      id: 'prospeo-io',
+      name: 'Prospeo.io',
+      type: 'Lead Generation',
+      status: 'disconnected',
+      icon: '🥇',
+      description: '75 FREE credits! Email + mobile finder with highest free tier',
+      lastSync: 'Never',
+      account: 'Not connected',
+      freeCredits: '75 FREE credits',
+      features: ['Email Finder', 'Mobile Finder', 'Chrome Extension', 'API Access', 'Bulk Processing']
+    },
+    {
       id: 'hunter-io',
       name: 'Hunter.io',
       type: 'Lead Generation',
@@ -225,18 +237,6 @@ const APIKeysIntegrations = ({ calendarConnections, onCalendarConnect, saveCalen
       account: 'Not connected',
       freeCredits: '50 FREE credits',
       features: ['98% Email Accuracy', 'Browser Extension', 'Domain Search', 'Email Verification']
-    },
-    {
-      id: 'anymailfinder',
-      name: 'AnymailFinder',
-      type: 'Lead Generation',
-      status: 'disconnected',
-      icon: '🔍',
-      description: '3-day FREE trial! Pay only for valid emails, credits roll over',
-      lastSync: 'Never',
-      account: 'Not connected',
-      freeCredits: '3-day FREE trial',
-      features: ['Pay per Valid Email', 'Credits Roll Over', 'API Access', 'Bulk Processing']
     },
     {
       id: 'firecrawl',

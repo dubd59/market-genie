@@ -59,42 +59,42 @@ export default function LandingPage() {
     {
       icon: Bot,
       title: "AI-Powered Automation",
-      description: "Complete marketing automation with AI email generation that learns and optimizes your campaigns"
+      description: "Tired of manual marketing tasks? Complete automation with AI email generation that learns and optimizes your campaigns"
     },
     {
       icon: Users,
       title: "Advanced Lead Generation",
-      description: "Automated web scraping and lead enrichment from multiple sources with AI-powered targeting"
+      description: "Struggling to find quality leads? Automated web scraping and lead enrichment from multiple sources with AI-powered targeting"
     },
     {
       icon: Mail,
       title: "Multi-Channel Campaigns",
-      description: "Email and social media campaigns from one platform with intelligent cross-channel optimization"
+      description: "Overwhelmed by managing separate tools? Email and social media campaigns from one platform with intelligent cross-channel optimization"
     },
     {
       icon: Brain,
       title: "Intelligent Lead Scoring",
-      description: "AI analyzes behavior patterns to identify your hottest prospects and prioritize follow-ups"
+      description: "Wasting time on unqualified prospects? AI analyzes behavior patterns to identify your hottest prospects and prioritize follow-ups"
     },
     {
       icon: Workflow,
       title: "AI Funnel Builder",
-      description: "Creates complete, high-converting landing page funnels instantly based on your business needs"
+      description: "Frustrated with complex funnel creation? Creates complete, high-converting landing page funnels instantly based on your business needs"
     },
     {
       icon: Calendar,
       title: "Appointment Automation",
-      description: "Smart scheduling with automated reminders and AI-powered follow-up sequences"
+      description: "Losing sales due to missed follow-ups? Smart scheduling with automated reminders and AI-powered follow-up sequences"
     },
     {
       icon: BarChart3,
       title: "Real-Time Analytics",
-      description: "Beautiful 3D dashboards with predictive insights and performance optimization recommendations"
+      description: "Blind to your marketing performance? Beautiful 3D dashboards with actionable insights and performance optimization recommendations"
     },
     {
       icon: Shield,
       title: "Smart Campaign Analytics",
-      description: "AI-powered performance monitoring with automated optimization and conversion insights"
+      description: "Guessing what's working? AI-powered performance monitoring with automated optimization and conversion insights"
     }
   ]
 
@@ -103,7 +103,7 @@ export default function LandingPage() {
       id: 'free',
       name: 'Starter',
       price: 0,
-      description: 'Perfect for small businesses getting started',
+      description: 'Perfect for small businesses tired of expensive marketing tools getting started',
       features: [
         '50 contacts',
         '100 emails/month',
@@ -122,7 +122,7 @@ export default function LandingPage() {
       id: 'pro',
       name: 'Professional',
       price: 20,
-      description: 'For growing businesses that need more power',
+      description: 'For growing businesses frustrated with complex, costly marketing stacks that need more power',
       features: [
         '10,000 contacts',
         '50,000 emails/month',
@@ -143,7 +143,7 @@ export default function LandingPage() {
       id: 'lifetime',
       name: 'Lifetime',
       price: 300,
-      description: 'One-time payment, yours forever',
+      description: 'One-time payment for agencies and businesses done with recurring marketing tool costs, yours forever',
       features: [
         'Unlimited contacts',
         'Unlimited emails',
@@ -169,7 +169,7 @@ export default function LandingPage() {
       name: "Sarah Johnson",
       company: "Digital Growth Co.",
       avatar: "SJ",
-      text: "Market Genie increased our lead generation by 400% and cut our marketing costs in half. The AI automation is incredible!"
+      text: "Market Genie dramatically increased our lead generation and cut our marketing costs significantly. The AI automation is incredible!"
     },
     {
       name: "Michael Chen",

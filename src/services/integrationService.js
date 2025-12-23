@@ -494,8 +494,7 @@ class IntegrationService {
       const providerMap = {
         'prospeo-io': 'prospeo',
         'voilanorbert': 'voilanorbert',
-        'hunter': 'hunter',
-        'firecrawl': 'firecrawl'
+        'hunter': 'hunter'
       };
       
       const proxyProvider = providerMap[provider] || provider;
@@ -551,7 +550,67 @@ class IntegrationService {
   }
 
   async findEmailFirecrawl(tenantId, domain, firstName, lastName) {
-    return await this.findEmailWithProvider(tenantId, 'firecrawl', domain, firstName, lastName);
+    try {
+      const credentials = await this.getIntegrationCredentials(tenantId, 'firecrawl');
+      if (!credentials.success) {
+        return { success: false, error: 'Firecrawl not connected' };
+      }
+
+      // For Firecrawl, we'll try to scrape LinkedIn or company website
+      // First, try to find a LinkedIn profile URL
+      const linkedinUrl = `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
+      
+      console.log(`🔥 Firecrawl: Attempting to scrape ${linkedinUrl}`);
+
+      const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.data.apiKey}`
+        },
+        body: JSON.stringify({
+          url: linkedinUrl,
+          formats: ['markdown'],
+          onlyMainContent: true
+        })
+      });
+
+      if (!response.ok) {
+        console.log(`❌ Firecrawl API error: ${response.status}`);
+        return { success: false, error: `Firecrawl API error: ${response.status}` };
+      }
+
+      const result = await response.json();
+      console.log('🔥 Firecrawl scrape result:', result);
+
+      if (result.success && result.data && result.data.markdown) {
+        // Try to extract email from the scraped content
+        const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+        const emails = result.data.markdown.match(emailRegex);
+        
+        if (emails && emails.length > 0) {
+          const email = emails[0]; // Take the first email found
+          console.log(`✅ Firecrawl found email: ${email}`);
+          
+          return {
+            success: true,
+            data: {
+              email: email,
+              first_name: firstName,
+              last_name: lastName,
+              source: 'firecrawl_linkedin_scrape',
+              confidence: 'medium',
+              provider: 'firecrawl'
+            }
+          };
+        }
+      }
+
+      return { success: false, error: 'No email found in scraped content' };
+    } catch (error) {
+      console.error('❌ Firecrawl error:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   // Verify email using any provider

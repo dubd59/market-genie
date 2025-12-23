@@ -903,7 +903,8 @@ class LeadService {
     
     const providers = [
       { name: 'prospeo-io', method: 'findEmailProspeo' },
-      { name: 'hunter-io', method: 'findEmails' }
+      { name: 'hunter-io', method: 'findEmails' },
+      { name: 'firecrawl', method: 'findEmailFirecrawl' }
     ]
     
     for (const provider of providers) {
@@ -915,6 +916,8 @@ class LeadService {
           result = await IntegrationService.findEmailProspeo(tenantId, domain, firstName, lastName, domain)
         } else if (provider.name === 'hunter-io') {
           result = await IntegrationService.findEmails(tenantId, domain, firstName, lastName)
+        } else if (provider.name === 'firecrawl') {
+          result = await IntegrationService.findEmailFirecrawl(tenantId, domain, firstName, lastName)
         }
         
         if (result && result.success && result.data && result.data.email) {

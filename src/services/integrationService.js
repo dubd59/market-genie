@@ -572,6 +572,7 @@ class IntegrationService {
       console.log(`🔥 Firecrawl: Attempting to scrape ${linkedinUrl}`);
       console.log(`🔥 Firecrawl: Using API key starting with: ${credentials.data.apiKey.substring(0, 8)}...`);
 
+      // Use Firecrawl REST API directly (browser-compatible)
       const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
@@ -588,9 +589,19 @@ class IntegrationService {
       console.log(`🔥 Firecrawl: API response status: ${response.status}`);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`❌ Firecrawl API error: ${response.status} - ${errorText}`);
-        return { success: false, error: `Firecrawl API error: ${response.status} - ${errorText}` };
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage += `: ${errorData.error || errorData.message || 'Unknown error'}`;
+          console.log(`❌ Firecrawl API error details:`, errorData);
+        } catch (parseError) {
+          const errorText = await response.text();
+          errorMessage += `: ${errorText}`;
+          console.log(`❌ Firecrawl API error text: ${errorText}`);
+        }
+
+        console.log(`❌ Firecrawl API error: ${errorMessage}`);
+        return { success: false, error: `Firecrawl API error: ${errorMessage}` };
       }
 
       const result = await response.json();

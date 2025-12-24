@@ -634,6 +634,7 @@ export default function LandingPage() {
                 <li><a href="https://supportgenie.help/customer?tenant=supportgenie-tenant" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Help Center</a></li>
                 <li><Link to="/documentation" className="hover:text-white transition-colors">Documentation</Link></li>
                 <li><a href="mailto:Help@dubdproducts.com" className="hover:text-white transition-colors">Contact Support</a></li>
+                <li><a href="/press-kit.html" className="hover:text-white transition-colors">Press Release</a></li>
               </ul>
             </div>
 

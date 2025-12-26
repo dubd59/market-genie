@@ -3235,7 +3235,14 @@ Enter number (1-4):`);
       if (campaign.id === campaignId) {
         switch (action) {
           case 'pause':
-            const newStatus = campaign.status === 'Active' ? 'Paused' : 'Active'
+            let newStatus;
+            if (campaign.status === 'Active') {
+              newStatus = 'Paused';
+            } else if (campaign.status === 'In Progress') {
+              newStatus = 'Paused';
+            } else {
+              newStatus = 'Active';
+            }
             toast.success(`Campaign ${newStatus === 'Paused' ? 'paused' : 'resumed'} successfully`)
             return { ...campaign, status: newStatus }
           case 'send_now':
@@ -6302,12 +6309,12 @@ END:VCALENDAR`;
                             <button 
                               onClick={() => handleCampaignAction(campaign.id, 'pause')}
                               className={`px-3 py-1 rounded text-sm transition-colors ${
-                                campaign.status === 'Active' 
+                                campaign.status === 'Active' || campaign.status === 'In Progress'
                                   ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
                                   : 'bg-green-500 hover:bg-green-600 text-white'
                               }`}
                             >
-                              {campaign.status === 'Active' ? 'Pause' : 'Resume'}
+                              {campaign.status === 'Active' || campaign.status === 'In Progress' ? 'Pause' : 'Resume'}
                             </button>
                             <button 
                               onClick={() => handleCampaignAction(campaign.id, 'delete')}

@@ -134,6 +134,15 @@ const OutreachAutomation = () => {
     ]);
   };
 
+  const pauseCampaign = (campaignId) => {
+    setCampaigns(prev => prev.map(campaign =>
+      campaign.id === campaignId
+        ? { ...campaign, status: campaign.status === 'active' ? 'paused' : 'active' }
+        : campaign
+    ));
+    toast.success('Campaign status updated');
+  };
+
   const createCampaign = async (e) => {
     e.preventDefault();
     
@@ -454,7 +463,14 @@ Examples:
                 </div>
                 
                 <div className="flex gap-2">
-                  <button className="px-3 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors">
+                  <button
+                    onClick={() => pauseCampaign(campaign.id)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      campaign.status === 'active' 
+                        ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                        : 'bg-green-100 text-green-800 hover:bg-green-200'
+                    }`}
+                  >
                     {campaign.status === 'active' ? 'Pause' : 'Resume'}
                   </button>
                   <button className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
